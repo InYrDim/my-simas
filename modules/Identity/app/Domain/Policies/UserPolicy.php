@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\Identity\Policies;
+namespace Modules\Identity\App\Domain\Policies;
 
 use Illuminate\Auth\Access\HandlesAuthorization;
 

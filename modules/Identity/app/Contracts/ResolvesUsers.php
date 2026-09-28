@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\Identity\Contracts;
+namespace Modules\Identity\App\Contracts;
 
 interface ResolvesUsers
 {

@@ -1,9 +1,9 @@
 <?php
 
 use App\Providers\AppServiceProvider;
-use Modules\Core\Providers\CoreServiceProvider;
-use Modules\Identity\Providers\IdentityServiceProvider;
-use Modules\Shared\Providers\SharedServiceProvider;
+use Modules\Core\App\Infrastructure\Providers\CoreServiceProvider;
+use Modules\Identity\App\Infrastructure\Providers\IdentityServiceProvider;
+use Modules\Shared\App\Infrastructure\Providers\SharedServiceProvider;
 
 return [
     AppServiceProvider::class,

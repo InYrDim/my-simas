@@ -4,8 +4,8 @@ namespace Modules\Identity\Tests\Feature;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Modules\Identity\Contracts\ResolvesUsers;
-use Modules\Identity\Models\User;
+use Modules\Identity\App\Contracts\ResolvesUsers;
+use Modules\Identity\App\Domain\Models\User;
 
 test('user model is owned by the identity module and persisted', function () {
     $user = User::factory()->create([

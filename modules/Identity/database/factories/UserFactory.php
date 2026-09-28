@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\Attributes\UseModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use Modules\Identity\Models\User;
+use Modules\Identity\App\Domain\Models\User;
 
 /**
  * @extends Factory<User>

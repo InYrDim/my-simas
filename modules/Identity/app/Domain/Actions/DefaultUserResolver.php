@@ -1,10 +1,10 @@
 <?php
 
-namespace Modules\Identity\Services;
+namespace Modules\Identity\App\Domain\Actions;
 
-use Modules\Identity\Contracts\ResolvesUsers;
-use Modules\Identity\Contracts\UserRecord;
-use Modules\Identity\Models\User;
+use Modules\Identity\App\Contracts\ResolvesUsers;
+use Modules\Identity\App\Contracts\UserRecord;
+use Modules\Identity\App\Domain\Models\User;
 
 class DefaultUserResolver implements ResolvesUsers
 {

@@ -1,20 +1,33 @@
-# CONTRACT — Modules\Shared
+# Module: Shared
 
-Pure technical utilities usable by every module: base classes, generic
-traits, helpers, generic value objects, base exceptions, generic UI.
+## Owns
+- Database tables: none (must never own any)
+- Core domain concepts: none by design — pure technical utilities only
+  (base classes, generic traits/helpers, generic value objects, base
+  exceptions, generic UI). Knows nothing about school business domains
+  (student, class, teacher, attendance, PPDB) or other modules.
 
-## Rules (hard)
+## Public interface (Contracts/)
+- All of `Modules\Shared` is public by definition. There is no
+  internal/external split — the Deptrac `Shared` layer covers the whole
+  module and every module may use it.
 
-- **Allowed in:** code that knows nothing about school business domains
-  (student, class, teacher, attendance, PPDB) and no other module's
-  domain concepts.
-- **Not allowed in:** models/tables/enums/business rules; code used by a
-  single module (put it inside that module); business-meaningful code
-  merely shared by two modules (report it instead — candidate for the
-  owning module's public surface or a future Core module).
-- **Dependencies:** Shared may depend only on `Laravel`/`Vendor`.
-  It must never import `Modules\*` namespaces.
+## Allowed dependencies
+- Laravel/Vendor only. Never `Modules\*` (enforced by Deptrac and an
+  arch test).
 
-## Public surface
+## Events published
+- None.
 
-Everything under `Modules\Shared\` is public to all modules by design.
+## Events consumed
+- None.
+
+## Explicitly NOT exposed
+- Nothing — but the *inbound* rule is the point: code used by only one
+  module belongs in that module, and business-meaningful code used by
+  two modules must be reported (candidate for the owning module's
+  contract or a future Core module), never parked here.
+
+## Notes for maintainers
+- The arch test "modules/Shared never imports another module namespace"
+  fails the suite on any violation — do not weaken it.

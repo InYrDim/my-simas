@@ -27,11 +27,11 @@ test('modules/Shared never imports another module namespace', function () {
 
 test('no module imports the internal namespace of another module', function () {
     $modules = ['Identity', 'Core'];
-    $publicPrefixes = array_map(fn (string $m): string => "Modules\\{$m}\\Contracts\\", $modules);
+    $publicPrefixes = array_map(fn (string $m): string => "Modules\\{$m}\\App\\Contracts\\", $modules);
     $violations = [];
 
     foreach ($modules as $module) {
-        $publicPath = "modules/{$module}/Contracts";
+        $publicPath = "modules/{$module}/app/Contracts";
         $internalPath = "modules/{$module}";
 
         foreach (phpFilesUnder($internalPath) as $file => $contents) {
@@ -67,13 +67,14 @@ test('no module imports the internal namespace of another module', function () {
     expect($violations)->toBe([]);
 });
 
-test('Modules Identity Models User is never imported outside the Identity module', function () {
+test('the Identity User model is never imported outside the Identity module', function () {
+    $forbidden = 'Modules\\Identity\\App\\Domain\\Models\\User';
     $violations = [];
 
     foreach (['app', 'modules/Shared', 'modules/Core', 'modules/Platform', 'database'] as $dir) {
         foreach (phpFilesUnder($dir) as $file => $contents) {
-            if (in_array('Modules\\Identity\\Models\\User', importedNamespaces($contents), true)) {
-                $violations[] = "$file imports Modules\\Identity\\Models\\User";
+            if (in_array($forbidden, importedNamespaces($contents), true)) {
+                $violations[] = "$file imports $forbidden";
             }
         }
     }
@@ -85,7 +86,7 @@ test('migrations declare no foreign key constraints', function () {
     $violations = [];
     $patterns = ['->foreign(', '->constrained(', '->foreignIdFor(', '->foreignUuid('];
 
-    foreach (['database/migrations', 'modules/Identity/Database/Migrations', 'modules/Core/Database/Migrations'] as $dir) {
+    foreach (['database/migrations', 'modules/Identity/database/migrations', 'modules/Core/database/migrations', 'modules/Shared/database/migrations'] as $dir) {
         foreach (phpFilesUnder($dir) as $file => $contents) {
             foreach ($patterns as $pattern) {
                 if (str_contains($contents, $pattern)) {

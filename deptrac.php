@@ -15,65 +15,72 @@ use Deptrac\Deptrac\Contract\Config\Ruleset;
 | Layer order (bottom -> top):
 |   Vendor / Laravel -> Shared -> Platform (Fase 1) -> Identity -> Core -> App
 |
-| Each module has an internal layer plus a Public layer (Contracts only).
-| Modules may depend on other modules ONLY through their Public layer.
-| See docs/architecture/modular-monolith.md for the full policy.
+| Each module has an internal layer plus a Public layer (App/Contracts
+| only, per the module template). Modules may depend on other modules
+| ONLY through their Public layer. See
+| docs/architecture/modular-monolith.md for the full policy.
 |
-| Note: ClassLikeConfig::create() doubles backslashes when building the
-| final PCRE, so write patterns here exactly like a normal PHP string
-| containing single backslashes.
+| Notes:
+|  - ClassLikeConfig::create() doubles backslashes when building the
+|    final PCRE, so write patterns here exactly like a normal PHP string
+|    containing single backslashes.
+|  - The App layer is anchored (^App\) so it never swallows the
+|    Modules\<Name>\App\... namespaces of module-internal code.
 */
 
 return static function (DeptracConfig $config): void {
     $config
         ->paths('./app', './modules', './database')
+        ->excludeFiles('#[\\/]tests[\\/]#')
         ->layers(
             $app = Layer::withName('App')->collectors(
-                ClassLikeConfig::create('.*App\\.*'),
-            ),
-            $database = Layer::withName('Database')->collectors(
-                // Root seeders/factories glue (e.g. DatabaseSeeder creates the
-                // example Identity user). Known, documented exception: seeding
-                // is app-level wiring, not a module consuming another module.
-                // Anchored: must not swallow Modules\*\Database\* or vendor
-                // Illuminate\Database\* classes.
-                ClassLikeConfig::create('^Database\\.*'),
+                ClassLikeConfig::create('^App\\\\.*'),
             ),
             $vendor = Layer::withName('Vendor')->collectors(
-                // Anything that is not App\, Modules\, Tests\ or Database\.
-                ClassLikeConfig::create('^(?!.*(App|Modules|Tests|Database)\\).*$'),
+                // Anything that is not App\, Modules\ or Database\.
+                ClassLikeConfig::create('^(?!(App|Modules|Database)\\\\).*$'),
             ),
             $laravel = Layer::withName('Laravel')->collectors(
-                ClassLikeConfig::create('.*Illuminate\\.*'),
-                ClassLikeConfig::create('.*Laravel\\.*'),
+                ClassLikeConfig::create('.*Illuminate\\\\.*'),
+                ClassLikeConfig::create('.*Laravel\\\\.*'),
+            ),
+            $database = Layer::withName('Database')->collectors(
+                // Root seeders/factories glue (e.g. DatabaseSeeder creates
+                // the example Identity user). Known, documented exception:
+                // seeding is app-level wiring, not a module consuming
+                // another module. Anchored so it never swallows
+                // Modules\<Name>\Database\* or Illuminate\Database\*.
+                ClassLikeConfig::create('^Database\\\\.*'),
             ),
             $shared = Layer::withName('Shared')->collectors(
-                ClassLikeConfig::create('.*Modules\\Shared\\.*'),
+                // Shared has no Contracts restriction; all of it is public.
+                ClassLikeConfig::create('.*Modules\\\\Shared\\\\.*'),
             ),
             $platform = Layer::withName('Platform')->collectors(
                 // Reserved for Fase 1 (tenancy, module registry, permissions).
-                ClassLikeConfig::create('.*Modules\\Platform\\(?!Contracts\\).*'),
+                ClassLikeConfig::create('.*Modules\\\\Platform\\\\App\\\\(?!Contracts\\\\).*'),
+                ClassLikeConfig::create('.*Modules\\\\Platform\\\\(Database|routes)\\\\.*'),
             ),
             $platformPublic = Layer::withName('PlatformPublic')->collectors(
-                ClassLikeConfig::create('.*Modules\\Platform\\Contracts\\.*'),
+                ClassLikeConfig::create('.*Modules\\\\Platform\\\\App\\\\Contracts\\\\.*'),
             ),
             $identity = Layer::withName('Identity')->collectors(
-                ClassLikeConfig::create('.*Modules\\Identity\\(?!Contracts\\).*'),
+                ClassLikeConfig::create('.*Modules\\\\Identity\\\\App\\\\(?!Contracts\\\\).*'),
+                ClassLikeConfig::create('.*Modules\\\\Identity\\\\(Database|routes)\\\\.*'),
             ),
             $identityPublic = Layer::withName('IdentityPublic')->collectors(
-                ClassLikeConfig::create('.*Modules\\Identity\\Contracts\\.*'),
+                ClassLikeConfig::create('.*Modules\\\\Identity\\\\App\\\\Contracts\\\\.*'),
             ),
             $core = Layer::withName('Core')->collectors(
-                ClassLikeConfig::create('.*Modules\\Core\\(?!Contracts\\).*'),
+                ClassLikeConfig::create('.*Modules\\\\Core\\\\App\\\\(?!Contracts\\\\).*'),
+                ClassLikeConfig::create('.*Modules\\\\Core\\\\(Database|routes)\\\\.*'),
             ),
             $corePublic = Layer::withName('CorePublic')->collectors(
-                ClassLikeConfig::create('.*Modules\\Core\\Contracts\\.*'),
+                ClassLikeConfig::create('.*Modules\\\\Core\\\\App\\\\Contracts\\\\.*'),
             ),
         )
         ->rulesets(
-            // App is Laravel glue only: wiring, never business logic. It may
-            // bind Identity (auth model config) but must not touch other
-            // modules' internals.
+            // App is Laravel glue only: wiring, never business logic.
             Ruleset::forLayer($app)->accesses(
                 $shared, $laravel, $vendor,
                 $identity, $identityPublic,

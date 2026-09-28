@@ -34,12 +34,22 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/",
-            "Modules\\": "modules/"
+            "Modules\\Shared\\App\\": "modules/Shared/app/",
+            "Modules\\Shared\\Database\\": "modules/Shared/database/",
+            "Modules\\Shared\\Tests\\": "modules/Shared/tests/",
+            "Modules\\Identity\\App\\": "modules/Identity/app/",
+            "Modules\\Identity\\Database\\": "modules/Identity/database/",
+            "Modules\\Identity\\Tests\\": "modules/Identity/tests/",
+            "Modules\\Core\\App\\": "modules/Core/app/",
+            "Modules\\Core\\Database\\": "modules/Core/database/",
+            "Modules\\Core\\Tests\\": "modules/Core/tests/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Tests\\": "tests/"
+            "Tests\\": "tests/",
+            "Modules\\Identity\\Tests\\": "modules/Identity/tests/",
+            "Modules\\Core\\Tests\\": "modules/Core/tests/"
         }
     },
     "scripts": {

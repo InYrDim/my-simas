@@ -1,13 +1,13 @@
 <?php
 
-namespace Modules\Identity\Providers;
+namespace Modules\Identity\App\Infrastructure\Providers;
 
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
-use Modules\Identity\Contracts\ResolvesUsers;
-use Modules\Identity\Models\User;
-use Modules\Identity\Policies\UserPolicy;
-use Modules\Identity\Services\DefaultUserResolver;
+use Modules\Identity\App\Contracts\ResolvesUsers;
+use Modules\Identity\App\Domain\Actions\DefaultUserResolver;
+use Modules\Identity\App\Domain\Models\User;
+use Modules\Identity\App\Domain\Policies\UserPolicy;
 
 class IdentityServiceProvider extends ServiceProvider
 {
@@ -17,8 +17,6 @@ class IdentityServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(ResolvesUsers::class, DefaultUserResolver::class);
-
-        $this->mergeConfigFrom(__DIR__.'/../config/identity.php', 'identity');
     }
 
     /**
@@ -36,7 +34,7 @@ class IdentityServiceProvider extends ServiceProvider
      */
     protected function registerMigrations(): void
     {
-        $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
+        $this->loadMigrationsFrom(__DIR__.'/../../../database/migrations');
     }
 
     /**
@@ -44,7 +42,7 @@ class IdentityServiceProvider extends ServiceProvider
      */
     protected function registerRoutes(): void
     {
-        $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+        $this->loadRoutesFrom(__DIR__.'/../../../routes/web.php');
     }
 
     /**
