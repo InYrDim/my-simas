@@ -2,6 +2,7 @@
 
 namespace Modules\Identity\Database\Factories;
 
+use Illuminate\Database\Eloquent\Factories\Attributes\UseModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -10,6 +11,7 @@ use Modules\Identity\Models\User;
 /**
  * @extends Factory<User>
  */
+#[UseModel(User::class)]
 class UserFactory extends Factory
 {
     /**

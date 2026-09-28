@@ -8,7 +8,7 @@ user-resolution logic.
 
 | Namespace | Contents |
 |---|---|
-| `Modules\Identity\Contracts` | `ResolvesUsers` — resolve a user by email |
+| `Modules\Identity\Contracts` | `ResolvesUsers` — resolve a user by email; `UserRecord` — read-only user DTO |
 
 Nothing else (models, services, policies, HTTP) is public. Binding is
 registered in `IdentityServiceProvider` and can be overridden in tests
@@ -19,8 +19,7 @@ over importing `User` directly.
 
 - Other modules **must not** import `Modules\Identity\Models\User`.
   Store `user_id` as a plain column (no FK, no Eloquent relation) and
-  use `ResolvesUsers` (or a future IdentityPublic DTO) when user data
-  is needed.
+  use `ResolvesUsers` / `UserRecord` when user data is needed.
 - No cross-module foreign keys in migrations.
 
 ## Deferred to Fase 1 (Platform)

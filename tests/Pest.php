@@ -20,12 +20,33 @@ pest()->extend(TestCase::class)
 
 /*
 |--------------------------------------------------------------------------
+| Module test suites
+|--------------------------------------------------------------------------
+|
+| Each module carries its own Feature/Unit tests under modules/<Name>/Tests.
+| They are bound here with absolute paths because Pest resolves relative
+| targets against the tests/ directory.
+|
+*/
+
+foreach (glob(__DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'modules'.DIRECTORY_SEPARATOR.'*'.DIRECTORY_SEPARATOR.'Tests'.DIRECTORY_SEPARATOR.'Feature') ?: [] as $featureDir) {
+    pest()->extend(TestCase::class)
+        ->use(RefreshDatabase::class)
+        ->in($featureDir);
+}
+
+foreach (glob(__DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'modules'.DIRECTORY_SEPARATOR.'*'.DIRECTORY_SEPARATOR.'Tests'.DIRECTORY_SEPARATOR.'Unit') ?: [] as $unitDir) {
+    pest()->extend(TestCase::class)
+        ->in($unitDir);
+}
+
+/*
+|--------------------------------------------------------------------------
 | Expectations
 |--------------------------------------------------------------------------
 |
-| When you're writing tests, you often need to check that values meet certain conditions. The
-| "expect()" function gives you access to a set of "expectations" methods that you can use
-| to assert different things. Of course, you may extend the Expectation API at any time.
+| When you're writing tests, it is likely you will want to check that values meet
+| certain conditions. Here you can add custom expectations to use in your tests.
 |
 */
 
