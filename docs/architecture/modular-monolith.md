@@ -28,6 +28,8 @@ Vendor/Laravel  ←  Shared  ←  Platform (Fase 1)  ←  Identity  ←  Core  �
 - **Identity** (`Modules\Identity`) — users, authentication scaffold:
   `User` model, factory, `users`/`password_reset_tokens`/`sessions`
   migrations, `ResolvesUsers` contract, `UserRecord` DTO, policy.
+  (See “Folder shape” below: module code lives under the module's own
+  `app/` tree, e.g. `Modules\Identity\App\Domain\Models\User`.)
 - **Core** (`Modules\Core`) — master data (skeleton in Fase 0).
 - **App / Database** — Laravel glue only: providers, config, root
   seeders. No business logic. (`DatabaseSeeder` creating the example
@@ -38,30 +40,36 @@ Vendor/Laravel  ←  Shared  ←  Platform (Fase 1)  ←  Identity  ←  Core  �
 | Module | Layer | Owns | Public surface |
 |---|---|---|---|
 | Shared | `Shared` | Generic technical utilities | Everything (by definition) |
-| Platform (Fase 1) | `Platform` | Tenancy, module registry, permissions | `Modules\Platform\Contracts` |
-| Identity | `Identity` | User model, auth scaffold | `Modules\Identity\Contracts` (`ResolvesUsers`, `UserRecord`) |
-| Core | `Core` | Master data (future) | `Modules\Core\Contracts` (empty) |
+| Platform (Fase 1) | `Platform` | Tenancy, module registry, permissions | `Modules\Platform\App\Contracts` |
+| Identity | `Identity` | User model, auth scaffold | `Modules\Identity\App\Contracts` (`ResolvesUsers`, `UserRecord`) |
+| Core | `Core` | Master data (future) | `Modules\Core\App\Contracts` (empty) |
 
-Each module folder follows the same shape:
+Each module folder follows the module template:
 
 ```
 modules/<Name>/
-  Providers/<Name>ServiceProvider.php   # registered in bootstrap/providers.php
+  app/
+    Contracts/                # PUBLIC surface — the only cross-module API
+    Domain/                   # private: Models/, Actions/, Events/, Policies/
+    Infrastructure/           # private: Repositories/, Providers/
+    Http/                     # private: Controllers/, Requests/, Resources/
+  resources/js/               # Pages/, Components/ (module frontend)
   routes/web.php
-  Database/Migrations/                   # module-owned migrations
-  Database/Factories/
-  Database/Seeders/
-  Models/ Services/ Policies/ Config/    # as needed
-  Contracts/                             # PUBLIC surface — the only cross-module API
-  Tests/Feature/ Tests/Unit/             # module-owned tests
-  CONTRACT.md                            # documents the public surface
+  database/migrations|factories|seeders/   # module-owned
+  tests/Feature|Unit/                       # module-owned tests
+  CONTRACT.md                 # documents the public surface
 ```
+
+Composer autoload maps `Modules\<Name>\App\`, `Modules\<Name>\Database\`
+and `Modules\<Name>\Tests\` to those folders (PSR-4 is case-sensitive on
+the `app/` vs `App\` boundary — follow the template exactly).
 
 ## Boundary rules
 
 1. **Cross-module access only via Contracts.** Never import another
-   module's `Models\`, `Services\`, `Http\`, or `Database\` namespaces.
-   Deptrac layer `XPublic` contains only `Modules\X\Contracts\**`.
+   module's `Domain\`, `Infrastructure\`, `Http\`, or `Database\`
+   namespaces. Deptrac layer `XPublic` contains only
+   `Modules\X\App\Contracts\**`.
 2. **No cross-module foreign keys.** References to other modules' data
    are plain columns (`user_id` etc.), no constraint, no Eloquent
    relation. The arch test scans every migration for `->foreign(`,
@@ -105,16 +113,21 @@ for removal. Baselines must never hide violations that are cheap to fix.
 
 1. Create `modules/<Name>/` with the folder shape above
    (`Contracts/` included even if empty).
-2. Add `<Name>ServiceProvider`, register it in `bootstrap/providers.php`.
+2. Add `app/Infrastructure/Providers/<Name>ServiceProvider` (registers
+   the module's migrations, routes, bindings), and register it in
+   `bootstrap/providers.php`.
 3. Register the PSR-4 root once: `Modules\` → `modules/` is already in
    `composer.json` (no change needed), then `composer dump-autoload`.
-4. Point the module's `ServiceProvider` at its own
-   `Database/Migrations` and `routes/web.php`.
-5. Add two Deptrac layers in `deptrac.php` — `<Name>` (internal,
-   negative-lookahead pattern excluding `Contracts\`) and `<Name>Public`
-   — then wire the ruleset following the one-way order:
-   internal → `Shared`, `Laravel`, `Vendor`, `PlatformPublic`, and
-   `Public` surfaces of *lower* modules only.
+4. Map `Modules\<Name>\App\`, `Modules\<Name>\Database\`,
+   `Modules\<Name>\Tests\` in `composer.json` (per-subnamespace, as the
+   existing modules do) and point the module's `ServiceProvider` at its
+   own `database/migrations` and `routes/web.php`.
+5. Add two Deptrac layers in `deptrac.php` — `<Name>` (internal:
+   `Modules\<Name>\App\(?!Contracts\).*` plus `Database|routes`)
+   and `<Name>Public` (`Modules\<Name>\App\Contracts\.*`) — then wire
+   the ruleset following the one-way order: internal → `Shared`,
+   `Laravel`, `Vendor`, `PlatformPublic`, and `Public` surfaces of
+   *lower* modules only.
 6. Add the module to the `$modules` list in
    `tests/Architecture/ModularMonolithTest.php`.
 7. Write `CONTRACT.md` describing the public surface.
