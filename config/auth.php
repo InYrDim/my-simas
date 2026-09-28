@@ -1,6 +1,7 @@
 <?php
 
 use Modules\Identity\App\Domain\Models\User;
+use Modules\Platform\App\Domain\Models\ProviderUser;
 
 return [
 
@@ -42,6 +43,17 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        /*
+        | SaaS provider staff (central). Fully separate from the tenant
+        | 'web' guard: sessions, tables, and routes do not overlap —
+        | a provider session must never authenticate a tenant route.
+        | No Gate::before super-admin (recorded decision).
+        */
+        'provider' => [
+            'driver' => 'session',
+            'provider' => 'provider_users',
+        ],
     ],
 
     /*
@@ -67,10 +79,10 @@ return [
             'model' => env('AUTH_MODEL', User::class),
         ],
 
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        'provider_users' => [
+            'driver' => 'eloquent',
+            'model' => ProviderUser::class,
+        ],
     ],
 
     /*

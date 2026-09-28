@@ -87,11 +87,18 @@ test('the Identity User model is never imported outside the Identity module', fu
 
 test('migrations declare no cross-module foreign key constraints', function () {
     $violations = [];
-    $patterns = ['->foreign(', '->constrained(', '->foreignIdFor(', '->foreignUuid('];
+    $patterns = ['->foreign(', '->constrained(', '->foreignIdFor(', '->foreignUuid('];        foreach (['database/migrations', 'modules/Shared/database/migrations', 'modules/Identity/database/migrations', 'modules/Core/database/migrations', 'modules/Platform/database/migrations'] as $dir) {
+            foreach (phpFilesUnder($dir) as $file => $contents) {
+                // Platform's copy of Spatie's permission-tables schema is
+                // exempt: every table it references (permissions, roles,
+                // model_has_*) is owned by the SAME module — the FKs Spatie
+                // requires are same-module by construction. Documented in
+                // modules/Platform/CONTRACT.md (Stage 6).
+                if (str_contains($file, 'create_permission_tables')) {
+                    continue;
+                }
 
-    foreach (['database/migrations', 'modules/Shared/database/migrations', 'modules/Identity/database/migrations', 'modules/Core/database/migrations', 'modules/Platform/database/migrations'] as $dir) {
-        foreach (phpFilesUnder($dir) as $file => $contents) {
-            foreach (preg_split('/\r?\n/', $contents) ?: [] as $lineNumber => $line) {
+                foreach (preg_split('/\r?\n/', $contents) ?: [] as $lineNumber => $line) {
                 foreach ($patterns as $pattern) {
                     if (str_contains($line, $pattern) && ! str_contains($line, 'tenant')) {
                         $violations[] = sprintf(

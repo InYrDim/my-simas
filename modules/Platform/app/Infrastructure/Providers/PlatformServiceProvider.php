@@ -5,6 +5,7 @@ namespace Modules\Platform\App\Infrastructure\Providers;
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use Modules\Platform\App\Contracts\ModuleRegistry;
+use Modules\Platform\App\Contracts\PermissionRegistry;
 use Modules\Platform\App\Contracts\TenantCache;
 use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Contracts\TenantModules;
@@ -15,6 +16,10 @@ use Modules\Platform\App\Infrastructure\Modules\DefaultModuleRegistry;
 use Modules\Platform\App\Infrastructure\Modules\DefaultTenantModules;
 use Modules\Platform\App\Infrastructure\Modules\ModuleFlagManager;
 use Modules\Platform\App\Infrastructure\Modules\TenantModulesCache;
+use Modules\Platform\App\Infrastructure\Permissions\DefaultPermissionRegistry;
+use Modules\Platform\App\Infrastructure\Permissions\PermissionSync;
+use Modules\Platform\App\Infrastructure\Permissions\TenantPermissionBridge;
+use Modules\Platform\App\Infrastructure\Permissions\TenantRoleResolver;
 use Modules\Platform\App\Infrastructure\Tenancy\DefaultTenantContext;
 use Modules\Platform\App\Infrastructure\Tenancy\PartitionedTenantCache;
 use Modules\Platform\App\Infrastructure\Tenancy\PartitionedTenantStorage;
@@ -57,6 +62,14 @@ class PlatformServiceProvider extends ServiceProvider
         $this->app->alias(DefaultTenantModules::class, TenantModules::class);
 
         $this->app->singleton(ModuleFlagManager::class);
+
+        // Permission layer (Stage 6): registry + sync + the Spatie seam.
+        $this->app->singleton(DefaultPermissionRegistry::class);
+        $this->app->alias(DefaultPermissionRegistry::class, PermissionRegistry::class);
+
+        $this->app->singleton(TenantRoleResolver::class);
+        $this->app->singleton(PermissionSync::class);
+        $this->app->singleton(TenantPermissionBridge::class);
     }
 
     /**

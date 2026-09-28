@@ -3,33 +3,40 @@
 namespace Modules\Platform\App\Infrastructure\Tenancy;
 
 use Modules\Platform\App\Contracts\TenantData;
+use Modules\Platform\App\Infrastructure\Permissions\TenantPermissionBridge;
 
 /**
  * Internal seam between the tenant context and layers that must react to
- * context changes. Stage 2: hydrate tenants, keep DTO/id consistent.
- * Stage 6: Spatie setPermissionsTeamId + permission-cache resets hook in
- * here without touching the public contract.
+ * context changes. Stage 6: the Spatie permission bridge is wired —
+ * every context change points Spatie's "team" at the current tenant.
  */
 final class TenantBridge
 {
+    public function __construct(
+        private readonly TenantPermissionBridge $permissions,
+    ) {}
+
     public function onTenantSet(string $tenantId): void
     {
-        // Stage 6: setPermissionsTeamId($tenantId) + forget permission cache.
+        $this->permissions->setTeam($tenantId);
     }
 
     public function onTenantAdopted(TenantData $tenant): void
     {
-        // Stage 6: setPermissionsTeamId($tenant->id).
+        $this->permissions->adoptTenant($tenant);
     }
 
     public function onTenantForget(): void
     {
-        // Stage 6: setPermissionsTeamId(null) + forget permission cache.
+        $this->permissions->clearTeam();
     }
 
     public function onTenantRestored(?TenantData $tenant, string $tenantId): void
     {
-        // Stage 6: setPermissionsTeamId($tenantId).
+        // Restore by id: the DTO may legitimately be absent (e.g. a
+        // restore inside runWithoutTenant) but the team pointer must
+        // still land back on the caller's tenant.
+        $this->permissions->setTeam($tenantId);
     }
 
     /**

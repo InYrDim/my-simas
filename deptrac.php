@@ -139,9 +139,12 @@ return static function (DeptracConfig $config): void {
             ),
             // Public may use its OWN internals (e.g. a public trait
             // delegating to internal machinery) — never another module's.
-            // Laravel types are fine for contracts; general vendor and
-            // Spatie are not.
-            Ruleset::forLayer($platformPublic)->accesses($platform, $shared, $laravel, $nativePhp),
+            // Laravel types are fine for contracts; general vendor is not.
+            // STAGE 6 EXCEPTION: HasTenantRoles is the documented public
+            // WRAPPER of Spatie's HasRoles — the single sanctioned Spatie
+            // touchpoint on the public surface, so consumers (Identity)
+            // never import Spatie themselves.
+            Ruleset::forLayer($platformPublic)->accesses($platform, $shared, $laravel, $nativePhp, $spatie),
             // Identity: auth + user identity.
             Ruleset::forLayer($identity)->accesses(
                 $identityPublic, $shared, $platformPublic, $laravel, $vendor, $nativePhp,

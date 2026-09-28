@@ -2,7 +2,9 @@
 
 ## Owns
 
-- Database tables: `tenants`, `tenant_modules`
+- Database tables: `tenants`, `tenant_modules`, Spatie permission
+  tables (`permissions`, `roles`, `model_has_permissions`,
+  `model_has_roles`, `role_has_permissions`), `provider_users`
 - Core domain concepts: tenancy (tenant resolution, tenant context,
   tenant-scoped models, tenant-aware cache/storage/queue propagation),
   the module registry, per-tenant feature flags, permission registry,
@@ -45,7 +47,17 @@
   `TenantNotSetException`.
 - `UnknownModuleException` (Stage 5): enabling/disabling an
   unregistered key fails loudly instead of silently enabling nothing.
-- `PermissionRegistry`, `HasTenantRoles` (Stage 6).
+- `PermissionRegistry` (Stage 6): permission names registered by each
+  module's own provider (`register(module, names)`); Platform never
+  hardcodes business permission names. Materialisation happens via
+  `permissions:sync` (Stage 7), never at boot.
+- `HasTenantRoles` (Stage 6, trait in `Contracts/Concerns`): the public
+  WRAPPER of Spatie's HasRoles — pulls in Spatie itself, so consumers
+  (Identity, Stage 9) never import Spatie. API: `assignTenantRole`,
+  `removeTenantRole`, `hasTenantRole`, `tenantRoleNames`,
+  `flushTenantPermissionCache`, `syncTenantTeam`. Deptrac exception:
+  PlatformPublic → Spatie is sanctioned for this one trait.
+- `UnknownModuleException`, `TenantNotSetException` (Contracts/Exceptions).
 - `TenantCreated` event (in `Contracts/Events`) — fired from the Tenant
   model's `created` hook; payload: tenant ULID.
 
@@ -110,6 +122,42 @@ hooks between tests — tests re-register via `app(TenantQueueContext::class)->r
 in their setup. Also: dispatch inside a `void` closure — `fn () => Job::dispatch()`
 RETURNS the PendingDispatch, whose destructor defers the push until after
 `run()` restored the context (payload stamped with the wrong tenant).
+
+## Permission tenancy (Stage 6)
+
+Spatie `teams = true` with `team_foreign_key = 'tenant_id'` (config
+published and owned here). Design decisions (user-approved):
+
+- **`roles.tenant_id` NULLABLE** — Spatie teams semantics: null means a
+  GLOBAL role visible to every tenant. The (tenant_id, name,
+  guard_name) unique key keeps same-named roles apart.
+- **Pivot `tenant_id` REQUIRED and part of the primary key**
+  (`model_has_roles` / `model_has_permissions`): every assignment
+  belongs to exactly one tenant — never null, never global.
+- The permission cache resets ONLY on an actual team change
+  (`TenantPermissionBridge` guards), so same-tenant requests keep the
+  cache warm.
+- The Spatie team pointer is driven by `TenantBridge`: every context
+  change (set/adopt/forget/restore) lands on Spatie via
+  `TenantPermissionBridge` — the ONLY internal class calling Spatie's
+  team API.
+- `TenantRoleResolver` (internal): resolve-or-create per-tenant role
+  rows; throws `TenantNotSetException` without context (a missing
+  context must never silently create a GLOBAL role). Removal path uses
+  `resolveOrNull` — removing never materialises rows.
+- Spatie permission tables are a COPY of the published migration in
+  `modules/Platform/database/migrations` (0001_01_01_000002): FKs to
+  tenants.id are the legal Platform-owned cross-module exception.
+
+## Provider users (Stage 6)
+
+- `provider_users` table is CENTRAL (no tenant_id, never
+  BelongsToTenant): SaaS staff, not school users.
+- Guard `provider` (session) with provider `provider_users`
+  (`config/auth.php` owned here). Guard separation enforced by routes
+  in Stage 9; no `Gate::before` super-admin (recorded decision).
+- `ProviderUser` model is internal (`App/Domain/Models`) — Stage 7
+  adds the `provider:create-user` command.
 
 ## Allowed dependencies
 
