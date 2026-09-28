@@ -32,7 +32,8 @@
         "psr-4": {
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
-            "Database\\Seeders\\": "database/seeders/"
+            "Database\\Seeders\\": "database/seeders/",
+            "Modules\\": "modules/"
         }
     },
     "autoload-dev": {
@@ -59,6 +60,9 @@
         "lint:check": [
             "pint --parallel --test"
         ],
+        "deptrac": [
+            "deptrac analyse --no-progress"
+        ],
         "ci:check": [
             "Composer\\Config::disableProcessTimeout",
             "npm run check",
@@ -72,6 +76,7 @@
             "@php artisan config:clear --ansi",
             "@lint:check",
             "@types:check",
+            "@deptrac",
             "@php artisan test"
         ],
         "post-autoload-dump": [

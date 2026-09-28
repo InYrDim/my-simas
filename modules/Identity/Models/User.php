@@ -1,9 +1,8 @@
 <?php
 
-namespace App\Models;
+namespace Modules\Identity\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,6 +11,10 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 
 /**
+ * TODO (Fase 1): PlatformPublic akan menyediakan trait pembungkus
+ * HasTenantRoles (modules/Platform/Contracts) — jangan import Spatie
+ * langsung di modul ini.
+ *
  * @property int $id
  * @property string $name
  * @property string $email
@@ -25,7 +28,7 @@ use Illuminate\Support\Carbon;
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
+    /** @use HasFactory<\Modules\Identity\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
     /**
