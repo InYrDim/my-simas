@@ -37,6 +37,9 @@
             "Modules\\Shared\\App\\": "modules/Shared/app/",
             "Modules\\Shared\\Database\\": "modules/Shared/database/",
             "Modules\\Shared\\Tests\\": "modules/Shared/tests/",
+            "Modules\\Platform\\App\\": "modules/Platform/app/",
+            "Modules\\Platform\\Database\\": "modules/Platform/database/",
+            "Modules\\Platform\\Tests\\": "modules/Platform/tests/",
             "Modules\\Identity\\App\\": "modules/Identity/app/",
             "Modules\\Identity\\Database\\": "modules/Identity/database/",
             "Modules\\Identity\\Tests\\": "modules/Identity/tests/",
@@ -49,6 +52,7 @@
         "psr-4": {
             "Tests\\": "tests/",
             "Modules\\Identity\\Tests\\": "modules/Identity/tests/",
+            "Modules\\Platform\\Tests\\": "modules/Platform/tests/",
             "Modules\\Core\\Tests\\": "modules/Core/tests/"
         }
     },

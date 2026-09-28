@@ -2,43 +2,64 @@
 
 ## Owns
 
-- Database tables: `tenants` (Fase 1)
-- Core domain concepts: tenancy (tenant resolution/scoping, tenant-aware
-  cache & storage), the module registry, permission registry, and
-  Spatie-permission integration for tenant-scoped roles.
-  **Reserved module — built in Fase 1. The folder is intentionally empty
-  today; Deptrac layers `Platform` / `PlatformPublic` already exist.**
+- Database tables: `tenants`
+- Core domain concepts: tenancy (tenant resolution, tenant context,
+  tenant-scoped models, tenant-aware cache/storage in later stages), the
+  module registry, permission registry, and Spatie-permission integration
+  for tenant-scoped roles (Stage 6).
 
 ## Public interface (Contracts/)
 
-Fase 1 will place ALL of the following under
-`Modules/Platform/app/Contracts/**` (per the surface policy):
+- `TenantData` — readonly DTO (id, name, slug, timezone, status). The
+  internal `Tenant` model is never handed out.
+- `TenantContext` — current-tenant accessor: `current()`, `currentOrFail()`,
+  `id()`, `timezone()`, `set()`, `forget()`, `run()` (nested-safe,
+  restores previous context in `finally`), `runWithoutTenant()`.
+  Singleton; bound as `DefaultTenantContext` with a class alias so
+  concrete and interface type-hints share one instance.
+- `BelongsToTenant` + `TenantNotSetException` (Stage 3).
+- `TenantCache`, `TenantStorage` (Stage 4).
+- `ModuleRegistry`, `TenantModules` (Stage 5).
+- `PermissionRegistry`, `HasTenantRoles` (Stage 6).
+- `TenantCreated` event (in `Contracts/Events`) — fired from the Tenant
+  model's `created` hook; payload: tenant ULID.
 
-- `TenantContext` — current-tenant resolution/scoping service contract.
-- `BelongsToTenant` — public trait delegating to the internal TenantScope.
-- `TenantNotSetException` — thrown when tenant context is required but absent.
-- `TenantCache`, `TenantStorage` — tenant-partitioned cache/storage contracts.
-- `ModuleRegistry`, `PermissionRegistry` — registration contracts used by
-  feature modules' service providers.
-- `HasTenantRoles` — wrapper trait around Spatie roles, consumed by Identity.
-- `TenantCreated` event (in `Contracts/Events`) — consumed by modules that
-  must seed per-tenant defaults (e.g. default roles, Fase 2).
-- Tenant helpers/DTOs as needed.
+Internal (private): Tenant model + `TenantStatus` enum, TenantScope,
+`SubdomainTenantResolver` (interface `TenantResolver`), `TenantHydrator`,
+`TenantBridge` (context-change seam; Spatie hooks in Stage 6),
+`ResolveTenant` middleware, `PlatformException` base. Other modules access
+tenancy only through contracts/DTOs — never the Tenant model.
 
-Internal (private): TenantScope, tenant resolver, queue listeners,
-Spatie integration, the `Tenant` model and its persistence. Other modules
-access tenancy through contracts/DTOs — never the `Tenant` model.
+## Tenant resolution (the one strategy)
+
+- Host normalization: lowercase, strip port and trailing dot.
+- Host ∈ `config('tenancy.central_domains')` → **null** → request runs
+  without tenant (central). No fallback, no override.
+- `"{slug}.{central}"` (exactly one subdomain level) → lookup by slug.
+- Anything else → lookup by custom `domain` column.
+- No match → generic 404 (`TenantMissingException` → NotFoundHttpException).
+- Suspended tenant → 403 (resolver still resolves it; middleware decides).
+- Lookups cached (5 min) as plain ids; models re-hydrated via `TenantHydrator`.
+
+`ResolveTenant` middleware: forgets context at request start (and in the
+`terminate` terminator — Octane-safe), resolves, adopts the DTO. Wired
+globally: prepended to the `web` group AND the middleware priority list
+(before `SubstituteBindings` and auth) in `bootstrap/app.php`. Alias
+`tenant` exists for non-web contexts.
 
 ## Allowed dependencies
 
 - Modules/Shared
-- Laravel/Vendor
-- (Identity and other modules depend on PlatformPublic — never the reverse.)
+- Laravel/Vendor (Deptrac: Platform layer)
+- Spatie (from Stage 6; only module allowed — dedicated `Spatie` layer)
+
+PlatformPublic additionally: Laravel types OK (Eloquent collections,
+Carbon), never general vendor/Spatie. NativePhp (SPL) is accessible from
+every layer via the `php_internal` collector.
 
 ## Events published
 
-- `TenantCreated` (Fase 1, in Contracts/Events) — fired when a new tenant
-  is provisioned; payload includes the tenant DTO.
+- `TenantCreated` — when a tenant row is created (also via factory).
 
 ## Events consumed
 
@@ -46,14 +67,22 @@ access tenancy through contracts/DTOs — never the `Tenant` model.
 
 ## Explicitly NOT exposed
 
-- `Tenant` Eloquent model and anything under `App/Domain/**`,
-  `App/Infrastructure/**`, `App/Http/**`, `database/**`.
-- Direct Spatie classes — consumers use `HasTenantRoles` instead.
+- `Tenant` Eloquent model, `TenantStatus`, anything under
+  `App/Domain/**`, `App/Infrastructure/**`, `App/Http/**`, `database/**`.
+- The `TenantResolver` interface and its implementation — internal by
+  design (single strategy).
+- Direct Spatie classes (Stage 6) — consumers use `HasTenantRoles`.
 
 ## Notes for maintainers
 
-- `ProviderUser` will live here (Fase 1), not in Identity.
-- Platform's `tenants` migration must run before all other modules'
-  migrations (timestamp ordering; prove with `php artisan migrate:fresh`).
-- In Fase 0 this module is empty and reserved; its Deptrac layers and
-  ruleset are pre-wired so Fase 1 needs no enforcement rework.
+- `tenants` migration is `0000_…` so it runs before all other modules'
+  migrations — proven by `php artisan migrate:fresh` ordering.
+- Central requests must NOT hit `currentOrFail()` (shared-props and
+  central pages use `current()`/`id()` and handle null).
+- Session cookies stay host-only (`SESSION_DOMAIN` unset): a session from
+  tenant A is not sent to tenant B's host. Verified by test.
+- `ProviderUser` will live here (Stage 6), not in Identity.
+- Deptrac notes: `ClassLikeConfig::create()` doubles backslashes — write
+  patterns with single backslashes. NativePhp layer uses
+  `PhpInteralConfig` (sic, Deptrac's own typo) + PhpStorm stubs. Vendor
+  layer requires a backslash so native symbols land only in NativePhp.

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Deptrac\Deptrac\Contract\Config\Collector\ClassLikeConfig;
+use Deptrac\Deptrac\Contract\Config\Collector\PhpInteralConfig;
 use Deptrac\Deptrac\Contract\Config\DeptracConfig;
 use Deptrac\Deptrac\Contract\Config\Layer;
 use Deptrac\Deptrac\Contract\Config\Ruleset;
@@ -24,6 +25,16 @@ use Deptrac\Deptrac\Contract\Config\Ruleset;
 | it). See docs/architecture/modular-monolith.md for the full policy.
 |
 | Notes:
+|  - "NativePhp" is a layer for PHP's own classes (RuntimeException,
+|    Collection, ... via the php_internal collector). It is accessible
+|    from every layer: extending/using SPL symbols is not a coupling
+|    decision, so it is exempt from the layer order.
+|  - "Laravel" collects Illuminate\* and Laravel\* only. "Vendor" is
+|    everything else (third-party packages, incl. Spatie). Public
+|    contract layers get Laravel but NOT general Vendor — contracts may
+|    touch framework types (Eloquent collections, Carbon), never
+|    third-party packages. Spatie is additionally its own layer so the
+|    Platform boundary stays explicit.
 |  - ClassLikeConfig::create() doubles every backslash in the given
 |    string when building the final PCRE. Patterns below therefore use
 |    single backslashes exactly like a normal PHP string: '^App\.*'
@@ -43,12 +54,25 @@ return static function (DeptracConfig $config): void {
                 ClassLikeConfig::create('^App\.*'),
             ),
             $vendor = Layer::withName('Vendor')->collectors(
-                // Anything that is not App\, Modules\ or Database\.
-                ClassLikeConfig::create('^(?!(App|Modules|Database)\).*$'),
+                // Third-party code: anything with a namespace separator
+                // that is not App\, Modules\ or Database\. Native PHP
+                // symbols (RuntimeException, ...) have no backslash and
+                // belong exclusively to NativePhp below.
+                ClassLikeConfig::create('^(?!(App|Modules|Database)\).*\.*'),
             ),
             $laravel = Layer::withName('Laravel')->collectors(
                 ClassLikeConfig::create('.*Illuminate\.*'),
                 ClassLikeConfig::create('.*Laravel\.*'),
+            ),
+            $spatie = Layer::withName('Spatie')->collectors(
+                // Third-party permission engine. Only Platform internals
+                // may depend on it (ruleset below).
+                ClassLikeConfig::create('^Spatie\.*'),
+            ),
+            $nativePhp = Layer::withName('NativePhp')->collectors(
+                // PHP's own classes/functions (SPL etc.). Accessible from
+                // every layer — see the notes block above.
+                PhpInteralConfig::create('.*'),
             ),
             $database = Layer::withName('Database')->collectors(
                 // Root seeders/factories glue (e.g. DatabaseSeeder creates
@@ -94,38 +118,43 @@ return static function (DeptracConfig $config): void {
         ->rulesets(
             // App is Laravel glue only: wiring, never business logic.
             Ruleset::forLayer($app)->accesses(
-                $shared, $laravel, $vendor,
+                $shared, $laravel, $vendor, $nativePhp,
                 $identity, $identityPublic,
                 $core, $corePublic, $platformPublic,
             ),
             // Shared: pure technical utilities, no module knowledge.
-            Ruleset::forLayer($shared)->accesses($laravel, $vendor),
+            Ruleset::forLayer($shared)->accesses($laravel, $vendor, $nativePhp),
             // Root tests are free glue.
             Ruleset::forLayer($tests)->accesses(
-                $app, $database, $shared, $laravel, $vendor,
+                $app, $database, $shared, $laravel, $vendor, $nativePhp,
                 $platform, $platformPublic,
                 $identity, $identityPublic,
                 $core, $corePublic,
             ),
-            // Platform: tenancy/permissions, depends on Shared only.
-            Ruleset::forLayer($platform)->accesses($platformPublic, $shared, $laravel, $vendor),
+            // Platform: tenancy/permissions. Only module allowed to touch
+            // Spatie.
+            Ruleset::forLayer($platform)->accesses(
+                $platformPublic, $shared, $laravel, $vendor, $spatie, $nativePhp,
+            ),
             // Public may use its OWN internals (e.g. a public trait
             // delegating to internal machinery) — never another module's.
-            Ruleset::forLayer($platformPublic)->accesses($platform, $shared),
+            // Laravel types are fine for contracts; general vendor and
+            // Spatie are not.
+            Ruleset::forLayer($platformPublic)->accesses($platform, $shared, $laravel, $nativePhp),
             // Identity: auth + user identity.
             Ruleset::forLayer($identity)->accesses(
-                $identityPublic, $shared, $platformPublic, $laravel, $vendor,
+                $identityPublic, $shared, $platformPublic, $laravel, $vendor, $nativePhp,
             ),
-            Ruleset::forLayer($identityPublic)->accesses($identity, $shared),
+            Ruleset::forLayer($identityPublic)->accesses($identity, $shared, $laravel, $nativePhp),
             // Core: master data. May use Identity's public surface, never
             // feature modules.
             Ruleset::forLayer($core)->accesses(
-                $corePublic, $shared, $platformPublic, $identityPublic, $laravel, $vendor,
+                $corePublic, $shared, $platformPublic, $identityPublic, $laravel, $vendor, $nativePhp,
             ),
-            Ruleset::forLayer($corePublic)->accesses($core, $shared),
+            Ruleset::forLayer($corePublic)->accesses($core, $shared, $laravel, $nativePhp),
             // Database glue: see note on the layer above.
             Ruleset::forLayer($database)->accesses(
-                $shared, $laravel, $vendor,
+                $shared, $laravel, $vendor, $nativePhp,
                 $identity, $identityPublic,
                 $core, $corePublic, $platformPublic,
             ),
