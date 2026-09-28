@@ -14,6 +14,10 @@ convention alone. Two enforcement layers work together:
 A change that crosses a boundary illegally fails `composer deptrac`,
 `composer test`, and CI.
 
+The agent skill that operationalizes these rules is mirrored (tracked)
+at `docs/skills/modular-monolith/` — the gitignored working copy lives
+in `.claude/skills/modular-monolith/`; keep the two in sync.
+
 ## Layer order (bottom → top)
 
 ```
