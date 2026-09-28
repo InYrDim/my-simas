@@ -2,11 +2,11 @@
 
 ## Owns
 
-- Database tables: `tenants`
+- Database tables: `tenants`, `tenant_modules`
 - Core domain concepts: tenancy (tenant resolution, tenant context,
   tenant-scoped models, tenant-aware cache/storage/queue propagation),
-  the module registry, permission registry, and Spatie-permission
-  integration for tenant-scoped roles (Stage 6).
+  the module registry, per-tenant feature flags, permission registry,
+  and Spatie-permission integration for tenant-scoped roles (Stage 6).
 
 ## Public interface (Contracts/)
 
@@ -28,7 +28,23 @@
   relative path cannot climb out of the tenant directory. API: `path()`,
   `get()`, `put()`, `delete()`, `exists()`.
 - `BelongsToTenant` + `TenantNotSetException` (Stage 3).
-- `ModuleRegistry`, `TenantModules` (Stage 5).
+- `ModuleRegistry` (Stage 5): module keys register THEMSELVES from
+  their own provider (`register(key, meta)`); Platform never hardcodes
+  business module names. `markAlwaysActive(key)` opts a module out of
+  per-tenant flagging (core declares itself, not Platform). API:
+  `register()`, `exists()`, `all()`, `markAlwaysActive()`,
+  `isAlwaysActive()`. Implementation `DefaultModuleRegistry` (in-memory,
+  idempotent registration).
+- `TenantModules` (Stage 5): read path for per-tenant flags —
+  `isEnabled(module, ?tenantId)` (default: current tenant). Semantics:
+  always-active → true without context; unknown key → false (fail
+  closed); flag row → `enabled && (expires_at === null || future)`.
+  Results cached via TenantCache (TTL 5 min), invalidated on every
+  enable/disable — flag changes are visible on the next request.
+  Flag-controlled lookups without tenant id/context throw
+  `TenantNotSetException`.
+- `UnknownModuleException` (Stage 5): enabling/disabling an
+  unregistered key fails loudly instead of silently enabling nothing.
 - `PermissionRegistry`, `HasTenantRoles` (Stage 6).
 - `TenantCreated` event (in `Contracts/Events`) — fired from the Tenant
   model's `created` hook; payload: tenant ULID.
@@ -73,6 +89,22 @@ globally: prepended to the `web` group AND the middleware priority list
 - Jobs dispatched centrally run without tenant context.
 - Applies automatically to queued listeners, mailables, notifications.
 
+## Module registry & per-tenant flags (Stage 5)
+
+- `tenant_modules` row per (tenant_id, module): `enabled`, `enabled_at`,
+  `expires_at` (nullable — trials), `meta` json.
+- Read path: `TenantModules::isEnabled()`; write path: internal
+  `ModuleFlagManager` (`enable($tenantId, $module, ?$expiresAt)` /
+  `disable()`) — consumed by Platform's own commands (Stage 7
+  `tenant:modules`), not exposed as a contract.
+- Cache: internal `TenantModulesCache` over `TenantCache` — key
+  `modules:enabled:{tenantId}:{module}` inside the tenant partition.
+- Middleware alias `module:{key}` (`EnsureModuleActive`): inactive or
+  unknown module → **403** (recorded decision, not 404); core always
+  passes. Runs after `ResolveTenant` (requires tenant context).
+- `tenant_modules` lookups use `Model::withoutTenancy()` with an
+  explicit `tenant_id` where-clause (flag checks must work from central
+  and CLI, not just with ambient context).
 Testing note: Laravel's `flushState()` clears ALL `createPayloadUsing`
 hooks between tests — tests re-register via `app(TenantQueueContext::class)->register()`
 in their setup. Also: dispatch inside a `void` closure — `fn () => Job::dispatch()`

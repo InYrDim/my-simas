@@ -4,10 +4,17 @@ namespace Modules\Platform\App\Infrastructure\Providers;
 
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
+use Modules\Platform\App\Contracts\ModuleRegistry;
 use Modules\Platform\App\Contracts\TenantCache;
 use Modules\Platform\App\Contracts\TenantContext;
+use Modules\Platform\App\Contracts\TenantModules;
 use Modules\Platform\App\Contracts\TenantStorage;
+use Modules\Platform\App\Http\Middleware\EnsureModuleActive;
 use Modules\Platform\App\Http\Middleware\ResolveTenant;
+use Modules\Platform\App\Infrastructure\Modules\DefaultModuleRegistry;
+use Modules\Platform\App\Infrastructure\Modules\DefaultTenantModules;
+use Modules\Platform\App\Infrastructure\Modules\ModuleFlagManager;
+use Modules\Platform\App\Infrastructure\Modules\TenantModulesCache;
 use Modules\Platform\App\Infrastructure\Tenancy\DefaultTenantContext;
 use Modules\Platform\App\Infrastructure\Tenancy\PartitionedTenantCache;
 use Modules\Platform\App\Infrastructure\Tenancy\PartitionedTenantStorage;
@@ -39,6 +46,17 @@ class PlatformServiceProvider extends ServiceProvider
         $this->app->alias(PartitionedTenantStorage::class, TenantStorage::class);
 
         $this->app->singleton(TenantQueueContext::class);
+
+        // Module registry + per-tenant flags: interface-aliased
+        // singletons, same pattern as the tenancy bindings.
+        $this->app->singleton(DefaultModuleRegistry::class);
+        $this->app->alias(DefaultModuleRegistry::class, ModuleRegistry::class);
+
+        $this->app->singleton(TenantModulesCache::class);
+        $this->app->singleton(DefaultTenantModules::class);
+        $this->app->alias(DefaultTenantModules::class, TenantModules::class);
+
+        $this->app->singleton(ModuleFlagManager::class);
     }
 
     /**
@@ -99,5 +117,7 @@ class PlatformServiceProvider extends ServiceProvider
         $router = $this->app->make(Router::class);
 
         $router->aliasMiddleware('tenant', ResolveTenant::class);
+
+        $router->aliasMiddleware('module', EnsureModuleActive::class);
     }
 }

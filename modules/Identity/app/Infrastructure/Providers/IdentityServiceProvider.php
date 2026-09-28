@@ -8,6 +8,7 @@ use Modules\Identity\App\Contracts\ResolvesUsers;
 use Modules\Identity\App\Domain\Actions\DefaultUserResolver;
 use Modules\Identity\App\Domain\Models\User;
 use Modules\Identity\App\Domain\Policies\UserPolicy;
+use Modules\Platform\App\Contracts\ModuleRegistry;
 
 class IdentityServiceProvider extends ServiceProvider
 {
@@ -24,9 +25,20 @@ class IdentityServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->registerModuleKey();
         $this->registerMigrations();
         $this->registerRoutes();
         $this->registerPolicies();
+    }
+
+    /**
+     * Register the module key with Platform's module registry.
+     * identity is flag-controlled (not always-active): tenant dapat
+     * dinonaktifkan modul identitasnya.
+     */
+    protected function registerModuleKey(): void
+    {
+        $this->app->make(ModuleRegistry::class)->register('identity', ['label' => 'Identity']);
     }
 
     /**
