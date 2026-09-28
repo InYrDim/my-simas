@@ -26,7 +26,7 @@ test('modules/Shared never imports another module namespace', function () {
 });
 
 test('no module imports the internal namespace of another module', function () {
-    $modules = ['Identity', 'Core'];
+    $modules = ['Identity', 'Platform', 'Core'];
     $publicPrefixes = array_map(fn (string $m): string => "Modules\\{$m}\\App\\Contracts\\", $modules);
     $violations = [];
 
@@ -89,7 +89,7 @@ test('migrations declare no cross-module foreign key constraints', function () {
     $violations = [];
     $patterns = ['->foreign(', '->constrained(', '->foreignIdFor(', '->foreignUuid('];
 
-    foreach (['database/migrations', 'modules/Identity/database/migrations', 'modules/Core/database/migrations', 'modules/Shared/database/migrations'] as $dir) {
+    foreach (['database/migrations', 'modules/Shared/database/migrations', 'modules/Identity/database/migrations', 'modules/Core/database/migrations', 'modules/Platform/database/migrations'] as $dir) {
         foreach (phpFilesUnder($dir) as $file => $contents) {
             foreach (preg_split('/\r?\n/', $contents) ?: [] as $lineNumber => $line) {
                 foreach ($patterns as $pattern) {
