@@ -4,11 +4,16 @@ namespace Modules\Platform\App\Infrastructure\Providers;
 
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
+use Modules\Platform\App\Contracts\TenantCache;
 use Modules\Platform\App\Contracts\TenantContext;
+use Modules\Platform\App\Contracts\TenantStorage;
 use Modules\Platform\App\Http\Middleware\ResolveTenant;
 use Modules\Platform\App\Infrastructure\Tenancy\DefaultTenantContext;
+use Modules\Platform\App\Infrastructure\Tenancy\PartitionedTenantCache;
+use Modules\Platform\App\Infrastructure\Tenancy\PartitionedTenantStorage;
 use Modules\Platform\App\Infrastructure\Tenancy\RegistersTenantMacro;
 use Modules\Platform\App\Infrastructure\Tenancy\SubdomainTenantResolver;
+use Modules\Platform\App\Infrastructure\Tenancy\TenantQueueContext;
 
 class PlatformServiceProvider extends ServiceProvider
 {
@@ -24,6 +29,16 @@ class PlatformServiceProvider extends ServiceProvider
         $this->app->alias(DefaultTenantContext::class, TenantContext::class);
 
         $this->app->singleton(SubdomainTenantResolver::class);
+
+        // Tenant-partitioned cache/storage: interface-aliased singletons
+        // so interface and concrete type-hints share one instance.
+        $this->app->singleton(PartitionedTenantCache::class);
+        $this->app->alias(PartitionedTenantCache::class, TenantCache::class);
+
+        $this->app->singleton(PartitionedTenantStorage::class);
+        $this->app->alias(PartitionedTenantStorage::class, TenantStorage::class);
+
+        $this->app->singleton(TenantQueueContext::class);
     }
 
     /**
@@ -35,6 +50,16 @@ class PlatformServiceProvider extends ServiceProvider
         $this->registerMigrations();
         $this->registerMiddleware();
         $this->registerSchemaMacro();
+        $this->registerQueueContext();
+    }
+
+    /**
+     * Stamp queued payloads with the dispatching tenant and restore that
+     * context when the job runs (save/restore, sync-driver safe).
+     */
+    protected function registerQueueContext(): void
+    {
+        $this->app->make(TenantQueueContext::class)->register();
     }
 
     /**

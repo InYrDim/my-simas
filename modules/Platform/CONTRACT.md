@@ -4,9 +4,9 @@
 
 - Database tables: `tenants`
 - Core domain concepts: tenancy (tenant resolution, tenant context,
-  tenant-scoped models, tenant-aware cache/storage in later stages), the
-  module registry, permission registry, and Spatie-permission integration
-  for tenant-scoped roles (Stage 6).
+  tenant-scoped models, tenant-aware cache/storage/queue propagation),
+  the module registry, permission registry, and Spatie-permission
+  integration for tenant-scoped roles (Stage 6).
 
 ## Public interface (Contracts/)
 
@@ -17,8 +17,17 @@
   restores previous context in `finally`), `runWithoutTenant()`.
   Singleton; bound as `DefaultTenantContext` with a class alias so
   concrete and interface type-hints share one instance.
+- `TenantCache` + `PartitionedTenantCache` (Stage 4): cache partitioned
+  per tenant — every key is prefixed `tenant:{id}:` (central: `central:`).
+  API: `repository()`, `key()`, `get()`, `put()`, `forget()`,
+  `rememberForever()`. Backed by the default cache store, resolved lazily.
+- `TenantStorage` + `PartitionedTenantStorage` (Stage 4): file storage
+  partitioned per tenant on the `local` disk — `path(module, relative)`
+  is rooted at `tenants/{id}/{module}/…` (central: `central/{module}/…`).
+  `.`/`..` segments are resolved inside the partition, so a hostile
+  relative path cannot climb out of the tenant directory. API: `path()`,
+  `get()`, `put()`, `delete()`, `exists()`.
 - `BelongsToTenant` + `TenantNotSetException` (Stage 3).
-- `TenantCache`, `TenantStorage` (Stage 4).
 - `ModuleRegistry`, `TenantModules` (Stage 5).
 - `PermissionRegistry`, `HasTenantRoles` (Stage 6).
 - `TenantCreated` event (in `Contracts/Events`) — fired from the Tenant
@@ -46,6 +55,29 @@ tenancy only through contracts/DTOs — never the Tenant model.
 globally: prepended to the `web` group AND the middleware priority list
 (before `SubstituteBindings` and auth) in `bootstrap/app.php`. Alias
 `tenant` exists for non-web contexts.
+
+## Queue context propagation (Stage 4)
+
+`TenantQueueContext` (internal, registered by the provider on boot):
+
+- `Queue::createPayloadUsing` stamps every payload with the dispatching
+  tenant id under key `tenant_id` (only when a context is set).
+- `Queue::before` SAVES the caller's context per job object
+  (SplObjectStorage — `SyncJob::getJobId()` returns '' on every job, ids
+  are unreliable), then sets the payload's tenant or forgets.
+- `JobProcessed` / `JobFailed` / `JobExceptionOccurred` RESTORE the saved
+  context (never a blind forget): the sync driver runs jobs inside the
+  dispatching request, so the caller's context must survive; sequential
+  jobs on one worker must not inherit each other's context. Restore is
+  per job object, so nested/reentrant processing is safe.
+- Jobs dispatched centrally run without tenant context.
+- Applies automatically to queued listeners, mailables, notifications.
+
+Testing note: Laravel's `flushState()` clears ALL `createPayloadUsing`
+hooks between tests — tests re-register via `app(TenantQueueContext::class)->register()`
+in their setup. Also: dispatch inside a `void` closure — `fn () => Job::dispatch()`
+RETURNS the PendingDispatch, whose destructor defers the push until after
+`run()` restored the context (payload stamped with the wrong tenant).
 
 ## Allowed dependencies
 
