@@ -25,20 +25,20 @@ yarn-error.log
 /.fleet
 /.idea
 /.nova
-/.vscode
+# /.vscode
 /.zed
-/.agents
+# /.agents
 /.amp
-/.claude
+# /.claude
 /.cursor
 /.factory
 /.grok
 /.junie
 /.kiro
 /.pi
-/.mcp.json
-/AGENTS.md
-/CLAUDE.md
-/boost.json
-/opencode.json
-/opencode.jsonc
+# /.mcp.json
+# /AGENTS.md
+# /CLAUDE.md
+# /boost.json
+# /opencode.json
+# /opencode.jsonc
