@@ -43,6 +43,8 @@ class IdentityServiceProvider extends ServiceProvider
     protected function registerRoutes(): void
     {
         $this->loadRoutesFrom(__DIR__.'/../../../routes/web.php');
+        // API routes bring their own middleware grouping inside the file.
+        $this->loadRoutesFrom(__DIR__.'/../../../routes/api.php');
     }
 
     /**

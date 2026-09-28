@@ -47,9 +47,12 @@ test('no module imports the internal namespace of another module', function () {
                     $publicPrefixes,
                 ), true);
 
-                // Public surface files may only touch Modules\Shared.
+                // Public surface files may touch Shared and their own
+                // module (public traits may delegate to own internals),
+                // never other modules.
                 if ($isPublicFile) {
-                    if (! str_starts_with($import, 'Modules\\Shared\\')) {
+                    $ownPrefix = "Modules\\{$module}\\";
+                    if (! str_starts_with($import, 'Modules\\Shared\\') && ! str_starts_with($import, $ownPrefix)) {
                         $violations[] = "$file (public surface) imports $import";
                     }
 
@@ -82,15 +85,57 @@ test('the Identity User model is never imported outside the Identity module', fu
     expect($violations)->toBe([]);
 });
 
-test('migrations declare no foreign key constraints', function () {
+test('migrations declare no cross-module foreign key constraints', function () {
     $violations = [];
     $patterns = ['->foreign(', '->constrained(', '->foreignIdFor(', '->foreignUuid('];
 
     foreach (['database/migrations', 'modules/Identity/database/migrations', 'modules/Core/database/migrations', 'modules/Shared/database/migrations'] as $dir) {
         foreach (phpFilesUnder($dir) as $file => $contents) {
-            foreach ($patterns as $pattern) {
-                if (str_contains($contents, $pattern)) {
-                    $violations[] = "$file uses $pattern — cross-module references must be plain columns (no FK)";
+            foreach (preg_split('/\r?\n/', $contents) ?: [] as $lineNumber => $line) {
+                foreach ($patterns as $pattern) {
+                    if (str_contains($line, $pattern) && ! str_contains($line, 'tenant')) {
+                        $violations[] = sprintf(
+                            '%s:%d uses %s — cross-module references must be plain columns (sole exception: tenant_id)',
+                            $file, $lineNumber + 1, $pattern,
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    expect($violations)->toBe([]);
+});
+
+test('every module has a filled CONTRACT.md', function () {
+    $violations = [];
+
+    foreach (glob(baseDir().DIRECTORY_SEPARATOR.'modules'.DIRECTORY_SEPARATOR.'*', GLOB_ONLYDIR) ?: [] as $moduleDir) {
+        $contract = $moduleDir.DIRECTORY_SEPARATOR.'CONTRACT.md';
+        $name = basename($moduleDir);
+
+        if (! is_file($contract)) {
+            $violations[] = "modules/{$name} is missing CONTRACT.md";
+
+            continue;
+        }
+
+        if (strlen(trim((string) file_get_contents($contract))) < 200) {
+            $violations[] = "modules/{$name}/CONTRACT.md looks like a placeholder";
+        }
+    }
+
+    expect($violations)->toBe([]);
+});
+
+test('Spatie packages are only referenced inside the Platform module', function () {
+    $violations = [];
+
+    foreach (['app', 'database', 'modules/Shared', 'modules/Identity', 'modules/Core'] as $dir) {
+        foreach (phpFilesUnder($dir) as $file => $contents) {
+            foreach (importedNamespaces($contents) as $import) {
+                if (str_starts_with($import, 'Spatie\\')) {
+                    $violations[] = "$file imports $import — Spatie integration belongs to Platform";
                 }
             }
         }

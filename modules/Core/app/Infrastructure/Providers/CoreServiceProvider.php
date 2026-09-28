@@ -12,5 +12,7 @@ class CoreServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadRoutesFrom(__DIR__.'/../../../routes/web.php');
+        // API routes bring their own middleware grouping inside the file.
+        $this->loadRoutesFrom(__DIR__.'/../../../routes/api.php');
     }
 }
