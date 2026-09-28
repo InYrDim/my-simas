@@ -18,6 +18,8 @@ final class DefaultTenantContext implements TenantContext
 
     private ?TenantData $tenant = null;
 
+    private bool $insideRunWithoutTenant = false;
+
     public function __construct(
         private readonly TenantBridge $bridge,
     ) {}
@@ -81,16 +83,28 @@ final class DefaultTenantContext implements TenantContext
     {
         $previousId = $this->tenantId;
         $previousTenant = $this->tenant;
+        $previousFlag = $this->insideRunWithoutTenant;
 
         try {
             $this->tenantId = null;
             $this->tenant = null;
+            $this->insideRunWithoutTenant = true;
             $this->bridge->onTenantForget();
 
             return $callback();
         } finally {
+            $this->insideRunWithoutTenant = $previousFlag;
             $this->restore($previousId, $previousTenant);
         }
+    }
+
+    /**
+     * Whether the current code runs inside runWithoutTenant() — the
+     * TenantScope consults this to become a no-op. Internal API.
+     */
+    public function isWithoutTenantRun(): bool
+    {
+        return $this->insideRunWithoutTenant;
     }
 
     /**

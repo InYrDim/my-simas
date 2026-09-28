@@ -54,11 +54,12 @@ return static function (DeptracConfig $config): void {
                 ClassLikeConfig::create('^App\.*'),
             ),
             $vendor = Layer::withName('Vendor')->collectors(
-                // Third-party code: anything with a namespace separator
-                // that is not App\, Modules\ or Database\. Native PHP
-                // symbols (RuntimeException, ...) have no backslash and
+                // Third-party code: namespaced classes outside App\,
+                // Modules\, Database\ and the specially-layered namespaces
+                // (Illuminate/Laravel -> Laravel, Spatie -> Spatie). Native
+                // PHP symbols (RuntimeException, ...) have no backslash and
                 // belong exclusively to NativePhp below.
-                ClassLikeConfig::create('^(?!(App|Modules|Database)\).*\.*'),
+                ClassLikeConfig::create('^(?!(App|Modules|Database|Illuminate|Laravel|Spatie)\\).*\\.*'),
             ),
             $laravel = Layer::withName('Laravel')->collectors(
                 ClassLikeConfig::create('.*Illuminate\.*'),

@@ -7,6 +7,7 @@ use Illuminate\Support\ServiceProvider;
 use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Http\Middleware\ResolveTenant;
 use Modules\Platform\App\Infrastructure\Tenancy\DefaultTenantContext;
+use Modules\Platform\App\Infrastructure\Tenancy\RegistersTenantMacro;
 use Modules\Platform\App\Infrastructure\Tenancy\SubdomainTenantResolver;
 
 class PlatformServiceProvider extends ServiceProvider
@@ -33,6 +34,15 @@ class PlatformServiceProvider extends ServiceProvider
         $this->registerConfig();
         $this->registerMigrations();
         $this->registerMiddleware();
+        $this->registerSchemaMacro();
+    }
+
+    /**
+     * Register the Blueprint::tenantId() macro.
+     */
+    protected function registerSchemaMacro(): void
+    {
+        RegistersTenantMacro::register();
     }
 
     /**
