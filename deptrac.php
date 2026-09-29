@@ -156,11 +156,14 @@ return static function (DeptracConfig $config): void {
                 $corePublic, $shared, $platformPublic, $identityPublic, $laravel, $vendor, $nativePhp,
             ),
             Ruleset::forLayer($corePublic)->accesses($core, $shared, $laravel, $nativePhp),
-            // Database glue: see note on the layer above.
+            // Database glue: see note on the layer above. Platform is
+            // included for the same reason as Identity/Core: DatabaseSeeder
+            // delegates to module dev seeders (e.g. PlatformDevSeeder).
             Ruleset::forLayer($database)->accesses(
                 $shared, $laravel, $vendor, $nativePhp,
+                $platform, $platformPublic,
                 $identity, $identityPublic,
-                $core, $corePublic, $platformPublic,
+                $core, $corePublic,
             ),
         );
 };

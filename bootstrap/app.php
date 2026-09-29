@@ -8,6 +8,7 @@ use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Modules\Platform\App\Http\Middleware\ResolveTenant;
+use Modules\Platform\App\Http\Middleware\ShareTenantContext;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -22,10 +23,11 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         // Tenant resolution must happen before bindings and authentication
-        // so route model binding and auth are tenant-scoped. Prepend to the
-        // web group AND the priority list (belt and braces for routes that
-        // do not use the web group).
-        $middleware->web(prepend: [ResolveTenant::class]);
+        // so route model binding and auth are tenant-scoped. ShareTenantContext
+        // follows it (reads the resolved context) and must precede the Inertia
+        // middleware so tenant props are registered before shared props resolve.
+        // A single prepend call: successive prepends stack in reverse.
+        $middleware->web(prepend: [ResolveTenant::class, ShareTenantContext::class]);
 
         $middleware->prependToPriorityList(
             before: SubstituteBindings::class,
