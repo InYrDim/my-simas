@@ -12,6 +12,14 @@ use Modules\Platform\App\Contracts\TenantModules;
 use Modules\Platform\App\Contracts\TenantStorage;
 use Modules\Platform\App\Http\Middleware\EnsureModuleActive;
 use Modules\Platform\App\Http\Middleware\ResolveTenant;
+use Modules\Platform\App\Infrastructure\Commands\PermissionsSyncCommand;
+use Modules\Platform\App\Infrastructure\Commands\ProviderCreateUserCommand;
+use Modules\Platform\App\Infrastructure\Commands\TenantActivateCommand;
+use Modules\Platform\App\Infrastructure\Commands\TenantCreateCommand;
+use Modules\Platform\App\Infrastructure\Commands\TenantListCommand;
+use Modules\Platform\App\Infrastructure\Commands\TenantModulesCommand;
+use Modules\Platform\App\Infrastructure\Commands\TenantRunCommand;
+use Modules\Platform\App\Infrastructure\Commands\TenantSuspendCommand;
 use Modules\Platform\App\Infrastructure\Modules\DefaultModuleRegistry;
 use Modules\Platform\App\Infrastructure\Modules\DefaultTenantModules;
 use Modules\Platform\App\Infrastructure\Modules\ModuleFlagManager;
@@ -70,6 +78,25 @@ class PlatformServiceProvider extends ServiceProvider
         $this->app->singleton(TenantRoleResolver::class);
         $this->app->singleton(PermissionSync::class);
         $this->app->singleton(TenantPermissionBridge::class);
+
+        $this->registerCommands();
+    }
+
+    /**
+     * Register the module's Artisan commands (Stage 7).
+     */
+    protected function registerCommands(): void
+    {
+        $this->commands([
+            TenantCreateCommand::class,
+            TenantListCommand::class,
+            TenantActivateCommand::class,
+            TenantSuspendCommand::class,
+            TenantModulesCommand::class,
+            TenantRunCommand::class,
+            PermissionsSyncCommand::class,
+            ProviderCreateUserCommand::class,
+        ]);
     }
 
     /**

@@ -2,24 +2,26 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Modules\Identity\Database\Factories\UserFactory;
+use Modules\Platform\Database\Seeders\PlatformDevSeeder;
 
+/**
+ * NOTE: deliberately NO WithoutModelEvents. Tenant-scoped models fill
+ * `tenant_id` in their `creating` hook (BelongsToTenant) — disabling
+ * model events here silently produces NOT NULL violations on every
+ * tenant-owned table (and would skip ULID-free timestamps etc.).
+ */
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     /**
      * Seed the application's database.
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        UserFactory::new()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Dev tenants (sekolah-a / sekolah-b) for subdomain testing —
+        // only in local, never in staging/production.
+        if (app()->isLocal()) {
+            $this->call(PlatformDevSeeder::class);
+        }
     }
 }
