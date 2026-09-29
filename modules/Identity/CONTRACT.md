@@ -2,9 +2,11 @@
 
 ## Owns
 
-- Database tables: `users`, `password_reset_tokens`, `sessions`
-- Core domain concepts: user identity and the authentication scaffold —
-  the `User` model, its factory, user resolution, and the user policy.
+- Database tables: `users` (tenant-scoped), `password_reset_tokens`
+  (central — TODO Fase 2), `sessions`
+- Core domain concepts: tenant-scoped user identity and session
+  authentication (login/logout) — the `User` model, its factory, user
+  resolution, the user policy, and login rate limiting.
 
 ## Public interface (Contracts/)
 
@@ -41,13 +43,34 @@ in `IdentityServiceProvider`; override in tests via the container.
 
 ## Notes for maintainers
 
-- Fase 1 TODO: `users` gains `tenant_id` + `unique(tenant_id, email)`;
-  `password_reset_tokens` becomes tenant-aware. Login behaviour must
-  not change until then.
-- Fase 1 TODO: roles come via a `HasTenantRoles` wrapper trait in
-  PlatformPublic — never import Spatie packages here; `User` currently
-  has no roles trait and `UserRecord::$roles` is always `[]`.
-- Fase 1 TODO: `ProviderUser` will live in modules/Platform, not here.
+- `users` is tenant-scoped since Fase 1: `tenant_id` via the
+  `Blueprint::tenantId()` macro, `unique(tenant_id, email)` — the same
+  email may exist in two tenants. The `User` model uses Platform's
+  `BelongsToTenant` + `HasTenantRoles` (PlatformPublic traits); Spatie
+  is never imported here.
+- Auth surface is login/logout ONLY (no registration, no password
+  reset — Fase 2). Login requires tenant context: the central host is
+  rejected, credentials are re-checked against the resolved tenant
+  after `Auth::validate()`, and rate limiting is enforced IN THE
+  CONTROLLER with key `login:{tenant_id}:{email}:{ip}` (a
+  `throttle:` middleware closure cannot rely on tenant context —
+  ordering is not guaranteed).
+- Session isolation: host-only cookies (`SESSION_DOMAIN` unset) are the
+  primary defence; Platform's `EnsureSessionTenant` middleware logs out
+  sessions whose user belongs to another tenant.
+- `password_reset_tokens` is STILL central (keyed by email alone) — it
+  crosses tenants today. Highest-priority Fase 2 fix.
+- Factory: `UserFactory::forTenant($id)` pins the tenant; without it
+  the `creating` hook fills `tenant_id` from ambient context (and
+  throws without one — fail closed).
+- The login page lives at
+  `resources/js/Pages/Identity/Auth/Login.tsx` (module pages resolve as
+  `<Module>/<Page>`, so the path doubles the module name) and posts via
+  the generated Wayfinder action — not the `route()` helper.
+- Module routes are loaded with `loadRoutesFrom()` and do NOT inherit
+  the root `web` group: `routes/web.php` declares
+  `Route::middleware('web')` itself.
+- `ProviderUser` lives in modules/Platform, not here.
 - Factory/model binding is explicit via `#[UseFactory]` / `#[UseModel]`
   attributes because Laravel's `App\` naming conventions do not apply
   inside modules.

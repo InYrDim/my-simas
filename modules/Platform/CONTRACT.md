@@ -159,6 +159,41 @@ published and owned here). Design decisions (user-approved):
 - `ProviderUser` model is internal (`App/Domain/Models`) — Stage 7
   adds the `provider:create-user` command.
 
+## Commands (Stage 7)
+
+`registerCommands()` in the provider registers: `tenant:create`,
+`tenant:list`, `tenant:status` (abstract; `tenant:suspend` /
+`tenant:activate`), `tenant:modules`, `tenant:run` (runs a command
+inside a tenant's context; relays inner output via BufferedOutput),
+`permissions:sync` (idempotent; runs in `runWithoutTenant`),
+`provider:create-user` (`--password=` option, prompt fallback). Status
+changes flush the `TenantHydrator` cache entry for the tenant.
+
+Dev seeding: `PlatformDevSeeder` (local only, called from
+`DatabaseSeeder`) creates sekolah-a (Jakarta; core+identity) and
+sekolah-b (Makassar; core) plus a dev login user
+`admin@sekolah-a.test` / `password`.
+
+## Frontend share (Stage 8)
+
+`ShareTenantContext` middleware (prepended right after `ResolveTenant`,
+before the Inertia middleware): shares `tenant` (`{name, slug,
+timezone}` — null on central) and `modules` (sorted active keys) via
+`Inertia::share()`. Deliberately opaque — no ids, no status enum. Hooks
+live in Shared (`useTenant()`, `useModules()`, `hasModule(key)`), types
+in `modules/Shared/resources/js/types/tenant.ts` re-exported by root
+`resources/js/types`.
+
+## Session isolation (Stage 9)
+
+`EnsureSessionTenant` middleware (web group, appended last): on a
+request with tenant context, an authenticated user whose `tenant_id`
+attribute differs from the resolved tenant is logged out and the
+session invalidated. Generic by design — inspects the `tenant_id`
+attribute, never imports Identity. Primary isolation is host-only
+session cookies (`SESSION_DOMAIN` unset); this middleware is the second
+layer if a cookie leaks (e.g. misconfigured shared session domain).
+
 ## Allowed dependencies
 
 - Modules/Shared
@@ -193,8 +228,23 @@ every layer via the `php_internal` collector.
   central pages use `current()`/`id()` and handle null).
 - Session cookies stay host-only (`SESSION_DOMAIN` unset): a session from
   tenant A is not sent to tenant B's host. Verified by test.
-- `ProviderUser` will live here (Stage 6), not in Identity.
+- `ProviderUser` lives here, not in Identity.
 - Deptrac notes: `ClassLikeConfig::create()` doubles backslashes — write
   patterns with single backslashes. NativePhp layer uses
   `PhpInteralConfig` (sic, Deptrac's own typo) + PhpStorm stubs. Vendor
   layer requires a backslash so native symbols land only in NativePhp.
+- **Trait flattening**: deptrac attributes a public trait's own imports
+  to every consuming class — consumers of `BelongsToTenant` /
+  `HasTenantRoles` are skipped per-class in `deptrac.baseline.yaml`.
+  Grow that file ONLY when another module consumes a public trait.
+- **Deptrac Database layer** may access Platform internals: the root
+  `DatabaseSeeder` delegates to module dev seeders (seeding is app-level
+  wiring, not a module dependency).
+- `TenantHydrator` caches plain attribute ARRAYS, never models (see
+  docs/architecture/modular-monolith.md → Tenancy traps), validates the
+  cached `id`, never caches null, and exposes `flush($tenantId)` for
+  status changes.
+- **Fase 2 TODOs parked here**: `password_reset_tokens` is still keyed
+  by email alone (crosses tenants); `expires_at` trial flags need an
+  expiry job; `TenantCreated` currently has no listeners (default-role
+  seeding is Fase 2).

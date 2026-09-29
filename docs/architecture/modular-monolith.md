@@ -27,14 +27,18 @@ Vendor/Laravel  ←  Shared  ←  Platform (Fase 1)  ←  Identity  ←  Core  �
 - **Vendor / Laravel** — the framework and composer packages.
 - **Shared** (`Modules\Shared`) — pure technical utilities. Knows no
   business concepts and no other module.
-- **Platform** (`Modules\Platform`) — **reserved, empty**. Fase 1 will
-  put tenancy, module registry, and permission contracts here. It is
-  already registered as a Deptrac layer so Fase 1 needs no rework.
-- **Identity** (`Modules\Identity`) — users, authentication scaffold:
-  `User` model, factory, `users`/`password_reset_tokens`/`sessions`
-  migrations, `ResolvesUsers` contract, `UserRecord` DTO, policy.
-  (See “Folder shape” below: module code lives under the module's own
-  `app/` tree, e.g. `Modules\Identity\App\Domain\Models\User`.)
+- **Platform** (`Modules\Platform`) — tenancy (resolution, context,
+  tenant-scoped models, tenant-partitioned cache/storage, queue
+  propagation), module registry, per-tenant feature flags, permission
+  registry + Spatie teams integration, provider users, tenant/provider
+  Artisan commands. Public surface: `Modules\Platform\App\Contracts`.
+- **Identity** (`Modules\Identity`) — tenant-scoped users and session
+  authentication (login/logout): `User` model (uses Platform's
+  `BelongsToTenant` + `HasTenantRoles`), factory, `users`/
+  `password_reset_tokens`/`sessions` migrations, `ResolvesUsers`
+  contract, `UserRecord` DTO, policy, login rate limiting. (See “Folder
+  shape” below: module code lives under the module's own `app/` tree,
+  e.g. `Modules\Identity\App\Domain\Models\User`.)
 - **Core** (`Modules\Core`) — master data (skeleton in Fase 0).
 - **App / Database** — Laravel glue only: providers, config, root
   seeders. No business logic. (`DatabaseSeeder` creating the example
@@ -45,9 +49,9 @@ Vendor/Laravel  ←  Shared  ←  Platform (Fase 1)  ←  Identity  ←  Core  �
 | Module            | Layer      | Owns                                  | Public surface                                                   |
 | ----------------- | ---------- | ------------------------------------- | ---------------------------------------------------------------- |
 | Shared            | `Shared`   | Generic technical utilities           | Everything (by definition)                                       |
-| Platform (Fase 1) | `Platform` | Tenancy, module registry, permissions | `Modules\Platform\App\Contracts`                                 |
-| Identity          | `Identity` | User model, auth scaffold             | `Modules\Identity\App\Contracts` (`ResolvesUsers`, `UserRecord`) |
-| Core              | `Core`     | Master data (future)                  | `Modules\Core\App\Contracts` (empty)                             |
+| Platform          | `Platform` | Tenancy, module registry, permissions | `Modules\Platform\App\Contracts`                                 |
+| Identity          | `Identity` | Tenant-scoped users, login/logout     | `Modules\Identity\App\Contracts` (`ResolvesUsers`, `UserRecord`) |
+| Core              | `Core`     | Master data (skeleton)                | `Modules\Core\App\Contracts` (empty)                             |
 
 Each module folder follows the module template:
 
@@ -114,7 +118,15 @@ pages are referenced as `"<Module>/<Page>"`; root pages keep their bare
 names. Generic UI and cross-module hooks go in
 `modules/Shared/resources/js` (import via the `@shared/` alias; `@/`
 still points at `resources/js`). Module pages/components never import
-another module's internals. No UI/UX change happens in Fase 0.
+another module's internals.
+
+Platform shares two props with the frontend (`ShareTenantContext`
+middleware, before the Inertia middleware): `tenant` — `{name, slug,
+timezone}` or `null` on central hosts — and `modules` — the sorted list
+of module keys active for the current tenant. `modules/Shared/resources
+/js/hooks/useTenant.ts` exposes `useTenant()`, `useModules()` and
+`hasModule(key)`; they read shared props only and know nothing of
+Platform internals.
 
 ## Running the checks
 
@@ -136,11 +148,16 @@ today that list is empty by design.
 
 ## Baseline policy
 
-Deptrac 4 supports baselining existing violations. Policy: **no baseline
-is used today** (the report is clean). A baseline may only be introduced
-for a violation that genuinely cannot be fixed in its phase, must be
-committed with a written justification, and must carry a target phase
-for removal. Baselines must never hide violations that are cheap to fix.
+Deptrac 4 supports baselining existing violations. The baseline file
+`deptrac.baseline.yaml` (loaded from `deptrac.php`) exists since Fase 1
+Stage 9 with exactly ONE class of skip: **trait flattening**. Deptrac
+attributes a trait's own imports to every class that `use`s it — so
+Identity's `User` (which uses PlatformPublic's `BelongsToTenant` /
+`HasTenantRoles`, the sanctioned touchpoint) would otherwise "depend on"
+Spatie and Platform internals itself. Skips are per-class and documented
+in the file header; they may grow ONLY when another module consumes one
+of Platform's public traits — never as a general escape hatch. Any other
+violation must be fixed, not baselined.
 
 ## Creating a new module
 
@@ -168,12 +185,108 @@ for removal. Baselines must never hide violations that are cheap to fix.
    modules, note the module key and registered permissions there.
 8. Run `composer dump-autoload && composer deptrac && vendor/bin/pest`.
 
-## Fase 1 notes (reserved, not built yet)
+## Tenancy rules (Fase 1 — built)
 
-- `modules/Platform` gets tenancy + `Modules\Platform\Contracts`
-  (module registry, permission contracts, `HasTenantRoles` wrapper
-  trait so modules never import Spatie directly).
-- `users` gains `tenant_id` + `unique(tenant_id, email)`;
-  `password_reset_tokens` becomes tenant-aware. Identity owns those
-  migrations; login behaviour stays untouched until then.
-- `ProviderUser` will live in Platform, not Identity.
+Every business table is tenant-scoped. The playbook:
+
+1. **Migration**: create the column with `$table->tenantId()` (Blueprint
+   macro from Platform) — char(26) ULID, FK to `tenants.id` (the sole
+   legal cross-module FK), indexed. For a unique constraint, almost
+   always make it composite with tenant: `unique(['tenant_id','email'])`
+   — a global-unique column (email alone) silently forbids the same
+   value in two tenants.
+2. **Model**: `use BelongsToTenant` (PlatformPublic) — queries are
+   auto-filtered by the current tenant; `creating` fills `tenant_id`
+   from context; `updating` refuses to change it. Queries without
+   context FAIL CLOSED (`TenantNotSetException`) — wrap in
+   `TenantContext::run($id, ...)` or `runWithoutTenant()` only for
+   deliberate central/cross-tenant work.
+3. **Queries inside `DB::table()` are NOT scoped** — the global scope
+   only protects Eloquent. Never use `DB::table()` for tenant-owned
+   data; if unavoidable (rare reporting), the tenant id must appear in
+   every where-clause.
+4. **Cross-tenant queries**: `Model::withoutTenancy()` — conspicuous on
+   purpose, review accordingly. Also: an explicit-`tenant_id` Eloquent
+   query still needs context unless wrapped in `runWithoutTenant()`.
+5. **Cache/storage/jobs**: use `TenantCache` / `TenantStorage`
+   contracts (auto-partitioned per tenant). Jobs need nothing special —
+   `TenantQueueContext` stamps payloads on dispatch and restores on
+   run (sync-safe).
+6. **Casing**: hosts are lowercased, but slugs/emails in the DB are
+   case-sensitive as written. Normalise emails to lowercase at write
+   time (login throttle keys already do).
+
+Registering a module (feature flag): the module's own provider calls
+`ModuleRegistry::register('key', ['label' => ...])` during boot;
+`markAlwaysActive('key')` opts out of per-tenant flags (core does).
+Routes behind the flag use the `module:{key}` middleware alias
+(inactive/unknown → 403). Permissions: register names via
+`PermissionRegistry::register(module, names)` in the provider;
+materialise with `php artisan permissions:sync` (idempotent) — never at
+boot.
+
+### Tenancy traps (each one bit during Fase 1)
+
+- **`WithoutModelEvents` in seeders kills tenancy.** The
+  `BelongsToTenant::creating` hook is a model event — with it disabled,
+  `tenant_id` is never filled and every insert violates NOT NULL.
+  `DatabaseSeeder` deliberately does not use it (see the NOTE there).
+- **Never cache Eloquent models.** Cached models unserialize into
+  `__PHP_Incomplete_Class` when the classmap shifts and pin object
+  graphs in the cache. Cache plain attribute arrays and re-hydrate via
+  `(new Model)->setRawAttributes($attrs, true)` — NOT `newInstance()`,
+  which drops non-fillable columns (notably the primary key). See
+  `TenantHydrator`.
+- **Never cache null** for a tenant lookup: a tenant deleted after
+  being cached would stay invisible for the whole TTL.
+- **Laravel's `flushState()` clears ALL `Queue::createPayloadUsing`
+  hooks** between tests — queue tests must re-register via
+  `app(TenantQueueContext::class)->register()` in their setup.
+- **Successive `$middleware->web(prepend:)` calls stack in REVERSE** —
+  the second prepend lands BEFORE the first. Keep the ordering
+  requirement in one call (see `bootstrap/app.php`).
+- **`throttle:` middleware cannot key on tenant context** — the limiter
+  closure may run before `ResolveTenant` sets the context. Identity's
+  login rate limiting therefore lives in the controller with the tenant
+  id in the key.
+- **`Route::middleware('web')->inertia(...)` does not exist** — use
+  `Route::middleware('web')->get(..., fn () => Inertia::render(...))`.
+- **Module routes via `loadRoutesFrom()` do NOT inherit the root `web`
+  group** — declare `Route::middleware('web')` inside the module's
+  route file or lose sessions/auth entirely.
+- **Inertia shared props are per-request mutable singletons**: the
+  middleware writes them via `Inertia::share()` before the Inertia
+  middleware merges its own — order matters (prepend order above).
+- **Module pages resolve as `<Module>/<Page>`** — a page for component
+  name `Identity/Auth/Login` must live at
+  `modules/Identity/resources/js/Pages/Identity/Auth/Login.tsx` (note
+  the doubled `Identity`), per the resolver in `app.tsx`.
+
+### Production requirements (multi-tenant DNS/SSL)
+
+- Wildcard DNS `*.your-domain.com` + wildcard TLS certificate for
+  tenant subdomains (custom domains terminate per-tenant).
+- `SESSION_DOMAIN` must stay UNSET (host-only cookies): a shared session
+  domain would leak tenant sessions across subdomains. `EnsureSessionTenant`
+  (web group) is the second layer: a session whose user belongs to
+  another tenant is logged out on mismatch.
+- Queue worker + scheduler run centrally; jobs carry their tenant in
+  the payload (Stage 4 propagation) — no per-tenant workers needed.
+- Dev: `*.localhost` resolves locally without /etc/hosts entries; seed
+  demo tenants with `php artisan db:seed` (local only).
+
+## Fase 2 notes (proposed, not built)
+
+- Default role set created per tenant on `TenantCreated` (role seeding
+  listener) and user management UI/flows.
+- `password_reset_tokens` becomes tenant-aware (today it is keyed by
+  email alone and crosses tenants — single most important Fase 2 fix).
+- Registration and password-reset flows (Fase 1 ships login/logout
+  only).
+- `expires_at`-driven trial expiry jobs, module flag UI, permission
+  management UI.
+
+A Fase 1 deviation from the original plan is recorded in git history:
+`password_reset_tokens` was NOT made tenant-aware in Fase 1 (the plan
+allowed touching it; it was deliberately left central to keep the auth
+surface minimal).
