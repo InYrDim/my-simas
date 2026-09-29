@@ -275,16 +275,36 @@ boot.
 - Dev: `*.localhost` resolves locally without /etc/hosts entries; seed
   demo tenants with `php artisan db:seed` (local only).
 
-## Fase 2 notes (proposed, not built)
+## Fase 2 notes (planned — see `docs/ai/plan/fase-2/plan.md`)
 
-- Default role set created per tenant on `TenantCreated` (role seeding
-  listener) and user management UI/flows.
-- `password_reset_tokens` becomes tenant-aware (today it is keyed by
-  email alone and crosses tenants — single most important Fase 2 fix).
-- Registration and password-reset flows (Fase 1 ships login/logout
-  only).
-- `expires_at`-driven trial expiry jobs, module flag UI, permission
-  management UI.
+The authoritative, staged plan lives in `docs/ai/plan/fase-2/plan.md`
+(mirrors the Fase 1 plan format: locked decisions, verified repo facts,
+11 stages with gates, test map, risks). Summary of the locked scope:
+
+- **School onboarding**: public application form on the central host
+  (`tenant_applications`, owned by Platform) → provider approves in the
+  platform console → `TenantCreated` (roles seeded) + `TenantApproved`
+  (Identity provisions the first Admin Sekolah user via listener; the
+  applicant is NOT a user until approval — `users.tenant_id` is NOT
+  NULL).
+- **Default roles per tenant**: Identity listener on `TenantCreated`
+  seeds Admin Sekolah / Guru / Staf-TU through a new PlatformPublic
+  `TenantRoles` contract (explicit tenant id — safe from central/CLI).
+- **User management by school admin**: create users, assign/remove
+  roles, deactivate (`users.deactivated_at` nullable), send reset
+  links — gated by `UserPolicy` (first working "permission = action,
+  policy = which data" layer).
+- **Tenant-aware password reset**: `password_reset_tokens` migrates
+  in-place to a composite `(tenant_id, email)` primary key;
+  `TenantUrl` contract supplies tenant hosts to queued notifications.
+- **Invitations**: admin-created users may have a null password and
+  accept via set-password links (same token machinery).
+- Queue tenant-awareness is NOT Fase 2 scope — already shipped in
+  Fase 1 (Stage 4).
+
+Deferred to Fase 3+: `expires_at`-driven trial expiry jobs, module
+flag UI, permission management UI, relation-scoped policies in real
+business modules (Absensi).
 
 A Fase 1 deviation from the original plan is recorded in git history:
 `password_reset_tokens` was NOT made tenant-aware in Fase 1 (the plan
