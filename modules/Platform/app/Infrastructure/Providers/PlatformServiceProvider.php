@@ -11,6 +11,7 @@ use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Contracts\TenantModules;
 use Modules\Platform\App\Contracts\TenantRoles;
 use Modules\Platform\App\Contracts\TenantStorage;
+use Modules\Platform\App\Contracts\TenantUrl;
 use Modules\Platform\App\Http\Middleware\EnsureCentralHost;
 use Modules\Platform\App\Http\Middleware\EnsureModuleActive;
 use Modules\Platform\App\Http\Middleware\ResolveTenant;
@@ -32,6 +33,7 @@ use Modules\Platform\App\Infrastructure\Permissions\PermissionSync;
 use Modules\Platform\App\Infrastructure\Permissions\TenantPermissionBridge;
 use Modules\Platform\App\Infrastructure\Permissions\TenantRoleResolver;
 use Modules\Platform\App\Infrastructure\Tenancy\DefaultTenantContext;
+use Modules\Platform\App\Infrastructure\Tenancy\DefaultTenantUrl;
 use Modules\Platform\App\Infrastructure\Tenancy\PartitionedTenantCache;
 use Modules\Platform\App\Infrastructure\Tenancy\PartitionedTenantStorage;
 use Modules\Platform\App\Infrastructure\Tenancy\RegistersTenantMacro;
@@ -62,6 +64,12 @@ class PlatformServiceProvider extends ServiceProvider
         $this->app->alias(PartitionedTenantStorage::class, TenantStorage::class);
 
         $this->app->singleton(TenantQueueContext::class);
+
+        // Tenant URL resolution for queue-built links (Fase 2 Stage 4):
+        // interface-aliased singleton, same pattern as the tenancy
+        // bindings.
+        $this->app->singleton(DefaultTenantUrl::class);
+        $this->app->alias(DefaultTenantUrl::class, TenantUrl::class);
 
         // Module registry + per-tenant flags: interface-aliased
         // singletons, same pattern as the tenancy bindings.

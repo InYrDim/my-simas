@@ -9,6 +9,7 @@ use Modules\Identity\App\Contracts\ResolvesUsers;
 use Modules\Identity\App\Domain\Actions\DefaultUserResolver;
 use Modules\Identity\App\Domain\Models\User;
 use Modules\Identity\App\Domain\Policies\UserPolicy;
+use Modules\Identity\App\Infrastructure\Auth\TenantPasswordResetServiceProvider;
 use Modules\Identity\App\Infrastructure\Permissions\SeedDefaultRoles;
 use Modules\Platform\App\Contracts\Events\TenantCreated;
 use Modules\Platform\App\Contracts\ModuleRegistry;
@@ -25,6 +26,14 @@ class IdentityServiceProvider extends ServiceProvider
 
         // Default role set (machine names, labels, permission sets).
         $this->mergeConfigFrom(__DIR__.'/../../../config/roles.php', 'roles');
+
+        // NOTE: the tenant-scoped password broker swap
+        // (TenantPasswordResetServiceProvider) is NOT registered here.
+        // Laravel's PasswordResetServiceProvider is DEFERRED: its
+        // bindings overwrite eager ones at first resolution. The swap
+        // lives in bootstrap/providers.php so the deferred services map
+        // (service => provider) points at OUR provider — Laravel's
+        // never loads for auth.password.
     }
 
     /**

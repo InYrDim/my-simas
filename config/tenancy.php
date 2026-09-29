@@ -32,4 +32,17 @@ return [
 
     'default_timezone' => env('TENANCY_DEFAULT_TIMEZONE', 'Asia/Jakarta'),
 
+    // Tenant URL generation (Fase 2, TenantUrl contract): scheme/port
+    // for links built inside the queue (reset/set-password emails).
+    // Production: https + no port. Dev: http + :8000 (or the port the
+    // app is served on). Custom domains terminate TLS per-tenant.
+    'url_scheme' => env('TENANCY_URL_SCHEME', 'http'),
+
+    'url_port' => env('TENANCY_URL_PORT', ''),
+
+    // Modules enabled when a school application is approved (Fase 2
+    // Stage 5). Flagged modules only — core is always active and never
+    // carries a per-tenant flag row.
+    'onboarding_modules' => ['identity'],
+
 ];

@@ -9,9 +9,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Mail;
+use Modules\Identity\App\Infrastructure\Mail\ResetPasswordMail;
 use Modules\Identity\Database\Factories\UserFactory;
 use Modules\Platform\App\Contracts\Concerns\BelongsToTenant;
 use Modules\Platform\App\Contracts\Concerns\HasTenantRoles;
+use Modules\Platform\App\Contracts\TenantUrl;
 
 /**
  * Tenant-scoped user: the same email may exist in multiple tenants
@@ -71,5 +74,30 @@ class User extends Authenticatable
     public function isActive(): bool
     {
         return $this->deactivated_at === null;
+    }
+
+    /**
+     * Tenant-aware reset link delivery. Called by the password broker
+     * (Fase 2: queued Mailable directly — no Notification machinery).
+     *
+     * Eligibility gate: deactivated users and users without a password
+     * mechanism mismatch (never set) get NO email — but the controller
+     * responds generically either way, so the skip is invisible.
+     * Also overrides the broker's URL with the tenant host from
+     * Platform's TenantUrl contract (queue-safe: no request root).
+     */
+    public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void
+    {
+        if (! $this->isActive() || $this->password === null) {
+            return;
+        }
+
+        $url = app(TenantUrl::class)
+            ->root($this->tenant_id)
+            .'/reset-password?token='.$token.'&email='.
+            urlencode($this->email);
+
+        Mail::to($this->email)
+            ->queue(new ResetPasswordMail($url));
     }
 }

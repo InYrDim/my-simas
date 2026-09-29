@@ -5,37 +5,40 @@ import { AuthInput } from '@shared/components/AuthInput';
 import { AuthShell } from '@shared/components/AuthShell';
 import { useTenant } from '@shared/hooks/useTenant';
 
-import { store as loginStore } from '@/actions/Modules/Identity/App/Http/Controllers/Auth/AuthenticatedSessionController';
-import { create as forgotPassword } from '@/actions/Modules/Identity/App/Http/Controllers/Auth/PasswordResetLinkController';
+import { store as resetStore } from '@/actions/Modules/Identity/App/Http/Controllers/Auth/NewPasswordController';
+
+type ResetPasswordProps = {
+    email: string;
+    token: string;
+};
 
 /**
- * Tenant login (school portal). Rendered on a school subdomain; the
- * tenant context is resolved server-side from the host before this
- * page is ever served, and the school name comes from shared props.
+ * "Reset password" (tenant host): consumes a tenant-scoped token from
+ * the email link and sets the new password. On success the user is
+ * logged in server-side and redirected home.
  */
-export default function Login() {
+export default function ResetPassword({ email, token }: ResetPasswordProps) {
     const tenant = useTenant();
 
     const form = useForm({
-        email: '',
+        token,
+        email,
         password: '',
-        remember: false,
+        password_confirmation: '',
     });
 
     function submit(event: FormEvent) {
         event.preventDefault();
 
-        form.post(loginStore.url(), {
-            onFinish: () => form.reset('password'),
-        });
+        form.post(resetStore.url());
     }
 
     return (
         <AuthShell
             tone="light"
             eyebrow={tenant ? tenant.name : 'Portal Sekolah'}
-            title="Masuk ke akun Anda"
-            subtitle="Gunakan email dan kata sandi akun sekolah Anda."
+            title="Atur kata sandi baru"
+            subtitle="Buat kata sandi baru untuk akun sekolah Anda."
             footer="SIMAS untuk sekolah"
         >
             <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
@@ -45,7 +48,6 @@ export default function Login() {
                     name="email"
                     type="email"
                     autoComplete="username"
-                    autoFocus
                     required
                     value={form.data.email}
                     error={form.errors.email}
@@ -55,11 +57,12 @@ export default function Login() {
                 />
 
                 <AuthInput
-                    label="Kata sandi"
+                    label="Kata sandi baru"
                     id="password"
                     name="password"
                     type="password"
-                    autoComplete="current-password"
+                    autoComplete="new-password"
+                    autoFocus
                     required
                     value={form.data.password}
                     error={form.errors.password}
@@ -68,34 +71,29 @@ export default function Login() {
                     }
                 />
 
-                <div className="flex items-center justify-between">
-                    <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-                        <input
-                            type="checkbox"
-                            name="remember"
-                            checked={form.data.remember}
-                            onChange={(event) =>
-                                form.setData('remember', event.target.checked)
-                            }
-                            className="size-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-600/20"
-                        />
-                        Ingat saya
-                    </label>
-
-                    <a
-                        href={forgotPassword.url()}
-                        className="text-sm text-emerald-700 hover:text-emerald-800 hover:underline"
-                    >
-                        Lupa kata sandi?
-                    </a>
-                </div>
+                <AuthInput
+                    label="Ulangi kata sandi baru"
+                    id="password_confirmation"
+                    name="password_confirmation"
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    value={form.data.password_confirmation}
+                    error={form.errors.password_confirmation}
+                    onChange={(event) =>
+                        form.setData(
+                            'password_confirmation',
+                            event.target.value,
+                        )
+                    }
+                />
 
                 <button
                     type="submit"
                     disabled={form.processing}
                     className="mt-2 w-full rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                    {form.processing ? 'Memeriksa...' : 'Masuk'}
+                    {form.processing ? 'Menyimpan...' : 'Simpan kata sandi'}
                 </button>
             </form>
         </AuthShell>
