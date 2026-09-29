@@ -10,6 +10,7 @@ use Modules\Platform\App\Contracts\TenantCache;
 use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Contracts\TenantModules;
 use Modules\Platform\App\Contracts\TenantStorage;
+use Modules\Platform\App\Http\Middleware\EnsureCentralHost;
 use Modules\Platform\App\Http\Middleware\EnsureModuleActive;
 use Modules\Platform\App\Http\Middleware\ResolveTenant;
 use Modules\Platform\App\Infrastructure\Commands\PermissionsSyncCommand;
@@ -106,6 +107,7 @@ class PlatformServiceProvider extends ServiceProvider
     {
         $this->registerConfig();
         $this->registerMigrations();
+        $this->registerRoutes();
         $this->registerMiddleware();
         $this->registerSchemaMacro();
         $this->registerQueueContext();
@@ -147,6 +149,14 @@ class PlatformServiceProvider extends ServiceProvider
     }
 
     /**
+     * Register the module's route files (provider console).
+     */
+    protected function registerRoutes(): void
+    {
+        $this->loadRoutesFrom(__DIR__.'/../../../routes/web.php');
+    }
+
+    /**
      * Register the tenant middleware alias ('tenant') for routes/groups
      * that need explicit resolution (web group prepends the middleware
      * globally via bootstrap/app.php).
@@ -159,5 +169,7 @@ class PlatformServiceProvider extends ServiceProvider
         $router->aliasMiddleware('tenant', ResolveTenant::class);
 
         $router->aliasMiddleware('module', EnsureModuleActive::class);
+
+        $router->aliasMiddleware('central', EnsureCentralHost::class);
     }
 }

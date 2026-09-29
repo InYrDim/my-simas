@@ -3,18 +3,15 @@ import type { FormEvent } from 'react';
 
 import { AuthInput } from '@shared/components/AuthInput';
 import { AuthShell } from '@shared/components/AuthShell';
-import { useTenant } from '@shared/hooks/useTenant';
 
-import { store as loginStore } from '@/actions/Modules/Identity/App/Http/Controllers/Auth/AuthenticatedSessionController';
+import { store as providerLoginStore } from '@/actions/Modules/Platform/App/Http/Controllers/Auth/ProviderAuthenticatedSessionController';
 
 /**
- * Tenant login (school portal). Rendered on a school subdomain; the
- * tenant context is resolved server-side from the host before this
- * page is ever served, and the school name comes from shared props.
+ * Provider console login (SaaS staff). Central hosts only — the page
+ * lives on the /platform prefix of the central domain, never on a
+ * school subdomain.
  */
-export default function Login() {
-    const tenant = useTenant();
-
+export default function ProviderLogin() {
     const form = useForm({
         email: '',
         password: '',
@@ -24,18 +21,17 @@ export default function Login() {
     function submit(event: FormEvent) {
         event.preventDefault();
 
-        form.post(loginStore.url(), {
+        form.post(providerLoginStore.url(), {
             onFinish: () => form.reset('password'),
         });
     }
 
     return (
         <AuthShell
-            tone="light"
-            eyebrow={tenant ? tenant.name : 'Portal Sekolah'}
-            title="Masuk ke akun Anda"
-            subtitle="Gunakan email dan kata sandi akun sekolah Anda."
-            footer="SIMAS untuk sekolah"
+            tone="dark"
+            title="Console Provider"
+            subtitle="Adminstrasi SaaS: tenant, modul, dan izin."
+            footer="SIMAS provider console"
         >
             <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
                 <AuthInput
@@ -63,23 +59,21 @@ export default function Login() {
                     onChange={(event) => form.setData('password', event.target.value)}
                 />
 
-                <div className="flex items-center justify-between">
-                    <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-                        <input
-                            type="checkbox"
-                            name="remember"
-                            checked={form.data.remember}
-                            onChange={(event) => form.setData('remember', event.target.checked)}
-                            className="size-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-600/20"
-                        />
-                        Ingat saya
-                    </label>
-                </div>
+                <label className="flex items-center gap-2 text-sm text-zinc-400">
+                    <input
+                        type="checkbox"
+                        name="remember"
+                        checked={form.data.remember}
+                        onChange={(event) => form.setData('remember', event.target.checked)}
+                        className="size-4 rounded border-zinc-700 bg-zinc-950 text-emerald-600 focus:ring-emerald-600/20"
+                    />
+                    Ingat saya
+                </label>
 
                 <button
                     type="submit"
                     disabled={form.processing}
-                    className="mt-2 w-full rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
+                    className="mt-2 w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-500 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
                 >
                     {form.processing ? 'Memeriksa...' : 'Masuk'}
                 </button>

@@ -37,6 +37,26 @@ return Application::configure(basePath: dirname(__DIR__))
             before: SubstituteBindings::class,
             prepend: ResolveTenant::class,
         );
+
+        // Auth redirects are guard-aware: tenant guests land on the
+        // tenant login, provider guests on the platform console login.
+        // The platform.* routes are central-host only, so the generated
+        // absolute URLs always point at the central domain.
+        $middleware->redirectGuestsTo(function () {
+            if (request()->is('platform', 'platform/*')) {
+                return route('platform.login');
+            }
+
+            return route('login');
+        });
+
+        $middleware->redirectUsersTo(function () {
+            if (request()->is('platform', 'platform/*')) {
+                return route('platform.home');
+            }
+
+            return route('home');
+        });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
