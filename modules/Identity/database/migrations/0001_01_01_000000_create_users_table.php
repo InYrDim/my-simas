@@ -22,15 +22,26 @@ return new class extends Migration
             $table->string('email');
             $table->unique(['tenant_id', 'email']);
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
+            // Nullable: invited users (and the provisioned first school
+            // admin) only set a password via their set-password link.
+            $table->string('password')->nullable();
+            // Deactivation audit stamp (Fase 2): null = active. Login is
+            // refused and live sessions are ended via attribute
+            // enforcement — never via sessions.user_id lookups, which
+            // are ambiguous across tenants (users.id repeats per tenant).
+            $table->timestamp('deactivated_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
 
-        // TODO (Fase 2): make password reset tenant-aware (tokens are
-        // keyed by email alone today, so they cross tenants).
+        // Fase 2: tenant-aware reset/set-password tokens. The composite
+        // (tenant_id, email) primary key keeps tokens scoped to one
+        // school — a token minted in tenant A is useless on tenant B's
+        // host even when the email matches.
         Schema::create('password_reset_tokens', function (Blueprint $table) {
-            $table->string('email')->primary();
+            $table->tenantId();
+            $table->string('email');
+            $table->primary(['tenant_id', 'email']);
             $table->string('token');
             $table->timestamp('created_at')->nullable();
         });

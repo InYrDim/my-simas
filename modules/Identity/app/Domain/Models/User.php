@@ -19,12 +19,18 @@ use Modules\Platform\App\Contracts\Concerns\HasTenantRoles;
  * CURRENT tenant via Platform's HasTenantRoles wrapper — Spatie is
  * never imported directly in this module.
  *
+ * Invited users (and the provisioned first school admin) start with a
+ * NULL password and activate via a set-password link; deactivated
+ * users keep their row and roles but are refused at login and their
+ * live sessions are ended by middleware attribute enforcement.
+ *
  * @property int $id
  * @property string $tenant_id
  * @property string $name
  * @property string $email
  * @property Carbon|null $email_verified_at
- * @property string $password
+ * @property string|null $password
+ * @property Carbon|null $deactivated_at
  * @property string|null $remember_token
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -53,7 +59,17 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'deactivated_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Whether the account is currently usable (never deactivated).
+     * Deactivation never deletes the row or its roles.
+     */
+    public function isActive(): bool
+    {
+        return $this->deactivated_at === null;
     }
 }

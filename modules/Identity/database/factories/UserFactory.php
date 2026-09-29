@@ -56,4 +56,27 @@ class UserFactory extends Factory
             'email_verified_at' => null,
         ]);
     }
+
+    /**
+     * Deactivated account: audit stamp set, login refused, live
+     * sessions ended by middleware. Roles are kept.
+     */
+    public function deactivated(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'deactivated_at' => now(),
+        ]);
+    }
+
+    /**
+     * Invited user: no password yet — they activate via a set-password
+     * link (Fase 2 token machinery).
+     */
+    public function invited(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'password' => null,
+            'email_verified_at' => null,
+        ]);
+    }
 }

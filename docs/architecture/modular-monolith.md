@@ -261,6 +261,12 @@ boot.
   name `Identity/Auth/Login` must live at
   `modules/Identity/resources/js/Pages/Identity/Auth/Login.tsx` (note
   the doubled `Identity`), per the resolver in `app.tsx`.
+- **`sessions.user_id` is ambiguous across tenants** (users.id bigint
+  repeats per tenant) — NEVER query `sessions` by `user_id` for bulk
+  logouts or session audits; you would end sessions of unrelated users
+  in other tenants. Enforce deactivation/session policies via model
+  attributes in middleware (see `EnsureSessionTenant`), which is
+  tenant-aware by design.
 
 ### Production requirements (multi-tenant DNS/SSL)
 
