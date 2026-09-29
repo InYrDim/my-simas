@@ -262,15 +262,32 @@ Identity), TenantCreated event, helpers. Private: TenantScope, resolver,
 queue listeners, Spatie integration, Tenant model + persistence.
 ProviderUser stays in Platform (not Identity).
 
-## Identity (Fase 0 done / Fase 1 pending)
+## Identity (Fase 1 done)
 Other modules never import the User model: store user_id as a plain
 column (no FK, no Eloquent relation) and use Identity's Contracts for
-user data; for the logged-in user just use Auth/Gate. Fase 1: users
-become tenant-ready (tenant_id, unique(tenant_id, email),
-tenant-aware password_reset_tokens, SESSION_DOMAIN not shared across
-school subdomains); Identity uses BelongsToTenant + HasTenantRoles from
-PlatformContracts and never imports Spatie directly. Fase 2: default
-roles, role seeding via TenantCreated, user management.
+user data; for the logged-in user just use Auth/Gate. users is
+tenant-scoped: tenant_id + unique(tenant_id, email); User uses
+BelongsToTenant + HasTenantRoles from PlatformPublic and never imports
+Spatie directly. Auth is login/logout ONLY (Fase 2: register, password
+reset, default roles, user management). Login rate limiting lives in
+the controller keyed login:{tenant_id}:{email}:{ip} — throttle:
+middleware cannot rely on tenant context. password_reset_tokens is
+still central (email-keyed, crosses tenants) — top Fase 2 fix.
+
+## Tenancy traps (all bit during Fase 1 — full list in docs/architecture)
+- WithoutModelEvents in seeders kills the tenant_id creating hook.
+- Never cache Eloquent models (attribute arrays + setRawAttributes);
+  never cache null tenant lookups.
+- flushState() clears Queue::createPayloadUsing hooks between tests —
+  re-register via app(TenantQueueContext::class)->register().
+- Successive web(prepend:) calls stack in REVERSE — one call only.
+- Module routes via loadRoutesFrom() need Route::middleware('web')
+  declared inside the module's route file.
+- Module pages resolve as <Module>/<Page>: the file path doubles the
+  module name (Pages/Identity/Auth/Login.tsx).
+- Deptrac flattens traits: consumers of Platform's public traits are
+  skipped per-class in deptrac.baseline.yaml (grow ONLY for that).
+- DB::table() bypasses the tenant scope — Eloquent only for tenant data.
 
 ## Events across modules
 For module code, events other modules listen to live in the publisher's
