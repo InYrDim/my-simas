@@ -124,7 +124,14 @@ it('runs a command inside the tenant context', function () {
 it('syncs permissions idempotently without touching assignments', function () {
     app(PermissionRegistry::class)->register('probe', ['probe.one', 'probe.two']);
 
-    expect(artisanOutput('permissions:sync'))->toContain('Created 2 permission');
+    // Since Fase 2 Stage 2, Identity registers identity.users.* from its
+    // provider, so the first sync creates those too — assert the probe
+    // names are among the created rows instead of an exact count.
+    $first = artisanOutput('permissions:sync');
+
+    expect($first)->toContain('Created')
+        ->and($first)->toContain('probe.one')
+        ->and($first)->toContain('probe.two');
 
     // Second run: nothing new.
     expect(artisanOutput('permissions:sync'))->toContain('Nothing created');

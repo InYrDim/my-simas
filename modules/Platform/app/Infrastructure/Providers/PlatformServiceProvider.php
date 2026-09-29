@@ -9,6 +9,7 @@ use Modules\Platform\App\Contracts\PermissionRegistry;
 use Modules\Platform\App\Contracts\TenantCache;
 use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Contracts\TenantModules;
+use Modules\Platform\App\Contracts\TenantRoles;
 use Modules\Platform\App\Contracts\TenantStorage;
 use Modules\Platform\App\Http\Middleware\EnsureCentralHost;
 use Modules\Platform\App\Http\Middleware\EnsureModuleActive;
@@ -26,6 +27,7 @@ use Modules\Platform\App\Infrastructure\Modules\DefaultTenantModules;
 use Modules\Platform\App\Infrastructure\Modules\ModuleFlagManager;
 use Modules\Platform\App\Infrastructure\Modules\TenantModulesCache;
 use Modules\Platform\App\Infrastructure\Permissions\DefaultPermissionRegistry;
+use Modules\Platform\App\Infrastructure\Permissions\DefaultTenantRoles;
 use Modules\Platform\App\Infrastructure\Permissions\PermissionSync;
 use Modules\Platform\App\Infrastructure\Permissions\TenantPermissionBridge;
 use Modules\Platform\App\Infrastructure\Permissions\TenantRoleResolver;
@@ -79,6 +81,12 @@ class PlatformServiceProvider extends ServiceProvider
         $this->app->singleton(TenantRoleResolver::class);
         $this->app->singleton(PermissionSync::class);
         $this->app->singleton(TenantPermissionBridge::class);
+
+        // Explicit-tenant-id role materialisation (Fase 2 Stage 2):
+        // interface-aliased singleton, same pattern as the tenancy
+        // bindings.
+        $this->app->singleton(DefaultTenantRoles::class);
+        $this->app->alias(DefaultTenantRoles::class, TenantRoles::class);
 
         $this->registerCommands();
     }

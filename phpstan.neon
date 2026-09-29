@@ -14,4 +14,7 @@ parameters:
     level: 7
 
     excludePaths:
-        - modules/*/tests
+        # Module test suites are glue: they reach into other modules'
+        # factories/models by design. The pattern must match FILES (fnmatch
+        # matches the whole path), hence the trailing *.
+        - modules/*/tests/*

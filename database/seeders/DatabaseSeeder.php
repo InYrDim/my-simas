@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Modules\Identity\Database\Factories\UserFactory;
+use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Domain\Models\Tenant;
 use Modules\Platform\Database\Seeders\PlatformDevSeeder;
 
@@ -46,11 +47,23 @@ class DatabaseSeeder extends Seeder
             return;
         }
 
-        UserFactory::new()->forTenant($sekolahA->id)->create([
+        $user = UserFactory::new()->forTenant($sekolahA->id)->create([
             'name' => 'Admin Sekolah A',
             'email' => 'admin@sekolah-a.test',
         ]);
 
-        $this->command->info('Seeded dev user [admin@sekolah-a.test] (password: password).');
+        // Root seeder is app-level glue (Deptrac Database layer): it may
+        // touch Identity's factory and Platform's contracts directly. Role
+        // assignment resolves against the CURRENT tenant (fail-closed
+        // without context), so run it inside the tenant's context. The
+        // Identity User model itself may NOT be imported here (arch
+        // test) — method_exists() narrows the factory's union return
+        // type without naming the class.
+        app(TenantContext::class)->run($sekolahA->id, function () use ($user): void {
+            assert(method_exists($user, 'assignTenantRole'));
+            $user->assignTenantRole('admin-sekolah');
+        });
+
+        $this->command->info('Seeded dev user [admin@sekolah-a.test] (password: password, role: admin-sekolah).');
     }
 }

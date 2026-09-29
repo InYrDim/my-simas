@@ -33,24 +33,60 @@ final class PermissionSync
     {
         $created = [];
 
-        $this->context->runWithoutTenant(function () use (&$created): void {
-            foreach ($this->registry->all() as $permissions) {
-                foreach ($permissions as $name) {
-                    $exists = Permission::query()
-                        ->where('name', $name)
-                        ->where('guard_name', 'web')
-                        ->exists();
+        $all = $this->registry->all();
 
-                    if (! $exists) {
-                        Permission::query()->create(['name' => $name, 'guard_name' => 'web']);
-                        $created[] = $name;
-                    }
-                }
+        $this->context->runWithoutTenant(function () use (&$created, $all): void {
+            foreach ($all as $permissions) {
+                $created = [...$created, ...$this->createMissing($permissions)];
             }
-
-            // Bust Spatie's permission cache so new names are visible.
-            app(PermissionRegistrar::class)->forgetCachedPermissions();
         });
+
+        if ($created !== []) {
+            app(PermissionRegistrar::class)->forgetCachedPermissions();
+        }
+
+        return $created;
+    }
+
+    /**
+     * Create the given permission names if missing (create-if-missing,
+     * never revokes). Context-free by design — global rows, ambient
+     * context restored afterwards.
+     *
+     * @param  array<int, string>  $permissions
+     */
+    public function ensurePermissions(array $permissions): void
+    {
+        $created = $this->context->runWithoutTenant(
+            fn (): array => $this->createMissing($permissions),
+        );
+
+        if ($created !== []) {
+            app(PermissionRegistrar::class)->forgetCachedPermissions();
+        }
+    }
+
+    /**
+     * Insert missing permission rows; returns the created names.
+     *
+     * @param  array<int, string>  $permissions
+     * @return array<int, string>
+     */
+    private function createMissing(array $permissions): array
+    {
+        $created = [];
+
+        foreach ($permissions as $name) {
+            $exists = Permission::query()
+                ->where('name', $name)
+                ->where('guard_name', 'web')
+                ->exists();
+
+            if (! $exists) {
+                Permission::query()->create(['name' => $name, 'guard_name' => 'web']);
+                $created[] = $name;
+            }
+        }
 
         return $created;
     }
