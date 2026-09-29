@@ -24,6 +24,11 @@ use Modules\Platform\App\Contracts\TenantContext;
  * Rate limiting happens HERE (not in throttle: middleware) so the
  * bucket key can include the tenant id: middleware ordering cannot
  * guarantee the context is set when the limiter closure runs.
+ *
+ * Fase 2: deactivated accounts (deactivated_at set) are refused at
+ * login with the generic credential error — same response as a wrong
+ * password, so the endpoint cannot be used to enumerate account
+ * states.
  */
 final class AuthenticatedSessionController
 {
@@ -91,12 +96,14 @@ final class AuthenticatedSessionController
         // Re-check through the tenant scope: Auth::validate() resolves
         // the user via the scoped query, but assert it explicitly — a
         // VALID credential for tenant B's account must never
-        // authenticate against tenant A.
+        // authenticate against tenant A. Deactivated accounts are
+        // refused with the SAME generic error: the response must not
+        // disclose whether an email exists or what state it is in.
         $user = User::query()
             ->where('email', $credentials['email'])
             ->first();
 
-        if ($user === null || $user->tenant_id !== $tenantId) {
+        if ($user === null || $user->tenant_id !== $tenantId || ! $user->isActive()) {
             RateLimiter::hit($throttleKey, self::DECAY_SECONDS);
 
             throw ValidationException::withMessages([

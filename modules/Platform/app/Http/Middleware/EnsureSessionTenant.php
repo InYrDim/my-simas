@@ -18,10 +18,16 @@ use Symfony\Component\HttpFoundation\Response;
  * tenant_id disagrees with the ambient tenant context is logged out
  * before the route runs.
  *
- * Generic by design: inspects `tenant_id` on the authenticated model
- * via attributes (no Identity import — Platform never sees user
- * models). Users without a tenant_id attribute (e.g. provider staff on
- * central hosts) are untouched.
+ * Generic by design: inspects `tenant_id` and `deactivated_at` on the
+ * authenticated model via attributes (no Identity import — Platform
+ * never sees user models). Users without a tenant_id attribute (e.g.
+ * provider staff on central hosts) are untouched.
+ *
+ * Deactivation convention (Fase 2 Stage 3): a NULL `deactivated_at`
+ * attribute means active; any non-null value means the account was
+ * deactivated and the session must end — the same fail-closed pattern
+ * as the tenant_id mismatch branch. Attribute-based, so Identity (or
+ * any future user-like model) only needs the column, no interface.
  */
 final class EnsureSessionTenant
 {
@@ -36,19 +42,38 @@ final class EnsureSessionTenant
     {
         $tenantId = $this->context->id();
 
-        if ($tenantId !== null) {
-            $user = $request->user();
+        $user = $request->user();
 
-            $userTenantId = $user?->getAttribute('tenant_id');
+        if ($tenantId !== null && $user !== null) {
+            $userTenantId = $user->getAttribute('tenant_id');
 
             if (is_string($userTenantId) && $userTenantId !== $tenantId) {
-                Auth::guard('web')->logout();
+                $this->terminateSession($request);
+            } else {
+                // Deactivated accounts keep no live sessions: a non-null
+                // deactivated_at attribute ends the session on the next
+                // request. Deliberately NOT a sessions.user_id lookup —
+                // users.id repeats across tenants, so that key is
+                // ambiguous (see the architecture doc's trap list).
+                $deactivatedAt = $user->getAttribute('deactivated_at');
 
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
+                if ($deactivatedAt !== null) {
+                    $this->terminateSession($request);
+                }
             }
         }
 
         return $next($request);
+    }
+
+    /**
+     * Log out, invalidate the session, and rotate the CSRF token.
+     */
+    private function terminateSession(Request $request): void
+    {
+        Auth::guard('web')->logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
     }
 }
