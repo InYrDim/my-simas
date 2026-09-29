@@ -13,14 +13,22 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+
+            // Tenant-scoped identities: the same email may exist in two
+            // tenants. Fase 1 edits this migration directly (no data yet).
+            $table->tenantId();
+
             $table->string('name');
-            $table->string('email')->unique();
+            $table->string('email');
+            $table->unique(['tenant_id', 'email']);
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();
             $table->timestamps();
         });
 
+        // TODO (Fase 2): make password reset tenant-aware (tokens are
+        // keyed by email alone today, so they cross tenants).
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');

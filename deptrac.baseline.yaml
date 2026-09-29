@@ -1,0 +1,21 @@
+# Deptrac baseline skips (deptrac 4 has no PHP-config skip API; this file
+# is loaded from deptrac.php via DeptracConfig::baseline()).
+#
+# WHY THIS EXISTS (Stage 9): Deptrac flattens traits — every class that
+# `use`s a trait inherits the trait's own imports as its dependencies.
+# Identity's User uses PlatformPublic's BelongsToTenant / HasTenantRoles
+# (the sanctioned touchpoint), so the traits' INTERNAL machinery
+# (Spatie's HasRoles, TenantScope, TenantRoleResolver,
+# TenantPermissionBridge) is attributed to User itself. The PlatformPublic
+# layer rules already allow the traits to touch these internals; the skip
+# only re-hides that transitive attribution from trait CONSUMERS.
+#
+# Keep this list minimal: it must grow ONLY when another module consumes
+# one of Platform's public traits — never as a general escape hatch.
+deptrac:
+  skip_violations:
+    Modules\Identity\App\Domain\Models\User:
+      - 'Spatie\Permission\Traits\HasRoles'
+      - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+      - 'Modules\Platform\App\Infrastructure\Permissions\TenantRoleResolver'
+      - 'Modules\Platform\App\Infrastructure\Permissions\TenantPermissionBridge'

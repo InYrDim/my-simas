@@ -49,6 +49,8 @@ return static function (DeptracConfig $config): void {
     $config
         ->paths('./app', './modules', './database')
         ->excludeFiles('#[\\/]tests[\\/]#')
+        // Trait flattening skips (see the file's header for the why).
+        ->baseline(__DIR__.'/deptrac.baseline.yaml')
         ->layers(
             $app = Layer::withName('App')->collectors(
                 ClassLikeConfig::create('^App\.*'),

@@ -9,7 +9,9 @@ use Modules\Identity\App\Domain\Models\User;
 class DefaultUserResolver implements ResolvesUsers
 {
     /**
-     * Retrieve a user record by unique email address.
+     * Retrieve a user record by email within the CURRENT tenant. The
+     * BelongsToTenant global scope applies the tenant filter (and
+     * fails closed without context).
      */
     public function findByEmail(string $email): ?UserRecord
     {
@@ -26,10 +28,11 @@ class DefaultUserResolver implements ResolvesUsers
     {
         return new UserRecord(
             id: $user->id,
+            tenantId: $user->tenant_id,
             name: $user->name,
             email: $user->email,
             emailVerifiedAt: $user->email_verified_at?->toIso8601String(),
-            roles: [],
+            roles: $user->tenantRoleNames(),
         );
     }
 }

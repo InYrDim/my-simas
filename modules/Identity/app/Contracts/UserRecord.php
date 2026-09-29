@@ -9,6 +9,7 @@ readonly class UserRecord
      */
     public function __construct(
         public int $id,
+        public string $tenantId,
         public string $name,
         public string $email,
         public ?string $emailVerifiedAt,

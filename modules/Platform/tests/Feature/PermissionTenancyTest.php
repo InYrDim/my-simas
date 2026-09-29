@@ -53,11 +53,13 @@ function tenantForPermissions(string $slug): string
     return $tenant->id;
 }
 
-function tenantUserFor(string $email): PlatformTenantUser
+function tenantUserFor(string $email, ?string $tenantId = null): PlatformTenantUser
 {
-    // Central write: users table is not yet tenant-scoped (Stage 9),
-    // so create outside the scope machinery.
+    // Direct write (this test's subject model is NOT Identity's User and
+    // carries no BelongsToTenant scope). users.tenant_id is NOT NULL
+    // since Stage 9, so the owning tenant must be supplied explicitly.
     $id = DB::table('users')->insertGetId([
+        'tenant_id' => $tenantId,
         'name' => 'User '.$email,
         'email' => $email,
         'password' => 'password',
@@ -90,12 +92,12 @@ it('keeps same-named roles apart between tenants', function () {
     $b = tenantForPermissions('sekolah-b');
     $context = app(TenantContext::class);
 
-    $context->run($a, function (): void {
-        tenantUserFor('guru@a.test')->assignTenantRole('guru');
+    $context->run($a, function () use ($a): void {
+        tenantUserFor('guru@a.test', $a)->assignTenantRole('guru');
     });
 
-    $context->run($b, function (): void {
-        tenantUserFor('guru@b.test')->assignTenantRole('guru');
+    $context->run($b, function () use ($b): void {
+        tenantUserFor('guru@b.test', $b)->assignTenantRole('guru');
     });
 
     // Two role rows share the NAME but live in different tenants.
@@ -121,12 +123,12 @@ it('does not let a role assigned in tenant A appear in tenant B', function () {
     $b = tenantForPermissions('sekolah-b');
     $context = app(TenantContext::class);
 
-    $context->run($a, function (): void {
-        tenantUserFor('guru-a@test.local')->assignTenantRole('guru');
+    $context->run($a, function () use ($a): void {
+        tenantUserFor('guru-a@test.local', $a)->assignTenantRole('guru');
     });
 
-    $context->run($b, function (): void {
-        tenantUserFor('guru-b@test.local');
+    $context->run($b, function () use ($b): void {
+        tenantUserFor('guru-b@test.local', $b);
         expect(userInTenant('guru-a@test.local')->hasTenantRole('guru'))->toBeFalse();
     });
 });
@@ -149,8 +151,8 @@ it('treats null-tenant roles as global rows but keeps assignments per tenant', f
         ]);
     });
 
-    $context->run($a, function (): void {
-        tenantUserFor('ops@test.local')->assignRole('platform-ops');
+    $context->run($a, function () use ($a): void {
+        tenantUserFor('ops@test.local', $a)->assignRole('platform-ops');
     });
 
     // Assignment belongs to A only: user has it in A, not in B.
@@ -168,7 +170,11 @@ it('treats null-tenant roles as global rows but keeps assignments per tenant', f
 });
 
 it('refuses to resolve roles without tenant context', function () {
-    tenantUserFor('central@test.local');
+    $a = tenantForPermissions('sekolah-a');
+
+    // Row creation is explicit (tenant id given); the ROLE assignment
+    // below runs with NO context and must fail closed.
+    tenantUserFor('central@test.local', $a);
 
     userInTenant('central@test.local')->assignTenantRole('guru');
 })->throws(TenantNotSetException::class);
@@ -178,8 +184,8 @@ it('switches teams correctly within one process', function () {
     $b = tenantForPermissions('sekolah-b');
     $context = app(TenantContext::class);
 
-    $context->run($a, function (): void {
-        tenantUserFor('multi@test.local')->assignTenantRole('guru');
+    $context->run($a, function () use ($a): void {
+        tenantUserFor('multi@test.local', $a)->assignTenantRole('guru');
     });
 
     // Re-resolved model in B must not inherit A's roles relation.
@@ -201,9 +207,9 @@ it('does not let a provider session authenticate tenant routes', function () {
 });
 
 it('does not let a web session authenticate provider routes', function () {
-    tenantForPermissions('sekolah-a');
+    $a = tenantForPermissions('sekolah-a');
 
-    $webUser = tenantUserFor('web@test.local');
+    $webUser = tenantUserFor('web@test.local', $a);
     actingAs($webUser, 'web');
 
     get('http://localhost/provider-guard-probe')

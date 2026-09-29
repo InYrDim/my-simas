@@ -36,11 +36,23 @@ class UserFactory extends Factory
     }
 
     /**
+     * Pin the user to a specific tenant. Without it, BelongsToTenant's
+     * creating hook fills tenant_id from the ambient context — and
+     * throws when there is none (fail closed).
+     */
+    public function forTenant(string $tenantId): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'tenant_id' => $tenantId,
+        ]);
+    }
+
+    /**
      * Indicate that the model's email address should be unverified.
      */
     public function unverified(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn (array $attributes): array => [
             'email_verified_at' => null,
         ]);
     }
