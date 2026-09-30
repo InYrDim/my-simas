@@ -5,6 +5,7 @@ use Modules\Identity\App\Http\Controllers\Auth\AuthenticatedSessionController;
 use Modules\Identity\App\Http\Controllers\Auth\NewPasswordController;
 use Modules\Identity\App\Http\Controllers\Auth\PasswordResetLinkController;
 use Modules\Identity\App\Http\Controllers\Auth\SetPasswordController;
+use Modules\Identity\App\Http\Controllers\UsersManagementController;
 
 // Module routes are registered via loadRoutesFrom() and do NOT inherit
 // the root web group automatically — always declare the group here.
@@ -48,5 +49,40 @@ Route::middleware('web')->group(function (): void {
     Route::middleware('auth')->group(function (): void {
         Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
             ->name('logout');
+
+        // School-admin user management (Fase 2 Stage 9): every action
+        // is policy-gated (identity.users.* permissions, same-tenant
+        // re-assert). Role dropdown options come from
+        // TenantRoles::names() via config('roles') labels.
+        Route::middleware('module:identity')->name('identity.users.')->prefix('users')->group(function (): void {
+            Route::get('/', [UsersManagementController::class, 'index'])
+                ->name('index');
+
+            Route::get('create', [UsersManagementController::class, 'create'])
+                ->name('create');
+
+            Route::post('/', [UsersManagementController::class, 'store'])
+                ->name('store');
+
+            Route::get('{userId}/edit', [UsersManagementController::class, 'edit'])
+                ->whereNumber('userId')
+                ->name('edit');
+
+            Route::put('{userId}', [UsersManagementController::class, 'update'])
+                ->whereNumber('userId')
+                ->name('update');
+
+            Route::patch('{userId}/deactivate', [UsersManagementController::class, 'deactivate'])
+                ->whereNumber('userId')
+                ->name('deactivate');
+
+            Route::patch('{userId}/reactivate', [UsersManagementController::class, 'reactivate'])
+                ->whereNumber('userId')
+                ->name('reactivate');
+
+            Route::post('{userId}/send-reset', [UsersManagementController::class, 'sendReset'])
+                ->whereNumber('userId')
+                ->name('send-reset');
+        });
     });
 });
