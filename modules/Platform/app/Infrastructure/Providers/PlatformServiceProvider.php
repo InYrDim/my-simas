@@ -134,6 +134,7 @@ class PlatformServiceProvider extends ServiceProvider
         $this->registerMiddleware();
         $this->registerSchemaMacro();
         $this->registerQueueContext();
+        $this->registerInertiaPagePaths();
     }
 
     /**
@@ -194,5 +195,28 @@ class PlatformServiceProvider extends ServiceProvider
         $router->aliasMiddleware('module', EnsureModuleActive::class);
 
         $router->aliasMiddleware('central', EnsureCentralHost::class);
+    }
+
+    /**
+     * Make module page components resolvable server-side. Inertia's
+     * view finder only knows `inertia.pages.paths` (root js/pages by
+     * default), so ensure_pages_exist / assertInertia would fail for
+     * module pages like "Platform/Applications/Index". Each module's
+     * Pages dir is added as a view path and components resolve as
+     * "<Module>/<Page>" — the same names app.tsx's resolver uses.
+     */
+    protected function registerInertiaPagePaths(): void
+    {
+        $paths = (array) config('inertia.pages.paths', []);
+
+        foreach (glob(base_path('modules/*'), GLOB_ONLYDIR) ?: [] as $moduleDir) {
+            $pagesDir = $moduleDir.'/resources/js/Pages';
+
+            if (is_dir($pagesDir)) {
+                $paths[] = $pagesDir;
+            }
+        }
+
+        config(['inertia.pages.paths' => $paths]);
     }
 }

@@ -261,6 +261,16 @@ boot.
   name `Identity/Auth/Login` must live at
   `modules/Identity/resources/js/Pages/Identity/Auth/Login.tsx` (note
   the doubled `Identity`), per the resolver in `app.tsx`.
+- **The Blade layout must NOT hardcode `resources/js/pages/{component}.tsx`
+  as a Vite input** — module pages live in
+  `modules/<Module>/resources/js/Pages/…`, so a hardcoded root path
+  500s in build (non-hot) mode with "Unable to locate file in Vite
+  manifest" for EVERY module page (and in tests via the SSR fallback).
+  A `View::creator('app', …)` in `AppServiceProvider` computes the
+  correct path per component (`pageVitePath`). Same idea server-side:
+  `inertia.pages.paths` only knows the root js/pages dir by default, so
+  `PlatformServiceProvider` appends every module's `Pages/` dir for the
+  view finder (`ensure_pages_exist` / `assertInertia`).
 - **`sessions.user_id` is ambiguous across tenants** (users.id bigint
   repeats per tenant) — NEVER query `sessions` by `user_id` for bulk
   logouts or session audits; you would end sessions of unrelated users

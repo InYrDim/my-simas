@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\Platform\App\Http\Controllers\ApplicationReviewController;
 use Modules\Platform\App\Http\Controllers\Auth\ProviderAuthenticatedSessionController;
 use Modules\Platform\App\Http\Controllers\ProviderHomeController;
 
@@ -22,5 +23,22 @@ Route::middleware(['web', 'central'])->prefix('platform')->name('platform.')->gr
 
         Route::post('logout', [ProviderAuthenticatedSessionController::class, 'destroy'])
             ->name('logout');
+
+        // School application review (Fase 2 Stage 6): the approve POST
+        // carries provider corrections (school data final = form ACC).
+        Route::get('applications', [ApplicationReviewController::class, 'index'])
+            ->name('applications.index');
+
+        Route::get('applications/{application}', [ApplicationReviewController::class, 'show'])
+            ->whereNumber('application')
+            ->name('applications.show');
+
+        Route::post('applications/{application}/approve', [ApplicationReviewController::class, 'approve'])
+            ->whereNumber('application')
+            ->name('applications.approve');
+
+        Route::post('applications/{application}/reject', [ApplicationReviewController::class, 'reject'])
+            ->whereNumber('application')
+            ->name('applications.reject');
     });
 });
