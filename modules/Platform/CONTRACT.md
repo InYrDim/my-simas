@@ -2,13 +2,16 @@
 
 ## Owns
 
-- Database tables: `tenants`, `tenant_modules`, Spatie permission
-  tables (`permissions`, `roles`, `model_has_permissions`,
+- Database tables: `tenants`, `tenant_modules`, `tenant_applications`
+  (school applications: central form → provider review), Spatie
+  permission tables (`permissions`, `roles`, `model_has_permissions`,
   `model_has_roles`, `role_has_permissions`), `provider_users`
 - Core domain concepts: tenancy (tenant resolution, tenant context,
   tenant-scoped models, tenant-aware cache/storage/queue propagation),
   the module registry, per-tenant feature flags, permission registry,
-  and Spatie-permission integration for tenant-scoped roles (Stage 6).
+  Spatie-permission integration for tenant-scoped roles (Stage 6),
+  school onboarding (application → provider ACC → tenant
+  provisioning, Fase 2).
 
 ## Public interface (Contracts/)
 
@@ -60,11 +63,41 @@
 - `UnknownModuleException`, `TenantNotSetException` (Contracts/Exceptions).
 - `TenantCreated` event (in `Contracts/Events`) — fired from the Tenant
   model's `created` hook; payload: tenant ULID.
+- `TenantRoles` (Fase 2): `ensure($tenantId, $name, $permissions)` —
+  idempotent create/update of the tenant's role holding EXACTLY the
+  given permission set (syncs missing global permission rows before
+  attaching); `names($tenantId)` — machine names visible to the tenant
+  (own rows + global). Runs its own `TenantContext::run` (safe from
+  central/CLI); fails closed on an unknown tenant id — never a global
+  role.
+- `TenantUrl` (Fase 2): `host($tenantId)`, `scheme()`, `port()`,
+  `root($tenantId)` — the URL root for links built inside queued
+  mails (queue workers have no trustworthy request root). Scheme/port
+  from `config('tenancy.url_scheme')` / `url_port`.
+- `TenantApplications` (Fase 2) + `ApplicationData` readonly DTO
+  (Contracts/DTOs): `submit(payload)` (slug reserved/taken checks,
+  one pending application per email), `pending()`,
+  `approve($id, $decidedBy, $payload)` — REVALIDATES the corrected
+  slug, creates the tenant, enables onboarding modules from
+  `config('tenancy.onboarding_modules')` (default `['identity']`;
+  Platform reads the config, never hardcodes modules), fires
+  `TenantApproved` INSIDE the transaction; `reject($id, $note,
+  $decidedBy)`. Idempotent via `ApplicationNotPendingException`.
+- `TenantApproved` event (Contracts/Events) — fired inside the
+  approval transaction; payload: tenantId, applicantName,
+  applicantEmail. Identity's `ProvisionFirstAdmin` consumes it (a
+  failure rolls the whole approval back).
+- Exceptions (Contracts/Exceptions): `TenantNotSetException`,
+  `UnknownModuleException`, `ApplicationNotPendingException`,
+  `InvalidApplicationException` (slug conflicts at submit/approve).
 
 Internal (private): Tenant model + `TenantStatus` enum, TenantScope,
 `SubdomainTenantResolver` (interface `TenantResolver`), `TenantHydrator`,
 `TenantBridge` (context-change seam; Spatie hooks in Stage 6),
-`ResolveTenant` middleware, `PlatformException` base. Other modules access
+`ResolveTenant` middleware, `PlatformException` base,
+`TenantApplication` model + status enum, the application review
+controllers (guard `provider`, central-only) and the public
+`/daftar-sekolah` form (IP throttle + honeypot). Other modules access
 tenancy only through contracts/DTOs — never the Tenant model.
 
 ## Tenant resolution (the one strategy)
@@ -171,8 +204,12 @@ changes flush the `TenantHydrator` cache entry for the tenant.
 
 Dev seeding: `PlatformDevSeeder` (local only, called from
 `DatabaseSeeder`) creates sekolah-a (Jakarta; core+identity) and
-sekolah-b (Makassar; core) plus a dev login user
-`admin@sekolah-a.test` / `password`.
+sekolah-b (Makassar; core), a provider console login
+`provider@simas.test` / `password`, and one pending application
+(sekolah-c) so the review → ACC → provisioning flow runs end-to-end
+without filling the public form. The dev login user
+`admin@sekolah-a.test` / `password` gets its admin-sekolah role from
+the root seeder (glue layer — legal).
 
 ## Frontend share (Stage 8)
 
@@ -207,6 +244,8 @@ every layer via the `php_internal` collector.
 ## Events published
 
 - `TenantCreated` — when a tenant row is created (also via factory).
+- `TenantApproved` (Fase 2) — inside the application-approval
+  transaction; consumed by Identity (first-admin provisioning).
 
 ## Events consumed
 
@@ -244,7 +283,11 @@ every layer via the `php_internal` collector.
   docs/architecture/modular-monolith.md → Tenancy traps), validates the
   cached `id`, never caches null, and exposes `flush($tenantId)` for
   status changes.
-- **Fase 2 TODOs parked here**: `password_reset_tokens` is still keyed
-  by email alone (crosses tenants); `expires_at` trial flags need an
-  expiry job; `TenantCreated` currently has no listeners (default-role
-  seeding is Fase 2).
+- **Fase 2 TODO parked here**: `expires_at` trial flags still need an
+  expiry job. Resolved in Fase 2: `password_reset_tokens` is now
+  tenant-scoped (Identity, Stage 4); `TenantCreated` has a listener
+  (Identity's default-role seeding).
+- **Trait-flattening scope note**: the Fase 2 contracts kept the
+  baseline untouched — `TenantRoles`/`TenantUrl`/`TenantApplications`
+  are pure interface/DTO/event surfaces, and Identity's trait consumers
+  were already baselined per-class.

@@ -32,13 +32,17 @@ Vendor/Laravel  ←  Shared  ←  Platform (Fase 1)  ←  Identity  ←  Core  �
   propagation), module registry, per-tenant feature flags, permission
   registry + Spatie teams integration, provider users, tenant/provider
   Artisan commands. Public surface: `Modules\Platform\App\Contracts`.
-- **Identity** (`Modules\Identity`) — tenant-scoped users and session
-  authentication (login/logout): `User` model (uses Platform's
-  `BelongsToTenant` + `HasTenantRoles`), factory, `users`/
-  `password_reset_tokens`/`sessions` migrations, `ResolvesUsers`
-  contract, `UserRecord` DTO, policy, login rate limiting. (See “Folder
-  shape” below: module code lives under the module's own `app/` tree,
-  e.g. `Modules\Identity\App\Domain\Models\User`.)
+- **Identity** (`Modules\Identity`) — tenant-scoped users and their
+  full auth lifecycle (Fase 2): login/logout, tenant-scoped password
+  reset + set-password acceptance, default role seeding
+  (`TenantCreated`), first-admin provisioning (`TenantApproved`),
+  school-admin user management (create/invite/roles/
+  deactivate/reactivate/reset-link) behind `UserPolicy`. `User` model
+  (uses Platform's `BelongsToTenant` + `HasTenantRoles`), factory,
+  `users`/`password_reset_tokens`/`sessions` migrations,
+  `ResolvesUsers` contract, `UserRecord` DTO, login rate limiting.
+  (See “Folder shape” below: module code lives under the module's own
+  `app/` tree, e.g. `Modules\Identity\App\Domain\Models\User`.)
 - **Core** (`Modules\Core`) — master data (skeleton in Fase 0).
 - **App / Database** — Laravel glue only: providers, config, root
   seeders. No business logic. (`DatabaseSeeder` creating the example
@@ -50,7 +54,7 @@ Vendor/Laravel  ←  Shared  ←  Platform (Fase 1)  ←  Identity  ←  Core  �
 | -------- | ---------- | ------------------------------------- | ---------------------------------------------------------------- |
 | Shared   | `Shared`   | Generic technical utilities           | Everything (by definition)                                       |
 | Platform | `Platform` | Tenancy, module registry, permissions | `Modules\Platform\App\Contracts`                                 |
-| Identity | `Identity` | Tenant-scoped users, login/logout     | `Modules\Identity\App\Contracts` (`ResolvesUsers`, `UserRecord`) |
+| Identity | `Identity` | Tenant-scoped users, auth lifecycle, user management | `Modules\Identity\App\Contracts` (`ResolvesUsers`, `UserRecord`) |
 | Core     | `Core`     | Master data (skeleton)                | `Modules\Core\App\Contracts` (empty)                             |
 
 Each module folder follows the module template:
@@ -291,38 +295,131 @@ boot.
 - Dev: `*.localhost` resolves locally without /etc/hosts entries; seed
   demo tenants with `php artisan db:seed` (local only).
 
-## Fase 2 notes (planned — see `docs/ai/plan/fase-2/plan.md`)
+## Fase 2 (built — auth & onboarding)
 
-The authoritative, staged plan lives in `docs/ai/plan/fase-2/plan.md`
-(mirrors the Fase 1 plan format: locked decisions, verified repo facts,
-11 stages with gates, test map, risks). Summary of the locked scope:
+Shipped across Stages 1–10 (`docs/ai/plan/fase-2/plan.md` is the
+staged record; this section is the canonical summary).
 
-- **School onboarding**: public application form on the central host
-  (`tenant_applications`, owned by Platform) → provider approves in the
-  platform console → `TenantCreated` (roles seeded) + `TenantApproved`
-  (Identity provisions the first Admin Sekolah user via listener; the
-  applicant is NOT a user until approval — `users.tenant_id` is NOT
-  NULL).
-- **Default roles per tenant**: Identity listener on `TenantCreated`
-  seeds Admin Sekolah / Guru / Staf-TU through a new PlatformPublic
-  `TenantRoles` contract (explicit tenant id — safe from central/CLI).
-- **User management by school admin**: create users, assign/remove
-  roles, deactivate (`users.deactivated_at` nullable), send reset
-  links — gated by `UserPolicy` (first working "permission = action,
-  policy = which data" layer).
-- **Tenant-aware password reset**: `password_reset_tokens` migrates
-  in-place to a composite `(tenant_id, email)` primary key;
-  `TenantUrl` contract supplies tenant hosts to queued notifications.
-- **Invitations**: admin-created users may have a null password and
-  accept via set-password links (same token machinery).
-- Queue tenant-awareness is NOT Fase 2 scope — already shipped in
-  Fase 1 (Stage 4).
+### School onboarding flow
+
+Public application form on the central host (`/daftar-sekolah`,
+throttle IP + honeypot, owned by Platform) → provider reviews in the
+platform console (`platform/applications`, guard `provider`,
+central-only) → approve corrects school data from the form (the
+corrected payload is the FINAL tenant data) → inside one transaction:
+tenant row created (`TenantCreated` fires → default roles seeded),
+onboarding modules enabled from `config('tenancy.onboarding_modules')`
+(default `['identity']` — flagged modules only; core is always-active
+without a flag row; Platform reads the config, never hardcodes
+modules), decision columns filled, `TenantApproved` fired → Identity's
+`ProvisionFirstAdmin` listener creates the first Admin Sekolah user
+(password null) with a tenant-scoped set-password token and queues
+`SetPasswordMail`. A failure rolls the whole approval back — no tenant
+exists without its admin. The applicant is never a user before
+approval (`users.tenant_id` is NOT NULL); their identity lives in
+`tenant_applications`.
+
+### Default roles per tenant
+
+Identity's `SeedDefaultRoles` listener on `TenantCreated` calls the
+PlatformPublic `TenantRoles` contract (`ensure($tenantId, $name,
+$permissions)` — idempotent, runs its own `TenantContext::run` +
+permission sync, fails closed on an unknown tenant id; `names()` for
+UI dropdowns). The role set lives in `modules/Identity/config/roles.php`:
+keys are Spatie role MACHINE names (`admin-sekolah`, `guru`,
+`staf-tu`) — stable identifiers in code/DB; labels ("Admin Sekolah",
+…) live in config only, renamable without touching tenant DB rows.
+Guru/Staf-TU are born with empty permission sets — business modules
+extend them later from their own config/listeners.
+
+### Deactivation convention
+
+`users.deactivated_at` (nullable timestamp) — non-null means
+deactivated. Rows and roles are KEPT (audit + reactivation); deletion
+is not a Fase 2 concern. Login refuses deactivated accounts with the
+same generic error as wrong credentials (anti-enumeration), and
+Platform's `EnsureSessionTenant` middleware ends live sessions by
+reading the attribute — no trait, no interface, baseline untouched.
+Two anti-lockout invariants live in `DeactivateUser`: no
+self-deactivation, and the tenant's LAST ACTIVE admin-sekolah cannot
+be deactivated (checked under the target's own tenant context; the UI
+mirrors both as disabled buttons + `isSelf` / `isLastActiveAdmin`
+props — the action refuses regardless).
+
+### Tenant-scoped password tokens + `TenantUrl`
+
+`password_reset_tokens` was migrated in-place (pre-production) to
+`tenant_id` + composite PK `(tenant_id, email)`. The internal
+`TenantDatabaseTokenRepository` subclasses Laravel's and stamps/scopes
+every row by the AMBIENT tenant context — fail closed
+(`TenantNotSetException`) without one. A token minted in tenant A is
+never valid on tenant B, even for the same email. All token TTLs are
+60 minutes. Because these mails are built inside the queue (no
+trustworthy request root), PlatformPublic's `TenantUrl` contract
+supplies scheme/host/port per tenant for any link in a queued mail.
+
+Three flows share this ONE token machinery — the token table is
+generic; the consuming page decides the effect:
+
+1. **Reset** (`/reset-password`, forgot-password form): generic
+   response ALWAYS — unknown email, deactivated user, or a user
+   without a password all get the identical "jika email terdaftar…"
+   answer and NO email (anti-enumeration).
+2. **First-admin provisioning** (`TenantApproved` listener, Stage 8).
+3. **Invitations** (Stage 10, admin UI): `InviteUser` create-or-
+   reinvites a password-null user and queues `SetPasswordMail` with a
+   tenant-host link. Re-inviting an invited user UPDATES it (fresh
+   name/role) and REPLACES the token row (tenant-scoped
+   deleteExisting) — this is the deliberate replacement for a resend
+   button. There is deliberately NO separate invite permission:
+   invitations are gated by `identity.users.create`. An ACTIVE user
+   (has a password) refuses re-invitation — `identity.users.sendReset`
+   is the only password-mail path for them.
+
+A known, accepted cross-consumption: a set-password token consumed on
+the reset page sets the password WITHOUT email verification, and vice
+versa. The table does not know the issuing context; recorded in the
+plan as an accepted trade-off.
+
+### User management + policy convention
+
+School-admin UI at `/users` (Identity, routes behind `auth` +
+`module:identity`): list, direct-create (email marked verified —
+trusted admin input), edit (name + role full-sync from
+`TenantRoles::names()`-backed dropdown), deactivate/reactivate, send
+reset link, invite. `UserPolicy` is the first working example of the
+"permission = which action, policy = which data" convention:
+`viewAny/create/update/deactivate/reactivate/sendReset` gate on the
+`identity.users.*` permissions (via tenant roles), re-assert the
+target's tenancy (`sameTenant`), and a `before` hook denies
+DEACTIVATED actors entirely. Every mutation goes through Domain
+actions (`CreateUser`, `InviteUser`, `SendResetLink`,
+`DeactivateUser`, `ReactivateUser`) so the rules are testable without
+HTTP. Post-login landing stays `route('home')` (welcome) — a dedicated
+school dashboard waits for the business modules.
+
+### Transactional email convention (no Notification machinery)
+
+Mailables sent directly via `Mail::to(...)->queue(...)` — no
+`Notification` classes, no database/broadcast channels (locked
+decision). Module mail views resolve through the module's view
+namespace (`Identity::reset-password-text`, registered via
+`loadViewsFrom`) — a dot-path into `modules/…` does NOT work (the view
+finder maps dots to separators and searches the path doubled).
+
+### Anti-enumeration convention
+
+Every unauthenticated auth surface answers with the SAME generic
+message regardless of account state: login (deactivated = wrong
+password), forgot-password (unknown email = sent), set-password
+(deactivated = invalid link). Status is never disclosed to
+unauthenticated probes.
 
 Deferred to Fase 3+: `expires_at`-driven trial expiry jobs, module
 flag UI, permission management UI, relation-scoped policies in real
-business modules (Absensi).
+business modules (Absensi), a dedicated school dashboard.
 
 A Fase 1 deviation from the original plan is recorded in git history:
 `password_reset_tokens` was NOT made tenant-aware in Fase 1 (the plan
 allowed touching it; it was deliberately left central to keep the auth
-surface minimal).
+surface minimal) — fixed in Fase 2 Stage 4.

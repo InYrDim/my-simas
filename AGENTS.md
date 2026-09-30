@@ -270,18 +270,36 @@ Identity), TenantCreated event, helpers. Private: TenantScope, resolver,
 queue listeners, Spatie integration, Tenant model + persistence.
 ProviderUser stays in Platform (not Identity).
 
-## Identity (Fase 1 done)
+## Identity (Fase 1 + Fase 2 done)
 
 Other modules never import the User model: store user_id as a plain
 column (no FK, no Eloquent relation) and use Identity's Contracts for
 user data; for the logged-in user just use Auth/Gate. users is
 tenant-scoped: tenant_id + unique(tenant_id, email); User uses
 BelongsToTenant + HasTenantRoles from PlatformPublic and never imports
-Spatie directly. Auth is login/logout ONLY (Fase 2: register, password
-reset, default roles, user management). Login rate limiting lives in
-the controller keyed login:{tenant_id}:{email}:{ip} — throttle:
-middleware cannot rely on tenant context. password_reset_tokens is
-still central (email-keyed, crosses tenants) — top Fase 2 fix.
+Spatie directly. Auth surface (Fase 2): login/logout, forgot/reset
+password, set-password activation, school-admin user management
+(/users + invite) behind UserPolicy — NO public registration.
+password_reset_tokens is tenant-scoped (tenant_id + composite PK,
+Stage 4): token minting via the ambient-context repository (fail
+closed), TTL 60 min, ONE shared table for reset + provisioning +
+invitations (the page decides the effect; cross-consumption accepted
+and recorded). Rate limiting lives in controllers keyed
+{flow}:{tenant_id}:{email}:{ip} — throttle: middleware cannot rely on
+tenant context. Mails are queued Mailables with URLs from TenantUrl
+(queue-safe); views via the Identity:: namespace (dot-path into
+modules/ does NOT work); no Notification machinery (locked decision).
+Anti-enumeration: generic responses on login/forgot/set-password
+regardless of account state. Roles: machine names from
+modules/Identity/config/roles.php (labels config-only); permissions
+identity.users.* registered via PermissionRegistry; UserPolicy =
+permission gate + same-tenant re-assert + deactivated-actor deny;
+invitations reuse identity.users.create (no separate invite
+permission). Deactivation: deactivated_at nullable, rows+roles kept,
+anti-lockout invariants in DeactivateUser (no self, last ACTIVE admin
+protected). Events consumed: TenantCreated → SeedDefaultRoles,
+TenantApproved → ProvisionFirstAdmin (both idempotent, listeners in
+IdentityServiceProvider).
 
 ## Tenancy traps (all bit during Fase 1 — full list in docs/architecture)
 

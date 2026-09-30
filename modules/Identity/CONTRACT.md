@@ -3,10 +3,14 @@
 ## Owns
 
 - Database tables: `users` (tenant-scoped), `password_reset_tokens`
-  (central — TODO Fase 2), `sessions`
-- Core domain concepts: tenant-scoped user identity and session
-  authentication (login/logout) — the `User` model, its factory, user
-  resolution, the user policy, and login rate limiting.
+  (TENANT-SCOPED since Fase 2: `tenant_id` + composite PK
+  `(tenant_id, email)`), `sessions`
+- Core domain concepts: tenant-scoped user identity and the full auth
+  lifecycle — `User` model, factory, user resolution, `UserPolicy`,
+  login/logout + forgot/reset/set-password (all rate limited in the
+  controller), default role seeding, first-admin provisioning,
+  school-admin user management (create/invite/roles/
+  deactivate/reactivate/reset-link), transactional mailables.
 
 ## Public interface (Contracts/)
 
@@ -19,7 +23,7 @@ in `IdentityServiceProvider`; override in tests via the container.
 ## Allowed dependencies
 
 - Modules/Shared
-- Modules/Platform **App/Contracts only** (PlatformPublic; reserved for Fase 1)
+- Modules/Platform **App/Contracts only** (PlatformPublic)
 - Laravel/Vendor
 
 ## Events published
@@ -29,17 +33,28 @@ in `IdentityServiceProvider`; override in tests via the container.
 
 ## Events consumed
 
-- None.
+- `TenantCreated` (PlatformPublic) → `SeedDefaultRoles`: seeds the
+  tenant's default school roles via `TenantRoles::ensure` —
+  idempotent, safe on re-fire.
+- `TenantApproved` (PlatformPublic) → `ProvisionFirstAdmin`: creates
+  the first admin-sekolah user (password null), mints a tenant-scoped
+  set-password token, queues `SetPasswordMail` with a `TenantUrl`
+  tenant-host link. Idempotent; runs inside the approval transaction
+  (failure rolls the approval back). Both listeners register in
+  `IdentityServiceProvider`.
 
 ## Explicitly NOT exposed
 
 - `App\Domain\Models\User` — other modules must never import it. Store
   `user_id` as a plain column (no FK, no Eloquent relation) and use
   `ResolvesUsers` / `UserRecord` for user data.
-- `App\Domain\Actions\DefaultUserResolver` — bind/override the
-  contract, not the implementation.
-- `App\Domain\Policies\UserPolicy`, `database/migrations`,
-  `database/factories` — internal to Identity.
+- `App\Domain\Actions\DefaultUserResolver` and all other Domain
+  actions (`CreateUser`, `InviteUser`, `SendResetLink`,
+  `DeactivateUser`, `ReactivateUser`) — internal; HTTP is the surface.
+- `App\Domain\Policies\UserPolicy`, `App\Infrastructure\Auth\*`
+  (tenant-scoped token repository/broker/minter),
+  `App\Infrastructure\Onboarding\*`, `database/migrations`,
+  `database/factories`, `mail/*` templates — internal to Identity.
 
 ## Notes for maintainers
 
@@ -48,28 +63,59 @@ in `IdentityServiceProvider`; override in tests via the container.
   email may exist in two tenants. The `User` model uses Platform's
   `BelongsToTenant` + `HasTenantRoles` (PlatformPublic traits); Spatie
   is never imported here.
-- Auth surface is login/logout ONLY (no registration, no password
-  reset — Fase 2). Login requires tenant context: the central host is
-  rejected, credentials are re-checked against the resolved tenant
-  after `Auth::validate()`, and rate limiting is enforced IN THE
-  CONTROLLER with key `login:{tenant_id}:{email}:{ip}` (a
-  `throttle:` middleware closure cannot rely on tenant context —
-  ordering is not guaranteed).
-- Session isolation: host-only cookies (`SESSION_DOMAIN` unset) are the
-  primary defence; Platform's `EnsureSessionTenant` middleware logs out
-  sessions whose user belongs to another tenant.
-- `password_reset_tokens` is STILL central (keyed by email alone) — it
-  crosses tenants today. Highest-priority Fase 2 fix.
-- Factory: `UserFactory::forTenant($id)` pins the tenant; without it
-  the `creating` hook fills `tenant_id` from ambient context (and
-  throws without one — fail closed).
-- The login page lives at
-  `resources/js/Pages/Identity/Auth/Login.tsx` (module pages resolve as
-  `<Module>/<Page>`, so the path doubles the module name) and posts via
-  the generated Wayfinder action — not the `route()` helper.
+- Auth surface (Fase 2): login, logout, forgot-password, reset-
+  password, set-password (activation for password-null accounts),
+  user management `/users` + invite. NO public registration — school
+  accounts are created by their admin or via provisioning. Login
+  requires tenant context (central rejected) and re-checks the
+  resolved tenant after `Auth::validate()`; rate limiting lives IN
+  THE CONTROLLER with tenant-keyed buckets
+  (`login:{tenant}:{email}:{ip}`, same pattern for reset/set-
+  password/invite) — a `throttle:` middleware closure cannot rely on
+  tenant context.
+- Password tokens: `TenantDatabaseTokenRepository` scopes every row by
+  the AMBIENT tenant context (fail closed without one) — a token
+  minted in tenant A is never valid on tenant B. TTL 60 minutes for
+  all flows. Token PUBLISHING (provisioning, invitations) goes through
+  `TenantTokenMinter`; the three consuming flows (reset, provisioning,
+  invitation) share ONE table — the page decides the effect, and a
+  token consumed on the "other" page is an accepted trade-off
+  (recorded in docs/architecture).
+- Mails are queued Mailables with URLs built from PlatformPublic's
+  `TenantUrl` (queue-safe, no request root). Views resolve via the
+  `Identity::` namespace (`loadViewsFrom(…/mail, 'Identity')`) — a
+  dot-path like `modules/Identity/mail/…` does NOT work (finder maps
+  dots to separators). No Notification machinery (locked decision).
+- Anti-enumeration: login (deactivated = generic auth.failed),
+  forgot-password (unknown/deactivated/password-less = generic "sent"),
+  set-password (deactivated = invalid link). The eligibility skip for
+  deactivated/password-less users happens in
+  `User::sendPasswordResetNotification` — silently.
+- Deactivation (`users.deactivated_at`): rows + roles kept; login
+  refuses generically; live sessions ended by Platform's
+  `EnsureSessionTenant` (attribute-based, no Identity import).
+  `DeactivateUser` enforces the two anti-lockout invariants (no
+  self-deactivation; last ACTIVE admin-sekolah protected, checked
+  under the target's own tenant context).
+- Roles: machine names from `config/roles.php` (`admin-sekolah`,
+  `guru`, `staf-tu`); labels live in config only. Permissions
+  `identity.users.{view,create,update,deactivate,sendReset}` are
+  registered via `PermissionRegistry` and attached to admin-sekolah on
+  seed. `UserPolicy` = permission gate + same-tenant target re-assert
+  + deactivated-actor before-deny; invitations deliberately reuse
+  `identity.users.create` (no separate invite permission).
+- Factory: `UserFactory::forTenant($id)` pins the tenant (states:
+  `unverified`, `deactivated`, `invited`); without it the `creating`
+  hook fills `tenant_id` from ambient context (and throws without one
+  — fail closed).
+- Pages live at `resources/js/Pages/Identity/…` (module pages resolve
+  as `<Module>/<Page>`, so the path doubles the module name) and post
+  via generated Wayfinder actions — not the `route()` helper.
 - Module routes are loaded with `loadRoutesFrom()` and do NOT inherit
   the root `web` group: `routes/web.php` declares
-  `Route::middleware('web')` itself.
+  `Route::middleware('web')` itself. User management routes sit behind
+  `auth` + `module:identity` (403 when the tenant's identity flag is
+  off).
 - `ProviderUser` lives in modules/Platform, not here.
 - Factory/model binding is explicit via `#[UseFactory]` / `#[UseModel]`
   attributes because Laravel's `App\` naming conventions do not apply
