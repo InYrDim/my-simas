@@ -2,11 +2,10 @@
 
 namespace Modules\Identity\App\Infrastructure\Onboarding;
 
-use Illuminate\Auth\Passwords\TokenRepositoryInterface;
-use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Modules\Identity\App\Domain\Models\User;
+use Modules\Identity\App\Infrastructure\Auth\TenantTokenMinter;
 use Modules\Identity\App\Infrastructure\Mail\SetPasswordMail;
 use Modules\Platform\App\Contracts\Events\TenantApproved;
 use Modules\Platform\App\Contracts\TenantContext;
@@ -39,6 +38,7 @@ final class ProvisionFirstAdmin
     public function __construct(
         private readonly TenantContext $context,
         private readonly TenantUrl $tenantUrl,
+        private readonly TenantTokenMinter $minter,
     ) {}
 
     public function handle(TenantApproved $event): void
@@ -68,7 +68,7 @@ final class ProvisionFirstAdmin
             // the row lands on (tenant_id, email). DB transaction keeps
             // token + mail queueing atomic within the approval.
             DB::transaction(function () use ($user, $event): void {
-                $token = $this->mintToken($user);
+                $token = $this->minter->mint($user);
 
                 $url = $this->tenantUrl->root($event->tenantId)
                     .'/set-password?token='.$token.'&email='.
@@ -80,24 +80,5 @@ final class ProvisionFirstAdmin
                 ));
             });
         });
-    }
-
-    /**
-     * Mint a token via the password broker's repository (the tenant-
-     * scoped subclass — the ambient context decides the tenant).
-     * The broker exposes no public create-only API, so this reaches
-     * its repository through the same seam the reset flow uses.
-     */
-    private function mintToken(User $user): string
-    {
-        $broker = App::make('auth.password.broker');
-
-        $repository = new \ReflectionProperty($broker, 'tokens');
-        $repository->setAccessible(true);
-
-        /** @var TokenRepositoryInterface $tokens */
-        $tokens = $repository->getValue($broker);
-
-        return $tokens->create($user);
     }
 }

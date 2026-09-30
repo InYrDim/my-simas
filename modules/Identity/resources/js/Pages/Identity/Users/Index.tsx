@@ -3,6 +3,7 @@ import { Head, Link } from '@inertiajs/react';
 import {
     create as usersCreate,
     edit as editUser,
+    invite as usersInvite,
 } from '@/actions/Modules/Identity/App/Http/Controllers/UsersManagementController';
 
 import type { ManagedUser } from '@/types/ManagedUser';
@@ -25,12 +26,21 @@ export default function UsersIndex({ users, status }: IndexProps) {
                         Pengguna
                     </span>
 
-                    <Link
-                        href={usersCreate.url()}
-                        className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-800"
-                    >
-                        Tambah Pengguna
-                    </Link>
+                    <div className="flex items-center gap-3">
+                        <Link
+                            href={usersInvite.url()}
+                            className="rounded-lg border border-emerald-700 px-4 py-2 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50"
+                        >
+                            Undang
+                        </Link>
+
+                        <Link
+                            href={usersCreate.url()}
+                            className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-800"
+                        >
+                            Tambah Pengguna
+                        </Link>
+                    </div>
                 </div>
             </header>
 

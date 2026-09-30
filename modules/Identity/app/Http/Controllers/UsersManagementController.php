@@ -5,15 +5,19 @@ namespace Modules\Identity\App\Http\Controllers;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Identity\App\Domain\Actions\CreateUser;
 use Modules\Identity\App\Domain\Actions\DeactivateUser;
+use Modules\Identity\App\Domain\Actions\InviteUser;
 use Modules\Identity\App\Domain\Actions\ReactivateUser;
 use Modules\Identity\App\Domain\Actions\SendResetLink;
 use Modules\Identity\App\Domain\Exceptions\DeactivationNotAllowedException;
+use Modules\Identity\App\Domain\Exceptions\InvitationNotAllowedException;
 use Modules\Identity\App\Domain\Models\User;
 use Modules\Platform\App\Contracts\TenantContext;
 
@@ -29,6 +33,14 @@ use Modules\Platform\App\Contracts\TenantContext;
  */
 final class UsersManagementController
 {
+    /**
+     * Invitation attempts per bucket (tenant-keyed, like login —
+     * middleware ordering cannot guarantee tenant context).
+     */
+    private const INVITE_MAX_ATTEMPTS = 5;
+
+    private const INVITE_DECAY_SECONDS = 300;
+
     public function __construct(
         private readonly TenantContext $context,
     ) {}
@@ -108,6 +120,74 @@ final class UsersManagementController
         return redirect()
             ->route('identity.users.index')
             ->with('status', 'Pengguna berhasil dibuat.');
+    }
+
+    /**
+     * Invitation form (Stage 10): the email path for password-null
+     * accounts. Gated by identity.users.create — same permission as
+     * direct-create (locked decision: no separate invite permission).
+     */
+    public function invite(): Response
+    {
+        $this->authorize('create');
+
+        return Inertia::render('Identity/Users/Invite', [
+            'roleLabels' => $this->roleLabels(),
+        ]);
+    }
+
+    /**
+     * Send the invitation: create-or-reinvite (password null) + token
+     * + queued SetPasswordMail (the Stage 8 machinery). Rate limited
+     * tenant-keyed; an active account is refused via the domain
+     * exception (surfaced as a validation error on the email field).
+     */
+    public function storeInvite(Request $request, InviteUser $action): RedirectResponse
+    {
+        $this->authorize('create');
+
+        $tenantId = $this->context->id();
+
+        if ($tenantId === null) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255'],
+            'role' => ['nullable', 'string', Rule::in(array_keys($this->roleLabels()))],
+        ]);
+
+        $throttleKey = sprintf(
+            'invite:%s:%s:%s',
+            $tenantId,
+            strtolower($validated['email']),
+            $request->ip(),
+        );
+
+        if (RateLimiter::tooManyAttempts($throttleKey, self::INVITE_MAX_ATTEMPTS)) {
+            throw ValidationException::withMessages([
+                'email' => trans('auth.throttle', [
+                    'seconds' => RateLimiter::availableIn($throttleKey),
+                    'minutes' => (int) ceil(RateLimiter::availableIn($throttleKey) / 60),
+                ]),
+            ]);
+        }
+
+        RateLimiter::hit($throttleKey, self::INVITE_DECAY_SECONDS);
+
+        try {
+            $action->handle(
+                ['name' => $validated['name'], 'email' => $validated['email']],
+                $validated['role'] ?? null,
+            );
+        } catch (InvitationNotAllowedException $e) {
+            return back()->withErrors(['email' => $e->getMessage()]);
+        }
+
+        return redirect()
+            ->route('identity.users.index')
+            ->with('status', 'Undangan terkirim — tautan aktivasi dikirim ke email tersebut.');
     }
 
     /**

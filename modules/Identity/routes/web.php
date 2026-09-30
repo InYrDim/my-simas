@@ -64,6 +64,15 @@ Route::middleware('web')->group(function (): void {
             Route::post('/', [UsersManagementController::class, 'store'])
                 ->name('store');
 
+            // Email invitation (Stage 10): same create permission —
+            // the password-null path for accounts that activate via
+            // the emailed set-password link (Stage 8 machinery).
+            Route::get('invite', [UsersManagementController::class, 'invite'])
+                ->name('invite');
+
+            Route::post('invite', [UsersManagementController::class, 'storeInvite'])
+                ->name('store-invite');
+
             Route::get('{userId}/edit', [UsersManagementController::class, 'edit'])
                 ->whereNumber('userId')
                 ->name('edit');
