@@ -4,6 +4,19 @@ use Illuminate\Support\Facades\Route;
 use Modules\Platform\App\Http\Controllers\ApplicationReviewController;
 use Modules\Platform\App\Http\Controllers\Auth\ProviderAuthenticatedSessionController;
 use Modules\Platform\App\Http\Controllers\ProviderHomeController;
+use Modules\Platform\App\Http\Controllers\SchoolApplyController;
+
+// Public school application (Fase 2 Stage 7): central hosts, NO auth.
+// IP throttle is safe here — the form needs no tenant context (the
+// tenant-keyed throttle pattern is for TENANT routes, e.g. Identity's
+// login). Rate: 5 submissions per IP per 10 minutes.
+Route::middleware(['web', 'central', 'throttle:5,10'])->group(function (): void {
+    Route::get('daftar-sekolah', [SchoolApplyController::class, 'create'])
+        ->name('school.apply.create');
+
+    Route::post('daftar-sekolah', [SchoolApplyController::class, 'store'])
+        ->name('school.apply.store');
+});
 
 // Provider console: CENTRAL hosts only, dedicated 'provider' guard.
 // This file is loaded via loadRoutesFrom() so the middleware groups
