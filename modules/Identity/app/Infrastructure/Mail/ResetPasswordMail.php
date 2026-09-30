@@ -22,6 +22,14 @@ final class ResetPasswordMail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    /*
+     * The text view resolves through the `Identity::` view namespace
+     * (modules/Identity/mail, registered in IdentityServiceProvider).
+     * A plain "modules/Identity/mail/…" name is NOT valid: the view
+     * finder treats dots as directory separators and would look for
+     * modules/Identity/mail/modules/Identity/mail/….blade.php.
+     */
+
     public function __construct(
         public readonly string $resetUrl,
     ) {}
@@ -36,7 +44,7 @@ final class ResetPasswordMail extends Mailable
     public function content(): Content
     {
         /** @var view-string $textView */
-        $textView = 'modules/Identity/mail/reset-password-text';
+        $textView = 'Identity::reset-password-text';
 
         return new Content(
             text: $textView,

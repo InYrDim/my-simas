@@ -10,7 +10,9 @@ use Modules\Identity\App\Domain\Actions\DefaultUserResolver;
 use Modules\Identity\App\Domain\Models\User;
 use Modules\Identity\App\Domain\Policies\UserPolicy;
 use Modules\Identity\App\Infrastructure\Auth\TenantPasswordResetServiceProvider;
+use Modules\Identity\App\Infrastructure\Onboarding\ProvisionFirstAdmin;
 use Modules\Identity\App\Infrastructure\Permissions\SeedDefaultRoles;
+use Modules\Platform\App\Contracts\Events\TenantApproved;
 use Modules\Platform\App\Contracts\Events\TenantCreated;
 use Modules\Platform\App\Contracts\ModuleRegistry;
 use Modules\Platform\App\Contracts\PermissionRegistry;
@@ -42,11 +44,13 @@ class IdentityServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->registerModuleKey();
+        $this->registerMailViews();
         $this->registerMigrations();
         $this->registerRoutes();
         $this->registerPolicies();
         $this->registerIdentityPermissions();
         $this->listenForTenantCreated();
+        $this->listenForTenantApproved();
     }
 
     /**
@@ -108,5 +112,26 @@ class IdentityServiceProvider extends ServiceProvider
     protected function listenForTenantCreated(): void
     {
         Event::listen(TenantCreated::class, SeedDefaultRoles::class);
+    }
+
+    /**
+     * Provision the first school admin the moment an application is
+     * approved (Fase 2 Stage 8) — see ProvisionFirstAdmin.
+     */
+    protected function listenForTenantApproved(): void
+    {
+        Event::listen(TenantApproved::class, ProvisionFirstAdmin::class);
+    }
+
+    /**
+     * Register the module's mail templates under the `Identity::`
+     * namespace (modules/Identity/mail). A dot-path like
+     * "modules/Identity/mail/…" does NOT work: the view finder maps
+     * dots to directory separators, so it would search
+     * modules/Identity/mail/modules/Identity/mail/….blade.php.
+     */
+    protected function registerMailViews(): void
+    {
+        $this->loadViewsFrom(__DIR__.'/../../../mail', 'Identity');
     }
 }
