@@ -6,6 +6,7 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use Modules\Platform\App\Contracts\ModuleRegistry;
 use Modules\Platform\App\Contracts\PermissionRegistry;
+use Modules\Platform\App\Contracts\TenantApplications;
 use Modules\Platform\App\Contracts\TenantCache;
 use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Contracts\TenantModules;
@@ -27,6 +28,7 @@ use Modules\Platform\App\Infrastructure\Modules\DefaultModuleRegistry;
 use Modules\Platform\App\Infrastructure\Modules\DefaultTenantModules;
 use Modules\Platform\App\Infrastructure\Modules\ModuleFlagManager;
 use Modules\Platform\App\Infrastructure\Modules\TenantModulesCache;
+use Modules\Platform\App\Infrastructure\Onboarding\DefaultTenantApplications;
 use Modules\Platform\App\Infrastructure\Permissions\DefaultPermissionRegistry;
 use Modules\Platform\App\Infrastructure\Permissions\DefaultTenantRoles;
 use Modules\Platform\App\Infrastructure\Permissions\PermissionSync;
@@ -95,6 +97,11 @@ class PlatformServiceProvider extends ServiceProvider
         // bindings.
         $this->app->singleton(DefaultTenantRoles::class);
         $this->app->alias(DefaultTenantRoles::class, TenantRoles::class);
+
+        // School onboarding pipeline (Fase 2 Stage 5): interface-aliased
+        // singleton, same pattern as the tenancy bindings.
+        $this->app->singleton(DefaultTenantApplications::class);
+        $this->app->alias(DefaultTenantApplications::class, TenantApplications::class);
 
         $this->registerCommands();
     }

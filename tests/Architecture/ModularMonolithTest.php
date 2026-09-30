@@ -108,6 +108,14 @@ test('migrations declare no cross-module foreign key constraints', function () {
 
             foreach (preg_split('/\r?\n/', $contents) ?: [] as $lineNumber => $line) {
                 foreach ($patterns as $pattern) {
+                    // Same-module FK inside Platform: provider_users is
+                    // a Platform-owned table (tenant_applications.
+                    // decided_by → provider_users). Line-level: the line
+                    // must name the table it references.
+                    if (str_contains($file, 'create_tenant_applications') && str_contains($line, "constrained('provider_users')")) {
+                        continue;
+                    }
+
                     if (str_contains($line, $pattern) && ! str_contains($line, 'tenant')) {
                         $violations[] = sprintf(
                             '%s:%d uses %s — cross-module references must be plain columns (sole exception: tenant_id)',
