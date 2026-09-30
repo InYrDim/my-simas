@@ -10,6 +10,7 @@ The Laravel Boost guidelines are specifically curated by Laravel maintainers for
 This application is a Laravel application running on PHP 8.4. You are an expert with the Laravel ecosystem. Always use the APIs that match the installed major version of each package — do not assume a version.
 
 Before relying on a package's API, confirm its installed version:
+
 - PHP packages: run `composer show --direct` to list direct dependencies with versions, or `composer show <vendor/package>` for a single package.
 - JS packages: check `package.json` for the installed versions.
 
@@ -85,7 +86,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 - Execute PHP in app context for debugging and testing code. Do not create models without user approval, prefer tests with factories instead. Prefer existing Artisan commands over custom tinker code.
 - Always use single quotes to prevent shell expansion: `php artisan tinker --execute 'Your::code();'`
-  - Double quotes for PHP strings inside: `php artisan tinker --execute 'User::where("active", true)->count();'`
+    - Double quotes for PHP strings inside: `php artisan tinker --execute 'User::where("active", true)->count();'`
 
 === php rules ===
 
@@ -203,11 +204,13 @@ template wins. Current template deviations are reported in
 docs/architecture/modular-monolith.md.
 
 ## Layer order (bottom -> top)
+
 Shared -> Platform -> Identity -> Core -> feature modules (Attendance,
 Ppdb). Dependencies only point upward; feature modules never depend on
 each other, not even via Public surfaces.
 
 ## Module template (authoritative shape)
+
 Modules/<Name>/ with CONTRACT.md; app/{Contracts,Domain,Infrastructure,Http};
 resources/js/{Pages,Components}; routes/{web,api}.php;
 database/{migrations,factories,seeders}; tests/{Feature,Unit};
@@ -218,6 +221,7 @@ Namespaces follow folders: Modules\<Name>\App\...; Modules\<Name>\Database\,
 Modules\<Name>\Tests\ map to database/, tests/ (per composer.json).
 
 ## Public surface = app/Contracts/** only
+
 - Everything another module may use lives under app/Contracts/ (incl.
   Contracts/Events, Contracts/DTOs, Contracts/Exceptions, Contracts/Concerns).
 - Public events (listened to by other modules) live in Contracts/Events;
@@ -230,6 +234,7 @@ Modules\<Name>\Tests\ map to database/, tests/ (per composer.json).
   exception: tenant_id -> tenants (owned by Platform).
 
 ## Shared
+
 All of Shared is importable by every module (Deptrac: whole Shared layer
 is an allowed target), but its contents stay pure technical utilities —
 no school business concepts. Shared depends on no module. Business-
@@ -237,6 +242,7 @@ meaningful code "accidentally used by two modules" is reported as a
 candidate contract / Core module — never parked in Shared.
 
 ## Deptrac (4.x, deptrac.php — not yaml)
+
 - <Name>Public -> Modules/<Name>/app/Contracts/**; <Name> -> the rest
   (Domain, Infrastructure, Http, Providers, routes, database, tests,
   resources).
@@ -250,11 +256,13 @@ candidate contract / Core module — never parked in Shared.
 - Root tests/ is its own glue layer: may use anything, nothing uses it.
 
 ## Pest arch tests (complement Deptrac)
+
 Every module has a filled CONTRACT.md; no cross-module FKs in
 migrations (except tenant_id); Shared never imports modules; no
 Spatie\ imports outside Platform.
 
 ## Platform surface (Fase 1 replaces the old Phase-1 list)
+
 All in Modules/Platform/app/Contracts/**: TenantContext, BelongsToTenant
 (public trait), TenantNotSetException, TenantCache, TenantStorage,
 ModuleRegistry, PermissionRegistry, HasTenantRoles (Spatie wrapper for
@@ -263,6 +271,7 @@ queue listeners, Spatie integration, Tenant model + persistence.
 ProviderUser stays in Platform (not Identity).
 
 ## Identity (Fase 1 done)
+
 Other modules never import the User model: store user_id as a plain
 column (no FK, no Eloquent relation) and use Identity's Contracts for
 user data; for the logged-in user just use Auth/Gate. users is
@@ -275,6 +284,7 @@ middleware cannot rely on tenant context. password_reset_tokens is
 still central (email-keyed, crosses tenants) — top Fase 2 fix.
 
 ## Tenancy traps (all bit during Fase 1 — full list in docs/architecture)
+
 - WithoutModelEvents in seeders kills the tenant_id creating hook.
 - Never cache Eloquent models (attribute arrays + setRawAttributes);
   never cache null tenant lookups.
@@ -290,17 +300,20 @@ still central (email-keyed, crosses tenants) — top Fase 2 fix.
 - DB::table() bypasses the tenant scope — Eloquent only for tenant data.
 
 ## Events across modules
+
 For module code, events other modules listen to live in the publisher's
 Contracts/Events (that's what makes them legally importable).
 app/Events is only for legacy code not yet extracted. Listeners live in
 the listening module and register in that module's provider.
 
 ## New module authorization
+
 Platform (Fase 1) and Identity are explicitly authorized. Creating any
 other module (Attendance, Ppdb, ...) requires the user's go-ahead in its
 phase. Extract one module per stage and stop between stages.
 
 ## Docs
+
 The tracked, canonical version of this policy lives in
 docs/architecture/modular-monolith.md — update it whenever the surface
 or rules change (this AGENTS.md copy is intentionally gitignored; keep

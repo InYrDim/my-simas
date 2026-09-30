@@ -15,11 +15,7 @@ interface ShowProps {
     application: ApplicationData;
 }
 
-const TIMEZONES = [
-    'Asia/Jakarta',
-    'Asia/Makassar',
-    'Asia/Jayapura',
-];
+const TIMEZONES = ['Asia/Jakarta', 'Asia/Makassar', 'Asia/Jayapura'];
 
 const isPending = (status: string) => status === 'pending';
 
@@ -42,7 +38,9 @@ export default function ApplicationsShow({ application }: ShowProps) {
     function approve(event: FormEvent) {
         event.preventDefault();
 
-        decideForm.post(approveApplication.url({ application: application.id }));
+        decideForm.post(
+            approveApplication.url({ application: application.id }),
+        );
     }
 
     function reject(event: FormEvent) {
@@ -99,7 +97,8 @@ export default function ApplicationsShow({ application }: ShowProps) {
                 <dl className="mt-6 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-5 py-4 text-sm">
                     <dt className="text-zinc-500">Pengaju</dt>
                     <dd className="text-zinc-200">
-                        {application.applicantName} ({application.applicantEmail})
+                        {application.applicantName} (
+                        {application.applicantEmail})
                     </dd>
 
                     <dt className="text-zinc-500">Slug diajukan</dt>
@@ -147,41 +146,68 @@ export default function ApplicationsShow({ application }: ShowProps) {
                             </p>
 
                             <label className="flex flex-col gap-1.5 text-sm">
-                                <span className="text-zinc-400">Nama sekolah</span>
+                                <span className="text-zinc-400">
+                                    Nama sekolah
+                                </span>
                                 <input
                                     type="text"
                                     name="school_name"
                                     value={decideForm.data.school_name}
-                                    onChange={(event) => decideForm.setData('school_name', event.target.value)}
+                                    onChange={(event) =>
+                                        decideForm.setData(
+                                            'school_name',
+                                            event.target.value,
+                                        )
+                                    }
                                     className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 focus:border-emerald-600 focus:outline-none"
                                     required
                                 />
-                                {decideForm.errors.school_name !== undefined && (
-                                    <span className="text-xs text-red-400">{decideForm.errors.school_name}</span>
+                                {decideForm.errors.school_name !==
+                                    undefined && (
+                                    <span className="text-xs text-red-400">
+                                        {decideForm.errors.school_name}
+                                    </span>
                                 )}
                             </label>
 
                             <label className="flex flex-col gap-1.5 text-sm">
-                                <span className="text-zinc-400">Slug (subdomain)</span>
+                                <span className="text-zinc-400">
+                                    Slug (subdomain)
+                                </span>
                                 <input
                                     type="text"
                                     name="desired_slug"
                                     value={decideForm.data.desired_slug}
-                                    onChange={(event) => decideForm.setData('desired_slug', event.target.value)}
+                                    onChange={(event) =>
+                                        decideForm.setData(
+                                            'desired_slug',
+                                            event.target.value,
+                                        )
+                                    }
                                     className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 font-mono text-zinc-100 focus:border-emerald-600 focus:outline-none"
                                     required
                                 />
-                                {decideForm.errors.desired_slug !== undefined && (
-                                    <span className="text-xs text-red-400">{decideForm.errors.desired_slug}</span>
+                                {decideForm.errors.desired_slug !==
+                                    undefined && (
+                                    <span className="text-xs text-red-400">
+                                        {decideForm.errors.desired_slug}
+                                    </span>
                                 )}
                             </label>
 
                             <label className="flex flex-col gap-1.5 text-sm">
-                                <span className="text-zinc-400">Zona waktu</span>
+                                <span className="text-zinc-400">
+                                    Zona waktu
+                                </span>
                                 <select
                                     name="timezone"
                                     value={decideForm.data.timezone}
-                                    onChange={(event) => decideForm.setData('timezone', event.target.value)}
+                                    onChange={(event) =>
+                                        decideForm.setData(
+                                            'timezone',
+                                            event.target.value,
+                                        )
+                                    }
                                     className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 focus:border-emerald-600 focus:outline-none"
                                 >
                                     {TIMEZONES.map((timezone) => (
@@ -193,11 +219,18 @@ export default function ApplicationsShow({ application }: ShowProps) {
                             </label>
 
                             <label className="flex flex-col gap-1.5 text-sm">
-                                <span className="text-zinc-400">Catatan (opsional)</span>
+                                <span className="text-zinc-400">
+                                    Catatan (opsional)
+                                </span>
                                 <textarea
                                     name="admin_note"
                                     value={decideForm.data.admin_note}
-                                    onChange={(event) => decideForm.setData('admin_note', event.target.value)}
+                                    onChange={(event) =>
+                                        decideForm.setData(
+                                            'admin_note',
+                                            event.target.value,
+                                        )
+                                    }
                                     rows={2}
                                     className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 focus:border-emerald-600 focus:outline-none"
                                 />
@@ -208,7 +241,9 @@ export default function ApplicationsShow({ application }: ShowProps) {
                                 disabled={decideForm.processing}
                                 className="mt-1 w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                                {decideForm.processing ? 'Memproses...' : 'Setujui & buat sekolah'}
+                                {decideForm.processing
+                                    ? 'Memproses...'
+                                    : 'Setujui & buat sekolah'}
                             </button>
                         </form>
 
@@ -223,11 +258,18 @@ export default function ApplicationsShow({ application }: ShowProps) {
                                 </h2>
 
                                 <label className="flex flex-col gap-1.5 text-sm">
-                                    <span className="text-zinc-400">Alasan (opsional)</span>
+                                    <span className="text-zinc-400">
+                                        Alasan (opsional)
+                                    </span>
                                     <textarea
                                         name="reject_note"
                                         value={decideForm.data.admin_note}
-                                        onChange={(event) => decideForm.setData('admin_note', event.target.value)}
+                                        onChange={(event) =>
+                                            decideForm.setData(
+                                                'admin_note',
+                                                event.target.value,
+                                            )
+                                        }
                                         rows={2}
                                         className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 focus:border-red-600 focus:outline-none"
                                     />
@@ -264,8 +306,10 @@ export default function ApplicationsShow({ application }: ShowProps) {
                 ) : (
                     <p className="mt-8 rounded-lg border border-zinc-800 bg-zinc-900/50 px-5 py-4 text-sm text-zinc-400">
                         Pengajuan ini sudah diputuskan ({application.status}
-                        {application.decidedAt !== null ? `, ${application.decidedAt}` : ''}).
-                        Tidak ada aksi lagi.
+                        {application.decidedAt !== null
+                            ? `, ${application.decidedAt}`
+                            : ''}
+                        ). Tidak ada aksi lagi.
                     </p>
                 )}
             </main>

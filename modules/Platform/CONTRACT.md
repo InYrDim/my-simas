@@ -117,11 +117,11 @@ globally: prepended to the `web` group AND the middleware priority list
 - `tenant_modules` lookups use `Model::withoutTenancy()` with an
   explicit `tenant_id` where-clause (flag checks must work from central
   and CLI, not just with ambient context).
-Testing note: Laravel's `flushState()` clears ALL `createPayloadUsing`
-hooks between tests — tests re-register via `app(TenantQueueContext::class)->register()`
-in their setup. Also: dispatch inside a `void` closure — `fn () => Job::dispatch()`
-RETURNS the PendingDispatch, whose destructor defers the push until after
-`run()` restored the context (payload stamped with the wrong tenant).
+  Testing note: Laravel's `flushState()` clears ALL `createPayloadUsing`
+  hooks between tests — tests re-register via `app(TenantQueueContext::class)->register()`
+  in their setup. Also: dispatch inside a `void` closure — `fn () => Job::dispatch()`
+  RETURNS the PendingDispatch, whose destructor defers the push until after
+  `run()` restored the context (payload stamped with the wrong tenant).
 
 ## Permission tenancy (Stage 6)
 

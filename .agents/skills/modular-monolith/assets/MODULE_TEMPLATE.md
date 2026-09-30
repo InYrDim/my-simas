@@ -50,6 +50,6 @@ Modules/<Name>/
   package is installed, then adjust to match this shape.
 - Shared code that legitimately belongs to no single module goes in
   `Modules/Shared/` using this same shape (it has no `Contracts/` restriction
-  on the *consuming* side, but its own internals still shouldn't be reached
+  on the _consuming_ side, but its own internals still shouldn't be reached
   into directly — treat `Modules/Shared/app/Domain` as its own contract
   surface for simplicity).

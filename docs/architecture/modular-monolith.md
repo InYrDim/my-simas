@@ -46,12 +46,12 @@ Vendor/Laravel  ←  Shared  ←  Platform (Fase 1)  ←  Identity  ←  Core  �
 
 ## Modules
 
-| Module            | Layer      | Owns                                  | Public surface                                                   |
-| ----------------- | ---------- | ------------------------------------- | ---------------------------------------------------------------- |
-| Shared            | `Shared`   | Generic technical utilities           | Everything (by definition)                                       |
-| Platform          | `Platform` | Tenancy, module registry, permissions | `Modules\Platform\App\Contracts`                                 |
-| Identity          | `Identity` | Tenant-scoped users, login/logout     | `Modules\Identity\App\Contracts` (`ResolvesUsers`, `UserRecord`) |
-| Core              | `Core`     | Master data (skeleton)                | `Modules\Core\App\Contracts` (empty)                             |
+| Module   | Layer      | Owns                                  | Public surface                                                   |
+| -------- | ---------- | ------------------------------------- | ---------------------------------------------------------------- |
+| Shared   | `Shared`   | Generic technical utilities           | Everything (by definition)                                       |
+| Platform | `Platform` | Tenancy, module registry, permissions | `Modules\Platform\App\Contracts`                                 |
+| Identity | `Identity` | Tenant-scoped users, login/logout     | `Modules\Identity\App\Contracts` (`ResolvesUsers`, `UserRecord`) |
+| Core     | `Core`     | Master data (skeleton)                | `Modules\Core\App\Contracts` (empty)                             |
 
 Each module folder follows the module template:
 
@@ -93,18 +93,18 @@ the `app/` vs `App\` boundary — follow the template exactly).
    `Contracts/Events`; internal events stay in `Domain/Events`.
    Listeners live in the listening module and register in its provider.
    `app/Events` is only for legacy code not yet extracted.
-3. **One-way dependencies.** `Shared` depends on nothing module-ish;
+4. **One-way dependencies.** `Shared` depends on nothing module-ish;
    `Core` may use `IdentityPublic` but not the reverse; feature modules
    (Fase 1+: `attendance`, `ppdb`) never depend on each other.
-4. **Other modules must not import `User`.** Store `user_id` as a plain
+5. **Other modules must not import `User`.** Store `user_id` as a plain
    column and resolve users through `ResolvesUsers` → `UserRecord`.
-5. **Shared stays clean.** All of Shared is importable by every module,
+6. **Shared stays clean.** All of Shared is importable by every module,
    but its contents stay pure technical utilities — no school business
    concepts (student, class, teacher, attendance, PPDB), nothing used
    by only one module. Business-meaningful code "accidentally used by
    two modules" is reported (candidate contract / Core module), never
    parked in Shared. See `modules/Shared/CONTRACT.md`.
-6. **Module creation is authorized per phase.** Platform (Fase 1) and
+7. **Module creation is authorized per phase.** Platform (Fase 1) and
    Identity are explicitly authorized. Any other module (Attendance,
    Ppdb, …) needs the user's go-ahead in its own phase, and extraction
    proceeds one module per stage.

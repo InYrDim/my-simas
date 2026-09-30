@@ -23,12 +23,12 @@ whether it should be split into separate module extractions.
    before moving anything if the task is large.
 
 4. **Move one file at a time.**
-   - Move the file into its new module location.
-   - Update its namespace.
-   - Update every place that referenced the old namespace (search the whole
-     repo, not just the obvious callers).
-   - Run the relevant tests immediately.
-   - Only move on to the next file once this one passes.
+    - Move the file into its new module location.
+    - Update its namespace.
+    - Update every place that referenced the old namespace (search the whole
+      repo, not just the obvious callers).
+    - Run the relevant tests immediately.
+    - Only move on to the next file once this one passes.
 
 5. **Add `Contracts/` last, after the internals are moved.** Define the
    minimal public interface other code actually needs — don't expose more

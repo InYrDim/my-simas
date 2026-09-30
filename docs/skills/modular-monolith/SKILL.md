@@ -49,19 +49,19 @@ every section — don't leave "TBD" placeholders in a contract you're committing
 
 ## Decision table
 
-| Situation | Correct action |
-|---|---|
-| New feature entirely within one existing module | Add it inside that module, following its existing folder conventions. |
-| New feature that doesn't fit any existing module | Stop and ask the user whether this is a new module or belongs in an existing one — don't create a module speculatively. |
-| Controller needs data from another module | Constructor-inject that module's `Contracts\*` interface, resolved via the container. Never `use Modules\Other\Domain\...` directly. |
-| Need to react to an event in another module | Listen for the publisher's public event from its `Contracts/Events/` (that is what makes it importable); the listener class lives in YOUR module and registers in your module's provider. Never a direct method call across modules. `app/Events` (root) is only for legacy code not yet extracted. |
-| Shared DTO/value object needed by 2+ modules | `Modules/Shared/app/Domain/`. Never copy-paste it into each module. |
-| Inertia page belongs to a module's feature | `Modules/<Name>/resources/js/Pages/`, rendered via the module's controller. |
-| Shared React component (button, layout, etc.) | `Modules/Shared/resources/js/Components/`. Never import one module's component tree from another module. |
-| You're touching a file in legacy `app/` for an unrelated bug fix | Fix only what's needed. Don't opportunistically migrate it — that's a separate, deliberate task (see migration playbook). |
-| Extracting a legacy feature into a module | `references/migration-playbook.md` — follow it step by step, don't skip the "run tests after each move" step. |
-| A Deptrac or frontend lint boundary check fails | The check is correct until proven otherwise. Fix the violation. Do not edit the check to make it pass, and do not suppress/ignore the failing rule, without explicit user confirmation. |
-| Genuinely unsure which module owns something | Stop. Ask the user. Guessing here is the single most common way this architecture rots. |
+| Situation                                                        | Correct action                                                                                                                                                                                                                                                                                      |
+| ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| New feature entirely within one existing module                  | Add it inside that module, following its existing folder conventions.                                                                                                                                                                                                                               |
+| New feature that doesn't fit any existing module                 | Stop and ask the user whether this is a new module or belongs in an existing one — don't create a module speculatively.                                                                                                                                                                             |
+| Controller needs data from another module                        | Constructor-inject that module's `Contracts\*` interface, resolved via the container. Never `use Modules\Other\Domain\...` directly.                                                                                                                                                                |
+| Need to react to an event in another module                      | Listen for the publisher's public event from its `Contracts/Events/` (that is what makes it importable); the listener class lives in YOUR module and registers in your module's provider. Never a direct method call across modules. `app/Events` (root) is only for legacy code not yet extracted. |
+| Shared DTO/value object needed by 2+ modules                     | `Modules/Shared/app/Domain/`. Never copy-paste it into each module.                                                                                                                                                                                                                                 |
+| Inertia page belongs to a module's feature                       | `Modules/<Name>/resources/js/Pages/`, rendered via the module's controller.                                                                                                                                                                                                                         |
+| Shared React component (button, layout, etc.)                    | `Modules/Shared/resources/js/Components/`. Never import one module's component tree from another module.                                                                                                                                                                                            |
+| You're touching a file in legacy `app/` for an unrelated bug fix | Fix only what's needed. Don't opportunistically migrate it — that's a separate, deliberate task (see migration playbook).                                                                                                                                                                           |
+| Extracting a legacy feature into a module                        | `references/migration-playbook.md` — follow it step by step, don't skip the "run tests after each move" step.                                                                                                                                                                                       |
+| A Deptrac or frontend lint boundary check fails                  | The check is correct until proven otherwise. Fix the violation. Do not edit the check to make it pass, and do not suppress/ignore the failing rule, without explicit user confirmation.                                                                                                             |
+| Genuinely unsure which module owns something                     | Stop. Ask the user. Guessing here is the single most common way this architecture rots.                                                                                                                                                                                                             |
 
 ## Workflow for this session
 
@@ -72,10 +72,10 @@ every section — don't leave "TBD" placeholders in a contract you're committing
 2. Read the CONTRACT.md of every module you're touching or calling into.
 3. Make the change, respecting the decision table above.
 4. Run boundary checks:
-   - `composer deptrac` (PHP; config is `deptrac.php` — Deptrac 4.x PHP
-     config, there is no `deptrac.yaml`)
-   - `npm run check` (frontend lint/format via vite-plus; this repo has no
-     ESLint config — do not run `npx eslint`)
+    - `composer deptrac` (PHP; config is `deptrac.php` — Deptrac 4.x PHP
+      config, there is no `deptrac.yaml`)
+    - `npm run check` (frontend lint/format via vite-plus; this repo has no
+      ESLint config — do not run `npx eslint`)
 5. Run tests scoped to the affected module(s).
 6. Update CONTRACT.md if the public interface changed.
 7. Report failures honestly — a task with a failing boundary check or test is

@@ -44,7 +44,9 @@ export default function ProviderLogin() {
                     required
                     value={form.data.email}
                     error={form.errors.email}
-                    onChange={(event) => form.setData('email', event.target.value)}
+                    onChange={(event) =>
+                        form.setData('email', event.target.value)
+                    }
                 />
 
                 <AuthInput
@@ -56,7 +58,9 @@ export default function ProviderLogin() {
                     required
                     value={form.data.password}
                     error={form.errors.password}
-                    onChange={(event) => form.setData('password', event.target.value)}
+                    onChange={(event) =>
+                        form.setData('password', event.target.value)
+                    }
                 />
 
                 <label className="flex items-center gap-2 text-sm text-zinc-400">
@@ -64,7 +68,9 @@ export default function ProviderLogin() {
                         type="checkbox"
                         name="remember"
                         checked={form.data.remember}
-                        onChange={(event) => form.setData('remember', event.target.checked)}
+                        onChange={(event) =>
+                            form.setData('remember', event.target.checked)
+                        }
                         className="size-4 rounded border-zinc-700 bg-zinc-950 text-emerald-600 focus:ring-emerald-600/20"
                     />
                     Ingat saya

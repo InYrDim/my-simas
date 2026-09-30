@@ -13,9 +13,9 @@
 # Keep this list minimal: it must grow ONLY when another module consumes
 # one of Platform's public traits — never as a general escape hatch.
 deptrac:
-  skip_violations:
-    Modules\Identity\App\Domain\Models\User:
-      - 'Spatie\Permission\Traits\HasRoles'
-      - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
-      - 'Modules\Platform\App\Infrastructure\Permissions\TenantRoleResolver'
-      - 'Modules\Platform\App\Infrastructure\Permissions\TenantPermissionBridge'
+    skip_violations:
+        Modules\Identity\App\Domain\Models\User:
+            - 'Spatie\Permission\Traits\HasRoles'
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+            - 'Modules\Platform\App\Infrastructure\Permissions\TenantRoleResolver'
+            - 'Modules\Platform\App\Infrastructure\Permissions\TenantPermissionBridge'

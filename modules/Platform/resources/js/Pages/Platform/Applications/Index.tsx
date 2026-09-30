@@ -15,7 +15,10 @@ interface IndexProps {
  * working list is pending only; decided rows are reachable via their
  * detail page for situational awareness.
  */
-export default function ApplicationsIndex({ applications, status }: IndexProps) {
+export default function ApplicationsIndex({
+    applications,
+    status,
+}: IndexProps) {
     return (
         <div className="min-h-[100dvh] bg-zinc-950">
             <header className="flex h-16 items-center justify-between border-b border-zinc-800 px-6">
@@ -50,7 +53,8 @@ export default function ApplicationsIndex({ applications, status }: IndexProps) 
                 </h1>
 
                 <p className="mt-1 text-sm text-zinc-400">
-                    Tinjau pengajuan, koreksi data bila perlu, lalu ACC atau tolak.
+                    Tinjau pengajuan, koreksi data bila perlu, lalu ACC atau
+                    tolak.
                 </p>
 
                 {status !== undefined && status !== '' && (
@@ -70,7 +74,9 @@ export default function ApplicationsIndex({ applications, status }: IndexProps) 
                         {applications.map((application) => (
                             <li key={application.id}>
                                 <Link
-                                    href={showApplication.url({ application: application.id })}
+                                    href={showApplication.url({
+                                        application: application.id,
+                                    })}
                                     className="block rounded-lg border border-zinc-800 bg-zinc-900/50 px-5 py-4 transition-colors hover:border-zinc-700 hover:bg-zinc-900"
                                 >
                                     <div className="flex items-center justify-between gap-4">
@@ -79,7 +85,8 @@ export default function ApplicationsIndex({ applications, status }: IndexProps) 
                                                 {application.schoolName}
                                             </p>
                                             <p className="mt-0.5 text-sm text-zinc-400">
-                                                {application.applicantName} · {application.applicantEmail}
+                                                {application.applicantName} ·{' '}
+                                                {application.applicantEmail}
                                             </p>
                                         </div>
 

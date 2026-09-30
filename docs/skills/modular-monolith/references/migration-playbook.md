@@ -23,12 +23,12 @@ whether it should be split into separate module extractions.
    before moving anything if the task is large.
 
 4. **Move one file at a time.**
-   - Move the file into its new module location.
-   - Update its namespace.
-   - Update every place that referenced the old namespace (search the whole
-     repo, not just the obvious callers).
-   - Run the relevant tests immediately.
-   - Only move on to the next file once this one passes.
+    - Move the file into its new module location.
+    - Update its namespace.
+    - Update every place that referenced the old namespace (search the whole
+      repo, not just the obvious callers).
+    - Run the relevant tests immediately.
+    - Only move on to the next file once this one passes.
 
 5. **Add `Contracts/` last, after the internals are moved.** Define the
    minimal public interface other code actually needs — don't expose more
@@ -50,7 +50,7 @@ whether it should be split into separate module extractions.
    extraction — that's expected in a retrofit. Only the module you just
    extracted needs to be clean. Do not attempt to fix unrelated violations
    in this task. Also run the arch tests (`vendor/bin/pest
-   tests/Architecture`): they check CONTRACT.md presence, the cross-module
+tests/Architecture`): they check CONTRACT.md presence, the cross-module
    FK ban (except tenant_id), Shared isolation, and the Spatie ban outside
    Platform.
 

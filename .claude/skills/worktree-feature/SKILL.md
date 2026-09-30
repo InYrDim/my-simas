@@ -55,12 +55,12 @@ git -C "<worktree-path>" switch -c feat/<short-slug>
 
 - **Single feature**: work directly inside the worktree (cd into it, or absolute paths on every command). Never mix main-checkout paths into worktree commands.
 - **N parallel agents**: spawn one subagent per slot (background, in one message so they run concurrently). Every subagent prompt must state:
-  - its worktree path — work ONLY there;
-  - the feature task;
-  - `git switch -c feat/<slug>` before committing;
-  - run the narrowest tests: `vendor/bin/pest <path> --compact` from inside the worktree;
-  - report back: commits made + test results.
-  Never give two agents the same slot or knowingly overlapping files.
+    - its worktree path — work ONLY there;
+    - the feature task;
+    - `git switch -c feat/<slug>` before committing;
+    - run the narrowest tests: `vendor/bin/pest <path> --compact` from inside the worktree;
+    - report back: commits made + test results.
+      Never give two agents the same slot or knowingly overlapping files.
 - **Dev servers**: the seeded `.env` has `APP_URL=localhost:8000`. If two slots run `artisan serve` / `vite` at once, adjust the port and `APP_URL` per slot first.
 
 ## Step 6 — Returning slots (only when the user asks, or the slot is stale)

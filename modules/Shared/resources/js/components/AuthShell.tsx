@@ -20,7 +20,14 @@ export type AuthShellProps = {
     footer?: string;
 };
 
-export function AuthShell({ tone, eyebrow, title, subtitle, children, footer }: AuthShellProps) {
+export function AuthShell({
+    tone,
+    eyebrow,
+    title,
+    subtitle,
+    children,
+    footer,
+}: AuthShellProps) {
     const isDark = tone === 'dark';
 
     return (
