@@ -1,6 +1,8 @@
 import { createInertiaApp } from '@inertiajs/react';
 import type { ComponentType } from 'react';
 
+import { TooltipProvider } from '@shared/components/ui/tooltip';
+
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 // Page components live per module (modules/<Name>/resources/js/Pages) and in
@@ -16,6 +18,8 @@ void createInertiaApp({
     progress: {
         color: '#4B5563',
     },
+    // shadcn Tooltip (sidebar, icon buttons) needs one provider at the root.
+    withApp: (app) => <TooltipProvider>{app}</TooltipProvider>,
     resolve: async (name) => {
         const page =
             pages[`./pages/${name}.tsx`] ??

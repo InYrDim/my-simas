@@ -3,7 +3,8 @@
 ## Owns
 
 - Database tables: `tenants`, `tenant_modules`, `tenant_applications`
-  (school applications: central form → provider review), Spatie
+  (school applications: central form → provider review), `plans`,
+  `subscriptions`, `invoices` (provider-side subscription billing), Spatie
   permission tables (`permissions`, `roles`, `model_has_permissions`,
   `model_has_roles`, `role_has_permissions`), `provider_users`
 - Core domain concepts: tenancy (tenant resolution, tenant context,
@@ -264,8 +265,60 @@ every layer via the `php_internal` collector.
 
 - None.
 
+## Subscription billing & master data (provider console)
+
+Billing lives inside Platform (no Billing module). Internal only — nothing
+here is under `Contracts/` except what is listed at the end of this section.
+
+- **Tables.** `plans` (key, name, `price_monthly`, `price_yearly` in whole
+  rupiah, `max_users` nullable = unlimited, `modules` json, `is_active`,
+  `sort_order`, `archived_at`), `subscriptions` (ONE per tenant, unique
+  `tenant_id`; `plan_id` is a plain indexed column, no FK), `invoices`
+  (`number` INV-YYMM-####, snapshot `plan_name`/`billing_cycle`/`amount`,
+  `status` unpaid|paid|void). The only FK is `tenant_id → tenants`.
+- **Modes.** Stored `subscriptions.status` = `trial` | `active` |
+  `cancelled`. Date-derived display states (`Subscription::displayState()`):
+  `trial`, `trial_expired`, `active`, `due` (active, ends within 7 days),
+  `overdue` (active, period passed), `cancelled`. No scheduler or job writes
+  these — they are computed from dates.
+- **Flow.** Approving an application starts a trial
+  (`SubscriptionManager::startTrial`, in the approval transaction; a missing
+  trial plan only logs a warning). `activate()` issues an UNPAID invoice;
+  `payInvoice()` charges the gateway and, on success, marks the invoice paid,
+  sets the subscription active, extends the period (continuing from the old
+  end when still running, else from today) and syncs the plan's modules
+  (never disabling `core` or `config('tenancy.onboarding_modules')`).
+  Plan change takes effect on modules immediately and on price from the next
+  invoice (no proration). Cancelling does NOT suspend the tenant.
+- **Payment stub.** `PaymentGateway::charge()` is bound to
+  `AlwaysSucceedsPaymentGateway`, which ALWAYS returns `true`. Real billing is
+  deferred; replace the binding in `PlatformServiceProvider`.
+- **Seeding.** `BillingMasterDataSeeder` (idempotent, production-safe) creates
+  the initial plans. Run in production with
+  `php artisan db:seed --class="Modules\Platform\Database\Seeders\BillingMasterDataSeeder"`.
+  `PlatformDevSeeder` (local only) calls it and gives `sekolah-a` an active
+  subscription and `sekolah-b` a trial.
+
+### Master data & assumptions (confirm / change as needed)
+
+| Item | Current value | Where |
+|---|---|---|
+| Plan Starter | Rp150.000/bln, Rp1.500.000/thn, 25 users, modules core+identity | `BillingMasterDataSeeder` |
+| Plan Standard | Rp350.000/bln, Rp3.500.000/thn, 100 users, core+identity | same |
+| Plan Pro | Rp750.000/bln, Rp7.500.000/thn, unlimited users, core+identity | same |
+| Yearly price | 10 × monthly (assumption) | same |
+| Trial | 14 days, plan `starter`, automatic on approval, no auto-suspend | `config/billing.php` |
+| Invoice due | 7 days after issue | `config/billing.php` |
+| "Due soon" window | 7 days | `config/billing.php` |
+| Plan modules | `attendance`/`ppdb` are not registered yet, so every plan lists only core+identity until they register | plans table |
+
+Public additions: `Contracts/TenantDirectory` (read-only tenant lookup for
+other modules' provider pages) and `TenantRoles::rolePermissions()`.
+
 ## Explicitly NOT exposed
 
+- `Plan`, `Subscription`, `Invoice`, `SubscriptionManager`, `InvoiceIssuer`,
+  `PaymentGateway`, `BillingSummary`, `TenantLifecycle`.
 - `Tenant` Eloquent model, `TenantStatus`, anything under
   `App/Domain/**`, `App/Infrastructure/**`, `App/Http/**`, `database/**`.
 - The `TenantResolver` interface and its implementation — internal by

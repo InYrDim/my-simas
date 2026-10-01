@@ -1,50 +1,55 @@
 import { Head, Link } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
-import { consolePath } from '../../../Components/consolePath';
+import { useState } from 'react';
+import type { FormEvent } from 'react';
 
-import { show as showTenant } from '@/actions/Modules/Platform/App/Http/Controllers/TenantConsoleController';
-
-import ProviderLayout from '../../../Components/ProviderLayout';
 import {
+    index as tenantsIndex,
+    show as showTenant,
+} from '@/actions/Modules/Platform/App/Http/Controllers/TenantConsoleController';
+import { Button } from '@shared/components/ui/button';
+import { Input } from '@shared/components/ui/input';
+import { TableCell, TableRow } from '@shared/components/ui/table';
+
+import { consolePath } from '../../../Components/consolePath';
+import {
+    DataTable,
     EmptyState,
+    ListPagination,
+    OptionSelect,
     PageHeader,
     StatusChip,
-    Table,
-    inputClass,
-} from '../../../Components/ui';
+} from '../../../Components/ConsoleParts';
 import { cycleLabel, formatDate } from '../../../Components/format';
-import type { ConsolePlan, ConsoleTenant } from '../../../types/console';
+import ProviderLayout from '../../../Components/ProviderLayout';
+import { applyFilters } from '../../../Components/send';
+import type {
+    Paginated,
+    PlanOption,
+    TenantListItem,
+} from '../../../types/console';
 
 interface IndexProps {
-    tenants: ConsoleTenant[];
-    plans: ConsolePlan[];
+    tenants: Paginated<TenantListItem>;
+    filters: { q: string; status: string; plan: string; mode: string };
+    plans: PlanOption[];
 }
 
 /**
- * Provider console: every school on the platform, searchable by name,
- * slug or school code, filterable by status and plan.
+ * Provider console: every school on the platform. Filters run on the
+ * server (name/slug/code search, status, plan, trial vs subscribed).
  */
-export default function TenantsIndex({ tenants, plans }: IndexProps) {
-    const [query, setQuery] = useState('');
-    const [status, setStatus] = useState('');
-    const [plan, setPlan] = useState('');
+export default function TenantsIndex({ tenants, filters, plans }: IndexProps) {
+    const [query, setQuery] = useState(filters.q);
+    const base = tenantsIndex.url();
 
-    const planLabel = (key: string) =>
-        plans.find((candidate) => candidate.key === key)?.label ?? key;
+    function change(next: Partial<typeof filters>) {
+        applyFilters(base, { ...filters, q: query, ...next });
+    }
 
-    const rows = useMemo(() => {
-        const needle = query.trim().toLowerCase();
-
-        return tenants.filter(
-            (tenant) =>
-                (status === '' || tenant.status === status) &&
-                (plan === '' || tenant.plan === plan) &&
-                (needle === '' ||
-                    tenant.name.toLowerCase().includes(needle) ||
-                    tenant.slug.includes(needle) ||
-                    tenant.id.toLowerCase().includes(needle)),
-        );
-    }, [tenants, query, status, plan]);
+    function search(event: FormEvent) {
+        event.preventDefault();
+        change({});
+    }
 
     return (
         <ProviderLayout>
@@ -52,89 +57,113 @@ export default function TenantsIndex({ tenants, plans }: IndexProps) {
 
             <PageHeader
                 title="Tenant"
-                description={`${tenants.length} sekolah terdaftar di platform.`}
+                description={`${tenants.total} sekolah terdaftar di platform.`}
             />
 
-            <div className="mt-8 grid gap-3 sm:grid-cols-[1fr_12rem_12rem]">
-                <input
+            <form
+                onSubmit={search}
+                className="mt-8 grid gap-3 sm:grid-cols-[1fr_11rem_11rem_11rem_auto]"
+            >
+                <Input
                     type="search"
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
                     placeholder="Cari nama, slug, atau kode sekolah"
                     aria-label="Cari tenant"
-                    className={inputClass}
                 />
-                <select
-                    value={status}
-                    onChange={(event) => setStatus(event.target.value)}
-                    aria-label="Filter status"
-                    className={inputClass}
-                >
-                    <option value="">Semua status</option>
-                    <option value="active">Aktif</option>
-                    <option value="suspended">Ditangguhkan</option>
-                </select>
-                <select
-                    value={plan}
-                    onChange={(event) => setPlan(event.target.value)}
-                    aria-label="Filter paket"
-                    className={inputClass}
-                >
-                    <option value="">Semua paket</option>
-                    {plans.map((candidate) => (
-                        <option key={candidate.key} value={candidate.key}>
-                            {candidate.label}
-                        </option>
-                    ))}
-                </select>
-            </div>
+                <OptionSelect
+                    label="Filter mode"
+                    allLabel="Semua mode"
+                    value={filters.mode}
+                    onChange={(mode) => change({ mode })}
+                    options={[
+                        { value: 'trial', label: 'Uji coba' },
+                        { value: 'subscribed', label: 'Berlangganan' },
+                        { value: 'cancelled', label: 'Berhenti' },
+                        { value: 'none', label: 'Belum ada langganan' },
+                    ]}
+                />
+                <OptionSelect
+                    label="Filter status"
+                    allLabel="Semua status"
+                    value={filters.status}
+                    onChange={(status) => change({ status })}
+                    options={[
+                        { value: 'active', label: 'Aktif' },
+                        { value: 'suspended', label: 'Ditangguhkan' },
+                    ]}
+                />
+                <OptionSelect
+                    label="Filter paket"
+                    allLabel="Semua paket"
+                    value={filters.plan}
+                    onChange={(plan) => change({ plan })}
+                    options={plans.map((plan) => ({
+                        value: plan.key,
+                        label: plan.name,
+                    }))}
+                />
+                <Button type="submit" variant="outline">
+                    Cari
+                </Button>
+            </form>
 
             <div className="mt-6">
-                {rows.length === 0 ? (
-                    <EmptyState>Tidak ada tenant yang cocok dengan filter.</EmptyState>
+                {tenants.data.length === 0 ? (
+                    <EmptyState>
+                        Tidak ada tenant yang cocok dengan filter.
+                    </EmptyState>
                 ) : (
-                    <Table
-                        head={[
-                            'Sekolah',
-                            'Status',
-                            'Paket',
-                            'Langganan',
-                            'Pengguna',
-                        ]}
+                    <DataTable
+                        head={['Sekolah', 'Status', 'Paket', 'Langganan', 'Berakhir']}
                     >
-                        {rows.map((tenant) => (
-                            <tr key={tenant.id} className="hover:bg-muted">
-                                <td className="px-4 py-3">
+                        {tenants.data.map((tenant) => (
+                            <TableRow key={tenant.id}>
+                                <TableCell>
                                     <Link
-                                        href={consolePath(showTenant.url({ tenant: tenant.id }))}
-                                        className="font-medium text-foreground hover:underline"
+                                        href={consolePath(
+                                            showTenant.url({ tenant: tenant.id }),
+                                        )}
+                                        className="font-medium hover:underline"
                                     >
                                         {tenant.name}
                                     </Link>
                                     <p className="mt-0.5 font-mono text-xs text-muted-foreground">
                                         /{tenant.slug}
                                     </p>
-                                </td>
-                                <td className="px-4 py-3">
+                                </TableCell>
+                                <TableCell>
                                     <StatusChip status={tenant.status} />
-                                </td>
-                                <td className="px-4 py-3">
-                                    {planLabel(tenant.plan)}
-                                    <p className="mt-0.5 text-xs text-muted-foreground">
-                                        {cycleLabel[tenant.cycle]}
-                                    </p>
-                                </td>
-                                <td className="px-4 py-3">
-                                    <StatusChip status={tenant.subscriptionStatus} />
-                                    <p className="mt-0.5 text-xs text-muted-foreground">
-                                        s.d. {formatDate(tenant.renewsAt)}
-                                    </p>
-                                </td>
-                                <td className="px-4 py-3">{tenant.userCount}</td>
-                            </tr>
+                                </TableCell>
+                                <TableCell>
+                                    {tenant.subscription?.planName ?? '—'}
+                                    {tenant.subscription !== null && (
+                                        <p className="mt-0.5 text-xs text-muted-foreground">
+                                            {cycleLabel[tenant.subscription.cycle]}
+                                        </p>
+                                    )}
+                                </TableCell>
+                                <TableCell>
+                                    {tenant.subscription !== null ? (
+                                        <StatusChip
+                                            status={tenant.subscription.state}
+                                        />
+                                    ) : (
+                                        <span className="text-xs text-muted-foreground">
+                                            belum ada
+                                        </span>
+                                    )}
+                                </TableCell>
+                                <TableCell className="text-xs text-muted-foreground">
+                                    {tenant.subscription?.endsAt != null
+                                        ? formatDate(tenant.subscription.endsAt)
+                                        : '—'}
+                                </TableCell>
+                            </TableRow>
                         ))}
-                    </Table>
+                    </DataTable>
                 )}
+                <ListPagination page={tenants} />
             </div>
         </ProviderLayout>
     );

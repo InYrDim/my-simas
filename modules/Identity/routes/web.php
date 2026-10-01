@@ -5,7 +5,27 @@ use Modules\Identity\App\Http\Controllers\Auth\AuthenticatedSessionController;
 use Modules\Identity\App\Http\Controllers\Auth\NewPasswordController;
 use Modules\Identity\App\Http\Controllers\Auth\PasswordResetLinkController;
 use Modules\Identity\App\Http\Controllers\Auth\SetPasswordController;
+use Modules\Identity\App\Http\Controllers\Console\SchoolAdminController;
 use Modules\Identity\App\Http\Controllers\UsersManagementController;
+
+// Provider console → Pengguna: school admins across tenants. Console host
+// only, provider guard. MUST register before the tenant /users routes below:
+// the domain-bound route has to win on the console host.
+Route::domain((string) config('tenancy.console_domain'))
+    ->middleware(['web', 'auth:provider'])
+    ->prefix('users')
+    ->name('identity.console.admins.')
+    ->group(function (): void {
+        Route::get('/', [SchoolAdminController::class, 'index'])->name('index');
+        Route::post('/', [SchoolAdminController::class, 'store'])->name('store');
+
+        Route::prefix('{tenant}/{userId}')->whereNumber('userId')->group(function (): void {
+            Route::post('invite', [SchoolAdminController::class, 'resendInvite'])->name('invite');
+            Route::post('reset', [SchoolAdminController::class, 'sendReset'])->name('reset');
+            Route::post('deactivate', [SchoolAdminController::class, 'deactivate'])->name('deactivate');
+            Route::post('reactivate', [SchoolAdminController::class, 'reactivate'])->name('reactivate');
+        });
+    });
 
 // Module routes are registered via loadRoutesFrom() and do NOT inherit
 // the root web group automatically — always declare the group here.

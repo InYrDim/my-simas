@@ -442,3 +442,19 @@ A Fase 1 deviation from the original plan is recorded in git history:
 `password_reset_tokens` was NOT made tenant-aware in Fase 1 (the plan
 allowed touching it; it was deliberately left central to keep the auth
 surface minimal) — fixed in Fase 2 Stage 4.
+
+## Provider-console billing and school admins (Fase 3)
+
+- **Billing is Platform-internal** (`plans`, `subscriptions`, `invoices`;
+  services under `Infrastructure/Billing`). No Billing module. Cross-table
+  links are plain indexed columns — the only FK stays `tenant_id → tenants`.
+  The payment step is a stub (`AlwaysSucceedsPaymentGateway`, always `true`).
+  Initial plans come from `BillingMasterDataSeeder`; values and assumptions
+  are recorded in `modules/Platform/CONTRACT.md`.
+- **School admins across tenants are an Identity page.** Platform cannot import
+  Identity, so `Console/SchoolAdminController` lives in Identity on the console
+  host (`auth:provider`), reads tenants through Platform's read-only
+  `Contracts/TenantDirectory`, and runs every action inside the target tenant's
+  context. Its console route registers before the tenant `/users` routes.
+- Platform additions to its public surface: `TenantDirectory`,
+  `TenantRoles::rolePermissions()`.

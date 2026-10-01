@@ -10,7 +10,11 @@
   login/logout + forgot/reset/set-password (all rate limited in the
   controller), default role seeding, first-admin provisioning,
   school-admin user management (create/invite/roles/
-  deactivate/reactivate/reset-link), transactional mailables.
+  deactivate/reactivate/reset-link), transactional mailables, and the
+  provider-console "Pengguna" page (`Console/SchoolAdminController`, rutes on
+  the console host behind `auth:provider`): school admins across tenants,
+  invite/re-invite, reset link, deactivate/reactivate. Every action runs in
+  the target tenant's context; the last-active-admin invariant still holds.
 
 ## Public interface (Contracts/)
 

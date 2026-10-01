@@ -4,17 +4,20 @@ namespace Modules\Platform\App\Infrastructure\Onboarding;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 use Modules\Platform\App\Contracts\DTOs\ApplicationData;
 use Modules\Platform\App\Contracts\Events\TenantApproved;
 use Modules\Platform\App\Contracts\Exceptions\ApplicationNotPendingException;
 use Modules\Platform\App\Contracts\Exceptions\InvalidApplicationException;
 use Modules\Platform\App\Contracts\TenantApplications;
+use Modules\Platform\App\Domain\Exceptions\BillingException;
 use Modules\Platform\App\Domain\Models\ProviderUser;
 use Modules\Platform\App\Domain\Models\Tenant;
 use Modules\Platform\App\Domain\Models\TenantApplication;
 use Modules\Platform\App\Domain\Models\TenantApplicationStatus;
 use Modules\Platform\App\Domain\Models\TenantStatus;
+use Modules\Platform\App\Infrastructure\Billing\SubscriptionManager;
 use Modules\Platform\App\Infrastructure\Modules\ModuleFlagManager;
 
 /**
@@ -46,6 +49,7 @@ final class DefaultTenantApplications implements TenantApplications
 
     public function __construct(
         private readonly ModuleFlagManager $flags,
+        private readonly SubscriptionManager $subscriptions,
     ) {}
 
     public static function payloadKeys(): array
@@ -114,6 +118,8 @@ final class DefaultTenantApplications implements TenantApplications
                 $this->flags->enable($tenant->id, $module);
             }
 
+            $this->startTrial($tenant->id);
+
             $application->forceFill([
                 'school_name' => $final['school_name'],
                 'desired_slug' => $final['desired_slug'],
@@ -137,6 +143,20 @@ final class DefaultTenantApplications implements TenantApplications
         });
 
         return $this->toData($application->refresh());
+    }
+
+    /**
+     * New tenants start on a trial. A missing trial plan (master data not
+     * seeded) must not block onboarding: the tenant just has no
+     * subscription until the provider assigns one.
+     */
+    private function startTrial(string $tenantId): void
+    {
+        try {
+            $this->subscriptions->startTrial($tenantId, (string) config('billing.trial_plan'));
+        } catch (BillingException $e) {
+            Log::warning('Trial not started for new tenant: '.$e->getMessage(), ['tenant_id' => $tenantId]);
+        }
     }
 
     public function reject(int $id, ?string $note, int $decidedBy): ApplicationData

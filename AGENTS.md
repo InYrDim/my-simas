@@ -341,3 +341,12 @@ The tracked, canonical version of this policy lives in
 docs/architecture/modular-monolith.md — update it whenever the surface
 or rules change (this AGENTS.md copy is intentionally gitignored; keep
 them in sync).
+
+## Billing and provider-console users (Fase 3)
+
+Subscription billing (plans/subscriptions/invoices, trial vs subscribed) is
+Platform-internal; payment is the always-true stub `PaymentGateway`. School
+admins across tenants are managed by Identity's `Console/SchoolAdminController`
+on the console host. New Platform contracts: `TenantDirectory`,
+`TenantRoles::rolePermissions()`. Details: modules/Platform/CONTRACT.md and
+docs/architecture/modular-monolith.md.

@@ -1,4 +1,10 @@
 @import 'tailwindcss';
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/jetbrains-mono";
+
+@custom-variant dark (&:is(.dark *));
 
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -131,10 +137,14 @@
     --radius-lg: 0;
     --radius-xl: 0;
     --radius-2xl: 0;
+    --radius-3xl: 0;
+    --radius-4xl: 0;
     --font-sans:
-        'Geist', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
-        'Segoe UI Emoji';
-    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+        'Geist Variable', ui-sans-serif, system-ui, sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji';
+    --font-heading: var(--font-sans);
+    --font-mono:
+        'JetBrains Mono Variable', ui-monospace, SFMono-Regular, monospace;
     --tracking-normal: -0.01em;
 
     font-family: var(--font-sans);

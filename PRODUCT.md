@@ -44,7 +44,11 @@ domain, and manage its own people and modules on its own — and the provider ca
 and audit the platform without developer intervention. **How success is measured is
 undecided.**
 
-Deliberately out of scope so far: billing and subscriptions, attendance (Absensi) and
+Provider-side subscription management exists (plans, trial vs subscribed tenants,
+invoices) with a placeholder payment step that always succeeds; real payment is
+deliberately deferred. Nothing about cost is shown to schools.
+
+Deliberately out of scope so far: real payment processing, attendance (Absensi) and
 PPDB as modules, public self-registration, notification-center machinery.
 
 ## Positioning

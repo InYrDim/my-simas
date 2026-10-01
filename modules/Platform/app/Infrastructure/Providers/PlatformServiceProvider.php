@@ -9,12 +9,18 @@ use Modules\Platform\App\Contracts\PermissionRegistry;
 use Modules\Platform\App\Contracts\TenantApplications;
 use Modules\Platform\App\Contracts\TenantCache;
 use Modules\Platform\App\Contracts\TenantContext;
+use Modules\Platform\App\Contracts\TenantDirectory;
 use Modules\Platform\App\Contracts\TenantModules;
 use Modules\Platform\App\Contracts\TenantRoles;
 use Modules\Platform\App\Contracts\TenantStorage;
 use Modules\Platform\App\Contracts\TenantUrl;
 use Modules\Platform\App\Http\Middleware\EnsureModuleActive;
 use Modules\Platform\App\Http\Middleware\ResolveTenant;
+use Modules\Platform\App\Infrastructure\Billing\AlwaysSucceedsPaymentGateway;
+use Modules\Platform\App\Infrastructure\Billing\BillingSummary;
+use Modules\Platform\App\Infrastructure\Billing\InvoiceIssuer;
+use Modules\Platform\App\Infrastructure\Billing\PaymentGateway;
+use Modules\Platform\App\Infrastructure\Billing\SubscriptionManager;
 use Modules\Platform\App\Infrastructure\Commands\PermissionsSyncCommand;
 use Modules\Platform\App\Infrastructure\Commands\ProviderCreateUserCommand;
 use Modules\Platform\App\Infrastructure\Commands\TenantActivateCommand;
@@ -34,11 +40,13 @@ use Modules\Platform\App\Infrastructure\Permissions\PermissionSync;
 use Modules\Platform\App\Infrastructure\Permissions\TenantPermissionBridge;
 use Modules\Platform\App\Infrastructure\Permissions\TenantRoleResolver;
 use Modules\Platform\App\Infrastructure\Tenancy\DefaultTenantContext;
+use Modules\Platform\App\Infrastructure\Tenancy\DefaultTenantDirectory;
 use Modules\Platform\App\Infrastructure\Tenancy\DefaultTenantUrl;
 use Modules\Platform\App\Infrastructure\Tenancy\PartitionedTenantCache;
 use Modules\Platform\App\Infrastructure\Tenancy\PartitionedTenantStorage;
 use Modules\Platform\App\Infrastructure\Tenancy\RegistersTenantMacro;
 use Modules\Platform\App\Infrastructure\Tenancy\SchoolCodeTenantResolver;
+use Modules\Platform\App\Infrastructure\Tenancy\TenantLifecycle;
 use Modules\Platform\App\Infrastructure\Tenancy\TenantQueueContext;
 
 class PlatformServiceProvider extends ServiceProvider
@@ -65,6 +73,12 @@ class PlatformServiceProvider extends ServiceProvider
         $this->app->alias(PartitionedTenantStorage::class, TenantStorage::class);
 
         $this->app->singleton(TenantQueueContext::class);
+
+        // Read-only tenant lookup for other modules' provider-console pages
+        // and the shared status/profile write path.
+        $this->app->singleton(DefaultTenantDirectory::class);
+        $this->app->alias(DefaultTenantDirectory::class, TenantDirectory::class);
+        $this->app->singleton(TenantLifecycle::class);
 
         // Tenant URL resolution for queue-built links (Fase 2 Stage 4):
         // interface-aliased singleton, same pattern as the tenancy
@@ -101,6 +115,13 @@ class PlatformServiceProvider extends ServiceProvider
         // singleton, same pattern as the tenancy bindings.
         $this->app->singleton(DefaultTenantApplications::class);
         $this->app->alias(DefaultTenantApplications::class, TenantApplications::class);
+
+        // Subscription billing (provider side). The gateway is a stub that
+        // always succeeds until a real payment provider is chosen.
+        $this->app->singleton(PaymentGateway::class, AlwaysSucceedsPaymentGateway::class);
+        $this->app->singleton(InvoiceIssuer::class);
+        $this->app->singleton(SubscriptionManager::class);
+        $this->app->singleton(BillingSummary::class);
 
         $this->registerCommands();
     }

@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['dark' => ($appearance ?? 'system') == 'dark'])>
+{{-- The console host carries the console theme tokens on <html> so portalled
+     shadcn overlays (dialog, tooltip, sheet) inherit them too. --}}
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['dark' => ($appearance ?? 'system') == 'dark', 'console-theme' => request()->getHost() === config('tenancy.console_domain')])>
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,11 +12,6 @@
 
         @fonts
 
-        @if (request()->getHost() === config('tenancy.console_domain'))
-            {{-- Console theme fonts: loaded in the browser (console host only), not at build time. --}}
-            <link rel="preconnect" href="https://fonts.bunny.net">
-            <link rel="stylesheet" href="https://fonts.bunny.net/css?family=geist:400,500,600|jetbrains-mono:400&display=swap">
-        @endif
 
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx', $pageVitePath])

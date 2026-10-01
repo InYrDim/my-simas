@@ -80,4 +80,28 @@ final class DefaultTenantRoles implements TenantRoles
                 ->all(),
         );
     }
+
+    public function rolePermissions(string $tenantId): array
+    {
+        if (TenantHydrator::find($tenantId) === null) {
+            throw new \InvalidArgumentException(
+                "Cannot list role permissions: tenant [{$tenantId}] does not exist.",
+            );
+        }
+
+        /** @var array<string, array<int, string>> */
+        return app(TenantContext::class)->run(
+            $tenantId,
+            fn (): array => Role::query()
+                ->with('permissions:id,name')
+                ->where('tenant_id', $tenantId)
+                ->orWhereNull('tenant_id')
+                ->orderBy('name')
+                ->get()
+                ->mapWithKeys(fn (Role $role): array => [
+                    $role->name => $role->permissions->pluck('name')->sort()->values()->all(),
+                ])
+                ->all(),
+        );
+    }
 }

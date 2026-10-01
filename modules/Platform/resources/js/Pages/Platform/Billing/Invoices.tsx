@@ -1,32 +1,53 @@
 import { Head, Link } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
-import { consolePath } from '../../../Components/consolePath';
+import { useState } from 'react';
+import type { FormEvent } from 'react';
 
-import { show as showTenant } from '@/actions/Modules/Platform/App/Http/Controllers/TenantConsoleController';
-
-import ProviderLayout from '../../../Components/ProviderLayout';
 import {
+    index as invoicesIndex,
+    pay as payInvoice,
+    voidMethod as voidInvoice,
+} from '@/actions/Modules/Platform/App/Http/Controllers/InvoiceController';
+import { show as showTenant } from '@/actions/Modules/Platform/App/Http/Controllers/TenantConsoleController';
+import { Button } from '@shared/components/ui/button';
+import { Input } from '@shared/components/ui/input';
+import { TableCell, TableRow } from '@shared/components/ui/table';
+
+import { consolePath } from '../../../Components/consolePath';
+import {
+    DataTable,
     EmptyState,
+    ListPagination,
+    OptionSelect,
     PageHeader,
     StatusChip,
-    Table,
-    inputClass,
-} from '../../../Components/ui';
-import { cycleLabel, formatDate, formatRupiah } from '../../../Components/format';
-import type { ConsoleInvoice } from '../../../types/console';
+} from '../../../Components/ConsoleParts';
+import {
+    cycleLabel,
+    formatDate,
+    formatRupiah,
+} from '../../../Components/format';
+import ProviderLayout from '../../../Components/ProviderLayout';
+import { applyFilters, send } from '../../../Components/send';
+import type { ConsoleInvoice, Paginated } from '../../../types/console';
 
-/** Invoice list with a status filter (mock data). */
-export default function BillingInvoices({
-    invoices,
-}: {
-    invoices: ConsoleInvoice[];
-}) {
-    const [status, setStatus] = useState('');
+interface InvoicesProps {
+    invoices: Paginated<ConsoleInvoice>;
+    filters: { q: string; status: string };
+}
 
-    const rows = useMemo(
-        () => invoices.filter((invoice) => status === '' || invoice.status === status),
-        [invoices, status],
-    );
+/** Invoices: search, filter, mark paid (gateway) or void. */
+export default function BillingInvoices({ invoices, filters }: InvoicesProps) {
+    const [query, setQuery] = useState(filters.q);
+    const base = invoicesIndex.url();
+
+    function change(next: Partial<typeof filters>) {
+        applyFilters(base, { ...filters, q: query, ...next });
+    }
+
+    function search(event: FormEvent) {
+        event.preventDefault();
+        change({});
+    }
 
     return (
         <ProviderLayout>
@@ -37,49 +58,108 @@ export default function BillingInvoices({
                 description="Faktur yang diterbitkan untuk langganan sekolah."
             />
 
-            <div className="mt-8 sm:w-48">
-                <select
-                    value={status}
-                    onChange={(event) => setStatus(event.target.value)}
-                    aria-label="Filter status"
-                    className={inputClass}
-                >
-                    <option value="">Semua status</option>
-                    <option value="paid">Lunas</option>
-                    <option value="unpaid">Belum dibayar</option>
-                    <option value="overdue">Menunggak</option>
-                    <option value="void">Dibatalkan</option>
-                </select>
-            </div>
+            <form
+                onSubmit={search}
+                className="mt-8 grid gap-3 sm:grid-cols-[1fr_12rem_auto]"
+            >
+                <Input
+                    type="search"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Cari nomor tagihan atau nama sekolah"
+                    aria-label="Cari tagihan"
+                />
+                <OptionSelect
+                    label="Filter status"
+                    allLabel="Semua status"
+                    value={filters.status}
+                    onChange={(status) => change({ status })}
+                    options={[
+                        { value: 'unpaid', label: 'Belum dibayar' },
+                        { value: 'overdue', label: 'Lewat jatuh tempo' },
+                        { value: 'paid', label: 'Lunas' },
+                        { value: 'void', label: 'Dibatalkan' },
+                    ]}
+                />
+                <Button type="submit" variant="outline">
+                    Cari
+                </Button>
+            </form>
 
             <div className="mt-6">
-                {rows.length === 0 ? (
-                    <EmptyState>Tidak ada tagihan dengan status ini.</EmptyState>
+                {invoices.data.length === 0 ? (
+                    <EmptyState>Tidak ada tagihan yang cocok.</EmptyState>
                 ) : (
-                    <Table head={['Nomor', 'Sekolah', 'Terbit', 'Jumlah', 'Status']}>
-                        {rows.map((invoice) => (
-                            <tr key={invoice.number}>
-                                <td className="px-4 py-3 font-mono text-xs">{invoice.number}</td>
-                                <td className="px-4 py-3">
+                    <DataTable
+                        head={['Nomor', 'Sekolah', 'Terbit', 'Jumlah', 'Status', '']}
+                    >
+                        {invoices.data.map((invoice) => (
+                            <TableRow key={invoice.id}>
+                                <TableCell className="font-mono text-xs">
+                                    {invoice.number}
+                                </TableCell>
+                                <TableCell>
                                     <Link
-                                        href={consolePath(showTenant.url({ tenant: invoice.tenantId }))}
-                                        className="font-medium text-foreground hover:underline"
+                                        href={consolePath(
+                                            showTenant.url({
+                                                tenant: invoice.tenantId,
+                                            }),
+                                        )}
+                                        className="font-medium hover:underline"
                                     >
                                         {invoice.tenantName}
                                     </Link>
                                     <p className="mt-0.5 text-xs text-muted-foreground">
+                                        {invoice.planName} ·{' '}
                                         {cycleLabel[invoice.cycle]}
                                     </p>
-                                </td>
-                                <td className="px-4 py-3">{formatDate(invoice.issuedAt)}</td>
-                                <td className="px-4 py-3">{formatRupiah(invoice.amount)}</td>
-                                <td className="px-4 py-3">
-                                    <StatusChip status={invoice.status} />
-                                </td>
-                            </tr>
+                                </TableCell>
+                                <TableCell>
+                                    {formatDate(invoice.issuedAt)}
+                                    <p className="mt-0.5 text-xs text-muted-foreground">
+                                        jatuh tempo {formatDate(invoice.dueAt)}
+                                    </p>
+                                </TableCell>
+                                <TableCell>
+                                    {formatRupiah(invoice.amount)}
+                                </TableCell>
+                                <TableCell>
+                                    <StatusChip status={invoice.state} />
+                                </TableCell>
+                                <TableCell>
+                                    {invoice.status === 'unpaid' && (
+                                        <div className="flex gap-2">
+                                            <Button
+                                                size="sm"
+                                                onClick={() =>
+                                                    send(
+                                                        'post',
+                                                        payInvoice.url({ invoice: invoice.id }),
+                                                    )
+                                                }
+                                            >
+                                                Tandai lunas
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() =>
+                                                    send(
+                                                        'post',
+                                                        voidInvoice.url({ invoice: invoice.id }),
+                                                    )
+                                                }
+                                            >
+                                                Batalkan
+                                            </Button>
+                                        </div>
+                                    )}
+                                </TableCell>
+                            </TableRow>
                         ))}
-                    </Table>
+                    </DataTable>
                 )}
+                <ListPagination page={invoices} />
             </div>
         </ProviderLayout>
     );

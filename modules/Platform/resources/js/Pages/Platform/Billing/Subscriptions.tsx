@@ -1,114 +1,163 @@
 import { Head, Link } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
-import { consolePath } from '../../../Components/consolePath';
+import { useState } from 'react';
+import type { FormEvent } from 'react';
 
+import { subscriptions as subscriptionsIndex } from '@/actions/Modules/Platform/App/Http/Controllers/BillingController';
 import { show as showTenant } from '@/actions/Modules/Platform/App/Http/Controllers/TenantConsoleController';
+import { Button } from '@shared/components/ui/button';
+import { Input } from '@shared/components/ui/input';
+import { TableCell, TableRow } from '@shared/components/ui/table';
 
-import ProviderLayout from '../../../Components/ProviderLayout';
+import { consolePath } from '../../../Components/consolePath';
 import {
+    DataTable,
     EmptyState,
+    ListPagination,
+    OptionSelect,
     PageHeader,
     StatusChip,
-    Table,
-    inputClass,
-} from '../../../Components/ui';
-import { cycleLabel, formatDate, formatRupiah } from '../../../Components/format';
-import type { ConsolePlan, ConsoleSubscription } from '../../../types/console';
+} from '../../../Components/ConsoleParts';
+import {
+    cycleLabel,
+    formatDate,
+    formatRupiah,
+} from '../../../Components/format';
+import ProviderLayout from '../../../Components/ProviderLayout';
+import { applyFilters } from '../../../Components/send';
+import type {
+    ConsoleSubscription,
+    Paginated,
+    PlanOption,
+} from '../../../types/console';
 
 interface SubscriptionsProps {
-    subscriptions: ConsoleSubscription[];
-    plans: ConsolePlan[];
+    subscriptions: Paginated<ConsoleSubscription>;
+    filters: { q: string; status: string; cycle: string; plan: string };
+    plans: PlanOption[];
 }
 
-/** Every tenant's subscription; detail and actions live on the tenant page. */
+/** Every tenant's subscription; actions live on the tenant page. */
 export default function BillingSubscriptions({
     subscriptions,
+    filters,
     plans,
 }: SubscriptionsProps) {
-    const [status, setStatus] = useState('');
-    const [cycle, setCycle] = useState('');
+    const [query, setQuery] = useState(filters.q);
+    const base = subscriptionsIndex.url();
 
-    const rows = useMemo(
-        () =>
-            subscriptions.filter(
-                (subscription) =>
-                    (status === '' || subscription.status === status) &&
-                    (cycle === '' || subscription.cycle === cycle),
-            ),
-        [subscriptions, status, cycle],
-    );
+    function change(next: Partial<typeof filters>) {
+        applyFilters(base, { ...filters, q: query, ...next });
+    }
 
-    const planLabel = (key: string) =>
-        plans.find((plan) => plan.key === key)?.label ?? key;
+    function search(event: FormEvent) {
+        event.preventDefault();
+        change({});
+    }
 
     return (
         <ProviderLayout>
             <Head title="Daftar langganan" />
 
             <PageHeader
-                title="Langganan"
+                title="Daftar langganan"
                 description="Ubah paket, siklus, atau perpanjangan dari halaman tenant."
             />
 
-            <div className="mt-8 grid gap-3 sm:grid-cols-[12rem_12rem]">
-                <select
-                    value={status}
-                    onChange={(event) => setStatus(event.target.value)}
-                    aria-label="Filter status"
-                    className={inputClass}
-                >
-                    <option value="">Semua status</option>
-                    <option value="trial">Uji coba</option>
-                    <option value="active">Aktif</option>
-                    <option value="due">Jatuh tempo</option>
-                    <option value="overdue">Menunggak</option>
-                    <option value="cancelled">Berhenti</option>
-                </select>
-                <select
-                    value={cycle}
-                    onChange={(event) => setCycle(event.target.value)}
-                    aria-label="Filter siklus"
-                    className={inputClass}
-                >
-                    <option value="">Semua siklus</option>
-                    <option value="monthly">Bulanan</option>
-                    <option value="yearly">Tahunan</option>
-                </select>
-            </div>
+            <form
+                onSubmit={search}
+                className="mt-8 grid gap-3 sm:grid-cols-[1fr_11rem_11rem_11rem_auto]"
+            >
+                <Input
+                    type="search"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Cari nama sekolah"
+                    aria-label="Cari sekolah"
+                />
+                <OptionSelect
+                    label="Filter mode"
+                    allLabel="Semua mode"
+                    value={filters.status}
+                    onChange={(status) => change({ status })}
+                    options={[
+                        { value: 'trial', label: 'Uji coba' },
+                        { value: 'active', label: 'Berlangganan' },
+                        { value: 'cancelled', label: 'Berhenti' },
+                    ]}
+                />
+                <OptionSelect
+                    label="Filter siklus"
+                    allLabel="Semua siklus"
+                    value={filters.cycle}
+                    onChange={(cycle) => change({ cycle })}
+                    options={[
+                        { value: 'monthly', label: 'Bulanan' },
+                        { value: 'yearly', label: 'Tahunan' },
+                    ]}
+                />
+                <OptionSelect
+                    label="Filter paket"
+                    allLabel="Semua paket"
+                    value={filters.plan}
+                    onChange={(plan) => change({ plan })}
+                    options={plans.map((plan) => ({
+                        value: plan.key,
+                        label: plan.name,
+                    }))}
+                />
+                <Button type="submit" variant="outline">
+                    Cari
+                </Button>
+            </form>
 
             <div className="mt-6">
-                {rows.length === 0 ? (
+                {subscriptions.data.length === 0 ? (
                     <EmptyState>Tidak ada langganan yang cocok.</EmptyState>
                 ) : (
-                    <Table head={['Sekolah', 'Paket', 'Status', 'Periode', 'Tarif']}>
-                        {rows.map((subscription) => (
-                            <tr key={subscription.tenantId} className="hover:bg-muted">
-                                <td className="px-4 py-3">
+                    <DataTable
+                        head={['Sekolah', 'Paket', 'Status', 'Periode', 'Tarif']}
+                    >
+                        {subscriptions.data.map((subscription) => (
+                            <TableRow key={subscription.id}>
+                                <TableCell>
                                     <Link
-                                        href={consolePath(showTenant.url({ tenant: subscription.tenantId }))}
-                                        className="font-medium text-foreground hover:underline"
+                                        href={consolePath(
+                                            showTenant.url({
+                                                tenant: subscription.tenantId,
+                                            }),
+                                        )}
+                                        className="font-medium hover:underline"
                                     >
                                         {subscription.tenantName}
                                     </Link>
-                                </td>
-                                <td className="px-4 py-3">
-                                    {planLabel(subscription.plan)}
+                                </TableCell>
+                                <TableCell>
+                                    {subscription.planName}
                                     <p className="mt-0.5 text-xs text-muted-foreground">
                                         {cycleLabel[subscription.cycle]}
                                     </p>
-                                </td>
-                                <td className="px-4 py-3">
-                                    <StatusChip status={subscription.status} />
-                                </td>
-                                <td className="px-4 py-3 text-xs text-muted-foreground">
-                                    {formatDate(subscription.startedAt)} –{' '}
-                                    {formatDate(subscription.endsAt)}
-                                </td>
-                                <td className="px-4 py-3">{formatRupiah(subscription.amount)}</td>
-                            </tr>
+                                </TableCell>
+                                <TableCell>
+                                    <StatusChip status={subscription.state} />
+                                </TableCell>
+                                <TableCell className="text-xs text-muted-foreground">
+                                    {subscription.status === 'trial'
+                                        ? `Uji coba sampai ${subscription.trialEndsAt ? formatDate(subscription.trialEndsAt) : '—'}`
+                                        : subscription.periodStart &&
+                                            subscription.periodEnd
+                                          ? `${formatDate(subscription.periodStart)} – ${formatDate(subscription.periodEnd)}`
+                                          : '—'}
+                                </TableCell>
+                                <TableCell>
+                                    {subscription.amount !== null
+                                        ? formatRupiah(subscription.amount)
+                                        : '—'}
+                                </TableCell>
+                            </TableRow>
                         ))}
-                    </Table>
+                    </DataTable>
                 )}
+                <ListPagination page={subscriptions} />
             </div>
         </ProviderLayout>
     );
