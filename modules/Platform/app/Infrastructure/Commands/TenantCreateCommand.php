@@ -14,8 +14,7 @@ class TenantCreateCommand extends Command
 {
     protected $signature = 'tenant:create
         {name : Human-readable tenant name}
-        {slug : URL slug (subdomain), lowercase letters/digits/dashes}
-        {--domain= : Optional custom domain}
+        {slug : Unique slug, lowercase letters/digits/dashes}
         {--timezone= : IANA timezone (default: config tenancy.default_timezone)}
         {--modules=* : Module keys to enable for this tenant}';
 
@@ -65,9 +64,6 @@ class TenantCreateCommand extends Command
         $tenant = Tenant::query()->create([
             'name' => trim((string) $this->argument('name')),
             'slug' => $slug,
-            'domain' => $this->option('domain') !== null
-                ? mb_strtolower(trim((string) $this->option('domain')))
-                : null,
             'timezone' => $timezone,
             'status' => TenantStatus::Active,
         ]);
@@ -76,8 +72,7 @@ class TenantCreateCommand extends Command
             $flags->enable($tenant->id, $module);
         }
 
-        $this->info("Tenant [{$tenant->name}] created: {$tenant->slug}.".
-            (config('tenancy.central_domains')[0] ?? 'localhost'));
+        $this->info("Tenant [{$tenant->name}] created. School code (login): {$tenant->id}");
 
         return self::SUCCESS;
     }

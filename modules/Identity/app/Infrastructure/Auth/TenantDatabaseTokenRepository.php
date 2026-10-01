@@ -21,7 +21,7 @@ use Modules\Platform\App\Contracts\TenantContext;
  * in tenant A is never found on tenant B, even for the same email.
  *
  * Callers MUST run inside the target tenant's context (HTTP requests on
- * a school subdomain always do; CLI flows wrap themselves). Without a
+ * a school session always do; CLI flows wrap themselves). Without a
  * context the repository fails closed with TenantNotSetException — it
  * must never fall back to an email-only row.
  */

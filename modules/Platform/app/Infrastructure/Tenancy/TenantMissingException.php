@@ -5,13 +5,13 @@ namespace Modules\Platform\App\Infrastructure\Tenancy;
 use RuntimeException;
 
 /**
- * Internal: the request host is not a central domain and matches no
- * tenant (by slug or custom domain). The middleware converts this into
- * a generic 404 — fail closed.
+ * Internal: the school code matches no tenant. The middleware leaves
+ * the request without tenant context (callers answer generically) —
+ * fail closed.
  */
 final class TenantMissingException extends RuntimeException
 {
-    public function __construct(string $message = 'No tenant matches this host.')
+    public function __construct(string $message = 'No tenant matches this school code.')
     {
         parent::__construct($message);
     }

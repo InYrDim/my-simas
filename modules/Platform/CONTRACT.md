@@ -3,7 +3,8 @@
 ## Owns
 
 - Database tables: `tenants`, `tenant_modules`, `tenant_applications`
-  (school applications: central form → provider review), Spatie
+  (school applications: central form → provider review), `plans`,
+  `subscriptions`, `invoices` (provider-side subscription billing), Spatie
   permission tables (`permissions`, `roles`, `model_has_permissions`,
   `model_has_roles`, `role_has_permissions`), `provider_users`
 - Core domain concepts: tenancy (tenant resolution, tenant context,
@@ -70,10 +71,12 @@
   (own rows + global). Runs its own `TenantContext::run` (safe from
   central/CLI); fails closed on an unknown tenant id — never a global
   role.
-- `TenantUrl` (Fase 2): `host($tenantId)`, `scheme()`, `port()`,
-  `root($tenantId)` — the URL root for links built inside queued
-  mails (queue workers have no trustworthy request root). Scheme/port
-  from `config('tenancy.url_scheme')` / `url_port`.
+- `TenantUrl` (Fase 2): `host()`, `scheme()`, `port()`, `root()`,
+  `url($tenantId, $path, $query)` — links built inside queued mails
+  (queue workers have no trustworthy request root). Every tenant
+  shares the first central host; `url()` appends `school=<tenant id>`
+  so the link resolves the tenant on arrival. Scheme/port from
+  `config('tenancy.url_scheme')` / `url_port`.
 - `TenantApplications` (Fase 2) + `ApplicationData` readonly DTO
   (Contracts/DTOs): `submit(payload)` (slug reserved/taken checks,
   one pending application per email), `pending()`,
@@ -92,7 +95,7 @@
   `InvalidApplicationException` (slug conflicts at submit/approve).
 
 Internal (private): Tenant model + `TenantStatus` enum, TenantScope,
-`SubdomainTenantResolver` (interface `TenantResolver`), `TenantHydrator`,
+`SchoolCodeTenantResolver` (interface `TenantResolver`), `TenantHydrator`,
 `TenantBridge` (context-change seam; Spatie hooks in Stage 6),
 `ResolveTenant` middleware, `PlatformException` base,
 `TenantApplication` model + status enum, the application review
@@ -102,14 +105,24 @@ tenancy only through contracts/DTOs — never the Tenant model.
 
 ## Tenant resolution (the one strategy)
 
-- Host normalization: lowercase, strip port and trailing dot.
-- Host ∈ `config('tenancy.central_domains')` → **null** → request runs
-  without tenant (central). No fallback, no override.
-- `"{slug}.{central}"` (exactly one subdomain level) → lookup by slug.
-- Anything else → lookup by custom `domain` column.
-- No match → generic 404 (`TenantMissingException` → NotFoundHttpException).
+Tenants are NOT resolved from the host. A school is identified by its
+**school code** (the tenant id today; NPSN later — `SchoolCodeTenantResolver`
+is the only place that mapping lives):
+
+- Console host (`config('tenancy.console_domain')`, default
+  `console.localhost`) → never a tenant; hosts the provider console
+  (`/login`, `/dashboard`, `/applications`).
+- Logged-in session → the tenant stored in the session (`tenant_id`) is
+  authoritative; a `school` input cannot switch it.
+- Guest + `school` input (login/forgot-password form field, emailed
+  link query) → resolved, then remembered in the session.
+- Guest + session tenant → the school chosen earlier in the session.
+- Unknown/malformed code → NO tenant context (no 404): the controllers
+  answer generically (same error as a wrong password) so codes cannot
+  be probed. Malformed codes never reach the database.
 - Suspended tenant → 403 (resolver still resolves it; middleware decides).
 - Lookups cached (5 min) as plain ids; models re-hydrated via `TenantHydrator`.
+- Slug and custom `domain` columns are no longer used for resolution.
 
 `ResolveTenant` middleware: forgets context at request start (and in the
 `terminate` terminator — Octane-safe), resolves, adopts the DTO. Wired
@@ -205,7 +218,7 @@ changes flush the `TenantHydrator` cache entry for the tenant.
 Dev seeding: `PlatformDevSeeder` (local only, called from
 `DatabaseSeeder`) creates sekolah-a (Jakarta; core+identity) and
 sekolah-b (Makassar; core), a provider console login
-`provider@simas.test` / `password`, and one pending application
+`admin@simas.com` / `admin123`, and one pending application
 (sekolah-c) so the review → ACC → provisioning flow runs end-to-end
 without filling the public form. The dev login user
 `admin@sekolah-a.test` / `password` gets its admin-sekolah role from
@@ -227,9 +240,10 @@ in `modules/Shared/resources/js/types/tenant.ts` re-exported by root
 request with tenant context, an authenticated user whose `tenant_id`
 attribute differs from the resolved tenant is logged out and the
 session invalidated. Generic by design — inspects the `tenant_id`
-attribute, never imports Identity. Primary isolation is host-only
-session cookies (`SESSION_DOMAIN` unset); this middleware is the second
-layer if a cookie leaks (e.g. misconfigured shared session domain).
+attribute, never imports Identity. Primary isolation is the per-session tenant
+(`tenant_id` in the session); schools now share one host, so this
+middleware is the second layer: a session whose user belongs to another
+tenant is logged out.
 
 ## Allowed dependencies
 
@@ -251,8 +265,60 @@ every layer via the `php_internal` collector.
 
 - None.
 
+## Subscription billing & master data (provider console)
+
+Billing lives inside Platform (no Billing module). Internal only — nothing
+here is under `Contracts/` except what is listed at the end of this section.
+
+- **Tables.** `plans` (key, name, `price_monthly`, `price_yearly` in whole
+  rupiah, `max_users` nullable = unlimited, `modules` json, `is_active`,
+  `sort_order`, `archived_at`), `subscriptions` (ONE per tenant, unique
+  `tenant_id`; `plan_id` is a plain indexed column, no FK), `invoices`
+  (`number` INV-YYMM-####, snapshot `plan_name`/`billing_cycle`/`amount`,
+  `status` unpaid|paid|void). The only FK is `tenant_id → tenants`.
+- **Modes.** Stored `subscriptions.status` = `trial` | `active` |
+  `cancelled`. Date-derived display states (`Subscription::displayState()`):
+  `trial`, `trial_expired`, `active`, `due` (active, ends within 7 days),
+  `overdue` (active, period passed), `cancelled`. No scheduler or job writes
+  these — they are computed from dates.
+- **Flow.** Approving an application starts a trial
+  (`SubscriptionManager::startTrial`, in the approval transaction; a missing
+  trial plan only logs a warning). `activate()` issues an UNPAID invoice;
+  `payInvoice()` charges the gateway and, on success, marks the invoice paid,
+  sets the subscription active, extends the period (continuing from the old
+  end when still running, else from today) and syncs the plan's modules
+  (never disabling `core` or `config('tenancy.onboarding_modules')`).
+  Plan change takes effect on modules immediately and on price from the next
+  invoice (no proration). Cancelling does NOT suspend the tenant.
+- **Payment stub.** `PaymentGateway::charge()` is bound to
+  `AlwaysSucceedsPaymentGateway`, which ALWAYS returns `true`. Real billing is
+  deferred; replace the binding in `PlatformServiceProvider`.
+- **Seeding.** `BillingMasterDataSeeder` (idempotent, production-safe) creates
+  the initial plans. Run in production with
+  `php artisan db:seed --class="Modules\Platform\Database\Seeders\BillingMasterDataSeeder"`.
+  `PlatformDevSeeder` (local only) calls it and gives `sekolah-a` an active
+  subscription and `sekolah-b` a trial.
+
+### Master data & assumptions (confirm / change as needed)
+
+| Item | Current value | Where |
+|---|---|---|
+| Plan Starter | Rp150.000/bln, Rp1.500.000/thn, 25 users, modules core+identity | `BillingMasterDataSeeder` |
+| Plan Standard | Rp350.000/bln, Rp3.500.000/thn, 100 users, core+identity | same |
+| Plan Pro | Rp750.000/bln, Rp7.500.000/thn, unlimited users, core+identity | same |
+| Yearly price | 10 × monthly (assumption) | same |
+| Trial | 14 days, plan `starter`, automatic on approval, no auto-suspend | `config/billing.php` |
+| Invoice due | 7 days after issue | `config/billing.php` |
+| "Due soon" window | 7 days | `config/billing.php` |
+| Plan modules | `attendance`/`ppdb` are not registered yet, so every plan lists only core+identity until they register | plans table |
+
+Public additions: `Contracts/TenantDirectory` (read-only tenant lookup for
+other modules' provider pages) and `TenantRoles::rolePermissions()`.
+
 ## Explicitly NOT exposed
 
+- `Plan`, `Subscription`, `Invoice`, `SubscriptionManager`, `InvoiceIssuer`,
+  `PaymentGateway`, `BillingSummary`, `TenantLifecycle`.
 - `Tenant` Eloquent model, `TenantStatus`, anything under
   `App/Domain/**`, `App/Infrastructure/**`, `App/Http/**`, `database/**`.
 - The `TenantResolver` interface and its implementation — internal by
@@ -265,8 +331,9 @@ every layer via the `php_internal` collector.
   migrations — proven by `php artisan migrate:fresh` ordering.
 - Central requests must NOT hit `currentOrFail()` (shared-props and
   central pages use `current()`/`id()` and handle null).
-- Session cookies stay host-only (`SESSION_DOMAIN` unset): a session from
-  tenant A is not sent to tenant B's host. Verified by test.
+- Schools share one host, so session isolation rests on the session's
+  own `tenant_id` + `EnsureSessionTenant`; a logged-in session ignores
+  a different `school` input. Verified by test.
 - `ProviderUser` lives here, not in Identity.
 - Deptrac notes: `ClassLikeConfig::create()` doubles backslashes — write
   patterns with single backslashes. NativePhp layer uses

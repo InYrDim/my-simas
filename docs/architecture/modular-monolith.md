@@ -126,7 +126,7 @@ another module's internals.
 
 Platform shares two props with the frontend (`ShareTenantContext`
 middleware, before the Inertia middleware): `tenant` — `{name, slug,
-timezone}` or `null` on central hosts — and `modules` — the sorted list
+timezone}` or `null` when no school is selected — and `modules` — the sorted list
 of module keys active for the current tenant. `modules/Shared/resources
 /js/hooks/useTenant.ts` exposes `useTenant()`, `useModules()` and
 `hasModule(key)`; they read shared props only and know nothing of
@@ -253,6 +253,21 @@ boot.
   closure may run before `ResolveTenant` sets the context. Identity's
   login rate limiting therefore lives in the controller with the tenant
   id in the key.
+- **`ResolveTenant` must run AFTER `StartSession`.** The tenant comes
+  from the session (school code at login), so it is appended to the web
+  group and ordered with `appendToPriorityList(after: StartSession)`;
+  prepending it makes every logged-in request tenant-less.
+- **Never pass the `school` field to `Auth::validate()`** — the provider
+  turns every credential key into a WHERE column. Pass only
+  `email`/`password`.
+- **`/login` exists twice** (console host = provider, anywhere else =
+  school): the console `Route::domain()` routes in Platform must
+  register BEFORE Identity's. Platform's provider is listed first in
+  `bootstrap/providers.php`; keep that order.
+- **A logged-in session whose school is gone is ended, not resolved** —
+  never call the web guard's `logout()` without a tenant context (it
+  reads the user through the tenant-scoped provider); drop the session
+  and `forgetUser()` instead (see `ResolveTenant`).
 - **`Route::middleware('web')->inertia(...)` does not exist** — use
   `Route::middleware('web')->get(..., fn () => Inertia::render(...))`.
 - **Module routes via `loadRoutesFrom()` do NOT inherit the root `web`
@@ -284,16 +299,20 @@ boot.
 
 ### Production requirements (multi-tenant DNS/SSL)
 
-- Wildcard DNS `*.your-domain.com` + wildcard TLS certificate for
-  tenant subdomains (custom domains terminate per-tenant).
-- `SESSION_DOMAIN` must stay UNSET (host-only cookies): a shared session
-  domain would leak tenant sessions across subdomains. `EnsureSessionTenant`
-  (web group) is the second layer: a session whose user belongs to
-  another tenant is logged out on mismatch.
+- DNS for the central domain and the provider console host
+  (`TENANCY_CONSOLE_DOMAIN`, e.g. `console.your-domain.com`); no
+  wildcard DNS/certificate is needed — schools share the central host
+  and log in with their school code.
+- Keep `SESSION_DOMAIN` UNSET (host-only cookies, so the console and
+  school sessions never mix). `EnsureSessionTenant` (web group) is the
+  second layer: a session whose user belongs to another tenant is
+  logged out on mismatch.
 - Queue worker + scheduler run centrally; jobs carry their tenant in
   the payload (Stage 4 propagation) — no per-tenant workers needed.
-- Dev: `*.localhost` resolves locally without /etc/hosts entries; seed
-  demo tenants with `php artisan db:seed` (local only).
+- Dev: `localhost:8000/login` for schools (school code = tenant id,
+  printed by `db:seed`), `console.localhost:8000/login` for the provider
+  (`*.localhost` resolves without /etc/hosts entries); seed demo
+  tenants with `php artisan db:seed` (local only).
 
 ## Fase 2 (built — auth & onboarding)
 
@@ -304,8 +323,8 @@ staged record; this section is the canonical summary).
 
 Public application form on the central host (`/daftar-sekolah`,
 throttle IP + honeypot, owned by Platform) → provider reviews in the
-platform console (`platform/applications`, guard `provider`,
-central-only) → approve corrects school data from the form (the
+platform console (`console.localhost/applications`, guard `provider`,
+console host only) → approve corrects school data from the form (the
 corrected payload is the FINAL tenant data) → inside one transaction:
 tenant row created (`TenantCreated` fires → default roles seeded),
 onboarding modules enabled from `config('tenancy.onboarding_modules')`
@@ -423,3 +442,19 @@ A Fase 1 deviation from the original plan is recorded in git history:
 `password_reset_tokens` was NOT made tenant-aware in Fase 1 (the plan
 allowed touching it; it was deliberately left central to keep the auth
 surface minimal) — fixed in Fase 2 Stage 4.
+
+## Provider-console billing and school admins (Fase 3)
+
+- **Billing is Platform-internal** (`plans`, `subscriptions`, `invoices`;
+  services under `Infrastructure/Billing`). No Billing module. Cross-table
+  links are plain indexed columns — the only FK stays `tenant_id → tenants`.
+  The payment step is a stub (`AlwaysSucceedsPaymentGateway`, always `true`).
+  Initial plans come from `BillingMasterDataSeeder`; values and assumptions
+  are recorded in `modules/Platform/CONTRACT.md`.
+- **School admins across tenants are an Identity page.** Platform cannot import
+  Identity, so `Console/SchoolAdminController` lives in Identity on the console
+  host (`auth:provider`), reads tenants through Platform's read-only
+  `Contracts/TenantDirectory`, and runs every action inside the target tenant's
+  context. Its console route registers before the tenant `/users` routes.
+- Platform additions to its public surface: `TenantDirectory`,
+  `TenantRoles::rolePermissions()`.

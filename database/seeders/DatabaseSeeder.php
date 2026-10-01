@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Modules\Identity\Database\Factories\UserFactory;
 use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Domain\Models\Tenant;
@@ -21,7 +22,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Dev tenants (sekolah-a / sekolah-b) for subdomain testing —
+        // Dev tenants (sekolah-a / sekolah-b) for local testing —
         // only in local, never in staging/production.
         if (! app()->isLocal()) {
             return;
@@ -44,6 +45,19 @@ class DatabaseSeeder extends Seeder
         $sekolahA = Tenant::query()->where('slug', 'sekolah-a')->first();
 
         if ($sekolahA === null) {
+            return;
+        }
+
+        // Idempotent: a re-seed must not trip unique(tenant_id, email).
+        // DB::table() bypasses the tenant scope, so no context is needed.
+        $exists = DB::table('users')
+            ->where('tenant_id', $sekolahA->id)
+            ->where('email', 'admin@sekolah-a.test')
+            ->exists();
+
+        if ($exists) {
+            $this->command->info('Dev user [admin@sekolah-a.test] already seeded.');
+
             return;
         }
 

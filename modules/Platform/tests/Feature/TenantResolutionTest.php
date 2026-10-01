@@ -28,95 +28,101 @@ beforeEach(function () {
     })->middleware(['web']);
 });
 
-it('resolves a tenant by subdomain and sets context', function () {
-    TenantFactory::new()->create(['slug' => 'sekolah-a']);
+it('resolves a tenant from the school code in the request', function () {
+    $tenant = TenantFactory::new()->create(['slug' => 'sekolah-a']);
 
-    get('http://sekolah-a.localhost/tenant-probe')
+    get('/tenant-probe?school='.$tenant->id)
         ->assertOk()
         ->assertSee('tenant-id:sekolah-a', false);
 });
 
-it('resolves a tenant by custom domain', function () {
-    TenantFactory::new()->create(['slug' => 'sekolah-a', 'domain' => 'sekolah-a.sch.id']);
+it('remembers the school in the session for later requests', function () {
+    $tenant = TenantFactory::new()->create(['slug' => 'sekolah-a']);
 
-    get('http://sekolah-a.sch.id/tenant-probe')
+    get('/tenant-probe?school='.$tenant->id)->assertSessionHas('tenant_id', $tenant->id);
+
+    get('/tenant-probe')
         ->assertOk()
         ->assertSee('tenant-id:sekolah-a', false);
 });
 
-it('rejects an unknown host with a generic 404', function () {
+it('runs without tenant context for an unknown or malformed school code', function () {
     TenantFactory::new()->create(['slug' => 'sekolah-a']);
 
-    get('http://unknown.localhost/tenant-probe')->assertNotFound();
+    get('/tenant-probe?school=01ARZ3NDEKTSV4RRFFQ69G5FAV')
+        ->assertOk()
+        ->assertSee('tenant-id:central', false);
+
+    get('/tenant-probe?school=sekolah-a')
+        ->assertOk()
+        ->assertSee('tenant-id:central', false);
 });
 
-it('rejects an unknown custom domain with a generic 404', function () {
-    get('http://random.sch.id/tenant-probe')->assertNotFound();
+it('forgets a remembered school when a new unknown code replaces it', function () {
+    $tenant = TenantFactory::new()->create(['slug' => 'sekolah-a']);
+
+    get('/tenant-probe?school='.$tenant->id)->assertSee('tenant-id:sekolah-a', false);
+
+    get('/tenant-probe?school=01ARZ3NDEKTSV4RRFFQ69G5FAV')
+        ->assertSee('tenant-id:central', false)
+        ->assertSessionMissing('tenant_id');
 });
 
 it('rejects a suspended tenant with 403', function () {
-    TenantFactory::new()->suspended()->create(['slug' => 'sekolah-b']);
+    $tenant = TenantFactory::new()->suspended()->create(['slug' => 'sekolah-b']);
 
-    get('http://sekolah-b.localhost/tenant-probe')->assertForbidden();
+    get('/tenant-probe?school='.$tenant->id)->assertForbidden();
 });
 
-it('runs central hosts without tenant context', function () {
-    TenantFactory::new()->create(['slug' => 'sekolah-a']);
+it('runs without tenant context when no school is given', function () {
+    get('/tenant-probe')
+        ->assertOk()
+        ->assertSee('tenant-id:central', false);
+});
 
-    get('http://localhost/tenant-probe')
+it('never resolves a tenant from the host', function () {
+    TenantFactory::new()->create(['slug' => 'sekolah-a', 'domain' => 'sekolah-a.sch.id']);
+
+    get('http://sekolah-a.localhost/tenant-probe')
+        ->assertOk()
+        ->assertSee('tenant-id:central', false);
+
+    get('http://sekolah-a.sch.id/tenant-probe')
+        ->assertOk()
+        ->assertSee('tenant-id:central', false);
+});
+
+it('never lets the console host carry a tenant', function () {
+    $tenant = TenantFactory::new()->create(['slug' => 'sekolah-a']);
+
+    get('http://console.localhost/tenant-probe?school='.$tenant->id)
         ->assertOk()
         ->assertSee('tenant-id:central', false);
 });
 
 it('does not leak context between sequential requests', function () {
-    TenantFactory::new()->create(['slug' => 'sekolah-a']);
+    $tenant = TenantFactory::new()->create(['slug' => 'sekolah-a']);
 
-    get('http://sekolah-a.localhost/tenant-probe')
-        ->assertOk()
+    get('/tenant-probe?school='.$tenant->id)
         ->assertSee('tenant-id:sekolah-a', false);
 
-    get('http://localhost/tenant-probe')
+    $this->flushSession();
+
+    get('/tenant-probe')
         ->assertOk()
         ->assertSee('tenant-id:central', false);
-
-    get('http://sekolah-a.localhost/tenant-probe')
-        ->assertOk()
-        ->assertSee('tenant-id:sekolah-a', false);
-});
-
-it('rejects multi-level subdomains instead of treating them as slugs', function () {
-    get('http://a.b.localhost/tenant-probe')->assertNotFound();
 });
 
 it('keeps the session cookie host-only when SESSION_DOMAIN is null', function () {
     config()->set('session.domain', null);
 
-    TenantFactory::new()->create(['slug' => 'sekolah-a']);
+    $tenant = TenantFactory::new()->create(['slug' => 'sekolah-a']);
 
-    $response = get('http://sekolah-a.localhost/tenant-probe');
+    $response = get('/tenant-probe?school='.$tenant->id);
 
-    $cookies = $response->headers->getCookies();
+    collect($response->headers->getCookies())
+        ->filter(fn (Cookie $cookie): bool => str_contains($cookie->getName(), 'session'))
+        ->each(fn (Cookie $cookie) => expect($cookie->getDomain())->toBeNull());
 
-    $sessionCookies = collect($cookies)->filter(
-        fn (Cookie $cookie): bool => str_contains($cookie->getName(), 'session'),
-    );
-
-    if ($sessionCookies->isNotEmpty()) {
-        // Host-only cookie: Symfony returns domain null (no Domain= attribute)
-        // so the browser only sends it back to sekolah-a.localhost.
-        $sessionCookies->each(
-            fn (Cookie $cookie) => expect($cookie->getDomain())->toBeNull(),
-        );
-    } else {
-        // No session data set by the probe route; assert config intent.
-        expect(config('session.domain'))->toBeNull();
-    }
-});
-
-it('normalizes host case and port', function () {
-    TenantFactory::new()->create(['slug' => 'sekolah-a']);
-
-    get('http://SEKOLAH-A.localhost:8080/tenant-probe')
-        ->assertOk()
-        ->assertSee('tenant-id:sekolah-a', false);
+    expect(config('session.domain'))->toBeNull();
 });

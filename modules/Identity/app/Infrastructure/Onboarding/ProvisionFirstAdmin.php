@@ -70,9 +70,10 @@ final class ProvisionFirstAdmin
             DB::transaction(function () use ($user, $event): void {
                 $token = $this->minter->mint($user);
 
-                $url = $this->tenantUrl->root($event->tenantId)
-                    .'/set-password?token='.$token.'&email='.
-                    urlencode($user->email);
+                $url = $this->tenantUrl->url($event->tenantId, 'set-password', [
+                    'token' => $token,
+                    'email' => $user->email,
+                ]);
 
                 Mail::to($user->email)->queue(new SetPasswordMail(
                     $url,

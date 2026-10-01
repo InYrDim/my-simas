@@ -1,15 +1,33 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
-import type { FormEvent } from 'react';
-
-import type { ApplicationData } from '@/types/ApplicationData';
+import type { FormEvent, ReactNode } from 'react';
 
 import {
     approve as approveApplication,
+    index as applicationsIndex,
     reject as rejectApplication,
 } from '@/actions/Modules/Platform/App/Http/Controllers/ApplicationReviewController';
+import type { ApplicationData } from '../../../types/ApplicationData';
+import { Alert, AlertDescription } from '@shared/components/ui/alert';
+import { Button } from '@shared/components/ui/button';
+import {
+    Field,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+} from '@shared/components/ui/field';
+import { Input } from '@shared/components/ui/input';
+import { Textarea } from '@shared/components/ui/textarea';
 
-import { destroy as providerLogout } from '@/actions/Modules/Platform/App/Http/Controllers/Auth/ProviderAuthenticatedSessionController';
+import { consolePath } from '../../../Components/consolePath';
+import {
+    DefinitionList,
+    OptionSelect,
+    PageHeader,
+    Panel,
+    StatusChip,
+} from '../../../Components/ConsoleParts';
+import ProviderLayout from '../../../Components/ProviderLayout';
 
 interface ShowProps {
     application: ApplicationData;
@@ -39,280 +57,201 @@ export default function ApplicationsShow({ application }: ShowProps) {
         event.preventDefault();
 
         decideForm.post(
-            approveApplication.url({ application: application.id }),
+            consolePath(approveApplication.url({ application: application.id })),
         );
     }
 
     function reject(event: FormEvent) {
         event.preventDefault();
 
-        decideForm.post(rejectApplication.url({ application: application.id }));
+        decideForm.post(
+            consolePath(rejectApplication.url({ application: application.id })),
+        );
+    }
+
+    const rows: [string, ReactNode][] = [
+        [
+            'Pengaju',
+            `${application.applicantName} (${application.applicantEmail})`,
+        ],
+        [
+            'Slug diajukan',
+            <span key="slug" className="font-mono">
+                /{application.desiredSlug}
+            </span>,
+        ],
+    ];
+
+    if (application.applicantMessage !== null) {
+        rows.push(['Pesan', application.applicantMessage]);
+    }
+
+    if (application.adminNote !== null) {
+        rows.push(['Catatan', application.adminNote]);
     }
 
     return (
-        <div className="min-h-[100dvh] bg-zinc-950">
-            <header className="flex h-16 items-center justify-between border-b border-zinc-800 px-6">
-                <div className="flex items-center gap-6">
-                    <span className="text-sm font-semibold text-zinc-100">
-                        Console Provider
-                    </span>
-
-                    <Link
-                        href="/platform/applications"
-                        className="text-sm text-zinc-400 transition-colors hover:text-zinc-200"
-                    >
-                        ← Pengajuan
-                    </Link>
-                </div>
-
-                <Link
-                    href={providerLogout.url()}
-                    method="post"
-                    as="button"
-                    className="text-sm text-zinc-400 transition-colors hover:text-zinc-200"
-                >
-                    Keluar
-                </Link>
-            </header>
-
+        <ProviderLayout width="max-w-2xl">
             <Head title={`${application.schoolName} — Review`} />
 
-            <main className="mx-auto max-w-2xl px-6 py-10">
-                <div className="flex items-center justify-between">
-                    <h1 className="text-xl font-semibold text-zinc-100">
-                        {application.schoolName}
-                    </h1>
+            <Button asChild variant="link" className="px-0">
+                <Link href={consolePath(applicationsIndex.url())}>
+                    Kembali ke pengajuan
+                </Link>
+            </Button>
 
-                    <span
-                        className={
-                            isPending(application.status)
-                                ? 'rounded-full border border-amber-800/60 bg-amber-950/40 px-2.5 py-0.5 text-xs font-medium text-amber-300'
-                                : 'rounded-full border border-zinc-700 bg-zinc-900 px-2.5 py-0.5 text-xs font-medium text-zinc-400'
-                        }
-                    >
-                        {application.status}
-                    </span>
-                </div>
+            <PageHeader
+                title={application.schoolName}
+                actions={<StatusChip status={application.status} />}
+            />
 
-                <dl className="mt-6 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-5 py-4 text-sm">
-                    <dt className="text-zinc-500">Pengaju</dt>
-                    <dd className="text-zinc-200">
-                        {application.applicantName} (
-                        {application.applicantEmail})
-                    </dd>
+            <Panel className="mt-6">
+                <DefinitionList rows={rows} />
+            </Panel>
 
-                    <dt className="text-zinc-500">Slug diajukan</dt>
-                    <dd className="font-mono text-zinc-200">
-                        /{application.desiredSlug}
-                    </dd>
+            {(decideForm.errors as Record<string, string>).application !== undefined && (
+                <Alert variant="destructive" className="mt-6">
+                    <AlertDescription>
+                        {(decideForm.errors as Record<string, string>).application}
+                    </AlertDescription>
+                </Alert>
+            )}
 
-                    {application.applicantMessage !== null && (
-                        <>
-                            <dt className="text-zinc-500">Pesan</dt>
-                            <dd className="text-zinc-300">
-                                {application.applicantMessage}
-                            </dd>
-                        </>
-                    )}
-
-                    {application.adminNote !== null && (
-                        <>
-                            <dt className="text-zinc-500">Catatan</dt>
-                            <dd className="text-zinc-300">
-                                {application.adminNote}
-                            </dd>
-                        </>
-                    )}
-                </dl>
-
-                {decideForm.errors.application !== undefined && (
-                    <div className="mt-6 rounded-lg border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-300">
-                        {decideForm.errors.application}
-                    </div>
-                )}
-
-                {isPending(application.status) ? (
-                    <>
-                        <form
-                            onSubmit={approve}
-                            className="mt-8 flex flex-col gap-4 rounded-lg border border-zinc-800 bg-zinc-900/50 p-5"
-                            noValidate
-                        >
-                            <h2 className="text-sm font-semibold text-zinc-100">
-                                Setujui — koreksi data bila perlu
-                            </h2>
-                            <p className="text-xs text-zinc-500">
+            {isPending(application.status) ? (
+                <>
+                    <form onSubmit={approve} noValidate className="mt-8">
+                        <Panel title="Setujui — koreksi data bila perlu">
+                            <p className="mb-4 text-xs text-muted-foreground">
                                 Data di form ini menjadi data final tenant.
                             </p>
-
-                            <label className="flex flex-col gap-1.5 text-sm">
-                                <span className="text-zinc-400">
-                                    Nama sekolah
-                                </span>
-                                <input
-                                    type="text"
-                                    name="school_name"
-                                    value={decideForm.data.school_name}
-                                    onChange={(event) =>
-                                        decideForm.setData(
-                                            'school_name',
-                                            event.target.value,
-                                        )
-                                    }
-                                    className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 focus:border-emerald-600 focus:outline-none"
-                                    required
-                                />
-                                {decideForm.errors.school_name !==
-                                    undefined && (
-                                    <span className="text-xs text-red-400">
-                                        {decideForm.errors.school_name}
-                                    </span>
-                                )}
-                            </label>
-
-                            <label className="flex flex-col gap-1.5 text-sm">
-                                <span className="text-zinc-400">
-                                    Slug (subdomain)
-                                </span>
-                                <input
-                                    type="text"
-                                    name="desired_slug"
-                                    value={decideForm.data.desired_slug}
-                                    onChange={(event) =>
-                                        decideForm.setData(
-                                            'desired_slug',
-                                            event.target.value,
-                                        )
-                                    }
-                                    className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 font-mono text-zinc-100 focus:border-emerald-600 focus:outline-none"
-                                    required
-                                />
-                                {decideForm.errors.desired_slug !==
-                                    undefined && (
-                                    <span className="text-xs text-red-400">
-                                        {decideForm.errors.desired_slug}
-                                    </span>
-                                )}
-                            </label>
-
-                            <label className="flex flex-col gap-1.5 text-sm">
-                                <span className="text-zinc-400">
-                                    Zona waktu
-                                </span>
-                                <select
-                                    name="timezone"
-                                    value={decideForm.data.timezone}
-                                    onChange={(event) =>
-                                        decideForm.setData(
-                                            'timezone',
-                                            event.target.value,
-                                        )
-                                    }
-                                    className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 focus:border-emerald-600 focus:outline-none"
-                                >
-                                    {TIMEZONES.map((timezone) => (
-                                        <option key={timezone} value={timezone}>
-                                            {timezone}
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
-
-                            <label className="flex flex-col gap-1.5 text-sm">
-                                <span className="text-zinc-400">
-                                    Catatan (opsional)
-                                </span>
-                                <textarea
-                                    name="admin_note"
-                                    value={decideForm.data.admin_note}
-                                    onChange={(event) =>
-                                        decideForm.setData(
-                                            'admin_note',
-                                            event.target.value,
-                                        )
-                                    }
-                                    rows={2}
-                                    className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 focus:border-emerald-600 focus:outline-none"
-                                />
-                            </label>
-
-                            <button
+                            <FieldGroup>
+                                <Field data-invalid={!!decideForm.errors.school_name}>
+                                    <FieldLabel htmlFor="school-name">
+                                        Nama sekolah
+                                    </FieldLabel>
+                                    <Input
+                                        id="school-name"
+                                        value={decideForm.data.school_name}
+                                        onChange={(event) =>
+                                            decideForm.setData('school_name', event.target.value)
+                                        }
+                                        aria-invalid={!!decideForm.errors.school_name}
+                                        required
+                                    />
+                                    <FieldError>{decideForm.errors.school_name}</FieldError>
+                                </Field>
+                                <Field data-invalid={!!decideForm.errors.desired_slug}>
+                                    <FieldLabel htmlFor="school-slug">
+                                        Slug sekolah
+                                    </FieldLabel>
+                                    <Input
+                                        id="school-slug"
+                                        value={decideForm.data.desired_slug}
+                                        onChange={(event) =>
+                                            decideForm.setData('desired_slug', event.target.value)
+                                        }
+                                        className="font-mono"
+                                        aria-invalid={!!decideForm.errors.desired_slug}
+                                        required
+                                    />
+                                    <FieldError>{decideForm.errors.desired_slug}</FieldError>
+                                </Field>
+                                <Field>
+                                    <FieldLabel>Zona waktu</FieldLabel>
+                                    <OptionSelect
+                                        label="Zona waktu"
+                                        value={decideForm.data.timezone}
+                                        onChange={(timezone) =>
+                                            decideForm.setData('timezone', timezone)
+                                        }
+                                        options={TIMEZONES.map((timezone) => ({
+                                            value: timezone,
+                                            label: timezone,
+                                        }))}
+                                    />
+                                </Field>
+                                <Field>
+                                    <FieldLabel htmlFor="admin-note">
+                                        Catatan (opsional)
+                                    </FieldLabel>
+                                    <Textarea
+                                        id="admin-note"
+                                        value={decideForm.data.admin_note}
+                                        onChange={(event) =>
+                                            decideForm.setData('admin_note', event.target.value)
+                                        }
+                                        rows={2}
+                                    />
+                                </Field>
+                            </FieldGroup>
+                            <Button
                                 type="submit"
+                                className="mt-5 w-full"
                                 disabled={decideForm.processing}
-                                className="mt-1 w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 {decideForm.processing
                                     ? 'Memproses...'
                                     : 'Setujui & buat sekolah'}
-                            </button>
-                        </form>
+                            </Button>
+                        </Panel>
+                    </form>
 
-                        {rejecting ? (
-                            <form
-                                onSubmit={reject}
-                                className="mt-4 flex flex-col gap-4 rounded-lg border border-red-900/50 bg-red-950/20 p-5"
-                                noValidate
-                            >
-                                <h2 className="text-sm font-semibold text-red-200">
-                                    Tolak pengajuan ini?
-                                </h2>
-
-                                <label className="flex flex-col gap-1.5 text-sm">
-                                    <span className="text-zinc-400">
+                    {rejecting ? (
+                        <form onSubmit={reject} noValidate className="mt-4">
+                            <Panel title="Tolak pengajuan ini?">
+                                <Field>
+                                    <FieldLabel htmlFor="reject-note">
                                         Alasan (opsional)
-                                    </span>
-                                    <textarea
-                                        name="reject_note"
+                                    </FieldLabel>
+                                    <Textarea
+                                        id="reject-note"
                                         value={decideForm.data.admin_note}
                                         onChange={(event) =>
-                                            decideForm.setData(
-                                                'admin_note',
-                                                event.target.value,
-                                            )
+                                            decideForm.setData('admin_note', event.target.value)
                                         }
                                         rows={2}
-                                        className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 focus:border-red-600 focus:outline-none"
                                     />
-                                </label>
-
-                                <div className="flex gap-3">
-                                    <button
+                                </Field>
+                                <div className="mt-4 flex gap-3">
+                                    <Button
                                         type="submit"
+                                        variant="destructive"
                                         disabled={decideForm.processing}
-                                        className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-500 disabled:opacity-60"
                                     >
                                         Ya, tolak
-                                    </button>
-
-                                    <button
+                                    </Button>
+                                    <Button
                                         type="button"
+                                        variant="outline"
                                         onClick={() => setRejecting(false)}
-                                        className="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 transition-colors hover:bg-zinc-900"
                                     >
                                         Batal
-                                    </button>
+                                    </Button>
                                 </div>
-                            </form>
-                        ) : (
-                            <button
-                                type="button"
-                                onClick={() => setRejecting(true)}
-                                className="mt-4 text-sm text-red-400 transition-colors hover:text-red-300"
-                            >
-                                Tolak pengajuan...
-                            </button>
-                        )}
-                    </>
-                ) : (
-                    <p className="mt-8 rounded-lg border border-zinc-800 bg-zinc-900/50 px-5 py-4 text-sm text-zinc-400">
+                            </Panel>
+                        </form>
+                    ) : (
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            className="mt-4 text-destructive"
+                            onClick={() => setRejecting(true)}
+                        >
+                            Tolak pengajuan...
+                        </Button>
+                    )}
+                </>
+            ) : (
+                <Panel className="mt-8">
+                    <p className="text-sm text-muted-foreground">
                         Pengajuan ini sudah diputuskan ({application.status}
                         {application.decidedAt !== null
                             ? `, ${application.decidedAt}`
                             : ''}
                         ). Tidak ada aksi lagi.
                     </p>
-                )}
-            </main>
-        </div>
+                </Panel>
+            )}
+        </ProviderLayout>
     );
 }

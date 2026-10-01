@@ -12,8 +12,8 @@ use Inertia\Response;
 use Modules\Platform\App\Domain\Models\ProviderUser;
 
 /**
- * Provider console session auth: CENTRAL hosts only (the routes carry
- * EnsureCentralHost), authenticated via the dedicated 'provider' guard
+ * Provider console session auth: the console host only (the routes are
+ * bound to it), authenticated via the dedicated 'provider' guard
  * against `provider_users` — fully separate from tenant logins
  * (different guard, different users table, different hosts).
  *

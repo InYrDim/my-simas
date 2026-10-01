@@ -13,7 +13,7 @@ type SetPasswordProps = {
 };
 
 /**
- * "Set password" acceptance (tenant host): the emailed link a newly
+ * "Set password" acceptance (school portal): the emailed link a newly
  * provisioned account (first school admin, invitations) uses to
  * activate — set a password, and the server verifies the email and
  * logs the user in. Same token machinery as reset; the page decides

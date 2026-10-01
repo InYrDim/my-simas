@@ -316,6 +316,11 @@ IdentityServiceProvider).
 - Deptrac flattens traits: consumers of Platform's public traits are
   skipped per-class in deptrac.baseline.yaml (grow ONLY for that).
 - DB::table() bypasses the tenant scope — Eloquent only for tenant data.
+- ResolveTenant runs AFTER StartSession (tenant lives in the session;
+  appendToPriorityList(after: StartSession)). Never pass `school` to
+  Auth::validate(). Console-host /login (provider) must register before
+  Identity's /login. End a logged-in session with no school via
+  session invalidate + forgetUser(), never guard->logout().
 
 ## Events across modules
 
@@ -336,3 +341,12 @@ The tracked, canonical version of this policy lives in
 docs/architecture/modular-monolith.md — update it whenever the surface
 or rules change (this AGENTS.md copy is intentionally gitignored; keep
 them in sync).
+
+## Billing and provider-console users (Fase 3)
+
+Subscription billing (plans/subscriptions/invoices, trial vs subscribed) is
+Platform-internal; payment is the always-true stub `PaymentGateway`. School
+admins across tenants are managed by Identity's `Console/SchoolAdminController`
+on the console host. New Platform contracts: `TenantDirectory`,
+`TenantRoles::rolePermissions()`. Details: modules/Platform/CONTRACT.md and
+docs/architecture/modular-monolith.md.

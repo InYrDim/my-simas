@@ -13,7 +13,7 @@ use Illuminate\Queue\SerializesModels;
  * admin from TenantApproved, and later email invitations — Stage 10
  * reuses this exact mail). Queued; the URL is prebuilt by the sender
  * via Platform's TenantUrl contract, so the worker never needs a
- * request root and the link lands on the TENANT host.
+ * request root and the link carries the school code.
  *
  * The text view resolves through the `Identity::` view namespace
  * (modules/Identity/mail, registered in IdentityServiceProvider).

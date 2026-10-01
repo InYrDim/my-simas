@@ -92,10 +92,10 @@ class User extends Authenticatable
             return;
         }
 
-        $url = app(TenantUrl::class)
-            ->root($this->tenant_id)
-            .'/reset-password?token='.$token.'&email='.
-            urlencode($this->email);
+        $url = app(TenantUrl::class)->url($this->tenant_id, 'reset-password', [
+            'token' => $token,
+            'email' => $this->email,
+        ]);
 
         Mail::to($this->email)
             ->queue(new ResetPasswordMail($url));

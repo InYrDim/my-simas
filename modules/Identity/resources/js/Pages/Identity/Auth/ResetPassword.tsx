@@ -13,7 +13,7 @@ type ResetPasswordProps = {
 };
 
 /**
- * "Reset password" (tenant host): consumes a tenant-scoped token from
+ * "Reset password" (school portal): consumes a tenant-scoped token from
  * the email link and sets the new password. On success the user is
  * logged in server-side and redirected home.
  */

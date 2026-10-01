@@ -47,7 +47,7 @@ it('requires the provider guard for review routes', function () {
     TenantApplicationFactory::new()->create();
 
     // Guest on central host → redirected to provider login.
-    get('http://localhost/platform/applications')
+    get('http://console.localhost/applications')
         ->assertRedirect(route('platform.login'));
 });
 
@@ -81,7 +81,7 @@ it('rejects a tenant web session on platform review routes', function () {
 
     actingAs($webUser, 'web');
 
-    get('http://localhost/platform/applications')
+    get('http://console.localhost/applications')
         ->assertRedirect(route('platform.login'));
 });
 
@@ -92,7 +92,7 @@ it('does not let a provider session authenticate tenant routes', function () {
     // Real provider login on the central host to obtain its session
     // cookie (actingAs persists guard state in the test process, which
     // would defeat the cross-host check).
-    post('http://localhost/platform/login', [
+    post('http://console.localhost/login', [
         'email' => 'staff@simas.test',
         'password' => 'password',
     ])->assertRedirect();
@@ -106,7 +106,7 @@ it('does not let a provider session authenticate tenant routes', function () {
     // with the central cookie replayed, the tenant host must see a
     // web-guard guest — no tenant identity leaks from the provider
     // session.
-    get('http://guard-b.localhost/tenant-review-probe', [
+    get(school('guard-b', '/tenant-review-probe'), [
         'Cookie' => $sessionCookie !== null
             ? $sessionCookie->getName().'='.$sessionCookie->getValue()
             : '',
@@ -123,7 +123,7 @@ it('lists pending applications for the provider', function () {
         'desired_slug' => 'sma-antrian',
     ]);
 
-    get('http://localhost/platform/applications')
+    get('http://console.localhost/applications')
         ->assertOk()
         ->assertInertia(
             fn ($page) => $page
@@ -141,7 +141,7 @@ it('shows one application with full detail', function () {
         'applicant_message' => 'Tolong cepat',
     ]);
 
-    get("http://localhost/platform/applications/{$application->id}")
+    get("http://console.localhost/applications/{$application->id}")
         ->assertOk()
         ->assertInertia(
             fn ($page) => $page
@@ -159,7 +159,7 @@ it('approves from the UI end-to-end: tenant provisioned', function () {
         'desired_slug' => 'sma-acc',
     ]);
 
-    post("http://localhost/platform/applications/{$application->id}/approve", [
+    post("http://console.localhost/applications/{$application->id}/approve", [
         'school_name' => 'SMA ACC',
         'desired_slug' => 'sma-acc',
         'timezone' => 'Asia/Jakarta',
@@ -180,7 +180,7 @@ it('applies provider corrections from the approve form to the final tenant', fun
         'desired_slug' => 'sma-salah',
     ]);
 
-    post("http://localhost/platform/applications/{$application->id}/approve", [
+    post("http://console.localhost/applications/{$application->id}/approve", [
         'school_name' => 'SMA Benar',
         'desired_slug' => 'sma-benar',
         'timezone' => 'Asia/Makassar',
@@ -200,7 +200,7 @@ it('surfaces contract validation errors on approve instead of crashing', functio
     TenantFactory::new()->create(['slug' => 'sma-bentrok-ui']);
     $application = TenantApplicationFactory::new()->create();
 
-    post("http://localhost/platform/applications/{$application->id}/approve", [
+    post("http://console.localhost/applications/{$application->id}/approve", [
         'school_name' => 'SMA Bentrok',
         'desired_slug' => 'sma-bentrok-ui',
         'timezone' => 'Asia/Jakarta',
@@ -219,7 +219,7 @@ it('rejects from the UI with a note and no side effects', function () {
         'desired_slug' => 'sma-tolak',
     ]);
 
-    post("http://localhost/platform/applications/{$application->id}/reject", [
+    post("http://console.localhost/applications/{$application->id}/reject", [
         'admin_note' => 'Data tidak lengkap',
     ])
         ->assertRedirect(route('platform.applications.index'));
@@ -236,7 +236,7 @@ it('validates required approve form fields', function () {
 
     $application = TenantApplicationFactory::new()->create();
 
-    post("http://localhost/platform/applications/{$application->id}/approve", [
+    post("http://console.localhost/applications/{$application->id}/approve", [
         'school_name' => '',
         'desired_slug' => '',
         'timezone' => 'Asia/Jakarta',

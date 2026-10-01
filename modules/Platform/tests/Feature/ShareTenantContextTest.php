@@ -24,7 +24,7 @@ it('shares tenant and module props on a tenant host', function () {
     // identity is flag-controlled (unlike always-active core).
     app(ModuleFlagManager::class)->enable($tenant->id, 'identity');
 
-    get('http://sekolah-a.localhost/tenant-share-probe')->assertOk();
+    get(school('sekolah-a', '/tenant-share-probe'))->assertOk();
 
     // The middleware wrote into Inertia's shared-prop registry; read it
     // back to assert exactly what the frontend would receive.

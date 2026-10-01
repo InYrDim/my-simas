@@ -1,0 +1,81 @@
+{
+  "title": "Beranda Sekolah — pilih komposisi",
+  "question": "The roll assigned Waktu Sekolah. Keep it, take an alternate, or re-roll.",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "Waktu Sekolah",
+      "kicker": "THE ROLL",
+      "lineage": "the school's own page of the day, framed by its own timezone",
+      "thesis": "The page is headed by the one thing no two schools share — its own time — so the record reads as today's state, not a dashboard.",
+      "palette": ["#18181b", "#71717a", "#e4e4e7", "#fafafa", "#fcd34d", "#047857"],
+      "materials": ["paper white", "hairline rules", "one dated line", "flat ink"],
+      "viewport": "At 390px: bar, school name, the date in 20px with the zone in mono beneath it, then today's single honest line and one full-width green action.",
+      "risk": "A date with no history behind it can read as decorative, and invites \"why is this hardcoded?\" — the timezone is per-tenant, the day is real, nothing else on the page is dated.",
+      "wireframe": {
+        "cols": 12,
+        "rows": 18,
+        "regions": [
+          { "label": "top bar", "x": 0, "y": 0, "w": 12, "h": 1 },
+          { "label": "school name", "x": 0, "y": 2, "w": 9, "h": 1 },
+          { "label": "date + zone (mono)", "x": 0, "y": 3, "w": 7, "h": 1, "accent": true },
+          { "label": "today's single line", "x": 0, "y": 5, "w": 12, "h": 2 },
+          { "label": "one green action", "x": 0, "y": 7, "w": 12, "h": 2, "accent": true },
+          { "label": "identity meta lines", "x": 0, "y": 10, "w": 12, "h": 4 },
+          { "label": "manage users link", "x": 0, "y": 15, "w": 5, "h": 1 }
+        ]
+      }
+    },
+    {
+      "id": "alternate-ledger",
+      "label": "Kolom Ganda",
+      "lineage": "a ruled double-entry table, phone-width",
+      "thesis": "Every fact the school can be held to sits in one hairline table, name left, number right, with nothing above the fold that is not a number.",
+      "palette": ["#18181b", "#3f3f46", "#a1a1aa", "#e4e4e7", "#fafafa", "#047857"],
+      "materials": ["hairline rules", "paper white", "flat ink", "no cards"],
+      "viewport": "At 390px: bar, a BUKU BESAR eyebrow, then four ruled rows — Akun, Aktif, Dinonaktifkan, Belum punya peran — the last in amber, and the action last so the numbers are seen first.",
+      "risk": "Density is the whole argument and it is unforgiving: one wrong number or one unexplained word costs the page its authority, and the numbers say nothing about what to do next.",
+      "wireframe": {
+        "cols": 12,
+        "rows": 16,
+        "regions": [
+          { "label": "top bar", "x": 0, "y": 0, "w": 12, "h": 1 },
+          { "label": "BUKU BESAR eyebrow", "x": 0, "y": 2, "w": 4, "h": 1 },
+          { "label": "four ruled rows, numbers right", "x": 0, "y": 3, "w": 12, "h": 5, "accent": true },
+          { "label": "amber provisional row", "x": 0, "y": 6, "w": 12, "h": 1, "accent": true },
+          { "label": "roles as one trailing line", "x": 0, "y": 9, "w": 10, "h": 1 },
+          { "label": "one green action", "x": 0, "y": 11, "w": 12, "h": 2 },
+          { "label": "manage users link", "x": 0, "y": 14, "w": 5, "h": 1 }
+        ]
+      }
+    },
+    {
+      "id": "alternate-roles",
+      "label": "Rak Peran",
+      "lineage": "the three school roles laid out as a shelf",
+      "thesis": "The school's roles are the subject — Admin Sekolah, Guru, Staf/TU as three ruled rows — so a new admin learns the shape of their school before being asked to fill it.",
+      "palette": ["#18181b", "#52525b", "#a1a1aa", "#e4e4e7", "#fafafa", "#047857"],
+      "materials": ["hairline rules", "paper white", "role labels as rows", "flat ink"],
+      "viewport": "At 390px: bar, a PERAN SEKOLAH eyebrow, one count line in 14px, then the three role names as 44px ruled rows each closing on the word \"terdefinisi\".",
+      "risk": "The honest state word is identical on all three rows — the shelf proves the roles exist, never that anyone holds them, because per-role counts would need a second contract crossing.",
+      "wireframe": {
+        "cols": 12,
+        "rows": 17,
+        "regions": [
+          { "label": "top bar", "x": 0, "y": 0, "w": 12, "h": 1 },
+          { "label": "PERAN SEKOLAH eyebrow", "x": 0, "y": 2, "w": 5, "h": 1 },
+          { "label": "one count line", "x": 0, "y": 3, "w": 11, "h": 1 },
+          { "label": "role row — Admin Sekolah", "x": 0, "y": 5, "w": 12, "h": 2, "accent": true },
+          { "label": "role row — Guru", "x": 0, "y": 7, "w": 12, "h": 2, "accent": true },
+          { "label": "role row — Staf/TU", "x": 0, "y": 9, "w": 12, "h": 2, "accent": true },
+          { "label": "one green action", "x": 0, "y": 12, "w": 12, "h": 2 },
+          { "label": "manage users link", "x": 0, "y": 15, "w": 5, "h": 1 }
+        ]
+      }
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code" },
+  "canon": false
+}

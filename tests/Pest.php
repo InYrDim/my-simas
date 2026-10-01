@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Modules\Platform\App\Domain\Models\Tenant;
 use Tests\TestCase;
 
 /*
@@ -66,7 +67,25 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * Point the next request(s) at a school: remembers the tenant in the
+ * session (what a real login/emailed link does) and returns the path,
+ * so it drops straight into get()/post()/... in place of a tenant host.
+ */
+function school(string $slug, string $path = '/'): string
 {
-    // ..
+    test()->withSession(['tenant_id' => schoolId($slug)]);
+
+    return $path === '' ? '/' : $path;
+}
+
+/**
+ * The tenant id (= school code) for a tenant slug.
+ */
+function schoolId(string $slug): string
+{
+    return (string) Tenant::query()
+        ->withoutGlobalScopes()
+        ->where('slug', $slug)
+        ->value('id');
 }

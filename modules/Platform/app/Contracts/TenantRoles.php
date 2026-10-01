@@ -32,4 +32,12 @@ interface TenantRoles
      * @return array<int, string>
      */
     public function names(string $tenantId): array;
+
+    /**
+     * Each visible role of the tenant with its permission names (sorted),
+     * keyed by role machine name. Same visibility as names().
+     *
+     * @return array<string, array<int, string>>
+     */
+    public function rolePermissions(string $tenantId): array;
 }

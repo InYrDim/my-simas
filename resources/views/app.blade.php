@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['dark' => ($appearance ?? 'system') == 'dark'])>
+{{-- The console host carries the console theme tokens on <html> so portalled
+     shadcn overlays (dialog, tooltip, sheet) inherit them too. --}}
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['dark' => ($appearance ?? 'system') == 'dark', 'console-theme' => request()->getHost() === config('tenancy.console_domain')])>
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,6 +11,7 @@
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
         @fonts
+
 
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx', $pageVitePath])

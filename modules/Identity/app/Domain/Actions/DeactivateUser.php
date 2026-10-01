@@ -45,6 +45,23 @@ final class DeactivateUser
     }
 
     /**
+     * Provider-console variant: there is no acting school user, so only
+     * the last-active-admin invariant applies.
+     */
+    public function handleAsProvider(User $target): void
+    {
+        $this->context->run($target->tenant_id, function () use ($target): void {
+            if ($this->isLastActiveAdmin($target)) {
+                throw new DeactivationNotAllowedException(
+                    'The last active school admin cannot be deactivated.',
+                );
+            }
+
+            $target->forceFill(['deactivated_at' => now()])->save();
+        });
+    }
+
+    /**
      * Whether the target is the tenant's only ACTIVE admin-sekolah.
      * Deactivated admins do not count as guardians (they cannot act).
      */

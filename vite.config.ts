@@ -15,6 +15,9 @@ export default defineConfig({
             '@shared': fileURLToPath(
                 new URL('./modules/Shared/resources/js', import.meta.url),
             ),
+            '@platform': fileURLToPath(
+                new URL('./modules/Platform/resources/js', import.meta.url),
+            ),
         },
     },
     plugins: lazyPlugins(() => [

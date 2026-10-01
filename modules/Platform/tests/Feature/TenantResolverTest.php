@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -8,13 +9,13 @@ use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Contracts\TenantData;
 use Modules\Platform\App\Domain\Models\Tenant;
 use Modules\Platform\App\Domain\Models\TenantStatus;
-use Modules\Platform\App\Infrastructure\Tenancy\SubdomainTenantResolver;
+use Modules\Platform\App\Infrastructure\Tenancy\SchoolCodeTenantResolver;
 use Modules\Platform\App\Infrastructure\Tenancy\TenantMissingException;
 use Modules\Platform\Database\Factories\TenantFactory;
 
-function resolver(): SubdomainTenantResolver
+function resolver(): SchoolCodeTenantResolver
 {
-    return app(SubdomainTenantResolver::class);
+    return app(SchoolCodeTenantResolver::class);
 }
 
 /**
@@ -31,49 +32,47 @@ function createTenant(array $attributes = []): Tenant
     return $tenant;
 }
 
-it('returns null for central domains', function () {
-    expect(resolver()->resolve('localhost'))->toBeNull()
-        ->and(resolver()->resolve('127.0.0.1'))->toBeNull();
-});
-
-it('resolves by slug for one-level subdomains of central domains', function () {
+it('resolves a tenant by its school code (the tenant id)', function () {
     $tenant = createTenant(['slug' => 'sekolah-a']);
 
-    $resolved = resolver()->resolve('sekolah-a.localhost');
+    $resolved = resolver()->resolve($tenant->id);
 
     expect($resolved)->toBeInstanceOf(TenantData::class)
         ->and($resolved->id)->toBe($tenant->id)
         ->and($resolved->slug)->toBe('sekolah-a');
 });
 
-it('rejects multi-level subdomains', function () {
-    resolver()->resolve('a.b.localhost');
-})->throws(TenantMissingException::class);
-
-it('resolves by custom domain outside central suffixes', function () {
-    $tenant = createTenant(['slug' => 'sekolah-a', 'domain' => 'sekolah-a.sch.id']);
-
-    expect(resolver()->resolve('sekolah-a.sch.id')->id)->toBe($tenant->id);
-});
-
-it('throws for hosts that match nothing', function () {
-    resolver()->resolve('nope.localhost');
-})->throws(TenantMissingException::class);
-
-it('normalizes case, port, and trailing dot', function () {
+it('normalizes case and surrounding whitespace in the code', function () {
     $tenant = createTenant(['slug' => 'sekolah-a']);
 
-    expect(resolver()->resolve('SEKOLAH-A.LOCALHOST:8080')->id)->toBe($tenant->id)
-        ->and(resolver()->resolve('sekolah-a.localhost.'))->toBeInstanceOf(TenantData::class);
+    expect(resolver()->resolve('  '.strtoupper($tenant->id).' ')->id)->toBe($tenant->id);
+});
+
+it('throws for codes that match no tenant', function () {
+    resolver()->resolve('01ARZ3NDEKTSV4RRFFQ69G5FAV');
+})->throws(TenantMissingException::class);
+
+it('throws for codes that cannot be a tenant id without querying', function () {
+    DB::enableQueryLog();
+
+    expect(fn () => resolver()->resolve('sekolah-a'))->toThrow(TenantMissingException::class)
+        ->and(DB::getQueryLog())->toBe([]);
+});
+
+it('does not resolve by slug or custom domain any more', function () {
+    createTenant(['slug' => 'sekolah-a', 'domain' => 'sekolah-a.sch.id']);
+
+    expect(fn () => resolver()->resolve('sekolah-a'))->toThrow(TenantMissingException::class)
+        ->and(fn () => resolver()->resolve('sekolah-a.sch.id'))->toThrow(TenantMissingException::class);
 });
 
 it('resolves suspended tenants so the middleware can return 403', function () {
     $tenant = createTenant(['slug' => 'sekolah-b', 'status' => 'suspended']);
 
-    $resolved = resolver()->resolve('sekolah-b.localhost');
+    $resolved = resolver()->resolve($tenant->id);
 
-    expect($resolved?->id)->toBe($tenant->id)
-        ->and($resolved?->status->value)->toBe('suspended');
+    expect($resolved->id)->toBe($tenant->id)
+        ->and($resolved->status->value)->toBe('suspended');
 });
 
 it('validates slug format, reserved slugs, and timezone', function () {

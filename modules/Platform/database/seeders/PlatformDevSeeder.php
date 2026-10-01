@@ -4,15 +4,19 @@ namespace Modules\Platform\Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Modules\Platform\App\Contracts\ModuleRegistry;
+use Modules\Platform\App\Domain\Models\Plan;
 use Modules\Platform\App\Domain\Models\ProviderUser;
+use Modules\Platform\App\Domain\Models\Subscription;
 use Modules\Platform\App\Domain\Models\Tenant;
 use Modules\Platform\App\Domain\Models\TenantApplication;
 use Modules\Platform\App\Domain\Models\TenantApplicationStatus;
 use Modules\Platform\App\Infrastructure\Modules\ModuleFlagManager;
+use Modules\Platform\Database\Factories\SubscriptionFactory;
 
 /**
  * Local-development tenants. NEVER runs outside local: it creates
- * predictable slugs (sekolah-a/sekolah-b) for subdomain testing.
+ * predictable slugs (sekolah-a/sekolah-b); log in with the school code
+ * printed below (the tenant id).
  */
 class PlatformDevSeeder extends Seeder
 {
@@ -39,25 +43,54 @@ class PlatformDevSeeder extends Seeder
                 }
             }
 
-            $this->command->info("Seeded tenant [{$tenant->slug}] ({$tenant->timezone}).");
+            $this->command->info("Seeded tenant [{$tenant->slug}] ({$tenant->timezone}) — school code: {$tenant->id}");
         }
+
+        $this->call(BillingMasterDataSeeder::class);
+        $this->seedSubscriptions();
 
         $this->seedProviderUser();
         $this->seedPendingApplication();
     }
 
     /**
+     * sekolah-a is a paying subscriber, sekolah-b is on trial. Rows are
+     * written directly (no module sync) so the dev tenants keep their
+     * deliberately different module sets. Idempotent per tenant.
+     */
+    protected function seedSubscriptions(): void
+    {
+        $starter = Plan::query()->where('key', 'starter')->firstOrFail();
+        $standard = Plan::query()->where('key', 'standard')->firstOrFail();
+
+        $subscribers = [
+            'sekolah-a' => SubscriptionFactory::new()->forPlan($standard->id)->active(20),
+            'sekolah-b' => SubscriptionFactory::new()->forPlan($starter->id)->trialEndingIn(14),
+        ];
+
+        foreach ($subscribers as $slug => $factory) {
+            $tenant = Tenant::query()->where('slug', $slug)->first();
+
+            if ($tenant === null || Subscription::query()->where('tenant_id', $tenant->id)->exists()) {
+                continue;
+            }
+
+            $factory->forTenant($tenant->id)->create();
+        }
+    }
+
+    /**
      * One provider staff account for the console (login at
-     * /platform/login on the central host).
+     * console.localhost/login).
      */
     protected function seedProviderUser(): void
     {
         ProviderUser::query()->firstOrCreate(
-            ['email' => 'provider@simas.test'],
-            ['name' => 'Provider Admin', 'password' => 'password'],
+            ['email' => 'admin@simas.com'],
+            ['name' => 'Provider Admin', 'password' => 'admin123'],
         );
 
-        $this->command->info('Seeded provider user [provider@simas.test] (password: password).');
+        $this->command->info('Seeded provider user [admin@simas.com] (password: admin123).');
     }
 
     /**

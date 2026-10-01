@@ -48,13 +48,14 @@ function tokenRowFor(string $tenantId, string $email): ?object
         ->first();
 }
 
-it('creates a tenant-scoped token row and emails a tenant-hosted link', function () {
+it('creates a tenant-scoped token row and emails a school-coded link', function () {
     Mail::fake();
 
     [$tenant, $user] = resetTenantUser('sekolah-a', 'budi@example.com');
 
-    from('http://sekolah-a.localhost/login')
-        ->post('http://sekolah-a.localhost/forgot-password', [
+    from(school('sekolah-a', '/login'))
+        ->post(school('sekolah-a', '/forgot-password'), [
+            'school' => schoolId('sekolah-a'),
             'email' => 'budi@example.com',
         ])->assertRedirect()
         ->assertSessionHas('status');
@@ -67,18 +68,20 @@ it('creates a tenant-scoped token row and emails a tenant-hosted link', function
 
     // The queued mail carries the tenant-hosted URL (built by the User
     // model via TenantUrl before queueing).
-    Mail::assertQueued(ResetPasswordMail::class, function (ResetPasswordMail $mail): bool {
-        return str_contains($mail->resetUrl, 'sekolah-a.localhost');
+    Mail::assertQueued(ResetPasswordMail::class, function (ResetPasswordMail $mail) use ($tenant): bool {
+        return str_contains($mail->resetUrl, 'school='.$tenant->id);
     });
 });
 
-it('builds reset links on the tenant host via TenantUrl', function () {
-    [$tenant, $user] = resetTenantUser('sekolah-a', 'budi@example.com');
+it('builds links on the shared host carrying the school code via TenantUrl', function () {
+    [$tenant] = resetTenantUser('sekolah-a', 'budi@example.com');
 
-    $root = app(TenantUrl::class)->root($tenant->id);
+    $urls = app(TenantUrl::class);
 
-    expect($root)->toBe('http://sekolah-a.localhost')
-        ->and(app(TenantUrl::class)->host($tenant->id))->toBe('sekolah-a.localhost');
+    expect($urls->root())->toBe('http://localhost')
+        ->and($urls->host())->toBe('localhost')
+        ->and($urls->url($tenant->id, '/set-password', ['token' => 'abc', 'email' => 'a+b@x.test']))
+        ->toBe('http://localhost/set-password?token=abc&email=a%2Bb%40x.test&school='.$tenant->id);
 });
 
 it('rejects a tenant A token on the tenant B host (same email)', function () {
@@ -95,7 +98,7 @@ it('rejects a tenant A token on the tenant B host (same email)', function () {
         ->and(tokenRowFor($tenantB->id, 'budi@example.com'))->toBeNull();
 
     // Present it on tenant B's host: refused (no row for B).
-    post('http://sekolah-b.localhost/reset-password', [
+    post(school('sekolah-b', '/reset-password'), [
         'token' => $token,
         'email' => 'budi@example.com',
         'password' => 'new-password-123',
@@ -115,7 +118,7 @@ it('resets the password of the right user and logs them in', function () {
         fn (): string => PasswordBrokerToken::create($userA),
     );
 
-    post('http://sekolah-a.localhost/reset-password', [
+    post(school('sekolah-a', '/reset-password'), [
         'token' => $token,
         'email' => 'budi@example.com',
         'password' => 'new-password-123',
@@ -140,7 +143,7 @@ it('refuses expired tokens', function () {
         ->where('email', 'budi@example.com')
         ->update(['created_at' => now()->subHours(2)]);
 
-    post('http://sekolah-a.localhost/reset-password', [
+    post(school('sekolah-a', '/reset-password'), [
         'token' => $token,
         'email' => 'budi@example.com',
         'password' => 'new-password-123',
@@ -155,8 +158,9 @@ it('responds generically and sends NO email for an unknown address', function ()
 
     resetTenantUser('sekolah-a', 'someone-else@example.com');
 
-    from('http://sekolah-a.localhost/forgot-password')
-        ->post('http://sekolah-a.localhost/forgot-password', [
+    from(school('sekolah-a', '/forgot-password'))
+        ->post(school('sekolah-a', '/forgot-password'), [
+            'school' => schoolId('sekolah-a'),
             'email' => 'ghost@example.com',
         ])->assertRedirect()
         ->assertSessionHas('status'); // same generic status
@@ -171,8 +175,9 @@ it('responds generically and sends NO email for a deactivated user', function ()
 
     $user->forceFill(['deactivated_at' => now()])->save();
 
-    from('http://sekolah-a.localhost/forgot-password')
-        ->post('http://sekolah-a.localhost/forgot-password', [
+    from(school('sekolah-a', '/forgot-password'))
+        ->post(school('sekolah-a', '/forgot-password'), [
+            'school' => schoolId('sekolah-a'),
             'email' => 'budi@example.com',
         ])->assertRedirect()
         ->assertSessionHas('status');
@@ -187,8 +192,9 @@ it('responds generically and sends NO email for a user without a password', func
 
     $user->forceFill(['password' => null])->save();
 
-    from('http://sekolah-a.localhost/forgot-password')
-        ->post('http://sekolah-a.localhost/forgot-password', [
+    from(school('sekolah-a', '/forgot-password'))
+        ->post(school('sekolah-a', '/forgot-password'), [
+            'school' => schoolId('sekolah-a'),
             'email' => 'invited@example.com',
         ])->assertRedirect()
         ->assertSessionHas('status');
@@ -196,12 +202,26 @@ it('responds generically and sends NO email for a user without a password', func
     Mail::assertNothingQueued();
 });
 
-it('refuses reset requests without tenant context (central host)', function () {
+it('requires a school code on reset requests', function () {
     resetTenantUser('sekolah-a', 'budi@example.com');
 
     post('http://localhost/forgot-password', [
         'email' => 'budi@example.com',
-    ])->assertSessionHasErrors('email');
+    ])->assertSessionHasErrors('school');
+});
+
+it('answers an unknown school code generically and sends nothing', function () {
+    Mail::fake();
+
+    resetTenantUser('sekolah-a', 'budi@example.com');
+
+    post('http://localhost/forgot-password', [
+        'school' => '01ARZ3NDEKTSV4RRFFQ69G5FAV',
+        'email' => 'budi@example.com',
+    ])->assertRedirect()
+        ->assertSessionHas('status');
+
+    Mail::assertNothingQueued();
 });
 
 /**

@@ -5,7 +5,7 @@ namespace Modules\Platform\App\Infrastructure\Commands;
 use Illuminate\Console\Command;
 use Modules\Platform\App\Domain\Models\Tenant;
 use Modules\Platform\App\Domain\Models\TenantStatus;
-use Modules\Platform\App\Infrastructure\Tenancy\TenantHydrator;
+use Modules\Platform\App\Infrastructure\Tenancy\TenantLifecycle;
 
 abstract class TenantStatusCommand extends Command
 {
@@ -21,7 +21,7 @@ abstract class TenantStatusCommand extends Command
      */
     abstract protected function verb(): string;
 
-    public function handle(): int
+    public function handle(TenantLifecycle $lifecycle): int
     {
         $slug = mb_strtolower(trim((string) $this->argument('tenant')));
 
@@ -40,12 +40,8 @@ abstract class TenantStatusCommand extends Command
             return self::SUCCESS;
         }
 
-        $tenant->status = $this->targetStatus();
-        $tenant->save();
-
-        // Flag lookups may be cached per tenant; status changes do not
-        // affect module flags, but the hydrator cache holds the old DTO.
-        TenantHydrator::flush($tenant->id);
+        // The lifecycle flushes the hydrator cache (it holds the old DTO).
+        $lifecycle->setStatus($tenant, $this->targetStatus());
 
         $this->info("Tenant [{$slug}] {$this->verb()}.");
 

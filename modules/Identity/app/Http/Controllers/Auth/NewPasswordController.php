@@ -42,7 +42,7 @@ final class NewPasswordController
 
         if ($tenantId === null) {
             throw ValidationException::withMessages([
-                'email' => __('Password reset is only available on a school subdomain.'),
+                'email' => __('Tautan tidak valid atau sudah kedaluwarsa.'),
             ]);
         }
 

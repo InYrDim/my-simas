@@ -6,17 +6,15 @@ use Modules\Platform\App\Contracts\TenantData;
 
 /**
  * Internal — other modules must not bind or replace this; middleware
- * only calls it. One strategy: central domains return null, a
- * "{slug}.{central}" host resolves by slug, everything else by custom
- * domain.
+ * only calls it. One strategy: the school code (tenant id today, NPSN
+ * later) identifies the tenant; hosts are irrelevant.
  */
 interface TenantResolver
 {
     /**
-     * Resolve the tenant for the given request host. Returns null when
-     * the host is a central domain (request must run without tenant).
+     * Resolve the tenant for a school code.
      *
      * @throws TenantMissingException when no tenant matches
      */
-    public function resolve(string $host): ?TenantData;
+    public function resolve(string $code): TenantData;
 }

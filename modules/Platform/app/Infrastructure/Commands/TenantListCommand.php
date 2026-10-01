@@ -15,7 +15,7 @@ class TenantListCommand extends Command
     {
         $tenants = Tenant::withTrashed()
             ->orderBy('slug')
-            ->get(['id', 'name', 'slug', 'domain', 'timezone', 'status', 'deleted_at']);
+            ->get(['id', 'name', 'slug', 'timezone', 'status', 'deleted_at']);
 
         if ($tenants->isEmpty()) {
             $this->info('No tenants yet. Create one with tenant:create.');
@@ -24,12 +24,11 @@ class TenantListCommand extends Command
         }
 
         $this->table(
-            ['ID', 'Name', 'Slug', 'Domain', 'Timezone', 'Status', 'Deleted'],
+            ['ID', 'Name', 'Slug', 'Timezone', 'Status', 'Deleted'],
             $tenants->map(fn (Tenant $t): array => [
                 $t->id,
                 $t->name,
                 $t->slug,
-                $t->domain ?? '-',
                 $t->timezone,
                 $t->status->value,
                 $t->deleted_at?->format('Y-m-d') ?? '-',
