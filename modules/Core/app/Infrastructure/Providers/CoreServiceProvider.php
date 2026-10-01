@@ -60,6 +60,7 @@ class CoreServiceProvider extends ServiceProvider
                 'children' => [
                     ['label' => 'Profil Sekolah', 'route' => 'core.master.school'],
                     ['label' => 'Tahun Ajaran', 'route' => 'core.master.years'],
+                    ['label' => 'Semester', 'route' => 'core.master.semesters'],
                     ['label' => 'Tingkat & Jurusan', 'route' => 'core.master.grades'],
                     ['label' => 'Kelas', 'route' => 'core.master.classes'],
                     ['label' => 'Mata Pelajaran', 'route' => 'core.master.subjects'],
@@ -87,6 +88,25 @@ class CoreServiceProvider extends ServiceProvider
                 'icon' => 'upload',
                 'route' => 'core.manage.import',
                 'order' => 40,
+            ],
+            [
+                'label' => 'Statistik & Laporan',
+                'icon' => 'chart-column',
+                'route' => 'core.insight.statistics',
+                'order' => 42,
+                'children' => [
+                    ['label' => 'Statistik', 'route' => 'core.insight.statistics'],
+                    ['label' => 'Laporan', 'route' => 'core.insight.reports'],
+                ],
+            ],
+            [
+                'label' => 'Integrasi',
+                'icon' => 'plug',
+                'route' => 'core.integration.whatsapp',
+                'order' => 60,
+                'children' => [
+                    ['label' => 'WhatsApp', 'route' => 'core.integration.whatsapp'],
+                ],
             ],
         ]);
     }

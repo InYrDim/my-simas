@@ -29,6 +29,7 @@ class IdentityServiceProvider extends ServiceProvider
 
         // Default role set (machine names, labels, permission sets).
         $this->mergeConfigFrom(__DIR__.'/../../../config/roles.php', 'roles');
+        $this->mergeConfigFrom(__DIR__.'/../../../config/permission_labels.php', 'permission_labels');
 
         // NOTE: the tenant-scoped password broker swap
         // (TenantPasswordResetServiceProvider) is NOT registered here.
@@ -119,6 +120,17 @@ class IdentityServiceProvider extends ServiceProvider
                 'route' => 'identity.users.index',
                 'permission' => 'identity.users.view',
                 'order' => 50,
+            ],
+            [
+                'label' => 'Sistem',
+                'icon' => 'shield-check',
+                'route' => 'identity.system.roles',
+                'permission' => 'identity.users.view',
+                'order' => 90,
+                'children' => [
+                    ['label' => 'Peran', 'route' => 'identity.system.roles', 'permission' => 'identity.users.view'],
+                    ['label' => 'Izin', 'route' => 'identity.system.permissions', 'permission' => 'identity.users.view'],
+                ],
             ],
         ]);
     }

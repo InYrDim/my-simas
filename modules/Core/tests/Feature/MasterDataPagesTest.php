@@ -30,6 +30,7 @@ function masterTenant(): string
 dataset('masterPages', [
     'school' => ['/master/sekolah', 'Core/Master/School/Show'],
     'years' => ['/master/tahun-ajaran', 'Core/Master/AcademicYears/Index'],
+    'semesters' => ['/master/semester', 'Core/Master/Semesters/Index'],
     'grades' => ['/master/tingkat-jurusan', 'Core/Master/Grades/Index'],
     'classes' => ['/master/kelas', 'Core/Master/Classes/Index'],
     'class' => ['/master/kelas/1', 'Core/Master/Classes/Show'],
@@ -47,6 +48,9 @@ dataset('masterPages', [
     'periods' => ['/akademik/jam-pelajaran', 'Core/Academic/Periods/Index'],
     'calendar' => ['/akademik/kalender', 'Core/Academic/Calendar/Index'],
     'import' => ['/kelola/impor', 'Core/Manage/Import/Index'],
+    'whatsapp' => ['/integrasi/whatsapp', 'Core/Integration/Whatsapp/Index'],
+    'statistics' => ['/statistik-laporan/statistik', 'Core/Insight/Statistics'],
+    'reports' => ['/statistik-laporan/laporan', 'Core/Insight/Reports'],
 ]);
 
 it('renders each master page for a school user', function (string $path, string $component) {
@@ -94,7 +98,7 @@ it('splits the sidebar into base data, academic management and import', function
 
     get(school($slug, '/beranda'))->assertInertia(fn (Assert $page) => $page
         ->where('tenantNav.1.label', 'Master Data')
-        ->has('tenantNav.1.children', 9)
+        ->has('tenantNav.1.children', 10)
         ->where('tenantNav.1.children.0.href', '/master/sekolah')
         ->where('tenantNav.2.label', 'Akademik')
         ->where('tenantNav.2.children', fn ($children) => collect($children)->pluck('href')->all() === [

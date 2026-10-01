@@ -86,6 +86,42 @@ final class MasterMockData
     }
 
     /**
+     * Every semester across the academic years, newest first, with its
+     * status: the active year's Genap is the running one, earlier ones are
+     * finished and the draft year's are upcoming. Only the running
+     * semester carries its week number.
+     *
+     * @return list<array{id: string, year: string, name: string, start: string, end: string, weeks: int, status: string, week: int|null}>
+     */
+    public function semesters(): array
+    {
+        $rows = [];
+
+        foreach ($this->academicYears()['years'] as $year) {
+            foreach ($year['semesters'] as $semester) {
+                $running = $year['status'] === 'active' && $semester['name'] === 'Genap';
+
+                $rows[] = [
+                    'id' => $year['id'].'-'.strtolower($semester['name']),
+                    'year' => $year['name'],
+                    'name' => $semester['name'],
+                    'start' => $semester['start'],
+                    'end' => $semester['end'],
+                    'weeks' => (int) ceil((strtotime($semester['end']) - strtotime($semester['start'])) / (7 * 86400)),
+                    'status' => match (true) {
+                        $running => 'current',
+                        $year['status'] === 'draft' => 'upcoming',
+                        default => 'finished',
+                    },
+                    'week' => $running ? 12 : null,
+                ];
+            }
+        }
+
+        return $rows;
+    }
+
+    /**
      * Grades (tingkat) for the current level.
      *
      * @return list<array{id: int, name: string, order: int, classes: int}>

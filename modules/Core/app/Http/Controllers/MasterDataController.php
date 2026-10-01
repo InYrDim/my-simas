@@ -5,6 +5,8 @@ namespace Modules\Core\App\Http\Controllers;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Core\App\Infrastructure\Mock\InsightMockData;
+use Modules\Core\App\Infrastructure\Mock\IntegrationMockData;
 use Modules\Core\App\Infrastructure\Mock\MasterMockData;
 use Modules\Platform\App\Contracts\TenantContext;
 
@@ -33,6 +35,13 @@ final class MasterDataController
     public function academicYears(Request $request): Response
     {
         return $this->render($request, 'Core/Master/AcademicYears/Index', fn (MasterMockData $data): array => $data->academicYears());
+    }
+
+    public function semesters(Request $request): Response
+    {
+        return $this->render($request, 'Core/Master/Semesters/Index', fn (MasterMockData $data): array => [
+            'semesters' => $data->semesters(),
+        ]);
     }
 
     public function grades(Request $request): Response
@@ -157,6 +166,26 @@ final class MasterDataController
     {
         return $this->render($request, 'Core/Manage/Import/Index', fn (MasterMockData $data): array => [
             'preview' => array_slice($data->students(), 0, 6),
+        ]);
+    }
+
+    public function statistics(Request $request): Response
+    {
+        return $this->render($request, 'Core/Insight/Statistics', fn (MasterMockData $data): array => (new InsightMockData($data))->statistics());
+    }
+
+    public function reports(Request $request): Response
+    {
+        return $this->render($request, 'Core/Insight/Reports', fn (MasterMockData $data): array => (new InsightMockData($data))->reports());
+    }
+
+    public function whatsapp(Request $request): Response
+    {
+        return $this->render($request, 'Core/Integration/Whatsapp/Index', fn (): array => [
+            'connection' => ($data = new IntegrationMockData)->whatsappConnection(),
+            'notifications' => $data->whatsappNotifications(),
+            'template' => $data->whatsappTemplate(),
+            'history' => $data->whatsappHistory(),
         ]);
     }
 

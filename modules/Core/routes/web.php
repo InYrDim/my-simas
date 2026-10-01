@@ -18,6 +18,7 @@ Route::middleware('web')->group(function (): void {
         Route::prefix('master')->name('core.master.')->controller(MasterDataController::class)->group(function (): void {
             Route::get('sekolah', 'school')->name('school');
             Route::get('tahun-ajaran', 'academicYears')->name('years');
+            Route::get('semester', 'semesters')->name('semesters');
             Route::get('tingkat-jurusan', 'grades')->name('grades');
             Route::get('kelas', 'classes')->name('classes');
             Route::get('kelas/{id}', 'classShow')->whereNumber('id')->name('classes.show');
@@ -43,5 +44,15 @@ Route::middleware('web')->group(function (): void {
 
         // Bulk import of base records (mockup phase).
         Route::get('kelola/impor', [MasterDataController::class, 'importData'])->name('core.manage.import');
+
+        // Integrasi with outside services (mockup phase).
+        Route::get('integrasi/whatsapp', [MasterDataController::class, 'whatsapp'])->name('core.integration.whatsapp');
+
+        // Statistik and Laporan: school-wide figures and downloadable
+        // reports (mockup phase).
+        Route::prefix('statistik-laporan')->name('core.insight.')->controller(MasterDataController::class)->group(function (): void {
+            Route::get('statistik', 'statistics')->name('statistics');
+            Route::get('laporan', 'reports')->name('reports');
+        });
     });
 });

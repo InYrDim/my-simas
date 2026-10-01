@@ -27,6 +27,19 @@ export interface Semester {
     end: string;
 }
 
+/** One semester across all years, as listed on the Semester page. */
+export interface SemesterRow {
+    id: string;
+    year: string;
+    name: string;
+    start: string;
+    end: string;
+    weeks: number;
+    status: 'current' | 'upcoming' | 'finished';
+    /** Week number of the running semester; null for the others. */
+    week: number | null;
+}
+
 export interface AcademicYear {
     id: number;
     name: string;

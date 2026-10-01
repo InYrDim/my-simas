@@ -6,6 +6,8 @@ use Modules\Identity\App\Http\Controllers\Auth\NewPasswordController;
 use Modules\Identity\App\Http\Controllers\Auth\PasswordResetLinkController;
 use Modules\Identity\App\Http\Controllers\Auth\SetPasswordController;
 use Modules\Identity\App\Http\Controllers\Console\SchoolAdminController;
+use Modules\Identity\App\Http\Controllers\PermissionsController;
+use Modules\Identity\App\Http\Controllers\RolesController;
 use Modules\Identity\App\Http\Controllers\UsersManagementController;
 
 // Provider console → Pengguna: school admins across tenants. Console host
@@ -74,6 +76,16 @@ Route::middleware('web')->group(function (): void {
         // is policy-gated (identity.users.* permissions, same-tenant
         // re-assert). Role dropdown options come from
         // TenantRoles::names() via config('roles') labels.
+        // Sistem: read-only catalogue of the school's roles and the
+        // permissions they hold (same gate as the user list).
+        Route::middleware('module:identity')->name('identity.system.')->prefix('sistem')->group(function (): void {
+            Route::get('peran', [RolesController::class, 'index'])
+                ->name('roles');
+
+            Route::get('izin', [PermissionsController::class, 'index'])
+                ->name('permissions');
+        });
+
         Route::middleware('module:identity')->name('identity.users.')->prefix('users')->group(function (): void {
             Route::get('/', [UsersManagementController::class, 'index'])
                 ->name('index');

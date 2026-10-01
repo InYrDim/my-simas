@@ -10,7 +10,10 @@ const statuses: Record<string, [Variant, string]> = {
     transferred: ['outline', 'Pindah'],
     left: ['destructive', 'Keluar'],
     maintenance: ['outline', 'Perbaikan'],
-    linked: ['default', 'Punya akun'],
+    current: ['default', 'Berjalan'],
+    upcoming: ['outline', 'Akan datang'],
+    finished: ['secondary', 'Selesai'],
+    linked:['default', 'Punya akun'],
     unlinked: ['outline', 'Belum punya akun'],
 };
 

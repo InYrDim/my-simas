@@ -72,3 +72,11 @@
 - `modules/Core/resources/js/Pages/Core/Beranda.tsx` — the school's
   landing record, phone-first, dated on the tenant's own clock. Surface
   brief: `.impeccable/surfaces/modules-core-resources-js-pages-core-beranda-tsx.md`.
+- **Statistik & Laporan** (`/statistik-laporan/*`, mockup) — school-wide
+  figures and a downloadable report catalogue, from
+  `Infrastructure/Mock/InsightMockData`. Decided direction for the DB
+  phase: Core owns the shell and the registry, and feature modules
+  (Attendance, Ppdb) register their own reports and figures through a
+  Core contract, the same way modules register sidebar entries with
+  Platform. Core never imports a feature module. Not built yet: the
+  registry contract arrives after the mockup phase.
