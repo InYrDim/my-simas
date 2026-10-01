@@ -150,8 +150,8 @@ export default function ProviderLayout({
         <SidebarProvider defaultOpen={readSidebarOpen()}>
             <Sidebar collapsible="icon">
                 <SidebarHeader className="h-16 justify-center">
-                    <div className="flex items-center gap-3 px-2 group-data-[collapsible=icon]:px-0">
-                        <span className="flex size-9 shrink-0 items-center justify-center bg-primary text-sm font-semibold text-primary-foreground group-data-[collapsible=icon]:mx-auto">
+                    <div className="flex items-center gap-3 px-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+                        <span className="flex size-9 shrink-0 items-center justify-center bg-primary text-sm font-semibold text-primary-foreground">
                             S
                         </span>
                         <span className="grid leading-tight group-data-[collapsible=icon]:hidden">
@@ -200,7 +200,7 @@ export default function ProviderLayout({
                                                     >
                                                         <entry.icon />
                                                         <span>{entry.label}</span>
-                                                        <ChevronRightIcon className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                                                        <ChevronRightIcon className="ml-auto group-data-[collapsible=icon]:hidden transition-transform group-data-[state=open]/collapsible:rotate-90" />
                                                     </SidebarMenuButton>
                                                 </CollapsibleTrigger>
                                                 <CollapsibleContent>
