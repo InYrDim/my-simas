@@ -9,6 +9,7 @@ use Modules\Identity\App\Contracts\ResolvesUsers;
 use Modules\Identity\App\Domain\Actions\DefaultUserResolver;
 use Modules\Identity\App\Domain\Models\User;
 use Modules\Identity\App\Domain\Policies\UserPolicy;
+use Modules\Identity\App\Infrastructure\Auth\DefaultSchoolSessionOpener;
 use Modules\Identity\App\Infrastructure\Auth\TenantPasswordResetServiceProvider;
 use Modules\Identity\App\Infrastructure\Onboarding\ProvisionFirstAdmin;
 use Modules\Identity\App\Infrastructure\Permissions\SeedDefaultRoles;
@@ -16,6 +17,7 @@ use Modules\Platform\App\Contracts\Events\TenantApproved;
 use Modules\Platform\App\Contracts\Events\TenantCreated;
 use Modules\Platform\App\Contracts\ModuleRegistry;
 use Modules\Platform\App\Contracts\PermissionRegistry;
+use Modules\Platform\App\Contracts\SchoolSessionOpener;
 use Modules\Platform\App\Contracts\TenantNavigation;
 
 class IdentityServiceProvider extends ServiceProvider
@@ -26,6 +28,11 @@ class IdentityServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(ResolvesUsers::class, DefaultUserResolver::class);
+
+        // Platform defines SchoolSessionOpener (its applicant login needs
+        // it) but only Identity knows school users: replace Platform's
+        // refusing default.
+        $this->app->singleton(SchoolSessionOpener::class, DefaultSchoolSessionOpener::class);
 
         // Default role set (machine names, labels, permission sets).
         $this->mergeConfigFrom(__DIR__.'/../../../config/roles.php', 'roles');

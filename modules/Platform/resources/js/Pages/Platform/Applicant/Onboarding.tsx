@@ -80,10 +80,16 @@ function ApplicationStatus({
             <p className="text-sm text-muted-foreground">
                 {application.status === 'pending'
                     ? 'Tim kami sedang meninjau pengajuan Anda. Kami mengabari lewat email setelah ada keputusan. Trial dimulai saat pengajuan disetujui.'
-                    : 'Sekolah Anda sudah disetujui dan trial sudah berjalan. Periksa email Anda untuk langkah masuk ke sekolah.'}
+                    : 'Sekolah Anda sudah disetujui dan trial sudah berjalan. Keluar, lalu masuk lagi dengan email dan kata sandi yang sama untuk membuka sekolah Anda.'}
             </p>
 
-            <LogoutButton />
+            {application.status === 'approved' ? (
+                <Button type="button" onClick={() => router.post(logout.url())}>
+                    Keluar dan masuk ke sekolah
+                </Button>
+            ) : (
+                <LogoutButton />
+            )}
         </div>
     );
 }

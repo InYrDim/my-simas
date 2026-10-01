@@ -40,15 +40,28 @@ in `IdentityServiceProvider`; override in tests via the container.
 - None yet. Will be added here when Identity starts emitting domain
   events (e.g. `UserRegistered`).
 
+## Implements for Platform
+
+- `Modules\Platform\App\Contracts\SchoolSessionOpener` →
+  `Infrastructure/Auth/DefaultSchoolSessionOpener` (bound in
+  `IdentityServiceProvider`, replacing Platform's refusing default).
+  Same rules as the school login minus the school code: credentials are
+  checked inside the school's context, deactivated accounts and
+  suspended schools are refused, every failure answers `false`. Used by
+  Platform's applicant login once an application is approved.
+
 ## Events consumed
 
 - `TenantCreated` (PlatformPublic) → `SeedDefaultRoles`: seeds the
   tenant's default school roles via `TenantRoles::ensure` —
   idempotent, safe on re-fire.
 - `TenantApproved` (PlatformPublic) → `ProvisionFirstAdmin`: creates
-  the first admin-sekolah user (password null), mints a tenant-scoped
-  set-password token, queues `SetPasswordMail` with a `TenantUrl`
-  school-coded link. Idempotent; runs inside the approval transaction
+  the first admin-sekolah user. When the event carries the applicant
+  account's `passwordHash` (Fase 4), the admin takes that password over
+  with a verified email and NO mail is sent. Without a hash (application
+  with no applicant account): password null, a tenant-scoped
+  set-password token is minted and `SetPasswordMail` queued with a
+  `TenantUrl` school-coded link. Idempotent; runs inside the approval transaction
   (failure rolls the approval back). Both listeners register in
   `IdentityServiceProvider`.
 

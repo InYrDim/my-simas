@@ -6,6 +6,7 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use Modules\Platform\App\Contracts\ModuleRegistry;
 use Modules\Platform\App\Contracts\PermissionRegistry;
+use Modules\Platform\App\Contracts\SchoolSessionOpener;
 use Modules\Platform\App\Contracts\TenantApplications;
 use Modules\Platform\App\Contracts\TenantCache;
 use Modules\Platform\App\Contracts\TenantContext;
@@ -13,6 +14,7 @@ use Modules\Platform\App\Contracts\TenantDirectory;
 use Modules\Platform\App\Contracts\TenantModules;
 use Modules\Platform\App\Contracts\TenantNavigation;
 use Modules\Platform\App\Contracts\TenantRoles;
+use Modules\Platform\App\Contracts\TenantSession;
 use Modules\Platform\App\Contracts\TenantStorage;
 use Modules\Platform\App\Contracts\TenantUrl;
 use Modules\Platform\App\Http\Middleware\EnsureModuleActive;
@@ -36,6 +38,7 @@ use Modules\Platform\App\Infrastructure\Modules\ModuleFlagManager;
 use Modules\Platform\App\Infrastructure\Modules\TenantModulesCache;
 use Modules\Platform\App\Infrastructure\Navigation\DefaultTenantNavigation;
 use Modules\Platform\App\Infrastructure\Onboarding\DefaultTenantApplications;
+use Modules\Platform\App\Infrastructure\Onboarding\NullSchoolSessionOpener;
 use Modules\Platform\App\Infrastructure\Permissions\DefaultPermissionRegistry;
 use Modules\Platform\App\Infrastructure\Permissions\DefaultTenantRoles;
 use Modules\Platform\App\Infrastructure\Permissions\PermissionSync;
@@ -48,6 +51,7 @@ use Modules\Platform\App\Infrastructure\Tenancy\PartitionedTenantCache;
 use Modules\Platform\App\Infrastructure\Tenancy\PartitionedTenantStorage;
 use Modules\Platform\App\Infrastructure\Tenancy\RegistersTenantMacro;
 use Modules\Platform\App\Infrastructure\Tenancy\SchoolCodeTenantResolver;
+use Modules\Platform\App\Infrastructure\Tenancy\SessionTenantSession;
 use Modules\Platform\App\Infrastructure\Tenancy\TenantLifecycle;
 use Modules\Platform\App\Infrastructure\Tenancy\TenantQueueContext;
 
@@ -121,6 +125,12 @@ class PlatformServiceProvider extends ServiceProvider
         // School onboarding pipeline (Fase 2 Stage 5): interface-aliased
         // singleton, same pattern as the tenancy bindings.
         $this->app->singleton(DefaultTenantApplications::class);
+
+        // Opening a school session needs school users, which live in
+        // Identity: Platform ships a refusing default and Identity
+        // replaces the binding (it registers after Platform).
+        $this->app->singleton(SchoolSessionOpener::class, NullSchoolSessionOpener::class);
+        $this->app->singleton(TenantSession::class, SessionTenantSession::class);
         $this->app->alias(DefaultTenantApplications::class, TenantApplications::class);
 
         // Subscription billing (provider side). The gateway is a stub that

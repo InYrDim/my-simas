@@ -25,7 +25,10 @@ final class ApplicantDecisionNotifier
         private readonly TenantUrl $urls,
     ) {}
 
-    public function approved(TenantApplication $application, string $tenantId): void
+    /**
+     * @param  bool  $passwordHandedOver  the admin account took over the applicant's password, so they can log in right away
+     */
+    public function approved(TenantApplication $application, string $tenantId, bool $passwordHandedOver): void
     {
         if ($application->applicant_id === null) {
             return;
@@ -41,6 +44,7 @@ final class ApplicantDecisionNotifier
             planName: $plan?->name,
             trialEndsOn: $subscription?->trial_ends_at?->toDateString(),
             loginUrl: $this->urls->root().'/pemohon/masuk',
+            passwordReady: $passwordHandedOver,
         ));
     }
 

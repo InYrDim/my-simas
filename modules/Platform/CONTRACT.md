@@ -95,8 +95,18 @@
   $decidedBy)`. Idempotent via `ApplicationNotPendingException`.
 - `TenantApproved` event (Contracts/Events) — fired inside the
   approval transaction; payload: tenantId, applicantName,
-  applicantEmail. Identity's `ProvisionFirstAdmin` consumes it (a
+  applicantEmail, and (Fase 4) `passwordHash` — the applicant account's
+  hash, null for applications without an account. Never queued. Identity's `ProvisionFirstAdmin` consumes it (a
   failure rolls the whole approval back).
+- `SchoolSessionOpener` (Fase 4): `attempt($tenantId, $email,
+  $password, $remember): bool` — signs an active user of that school in
+  on the school guard and remembers the school in the session; false for
+  every failure alike. DEFINED here, IMPLEMENTED by Identity (dependency
+  inversion: Platform cannot import school users). Platform's own
+  binding, `NullSchoolSessionOpener`, always refuses.
+- `TenantSession` (Fase 4): `remember($tenantId)` — the one sanctioned
+  way for another module to set the session's school; the session key
+  stays internal.
 - Exceptions (Contracts/Exceptions): `TenantNotSetException`,
   `UnknownModuleException`, `ApplicationNotPendingException`,
   `InvalidApplicationException` (slug conflicts at submit/approve).
@@ -166,9 +176,13 @@ Plan and status: `docs/ai/plan/fase-4/tenant-onboarding-plan.md`.
 - The applicant is mailed the decision AFTER the approval transaction
   committed (`ApplicantDecisionNotifier`; links from `TenantUrl::root()`
   because decisions are made on the console host).
-- Still to come (Tahap 3): handing the applicant's password to the
-  school admin and opening the school session from the applicant login.
-  Until then approval also sends Identity's set-password mail.
+- At approval the applicant's password hash travels on `TenantApproved`
+  to Identity's first-admin listener and is then CLEARED on the
+  applicant (moved, not copied); `applicants.tenant_id` is set. One
+  credential only: the school admin account.
+- From then on `/pemohon/masuk` opens the SCHOOL session for that email
+  through `SchoolSessionOpener` and redirects to `/`. No applicant
+  session is created for an approved applicant.
 
 ## Queue context propagation (Stage 4)
 

@@ -37,7 +37,10 @@ use Modules\Platform\App\Infrastructure\Modules\ModuleFlagManager;
  *     modules only — core is always active and never listed),
  *  4. start the trial on the application's plan,
  *  5. stamp the decision columns,
- *  6. fire TenantApproved (Identity provisions the first admin).
+ *  6. fire TenantApproved (Identity provisions the first admin, taking
+ *     over the applicant's password hash),
+ *  7. bind the applicant to the tenant and clear their password — it
+ *     now lives on the school admin account only.
  *
  * The applicant is told about the decision by mail AFTER the transaction
  * committed (ApplicantDecisionNotifier) — a mail must never announce a
@@ -177,7 +180,7 @@ final class DefaultTenantApplications implements TenantApplications
 
         $planKey = $correctedPlan ?? $application->plan_key;
 
-        $tenantId = DB::transaction(function () use ($application, $final, $planKey, $decidedBy, $payload): string {
+        [$tenantId, $passwordHandedOver] = DB::transaction(function () use ($application, $final, $planKey, $decidedBy, $payload): array {
             $tenant = Tenant::query()->create([
                 'name' => $final['school_name'],
                 'slug' => $final['desired_slug'],
@@ -204,21 +207,35 @@ final class DefaultTenantApplications implements TenantApplications
                 'decided_by' => $decidedBy,
             ])->save();
 
+            $applicant = $application->applicant_id === null
+                ? null
+                : Applicant::query()->lockForUpdate()->find($application->applicant_id);
+
+            $passwordHandedOver = $applicant?->password !== null;
+
             // Synchronous, INSIDE the transaction: Identity provisions
             // the first admin — a failing listener rolls everything back
-            // so no tenant exists without its admin.
+            // so no tenant exists without its admin. The applicant's
+            // password hash travels with the event so the admin keeps
+            // the password they registered with.
             Event::dispatch(new TenantApproved(
                 $tenant->id,
                 $application->applicant_name,
                 $application->applicant_email,
+                $applicant?->password,
             ));
 
-            return $tenant->id;
+            // The password now lives on the school admin account: MOVED,
+            // not copied, so no second credential is left behind. From
+            // here on the applicant login opens the school session.
+            $applicant?->forceFill(['tenant_id' => $tenant->id, 'password' => null])->save();
+
+            return [$tenant->id, $passwordHandedOver];
         });
 
         $application->refresh();
 
-        $this->notifier->approved($application, $tenantId);
+        $this->notifier->approved($application, $tenantId, $passwordHandedOver);
 
         return $this->toData($application);
     }

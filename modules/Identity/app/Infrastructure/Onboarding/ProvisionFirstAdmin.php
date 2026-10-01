@@ -23,6 +23,11 @@ use Modules\Platform\App\Contracts\TenantUrl;
  * (Spatie resolves the tenant's role), and the token mint (the tenant-
  * scoped token repository requires the context).
  *
+ * When the application came from an applicant account, the event
+ * carries that account's password hash: the admin takes it over
+ * (email already verified) and NO set-password mail is sent. Without
+ * a hash the admin starts with a null password and gets the link.
+ *
  * The link points at the TENANT host (TenantUrl) — the account does
  * not exist on central. Idempotent: an email already provisioned for
  * THIS tenant is left alone (approval re-runs never duplicate).
@@ -61,6 +66,18 @@ final class ProvisionFirstAdmin
             if ($user->password !== null) {
                 // Already activated (re-approval, or a previous run
                 // completed activation) — do not reset their password.
+                return;
+            }
+
+            if ($event->passwordHash !== null) {
+                // The applicant registered with a verified email and a
+                // password of their own: the admin account takes both
+                // over and needs no set-password link.
+                $user->forceFill([
+                    'password' => $event->passwordHash,
+                    'email_verified_at' => now(),
+                ])->save();
+
                 return;
             }
 

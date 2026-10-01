@@ -103,7 +103,7 @@ Legenda: ⬜ belum · 🟡 berjalan · ✅ selesai. Berhenti di antara tahap dan
 | --- | --- | --- | --- |
 | 1 | Akun pemohon: daftar (mengganti `/daftar-sekolah`), login/keluar, verifikasi email | ✅ | Tabel `applicants`, guard `applicant`, daftar + honeypot, login/keluar, verifikasi lewat signed URL, halaman pemohon (shadcn). Form data sekolah sudah pindah ke `/pemohon` memakai kontrak `submit()` lama (lihat Log keputusan). 411 tes lulus, Deptrac 0 pelanggaran, build sukses. Halaman belum dibuka di browser. |
 | 2 | Onboarding: data sekolah + pilih paket, status, ajukan ulang, trial pada paket terpilih, email keputusan | ✅ | Pengajuan terikat ke akun (`applicant_id`, satu per pemohon), pilih paket di onboarding, trial pada paket itu saat ACC (provider bisa mengoreksi), ajukan ulang di baris yang sama, email disetujui/ditolak. 428 tes lulus, Deptrac 0 pelanggaran, tipe TS bersih. Halaman belum dibuka di browser. |
-| 3 | Jembatan ACC: password dipindah, login pemohon membuka sesi sekolah | ⬜ | |
+| 3 | Jembatan ACC: password dipindah, login pemohon membuka sesi sekolah | ✅ | Saat ACC hash password pemohon dipindah ke admin sekolah (pemohon jadi tanpa password, `tenant_id` terisi), tanpa email atur kata sandi. Login di `/pemohon/masuk` untuk pemohon yang disetujui membuka sesi sekolah lewat `SchoolSessionOpener` (kontrak Platform, implementasi Identity). 439 tes lulus, Deptrac 0 pelanggaran, tipe TS bersih. Belum dicoba di browser. |
 | 4 | Provider mengundang pemohon; lupa kata sandi pemohon | ⬜ | |
 
 ## Tasks
@@ -137,12 +137,13 @@ Legenda: ⬜ belum · 🟡 berjalan · ✅ selesai. Berhenti di antara tahap dan
 **Selesai bila:** pemohon terverifikasi bisa mengajukan dengan paket, melihat status, dan mengajukan ulang setelah ditolak; ACC membuat tenant dengan trial pada paket itu. Bukti: `php artisan test --compact modules/Platform` → lulus.
 
 ### Tahap 3 — Jembatan ke sesi sekolah
-- [ ] Kontrak `SchoolSessionOpener`, `TenantSession` + default dan binding — `modules/Platform/app/Contracts/`, `modules/Platform/app/Infrastructure/Providers/PlatformServiceProvider.php`
-- [ ] `TenantApproved` membawa `passwordHash`; ACC mengisi `applicants.tenant_id` dan mengosongkan `applicants.password` — `modules/Platform/app/Contracts/Events/TenantApproved.php`, `DefaultTenantApplications.php`
-- [ ] `ProvisionFirstAdmin` memakai hash bila ada — `modules/Identity/app/Infrastructure/Onboarding/ProvisionFirstAdmin.php`
-- [ ] `DefaultSchoolSessionOpener` + binding — `modules/Identity/app/Infrastructure/Auth/DefaultSchoolSessionOpener.php`, `modules/Identity/app/Infrastructure/Providers/IdentityServiceProvider.php`
-- [ ] Login pemohon yang sudah disetujui memanggil opener lalu mengarah ke `/beranda` — `modules/Platform/app/Http/Controllers/Applicant/`
-- [ ] Tes: ACC memindahkan password tanpa email set-password; login pemohon disetujui membuka tenant yang benar; password salah, user non-aktif, tenant ditangguhkan ditolak dengan error generik; pemohon belum disetujui tidak pernah mendapat sesi sekolah — `modules/Identity/tests/Feature/`, `modules/Platform/tests/Feature/`
+- [x] Kontrak `SchoolSessionOpener`, `TenantSession` + default dan binding — `modules/Platform/app/Contracts/SchoolSessionOpener.php`, `modules/Platform/app/Contracts/TenantSession.php`, `modules/Platform/app/Infrastructure/Onboarding/NullSchoolSessionOpener.php`, `modules/Platform/app/Infrastructure/Tenancy/SessionTenantSession.php`, `modules/Platform/app/Infrastructure/Providers/PlatformServiceProvider.php`
+- [x] `TenantApproved` membawa `passwordHash`; ACC mengisi `applicants.tenant_id` dan mengosongkan `applicants.password` di dalam transaksi — `modules/Platform/app/Contracts/Events/TenantApproved.php`, `modules/Platform/app/Infrastructure/Onboarding/DefaultTenantApplications.php`
+- [x] `ProvisionFirstAdmin` memakai hash bila ada (tanpa email atur kata sandi) — `modules/Identity/app/Infrastructure/Onboarding/ProvisionFirstAdmin.php`
+- [x] `DefaultSchoolSessionOpener` + binding — `modules/Identity/app/Infrastructure/Auth/DefaultSchoolSessionOpener.php`, `modules/Identity/app/Infrastructure/Providers/IdentityServiceProvider.php`
+- [x] Login pemohon yang sudah disetujui memanggil opener lalu mengarah ke `/` (pintu depan → `/beranda`) — `modules/Platform/app/Http/Controllers/Applicant/SessionController.php`
+- [x] Email "disetujui" dan halaman status menyebut cara masuk yang baru — `modules/Platform/mail/application-approved-text.blade.php`, `modules/Platform/resources/js/Pages/Platform/Applicant/Onboarding.tsx`
+- [x] Tes — `modules/Identity/tests/Feature/ApplicantSchoolSessionTest.php` (baru, 11 tes)
 
 **Selesai bila:** setelah ACC, login di `/pemohon/masuk` mendarat di `/beranda` sekolah baru. Bukti: `php artisan test --compact` dan `vendor/bin/deptrac analyse` → lulus, 0 pelanggaran.
 
@@ -190,6 +191,9 @@ Legenda: ⬜ belum · 🟡 berjalan · ✅ selesai. Berhenti di antara tahap dan
 Diisi selama eksekusi; dokumen ini hidup.
 
 ### Log keputusan
+- 2026-10-01 — Pemohon yang sudah disetujui tidak pernah mendapat sesi guard `applicant` saat login: form yang sama langsung membuka sesi sekolah. Sesi pemohon yang masih hidup dari sebelum ACC tetap bisa melihat halaman status, yang menyuruhnya keluar lalu masuk lagi.
+- 2026-10-01 — Setelah login jembatan, pengalihan ke `/` (bukan langsung ke route `home`), supaya Platform tidak menyebut nama route milik Core; `EntryController` yang mengarahkan ke `/beranda`.
+- 2026-10-01 — Sekolah yang ditangguhkan ditolak di opener dengan error generik, bukan dibukakan sesi yang lalu mentok di 403.
 - 2026-10-01 — `resubmit` menerima `applicantId`, bukan id pengajuan: kepemilikan melekat pada pemohon yang login, jadi tidak ada id yang bisa ditukar untuk menyentuh pengajuan orang lain.
 - 2026-10-01 — Paket yang dipilih pemohon tidak divalidasi ulang saat ACC; hanya paket hasil koreksi provider yang wajib bisa dipilih. Bila paket pemohon sudah diarsipkan, ACC tetap jalan tanpa langganan (perilaku lama: log warning).
 - 2026-10-01 — Email keputusan hanya dikirim untuk pengajuan yang punya akun pemohon; baris lama tanpa akun tidak punya login pemohon untuk dituju.
@@ -202,7 +206,9 @@ Diisi selama eksekusi; dokumen ini hidup.
 - `auth:applicant` tidak dipakai: `redirectGuestsTo` di `bootstrap/app.php` sadar-host dan mengirim tamu ke login **sekolah**. Pemohon memakai middleware sendiri (`AuthenticateApplicant`); `guest:` juga diganti pengecekan di controller.
 - Di tes, `actingAs($x, 'applicant')` menjadikan guard itu guard default, sehingga route sekolah (`auth`) tampak terbuka bagi pemohon. Itu artefak tes: pemisahan guard diuji lewat login sungguhan (POST `/pemohon/masuk`).
 - Model yang dipegang guard tidak ikut ter-refresh dalam satu proses tes; setelah verifikasi, tes memakai `actingAs($applicant->fresh(), ...)`.
-- ACC masih mengirim email atur kata sandi (jalur lama) sampai Tahap 3, jadi pemohon yang disetujui menerima dua email: "disetujui" dari Platform dan "aktivasi akun" dari Identity. Teks email dan halaman status sudah menyebut itu; keduanya perlu diubah di Tahap 3.
+- Sejak Tahap 3, pengajuan dari akun pemohon tidak lagi memicu email atur kata sandi; hanya pengajuan lama tanpa akun yang masih memakainya.
+- `TenantData::status` adalah enum internal Platform di dalam DTO publik. Identity membandingkan `->value` supaya tidak mengimpor enum itu.
+- `SessionTenantSession` mengambil session lewat `session()` saat dipanggil, bukan lewat constructor: binding-nya singleton, sedangkan session store milik request.
 - Tautan di email keputusan dibuat dari `TenantUrl::root()`, bukan `route()`: keputusan diambil di host console, dan `route()` akan membawa host itu.
 - Pesan aturan slug/paket dari `DefaultTenantApplications` masih berbahasa Inggris dan tampil apa adanya di form pemohon (perilaku lama form publik). Belum diterjemahkan.
 - Tidak ada primitif radio group di Shared; `PlanPicker` memakai input radio native di dalam label seukuran kartu, tanpa menambah dependensi.

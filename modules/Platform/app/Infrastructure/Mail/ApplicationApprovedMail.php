@@ -10,7 +10,9 @@ use Illuminate\Queue\SerializesModels;
 
 /**
  * Tells an applicant their school was approved: the school code they log
- * in with, the plan and the trial end. Queued; every value is a plain
+ * in with, the plan and the trial end, and how to get in: with the
+ * password they registered with (`passwordReady`), or through the
+ * separate set-password mail. Queued; every value is a plain
  * string prebuilt by the sender.
  */
 final class ApplicationApprovedMail extends Mailable
@@ -24,6 +26,7 @@ final class ApplicationApprovedMail extends Mailable
         public readonly ?string $planName,
         public readonly ?string $trialEndsOn,
         public readonly string $loginUrl,
+        public readonly bool $passwordReady = true,
     ) {}
 
     public function envelope(): Envelope
@@ -47,6 +50,7 @@ final class ApplicationApprovedMail extends Mailable
                 'planName' => $this->planName,
                 'trialEndsOn' => $this->trialEndsOn,
                 'loginUrl' => $this->loginUrl,
+                'passwordReady' => $this->passwordReady,
             ],
         );
     }
