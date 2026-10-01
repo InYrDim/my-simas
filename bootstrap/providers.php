@@ -1,10 +1,12 @@
 <?php
 
 use App\Providers\AppServiceProvider;
+use Modules\Attendance\App\Infrastructure\Providers\AttendanceServiceProvider;
 use Modules\Core\App\Infrastructure\Providers\CoreServiceProvider;
 use Modules\Identity\App\Infrastructure\Auth\TenantPasswordResetServiceProvider;
 use Modules\Identity\App\Infrastructure\Providers\IdentityServiceProvider;
 use Modules\Platform\App\Infrastructure\Providers\PlatformServiceProvider;
+use Modules\Ppdb\App\Infrastructure\Providers\PpdbServiceProvider;
 use Modules\Shared\App\Infrastructure\Providers\SharedServiceProvider;
 
 return [
@@ -13,6 +15,8 @@ return [
     PlatformServiceProvider::class,
     IdentityServiceProvider::class,
     CoreServiceProvider::class,
+    AttendanceServiceProvider::class,
+    PpdbServiceProvider::class,
 
     // Tenant-scoped password broker (Fase 2 Stage 4). MUST be a
     // top-level provider: it replaces bindings of Laravel's DEFERRED

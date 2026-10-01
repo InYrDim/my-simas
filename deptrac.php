@@ -109,6 +109,20 @@ return static function (DeptracConfig $config): void {
                 ClassLikeConfig::create('.*Modules\Core\App\(?!Contracts\).*'),
                 ClassLikeConfig::create('.*Modules\Core\(Database|Tests|routes|resources)\.*'),
             ),
+            $attendance = Layer::withName('Attendance')->collectors(
+                ClassLikeConfig::create('.*Modules\Attendance\App\(?!Contracts\).*'),
+                ClassLikeConfig::create('.*Modules\Attendance\(Database|Tests|routes|resources)\.*'),
+            ),
+            $attendancePublic = Layer::withName('AttendancePublic')->collectors(
+                ClassLikeConfig::create('.*Modules\Attendance\App\Contracts\.*'),
+            ),
+            $ppdb = Layer::withName('Ppdb')->collectors(
+                ClassLikeConfig::create('.*Modules\Ppdb\App\(?!Contracts\).*'),
+                ClassLikeConfig::create('.*Modules\Ppdb\(Database|Tests|routes|resources)\.*'),
+            ),
+            $ppdbPublic = Layer::withName('PpdbPublic')->collectors(
+                ClassLikeConfig::create('.*Modules\Ppdb\App\Contracts\.*'),
+            ),
             $tests = Layer::withName('Tests')->collectors(
                 // Root test suite glue (arch tests etc.). Nothing may depend
                 // on it; it may reach anything.
@@ -124,6 +138,7 @@ return static function (DeptracConfig $config): void {
                 $shared, $laravel, $vendor, $nativePhp,
                 $identity, $identityPublic,
                 $core, $corePublic, $platformPublic,
+                $attendance, $attendancePublic, $ppdb, $ppdbPublic,
             ),
             // Shared: pure technical utilities, no module knowledge.
             Ruleset::forLayer($shared)->accesses($laravel, $vendor, $nativePhp),
@@ -133,6 +148,7 @@ return static function (DeptracConfig $config): void {
                 $platform, $platformPublic,
                 $identity, $identityPublic,
                 $core, $corePublic,
+                $attendance, $attendancePublic, $ppdb, $ppdbPublic,
             ),
             // Platform: tenancy/permissions. Only module allowed to touch
             // Spatie.
@@ -158,6 +174,15 @@ return static function (DeptracConfig $config): void {
                 $corePublic, $shared, $platformPublic, $identityPublic, $laravel, $vendor, $nativePhp,
             ),
             Ruleset::forLayer($corePublic)->accesses($core, $shared, $laravel, $nativePhp),
+            // Feature modules: never each other, not even via Public.
+            Ruleset::forLayer($attendance)->accesses(
+                $attendancePublic, $shared, $platformPublic, $identityPublic, $corePublic, $laravel, $vendor, $nativePhp,
+            ),
+            Ruleset::forLayer($attendancePublic)->accesses($attendance, $shared, $laravel, $nativePhp),
+            Ruleset::forLayer($ppdb)->accesses(
+                $ppdbPublic, $shared, $platformPublic, $identityPublic, $corePublic, $laravel, $vendor, $nativePhp,
+            ),
+            Ruleset::forLayer($ppdbPublic)->accesses($ppdb, $shared, $laravel, $nativePhp),
             // Database glue: see note on the layer above. Platform is
             // included for the same reason as Identity/Core: DatabaseSeeder
             // delegates to module dev seeders (e.g. PlatformDevSeeder).
@@ -166,6 +191,7 @@ return static function (DeptracConfig $config): void {
                 $platform, $platformPublic,
                 $identity, $identityPublic,
                 $core, $corePublic,
+                $attendance, $attendancePublic, $ppdb, $ppdbPublic,
             ),
         );
 };

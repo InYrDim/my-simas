@@ -46,7 +46,13 @@
             "Modules\\Identity\\Tests\\": "modules/Identity/tests/",
             "Modules\\Core\\App\\": "modules/Core/app/",
             "Modules\\Core\\Database\\": "modules/Core/database/",
-            "Modules\\Core\\Tests\\": "modules/Core/tests/"
+            "Modules\\Core\\Tests\\": "modules/Core/tests/",
+            "Modules\\Attendance\\App\\": "modules/Attendance/app/",
+            "Modules\\Attendance\\Database\\": "modules/Attendance/database/",
+            "Modules\\Attendance\\Tests\\": "modules/Attendance/tests/",
+            "Modules\\Ppdb\\App\\": "modules/Ppdb/app/",
+            "Modules\\Ppdb\\Database\\": "modules/Ppdb/database/",
+            "Modules\\Ppdb\\Tests\\": "modules/Ppdb/tests/"
         }
     },
     "autoload-dev": {
@@ -54,7 +60,9 @@
             "Tests\\": "tests/",
             "Modules\\Identity\\Tests\\": "modules/Identity/tests/",
             "Modules\\Platform\\Tests\\": "modules/Platform/tests/",
-            "Modules\\Core\\Tests\\": "modules/Core/tests/"
+            "Modules\\Core\\Tests\\": "modules/Core/tests/",
+            "Modules\\Attendance\\Tests\\": "modules/Attendance/tests/",
+            "Modules\\Ppdb\\Tests\\": "modules/Ppdb/tests/"
         }
     },
     "scripts": {

@@ -56,6 +56,8 @@ Vendor/Laravel  ←  Shared  ←  Platform (Fase 1)  ←  Identity  ←  Core  �
 | Platform | `Platform` | Tenancy, module registry, permissions | `Modules\Platform\App\Contracts`                                 |
 | Identity | `Identity` | Tenant-scoped users, auth lifecycle, user management | `Modules\Identity\App\Contracts` (`ResolvesUsers`, `UserRecord`) |
 | Core     | `Core`     | Master data (skeleton)                | `Modules\Core\App\Contracts` (empty)                             |
+| Attendance | `Attendance` | Daily attendance (Absensi) — mockup | `Modules\Attendance\App\Contracts` (none yet)                  |
+| Ppdb     | `Ppdb`     | Admissions (PPDB) — mockup            | `Modules\Ppdb\App\Contracts` (none yet)                         |
 
 Each module folder follows the module template:
 

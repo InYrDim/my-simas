@@ -23,7 +23,7 @@ class PlatformDevSeeder extends Seeder
     public function run(ModuleRegistry $registry, ModuleFlagManager $flags): void
     {
         $definitions = [
-            ['name' => 'SMA Sekolah A', 'slug' => 'sekolah-a', 'timezone' => 'Asia/Jakarta', 'modules' => ['core', 'identity']],
+            ['name' => 'SMA Sekolah A', 'slug' => 'sekolah-a', 'timezone' => 'Asia/Jakarta', 'modules' => ['core', 'identity', 'attendance', 'ppdb']],
             ['name' => 'SMA Sekolah B', 'slug' => 'sekolah-b', 'timezone' => 'Asia/Makassar', 'modules' => ['core']],
         ];
 

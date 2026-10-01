@@ -26,7 +26,7 @@ test('modules/Shared never imports another module namespace', function () {
 });
 
 test('no module imports the internal namespace of another module', function () {
-    $modules = ['Identity', 'Platform', 'Core'];
+    $modules = ['Identity', 'Platform', 'Core', 'Attendance', 'Ppdb'];
     $publicPrefixes = array_map(fn (string $m): string => "Modules\\{$m}\\App\\Contracts\\", $modules);
     $violations = [];
 
@@ -95,7 +95,7 @@ test('the Identity User model is never imported outside the Identity module', fu
 test('migrations declare no cross-module foreign key constraints', function () {
     $violations = [];
     $patterns = ['->foreign(', '->constrained(', '->foreignIdFor(', '->foreignUuid('];
-    foreach (['database/migrations', 'modules/Shared/database/migrations', 'modules/Identity/database/migrations', 'modules/Core/database/migrations', 'modules/Platform/database/migrations'] as $dir) {
+    foreach (['database/migrations', 'modules/Shared/database/migrations', 'modules/Identity/database/migrations', 'modules/Core/database/migrations', 'modules/Attendance/database/migrations', 'modules/Ppdb/database/migrations', 'modules/Platform/database/migrations'] as $dir) {
         foreach (phpFilesUnder($dir) as $file => $contents) {
             // Platform's copy of Spatie's permission-tables schema is
             // exempt: every table it references (permissions, roles,
@@ -154,7 +154,7 @@ test('every module has a filled CONTRACT.md', function () {
 test('Spatie packages are only referenced inside the Platform module', function () {
     $violations = [];
 
-    foreach (['app', 'database', 'modules/Shared', 'modules/Identity', 'modules/Core'] as $dir) {
+    foreach (['app', 'database', 'modules/Shared', 'modules/Identity', 'modules/Core', 'modules/Attendance', 'modules/Ppdb'] as $dir) {
         foreach (phpFilesUnder($dir) as $file => $contents) {
             foreach (importedNamespaces($contents) as $import) {
                 if (str_starts_with($import, 'Spatie\\')) {
