@@ -109,6 +109,11 @@
             "npm run build",
             "@php vendor/bin/pest -c phpunit.e2e.xml"
         ],
+        "test:playwright": [
+            "Composer\\Config::disableProcessTimeout",
+            "npm run build",
+            "npx playwright test"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"
