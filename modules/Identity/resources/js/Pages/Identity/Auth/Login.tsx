@@ -7,6 +7,7 @@ import { useTenant } from '@shared/hooks/useTenant';
 
 import { store as loginStore } from '@/actions/Modules/Identity/App/Http/Controllers/Auth/AuthenticatedSessionController';
 import { create as forgotPassword } from '@/actions/Modules/Identity/App/Http/Controllers/Auth/PasswordResetLinkController';
+import { create as registerSchool } from '@/actions/Modules/Platform/App/Http/Controllers/Applicant/RegisterController';
 
 /**
  * Tenant login (school portal). The school is identified by the school
@@ -112,6 +113,16 @@ export default function Login() {
                 >
                     {form.processing ? 'Memeriksa...' : 'Masuk'}
                 </button>
+
+                <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
+                    Sekolah Anda belum terdaftar?{' '}
+                    <a
+                        href={registerSchool.url()}
+                        className="text-emerald-700 hover:text-emerald-800 hover:underline"
+                    >
+                        Daftarkan sekolah
+                    </a>
+                </p>
             </form>
         </AuthShell>
     );

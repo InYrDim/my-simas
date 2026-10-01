@@ -1,6 +1,7 @@
 <?php
 
 use Modules\Identity\App\Domain\Models\User;
+use Modules\Platform\App\Domain\Models\Applicant;
 use Modules\Platform\App\Domain\Models\ProviderUser;
 
 return [
@@ -54,6 +55,16 @@ return [
             'driver' => 'session',
             'provider' => 'provider_users',
         ],
+
+        /*
+        | People applying to bring a school onto the platform (central).
+        | Separate from both guards above: an applicant is not a school
+        | user until approval provisions the school admin account.
+        */
+        'applicant' => [
+            'driver' => 'session',
+            'provider' => 'applicants',
+        ],
     ],
 
     /*
@@ -82,6 +93,11 @@ return [
         'provider_users' => [
             'driver' => 'eloquent',
             'model' => ProviderUser::class,
+        ],
+
+        'applicants' => [
+            'driver' => 'eloquent',
+            'model' => Applicant::class,
         ],
     ],
 

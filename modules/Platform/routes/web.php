@@ -1,26 +1,68 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\Platform\App\Http\Controllers\Applicant\OnboardingController;
+use Modules\Platform\App\Http\Controllers\Applicant\RegisterController;
+use Modules\Platform\App\Http\Controllers\Applicant\SessionController;
+use Modules\Platform\App\Http\Controllers\Applicant\VerificationController;
 use Modules\Platform\App\Http\Controllers\ApplicationReviewController;
 use Modules\Platform\App\Http\Controllers\Auth\ProviderAuthenticatedSessionController;
 use Modules\Platform\App\Http\Controllers\BillingController;
 use Modules\Platform\App\Http\Controllers\InvoiceController;
 use Modules\Platform\App\Http\Controllers\PlanController;
 use Modules\Platform\App\Http\Controllers\ProviderHomeController;
-use Modules\Platform\App\Http\Controllers\SchoolApplyController;
 use Modules\Platform\App\Http\Controllers\TenantConsoleController;
 use Modules\Platform\App\Http\Controllers\TenantSubscriptionController;
+use Modules\Platform\App\Http\Middleware\AuthenticateApplicant;
 
-// Public school application (Fase 2 Stage 7): NO auth.
-// IP throttle is safe here — the form needs no tenant context (the
-// tenant-keyed throttle pattern is for TENANT routes, e.g. Identity's
-// login). Rate: 5 submissions per IP per 10 minutes.
-Route::middleware(['web', 'throttle:5,10'])->group(function (): void {
-    Route::get('daftar-sekolah', [SchoolApplyController::class, 'create'])
-        ->name('school.apply.create');
+// Applicant accounts (Fase 4): people applying to bring a school onto the
+// platform. Central pages on the shared host, dedicated 'applicant' guard
+// — never a school user. IP throttle is safe here: none of this needs a
+// tenant context (the tenant-keyed throttle pattern is for TENANT routes,
+// e.g. Identity's login).
+Route::middleware('web')->name('applicant.')->group(function (): void {
+    Route::get('daftar-sekolah', [RegisterController::class, 'create'])
+        ->name('register');
 
-    Route::post('daftar-sekolah', [SchoolApplyController::class, 'store'])
-        ->name('school.apply.store');
+    // 5 registrations per IP per 10 minutes.
+    Route::post('daftar-sekolah', [RegisterController::class, 'store'])
+        ->middleware('throttle:5,10')
+        ->name('register.store');
+
+    Route::prefix('pemohon')->group(function (): void {
+        Route::get('masuk', [SessionController::class, 'create'])
+            ->name('login');
+
+        Route::post('masuk', [SessionController::class, 'store'])
+            ->name('login.attempt');
+
+        // Signed link from the verification mail; opens in any browser.
+        Route::get('verifikasi/{applicant}/{hash}', [VerificationController::class, 'verify'])
+            ->whereNumber('applicant')
+            ->middleware('signed')
+            ->name('verify');
+
+        Route::middleware(AuthenticateApplicant::class)->group(function (): void {
+            Route::post('keluar', [SessionController::class, 'destroy'])
+                ->name('logout');
+
+            Route::get('verifikasi', [VerificationController::class, 'notice'])
+                ->name('verify.notice');
+
+            Route::post('verifikasi/kirim-ulang', [VerificationController::class, 'resend'])
+                ->middleware('throttle:3,10')
+                ->name('verify.resend');
+        });
+
+        Route::middleware(AuthenticateApplicant::class.':verified')->group(function (): void {
+            Route::get('/', [OnboardingController::class, 'show'])
+                ->name('home');
+
+            Route::post('pengajuan', [OnboardingController::class, 'store'])
+                ->middleware('throttle:10,10')
+                ->name('application.store');
+        });
+    });
 });
 
 // Provider console: the console host only (config tenancy.console_domain),

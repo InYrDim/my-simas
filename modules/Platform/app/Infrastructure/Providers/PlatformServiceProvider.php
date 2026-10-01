@@ -157,6 +157,7 @@ class PlatformServiceProvider extends ServiceProvider
     {
         $this->registerConfig();
         $this->registerMigrations();
+        $this->registerMailViews();
         $this->registerRoutes();
         $this->registerMiddleware();
         $this->registerSchemaMacro();
@@ -197,6 +198,16 @@ class PlatformServiceProvider extends ServiceProvider
     protected function registerMigrations(): void
     {
         $this->loadMigrationsFrom(__DIR__.'/../../../database/migrations');
+    }
+
+    /**
+     * Register the module's mail templates under the `Platform::`
+     * namespace (modules/Platform/mail) — a dot-path into modules/ does
+     * not resolve through the view finder.
+     */
+    protected function registerMailViews(): void
+    {
+        $this->loadViewsFrom(__DIR__.'/../../../mail', 'Platform');
     }
 
     /**

@@ -323,8 +323,15 @@ staged record; this section is the canonical summary).
 
 ### School onboarding flow
 
-Public application form on the central host (`/daftar-sekolah`,
-throttle IP + honeypot, owned by Platform) → provider reviews in the
+> Fase 4 (in progress, `docs/ai/plan/fase-4/tenant-onboarding-plan.md`)
+> puts an applicant account in front of this flow: `/daftar-sekolah` now
+> registers an **applicant** (central, guard `applicant`, Platform-owned)
+> and the school form lives at `/pemohon`. Public registration exists
+> only for applicants; school users are still never self-registered.
+
+Application form on the central host (`/pemohon`, behind a verified
+applicant account; registration at `/daftar-sekolah` with throttle IP +
+honeypot, owned by Platform) → provider reviews in the
 platform console (`console.localhost/applications`, guard `provider`,
 console host only) → approve corrects school data from the form (the
 corrected payload is the FINAL tenant data) → inside one transaction:

@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
  *
  * - console host                  -> the provider console
  * - school session (tenant+user)  -> the school's landing (Core)
+ * - applicant session             -> the applicant's onboarding (Platform)
  * - anyone else                   -> the school login
  *
  * Schools share the central host and are told apart by the school
@@ -27,8 +28,12 @@ final class EntryController extends Controller
                 : redirect()->route('platform.login');
         }
 
-        return $request->user() !== null
-            ? redirect()->route('home')
+        if ($request->user() !== null) {
+            return redirect()->route('home');
+        }
+
+        return Auth::guard('applicant')->check()
+            ? redirect()->route('applicant.home')
             : redirect()->route('login');
     }
 }

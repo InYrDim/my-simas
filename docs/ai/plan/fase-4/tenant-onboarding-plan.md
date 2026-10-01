@@ -1,7 +1,7 @@
 # Pendaftaran sekolah: akun pemohon → onboarding → ACC → masuk ke sekolah
 
-> **Status dokumen:** Disetujui
-> **Dibuat:** 2026-10-01 · **Diperbarui:** 2026-10-01 · **Branch:** `feat/tenant-shell-master-data` (buat branch baru saat eksekusi)
+> **Status dokumen:** Berjalan
+> **Dibuat:** 2026-10-01 · **Diperbarui:** 2026-10-01 · **Branch:** `feat/tenant-onboarding`
 
 ## Context
 Pendaftaran sekolah sekarang berjalan tanpa akun. Calon admin mengisi form publik `/daftar-sekolah` (`modules/Platform/app/Http/Controllers/SchoolApplyController.php`), provider menyetujui di console (`ApplicationReviewController`), lalu `DefaultTenantApplications::approve()` membuat tenant, memulai trial pada paket default, dan memicu event `TenantApproved`. Identity (`ProvisionFirstAdmin`) membuat admin pertama **tanpa password** dan mengirim email "atur kata sandi". Setelah itu ia login dengan kode sekolah + email + password.
@@ -101,7 +101,7 @@ Legenda: ⬜ belum · 🟡 berjalan · ✅ selesai. Berhenti di antara tahap dan
 
 | Tahap | Cakupan | Status | Catatan |
 | --- | --- | --- | --- |
-| 1 | Akun pemohon: daftar (mengganti `/daftar-sekolah`), login/keluar, verifikasi email | ⬜ | |
+| 1 | Akun pemohon: daftar (mengganti `/daftar-sekolah`), login/keluar, verifikasi email | ✅ | Tabel `applicants`, guard `applicant`, daftar + honeypot, login/keluar, verifikasi lewat signed URL, halaman pemohon (shadcn). Form data sekolah sudah pindah ke `/pemohon` memakai kontrak `submit()` lama (lihat Log keputusan). 411 tes lulus, Deptrac 0 pelanggaran, build sukses. Halaman belum dibuka di browser. |
 | 2 | Onboarding: data sekolah + pilih paket, status, ajukan ulang, trial pada paket terpilih, email keputusan | ⬜ | |
 | 3 | Jembatan ACC: password dipindah, login pemohon membuka sesi sekolah | ⬜ | |
 | 4 | Provider mengundang pemohon; lupa kata sandi pemohon | ⬜ | |
@@ -109,16 +109,17 @@ Legenda: ⬜ belum · 🟡 berjalan · ✅ selesai. Berhenti di antara tahap dan
 ## Tasks
 
 ### Tahap 1 — Akun pemohon
-- [ ] Migrasi `applicants` — `modules/Platform/database/migrations/`
-- [ ] Model + factory `Applicant` — `modules/Platform/app/Domain/Models/Applicant.php`, `modules/Platform/database/factories/ApplicantFactory.php`
-- [ ] Guard `applicant` dan provider `applicants` — `config/auth.php`
-- [ ] Controller daftar, login/keluar, verifikasi — `modules/Platform/app/Http/Controllers/Applicant/` (baru)
-- [ ] `/daftar-sekolah` menjadi form daftar akun; hapus form lama — `modules/Platform/app/Http/Controllers/SchoolApplyController.php`, `modules/Platform/resources/js/Pages/Platform/SchoolApply.tsx`
-- [ ] Route pemohon — `modules/Platform/routes/web.php`
-- [ ] Mail verifikasi + view — `modules/Platform/app/Infrastructure/Mail/` (baru), `modules/Platform/mail/` (baru, didaftarkan sebagai namespace view `Platform::`)
-- [ ] Halaman `Register`, `Login`, `VerifyNotice` — `modules/Platform/resources/js/Pages/Platform/Applicant/` (baru)
-- [ ] Pemohon login tanpa sesi sekolah diarahkan ke `/pemohon`; tautan "Daftarkan sekolah" di login sekolah — `app/Http/Controllers/EntryController.php`, `modules/Identity/resources/js/Pages/Identity/Auth/Login.tsx`
-- [ ] Tes: daftar, email unik, honeypot, login, verifikasi, tautan kedaluwarsa — `modules/Platform/tests/Feature/ApplicantAccountTest.php`; sesuaikan `SchoolApplyTest.php`
+- [x] Migrasi `applicants` — `modules/Platform/database/migrations/0005_01_01_000000_create_applicants_table.php`
+- [x] Model + factory `Applicant` — `modules/Platform/app/Domain/Models/Applicant.php`, `modules/Platform/database/factories/ApplicantFactory.php`
+- [x] Guard `applicant` dan provider `applicants` — `config/auth.php`
+- [x] Controller daftar, login/keluar, verifikasi, onboarding — `modules/Platform/app/Http/Controllers/Applicant/`
+- [x] Middleware pemohon (tamu → login pemohon, belum terverifikasi → pemberitahuan) — `modules/Platform/app/Http/Middleware/AuthenticateApplicant.php`
+- [x] `/daftar-sekolah` menjadi form daftar akun; `SchoolApplyController` dan `SchoolApply.tsx` dihapus
+- [x] Route pemohon (`applicant.*`) — `modules/Platform/routes/web.php`
+- [x] Mail verifikasi + view + pengirim signed URL — `modules/Platform/app/Infrastructure/Mail/ApplicantVerifyMail.php`, `modules/Platform/mail/applicant-verify-text.blade.php`, `modules/Platform/app/Infrastructure/Onboarding/ApplicantVerification.php`
+- [x] Halaman `Register`, `Login`, `VerifyNotice`, `Onboarding` + `ApplicantShell` — `modules/Platform/resources/js/Pages/Platform/Applicant/`, `modules/Platform/resources/js/Components/ApplicantShell.tsx`
+- [x] Pemohon login tanpa sesi sekolah diarahkan ke `/pemohon`; tautan "Daftarkan sekolah" di login sekolah — `app/Http/Controllers/EntryController.php`, `modules/Identity/resources/js/Pages/Identity/Auth/Login.tsx`
+- [x] Tes — `modules/Platform/tests/Feature/ApplicantAccountTest.php` (baru, 16 tes), `modules/Platform/tests/Feature/SchoolApplyTest.php` (disesuaikan ke `/pemohon/pengajuan`, 10 tes)
 
 **Selesai bila:** pengunjung bisa mendaftar, memverifikasi email, login, dan keluar sebagai pemohon; tanpa verifikasi ia tertahan di halaman pemberitahuan. Bukti: `php artisan test --compact modules/Platform` → lulus.
 
@@ -189,10 +190,16 @@ Legenda: ⬜ belum · 🟡 berjalan · ✅ selesai. Berhenti di antara tahap dan
 Diisi selama eksekusi; dokumen ini hidup.
 
 ### Log keputusan
+- 2026-10-01 — Tahap 1 memindahkan form data sekolah ke `/pemohon` (di balik akun terverifikasi) memakai `TenantApplications::submit()` yang ada, dengan nama/email dari akun dan pengajuan terakhir dicari lewat email. Alasan: `/daftar-sekolah` lama dihapus di tahap ini, jadi tanpa itu tidak ada cara mengajukan sekolah sampai Tahap 2. Pengikatan `applicant_id`, pilih paket, dan `resubmit` tetap di Tahap 2; untuk sementara ajukan ulang setelah ditolak membuat baris pengajuan baru.
+- 2026-10-01 — Halaman pemohon memakai primitif shadcn dari Shared (`Card`, `Field`, `Input`), bukan `AuthShell`/`AuthInput`, mengikuti `.ai/rules/js.md`.
+- 2026-10-01 — Throttle IP hanya di POST `/daftar-sekolah` (dulu GET ikut terkena), supaya membuka form tidak memakan kuota.
 - 2026-10-01 — Dokumen diselaraskan ke template skill `writing-plans` (menambah Goal, Batasan masalah, Tasks, Batas tindakan); keputusan dan desain tidak berubah. Lupa kata sandi pemohon ditegaskan masuk Tahap 4.
 
 ### Temuan
-- Belum ada.
+- `auth:applicant` tidak dipakai: `redirectGuestsTo` di `bootstrap/app.php` sadar-host dan mengirim tamu ke login **sekolah**. Pemohon memakai middleware sendiri (`AuthenticateApplicant`); `guest:` juga diganti pengecekan di controller.
+- Di tes, `actingAs($x, 'applicant')` menjadikan guard itu guard default, sehingga route sekolah (`auth`) tampak terbuka bagi pemohon. Itu artefak tes: pemisahan guard diuji lewat login sungguhan (POST `/pemohon/masuk`).
+- Model yang dipegang guard tidak ikut ter-refresh dalam satu proses tes; setelah verifikasi, tes memakai `actingAs($applicant->fresh(), ...)`.
+- ACC masih mengirim email atur kata sandi (jalur lama) sampai Tahap 3; pesan di halaman status sudah menyesuaikan.
 
 ### Hasil akhir
 Belum diisi.

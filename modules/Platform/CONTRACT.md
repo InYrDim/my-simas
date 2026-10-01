@@ -3,7 +3,8 @@
 ## Owns
 
 - Database tables: `tenants`, `tenant_modules`, `tenant_applications`
-  (school applications: central form → provider review), `plans`,
+  (school applications: applicant onboarding → provider review),
+  `applicants` (central accounts of people registering a school), `plans`,
   `subscriptions`, `invoices` (provider-side subscription billing), Spatie
   permission tables (`permissions`, `roles`, `model_has_permissions`,
   `model_has_roles`, `role_has_permissions`), `provider_users`
@@ -99,8 +100,10 @@ Internal (private): Tenant model + `TenantStatus` enum, TenantScope,
 `TenantBridge` (context-change seam; Spatie hooks in Stage 6),
 `ResolveTenant` middleware, `PlatformException` base,
 `TenantApplication` model + status enum, the application review
-controllers (guard `provider`, central-only) and the public
-`/daftar-sekolah` form (IP throttle + honeypot). Other modules access
+controllers (guard `provider`, central-only), and the applicant
+surface (Fase 4): `Applicant` model + guard `applicant`, registration at
+`/daftar-sekolah` (IP throttle on POST + honeypot), `/pemohon/*` (login,
+signed-URL email verification, onboarding). Other modules access
 tenancy only through contracts/DTOs — never the Tenant model.
 
 ## Tenant resolution (the one strategy)
@@ -129,6 +132,28 @@ is the only place that mapping lives):
 globally: prepended to the `web` group AND the middleware priority list
 (before `SubstituteBindings` and auth) in `bootstrap/app.php`. Alias
 `tenant` exists for non-web contexts.
+
+## Applicant accounts (Fase 4, in progress)
+
+Plan and status: `docs/ai/plan/fase-4/tenant-onboarding-plan.md`.
+
+- `applicants` is CENTRAL (never `BelongsToTenant`): an applicant exists
+  before their tenant. `tenant_id` is nullable and filled at approval;
+  `password` is nullable (invited-not-yet-activated, or handed over to
+  the school admin at approval).
+- Guard `applicant` (session), separate from `web` and `provider`. The
+  pages use `AuthenticateApplicant` middleware instead of
+  `auth:applicant`, because the app's guest redirect is host-aware and
+  would send an applicant to the school login.
+- Public registration exists ONLY for applicants. School users are still
+  never self-registered (Identity's locked decision is unchanged).
+- Email verification uses a temporary signed URL (60 min) carrying a hash
+  of the email; no token table. Mail views live under the `Platform::`
+  view namespace (`modules/Platform/mail`).
+- Tahap 1 state: the school form at `/pemohon` submits through the
+  existing `TenantApplications::submit()` with the applicant's own name
+  and email; binding by `applicant_id`, plan choice and `resubmit`
+  arrive in Tahap 2, the hand-over to the school session in Tahap 3.
 
 ## Queue context propagation (Stage 4)
 

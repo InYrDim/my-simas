@@ -1,45 +1,66 @@
 <?php
 
+use Modules\Platform\App\Domain\Models\Applicant;
+use Modules\Platform\App\Domain\Models\TenantApplicationStatus;
+use Modules\Platform\Database\Factories\ApplicantFactory;
 use Modules\Platform\Database\Factories\TenantApplicationFactory;
 use Modules\Platform\Database\Factories\TenantFactory;
 
+use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
 use function Pest\Laravel\post;
 
 /**
- * Stage 7 (Fase 2): public school application form on the central
- * host. No auth; anti-spam = IP throttle + honeypot; domain rules
- * (slug reserved/taken/dupek, duplicate pending email) live in the
- * TenantApplications contract and are proven end-to-end here over
- * HTTP. A successful submit only creates a pending row — no tenant,
- * no login, no email.
+ * School application from the applicant's onboarding page (Fase 4
+ * Tahap 1): the school form that used to be public at /daftar-sekolah
+ * now sits behind a verified applicant account. Domain rules (slug
+ * reserved/taken/duplicate, one pending application per email) still
+ * live in the TenantApplications contract and are proven end-to-end here
+ * over HTTP. A successful submit only creates a pending row — no tenant,
+ * no school login.
  */
-it('renders the public application form on the central host', function () {
-    get('http://localhost/daftar-sekolah')
+function onboardingApplicant(array $attributes = []): Applicant
+{
+    $applicant = ApplicantFactory::new()->create($attributes);
+
+    actingAs($applicant, 'applicant');
+
+    return $applicant;
+}
+
+it('shows the school form to a verified applicant without an application', function () {
+    $applicant = onboardingApplicant(['name' => 'Budi Kepsek', 'email' => 'budi@nusantara.test']);
+
+    get('http://localhost/pemohon')
         ->assertOk()
         ->assertInertia(
             fn ($page) => $page
-                ->component('Platform/SchoolApply')
+                ->component('Platform/Applicant/Onboarding')
+                ->where('applicant.email', $applicant->email)
+                ->where('application', null)
                 ->has('timezones', 3),
         );
 });
 
-it('serves the application form even when a school is remembered in the session', function () {
+it('serves onboarding even when a school is remembered in the session', function () {
     TenantFactory::new()->create(['slug' => 'sekolah-a']);
+    onboardingApplicant();
 
-    get(school('sekolah-a', '/daftar-sekolah'))->assertOk();
+    get(school('sekolah-a', '/pemohon'))->assertOk();
 });
 
-it('stores a valid submission as a pending application', function () {
-    post('http://localhost/daftar-sekolah', [
+it('stores a valid submission as a pending application under the applicant identity', function () {
+    onboardingApplicant(['name' => 'Budi Kepsek', 'email' => 'budi@nusantara.test']);
+
+    post('http://localhost/pemohon/pengajuan', [
         'school_name' => 'SMA Nusantara',
         'desired_slug' => 'sma-nusantara',
         'timezone' => 'Asia/Jakarta',
-        'applicant_name' => 'Budi Kepsek',
-        'applicant_email' => 'budi@nusantara.test',
         'applicant_message' => 'Siap mulai semester ini.',
+        // Identity comes from the account, never from the form.
+        'applicant_email' => 'orang-lain@nusantara.test',
     ])
-        ->assertRedirect(route('school.apply.create'))
+        ->assertRedirect(route('applicant.home'))
         ->assertSessionHas('status');
 
     $row = DB::table('tenant_applications')
@@ -48,36 +69,33 @@ it('stores a valid submission as a pending application', function () {
 
     expect($row)->not->toBeNull()
         ->and($row->status)->toBe('pending')
+        ->and($row->applicant_name)->toBe('Budi Kepsek')
         ->and($row->applicant_email)->toBe('budi@nusantara.test')
         // A submission creates NOTHING but the row.
         ->and(DB::table('tenants')->where('slug', 'sma-nusantara')->exists())->toBeFalse();
 });
 
-it('rejects a slug colliding with an existing tenant', function () {
-    TenantFactory::new()->create(['slug' => 'sma-bentrok']);
-
-    post('http://localhost/daftar-sekolah', [
-        'school_name' => 'SMA Bentrok Baru',
-        'desired_slug' => 'sma-bentrok',
-        'applicant_name' => 'Budi',
-        'applicant_email' => 'budi@bentrok.test',
-    ])
-        ->assertRedirect()
-        ->assertSessionHasErrors('application');
-
-    expect(DB::table('tenant_applications')->count())->toBe(0);
-});
-
-it('rejects a second pending application for the same email', function () {
+it('shows the status instead of the form once an application is pending', function () {
+    onboardingApplicant(['email' => 'kepsek@nunggu.test']);
     TenantApplicationFactory::new()->create([
-        'applicant_email' => 'kepsek@dobel.test',
+        'applicant_email' => 'kepsek@nunggu.test',
+        'school_name' => 'SMA Nunggu',
     ]);
 
-    post('http://localhost/daftar-sekolah', [
+    get('http://localhost/pemohon')->assertInertia(
+        fn ($page) => $page
+            ->where('application.status', 'pending')
+            ->where('application.schoolName', 'SMA Nunggu'),
+    );
+});
+
+it('refuses a second application while one is pending', function () {
+    onboardingApplicant(['email' => 'kepsek@dobel.test']);
+    TenantApplicationFactory::new()->create(['applicant_email' => 'kepsek@dobel.test']);
+
+    post('http://localhost/pemohon/pengajuan', [
         'school_name' => 'SMA Dobel',
         'desired_slug' => 'sma-dobel',
-        'applicant_name' => 'Kepsek Dobel',
-        'applicant_email' => 'KEPSek@dobel.test',
     ])
         ->assertRedirect()
         ->assertSessionHasErrors('application');
@@ -85,43 +103,80 @@ it('rejects a second pending application for the same email', function () {
     expect(DB::table('tenant_applications')->where('desired_slug', 'sma-dobel')->exists())->toBeFalse();
 });
 
+it('lets a rejected applicant see the note and apply again', function () {
+    onboardingApplicant(['email' => 'kepsek@ulang.test']);
+    TenantApplicationFactory::new()->create([
+        'applicant_email' => 'kepsek@ulang.test',
+        'desired_slug' => 'sma-ulang',
+        'status' => TenantApplicationStatus::Rejected,
+        'admin_note' => 'Nama sekolah belum lengkap.',
+    ]);
+
+    get('http://localhost/pemohon')->assertInertia(
+        fn ($page) => $page
+            ->where('application.status', 'rejected')
+            ->where('application.adminNote', 'Nama sekolah belum lengkap.'),
+    );
+
+    post('http://localhost/pemohon/pengajuan', [
+        'school_name' => 'SMA Negeri 1 Ulang',
+        'desired_slug' => 'sma-ulang',
+    ])
+        ->assertRedirect(route('applicant.home'))
+        ->assertSessionHasNoErrors();
+
+    expect(DB::table('tenant_applications')->where('applicant_email', 'kepsek@ulang.test')->where('status', 'pending')->count())->toBe(1);
+});
+
+it('rejects a slug colliding with an existing tenant', function () {
+    TenantFactory::new()->create(['slug' => 'sma-bentrok']);
+    onboardingApplicant();
+
+    post('http://localhost/pemohon/pengajuan', [
+        'school_name' => 'SMA Bentrok Baru',
+        'desired_slug' => 'sma-bentrok',
+    ])
+        ->assertRedirect()
+        ->assertSessionHasErrors('application');
+
+    expect(DB::table('tenant_applications')->count())->toBe(0);
+});
+
 it('rejects a slug that is already pending approval', function () {
     TenantApplicationFactory::new()->create(['desired_slug' => 'sma-nunggu']);
+    onboardingApplicant();
 
-    post('http://localhost/daftar-sekolah', [
+    post('http://localhost/pemohon/pengajuan', [
         'school_name' => 'SMA Nunggu Juga',
         'desired_slug' => 'sma-nunggu',
-        'applicant_name' => 'Lain',
-        'applicant_email' => 'lain@nunggu.test',
     ])
         ->assertRedirect()
         ->assertSessionHasErrors('application');
 });
 
 it('validates required fields', function () {
-    post('http://localhost/daftar-sekolah', [
+    onboardingApplicant();
+
+    post('http://localhost/pemohon/pengajuan', [
         'school_name' => '',
         'desired_slug' => '',
-        'applicant_name' => '',
-        'applicant_email' => 'bukan-email',
     ])
         ->assertRedirect()
-        ->assertSessionHasErrors(['school_name', 'desired_slug', 'applicant_name', 'applicant_email']);
+        ->assertSessionHasErrors(['school_name', 'desired_slug']);
 
     expect(DB::table('tenant_applications')->count())->toBe(0);
 });
 
-it('silently drops honeypot submissions with a generic success', function () {
-    post('http://localhost/daftar-sekolah', [
-        'school_name' => 'SMA Bot',
-        'desired_slug' => 'sma-bot',
-        'applicant_name' => 'Bot',
-        'applicant_email' => 'bot@spam.test',
-        'website' => 'http://spam.example',
-    ])
-        ->assertRedirect(route('school.apply.create'))
-        ->assertSessionHas('status');
+it('keeps guests and unverified applicants out of onboarding', function () {
+    get('http://localhost/pemohon')->assertRedirect(route('applicant.login'));
+    post('http://localhost/pemohon/pengajuan', ['school_name' => 'X', 'desired_slug' => 'x'])
+        ->assertRedirect(route('applicant.login'));
 
-    // The row must NOT exist: the honeypot hit is dropped.
-    expect(DB::table('tenant_applications')->where('desired_slug', 'sma-bot')->exists())->toBeFalse();
+    actingAs(ApplicantFactory::new()->unverified()->create(), 'applicant');
+
+    get('http://localhost/pemohon')->assertRedirect(route('applicant.verify.notice'));
+    post('http://localhost/pemohon/pengajuan', ['school_name' => 'X', 'desired_slug' => 'x'])
+        ->assertRedirect(route('applicant.verify.notice'));
+
+    expect(DB::table('tenant_applications')->count())->toBe(0);
 });
