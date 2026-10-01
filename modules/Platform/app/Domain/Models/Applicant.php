@@ -63,4 +63,14 @@ class Applicant extends Authenticatable
     {
         return sha1($this->email);
     }
+
+    /**
+     * The value an invitation or password-reset link must carry: tied to
+     * the email AND the current password, so the link stops working the
+     * moment the password it was issued against changes.
+     */
+    public function credentialHash(): string
+    {
+        return sha1($this->email.'|'.($this->password ?? ''));
+    }
 }

@@ -44,6 +44,10 @@ const statusBadge: Record<string, [BadgeVariant, string]> = {
     pending: ['outline', 'pending'],
     inactive: ['secondary', 'nonaktif'],
     invited: ['outline', 'belum aktivasi'],
+    unverified: ['outline', 'email belum terverifikasi'],
+    registered: ['secondary', 'belum mengajukan'],
+    approved: ['default', 'disetujui'],
+    rejected: ['destructive', 'ditolak'],
     deactivated: ['destructive', 'nonaktif'],
 };
 

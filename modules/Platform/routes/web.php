@@ -1,10 +1,13 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\Platform\App\Http\Controllers\Applicant\ForgotPasswordController;
 use Modules\Platform\App\Http\Controllers\Applicant\OnboardingController;
+use Modules\Platform\App\Http\Controllers\Applicant\PasswordSetupController;
 use Modules\Platform\App\Http\Controllers\Applicant\RegisterController;
 use Modules\Platform\App\Http\Controllers\Applicant\SessionController;
 use Modules\Platform\App\Http\Controllers\Applicant\VerificationController;
+use Modules\Platform\App\Http\Controllers\ApplicantConsoleController;
 use Modules\Platform\App\Http\Controllers\ApplicationReviewController;
 use Modules\Platform\App\Http\Controllers\Auth\ProviderAuthenticatedSessionController;
 use Modules\Platform\App\Http\Controllers\BillingController;
@@ -35,6 +38,34 @@ Route::middleware('web')->name('applicant.')->group(function (): void {
 
         Route::post('masuk', [SessionController::class, 'store'])
             ->name('login.attempt');
+
+        Route::get('lupa-sandi', [ForgotPasswordController::class, 'create'])
+            ->name('password.request');
+
+        Route::post('lupa-sandi', [ForgotPasswordController::class, 'store'])
+            ->middleware('throttle:5,10')
+            ->name('password.email');
+
+        // Signed links from the invitation and reset mails. Signed
+        // RELATIVE: invitations are issued on the console host, and the
+        // link must work on this one. The POST carries the same signature.
+        Route::middleware('signed:relative')->group(function (): void {
+            Route::get('undangan/{applicant}/{hash}', [PasswordSetupController::class, 'show'])
+                ->whereNumber('applicant')
+                ->name('invitation');
+
+            Route::post('undangan/{applicant}/{hash}', [PasswordSetupController::class, 'store'])
+                ->whereNumber('applicant')
+                ->name('invitation.accept');
+
+            Route::get('atur-ulang/{applicant}/{hash}', [PasswordSetupController::class, 'show'])
+                ->whereNumber('applicant')
+                ->name('password.reset');
+
+            Route::post('atur-ulang/{applicant}/{hash}', [PasswordSetupController::class, 'store'])
+                ->whereNumber('applicant')
+                ->name('password.update');
+        });
 
         // Signed link from the verification mail; opens in any browser.
         Route::get('verifikasi/{applicant}/{hash}', [VerificationController::class, 'verify'])
@@ -134,6 +165,17 @@ Route::domain((string) config('tenancy.console_domain'))->middleware('web')->nam
             Route::post('invoices/{invoice}/pay', [InvoiceController::class, 'pay'])->name('invoices.pay');
             Route::post('invoices/{invoice}/void', [InvoiceController::class, 'void'])->name('invoices.void');
         });
+
+        // Applicant accounts (Fase 4): list and invite.
+        Route::get('applicants', [ApplicantConsoleController::class, 'index'])
+            ->name('applicants.index');
+
+        Route::post('applicants', [ApplicantConsoleController::class, 'store'])
+            ->name('applicants.store');
+
+        Route::post('applicants/{applicant}/invite', [ApplicantConsoleController::class, 'resend'])
+            ->whereNumber('applicant')
+            ->name('applicants.invite');
 
         // School application review (Fase 2 Stage 6): the approve POST
         // carries provider corrections (school data final = form ACC).

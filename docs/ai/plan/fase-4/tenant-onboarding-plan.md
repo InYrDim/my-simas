@@ -1,6 +1,6 @@
 # Pendaftaran sekolah: akun pemohon → onboarding → ACC → masuk ke sekolah
 
-> **Status dokumen:** Berjalan
+> **Status dokumen:** Selesai
 > **Dibuat:** 2026-10-01 · **Diperbarui:** 2026-10-01 · **Branch:** `feat/tenant-onboarding`
 
 ## Context
@@ -104,7 +104,7 @@ Legenda: ⬜ belum · 🟡 berjalan · ✅ selesai. Berhenti di antara tahap dan
 | 1 | Akun pemohon: daftar (mengganti `/daftar-sekolah`), login/keluar, verifikasi email | ✅ | Tabel `applicants`, guard `applicant`, daftar + honeypot, login/keluar, verifikasi lewat signed URL, halaman pemohon (shadcn). Form data sekolah sudah pindah ke `/pemohon` memakai kontrak `submit()` lama (lihat Log keputusan). 411 tes lulus, Deptrac 0 pelanggaran, build sukses. Halaman belum dibuka di browser. |
 | 2 | Onboarding: data sekolah + pilih paket, status, ajukan ulang, trial pada paket terpilih, email keputusan | ✅ | Pengajuan terikat ke akun (`applicant_id`, satu per pemohon), pilih paket di onboarding, trial pada paket itu saat ACC (provider bisa mengoreksi), ajukan ulang di baris yang sama, email disetujui/ditolak. 428 tes lulus, Deptrac 0 pelanggaran, tipe TS bersih. Halaman belum dibuka di browser. |
 | 3 | Jembatan ACC: password dipindah, login pemohon membuka sesi sekolah | ✅ | Saat ACC hash password pemohon dipindah ke admin sekolah (pemohon jadi tanpa password, `tenant_id` terisi), tanpa email atur kata sandi. Login di `/pemohon/masuk` untuk pemohon yang disetujui membuka sesi sekolah lewat `SchoolSessionOpener` (kontrak Platform, implementasi Identity). 439 tes lulus, Deptrac 0 pelanggaran, tipe TS bersih. Belum dicoba di browser. |
-| 4 | Provider mengundang pemohon; lupa kata sandi pemohon | ⬜ | |
+| 4 | Provider mengundang pemohon; lupa kata sandi pemohon | ✅ | Console `Pemohon` (daftar + undang + kirim ulang), atur kata sandi dari undangan, lupa kata sandi pemohon. Tautan signed relatif, sekali pakai. 452 tes lulus, Deptrac 0 pelanggaran, tipe TS bersih. Belum dicoba di browser. |
 
 ## Tasks
 
@@ -148,10 +148,12 @@ Legenda: ⬜ belum · 🟡 berjalan · ✅ selesai. Berhenti di antara tahap dan
 **Selesai bila:** setelah ACC, login di `/pemohon/masuk` mendarat di `/beranda` sekolah baru. Bukti: `php artisan test --compact` dan `vendor/bin/deptrac analyse` → lulus, 0 pelanggaran.
 
 ### Tahap 4 — Undangan provider dan lupa kata sandi
-- [ ] Console: daftar pemohon + undang — `modules/Platform/app/Http/Controllers/ApplicantConsoleController.php`, `modules/Platform/resources/js/Pages/Platform/Applicants/Index.tsx`
-- [ ] Atur kata sandi dari undangan (sekaligus verifikasi email) — `modules/Platform/app/Http/Controllers/Applicant/`, halaman `SetPassword`
-- [ ] Lupa kata sandi pemohon (respons generik) — controller + halaman + mail
-- [ ] Tes: undangan, tautan kedaluwarsa/salah tanda tangan, reset tidak membocorkan keberadaan email — `modules/Platform/tests/Feature/ApplicantInviteTest.php`
+- [x] Console: daftar pemohon + undang + kirim ulang undangan — `modules/Platform/app/Http/Controllers/ApplicantConsoleController.php`, `modules/Platform/resources/js/Pages/Platform/Applicants/Index.tsx`, entri menu di `modules/Platform/resources/js/Components/ProviderLayout.tsx`
+- [x] Atur kata sandi dari undangan atau reset (sekaligus verifikasi email) — `modules/Platform/app/Http/Controllers/Applicant/PasswordSetupController.php`, `modules/Platform/resources/js/Pages/Platform/Applicant/SetPassword.tsx`
+- [x] Lupa kata sandi pemohon (respons generik) — `modules/Platform/app/Http/Controllers/Applicant/ForgotPasswordController.php`, `modules/Platform/resources/js/Pages/Platform/Applicant/ForgotPassword.tsx`
+- [x] Pembuat tautan signed + mail undangan, reset, dan petunjuk reset sekolah — `modules/Platform/app/Infrastructure/Onboarding/ApplicantAccessLinks.php`, `modules/Platform/app/Infrastructure/Mail/`, `modules/Platform/mail/`
+- [x] Route `applicant.invitation*`, `applicant.password.*`, `platform.applicants.*` — `modules/Platform/routes/web.php`
+- [x] Tes — `modules/Platform/tests/Feature/ApplicantInviteTest.php` (baru, 13 tes)
 
 **Selesai bila:** provider bisa mengundang pemohon yang lalu mengatur kata sandi dan masuk onboarding; pemohon bisa mereset kata sandinya. Bukti: `php artisan test --compact modules/Platform` → lulus.
 
@@ -191,6 +193,10 @@ Legenda: ⬜ belum · 🟡 berjalan · ✅ selesai. Berhenti di antara tahap dan
 Diisi selama eksekusi; dokumen ini hidup.
 
 ### Log keputusan
+- 2026-10-01 — Tautan undangan dan reset ditandatangani **relatif** (`signed:relative`) lalu diberi awalan `TenantUrl::root()`: undangan dibuat di host console, dan tanda tangan absolut akan mengikat tautan ke host itu.
+- 2026-10-01 — Tautan undangan/reset membawa hash email + password saat ini, jadi otomatis sekali pakai tanpa tabel token. Masa berlaku: undangan 7 hari, reset 60 menit.
+- 2026-10-01 — "Lupa kata sandi" untuk pemohon yang sudah disetujui mengirim petunjuk ke halaman reset **sekolah** (dengan kode sekolah), karena password-nya sudah berada di akun admin sekolah. Untuk pemohon undangan yang belum aktivasi, yang dikirim adalah undangan ulang.
+- 2026-10-01 — Membuka tautan undangan/reset dianggap bukti menguasai email, jadi menyimpan kata sandi sekaligus memverifikasi email.
 - 2026-10-01 — Pemohon yang sudah disetujui tidak pernah mendapat sesi guard `applicant` saat login: form yang sama langsung membuka sesi sekolah. Sesi pemohon yang masih hidup dari sebelum ACC tetap bisa melihat halaman status, yang menyuruhnya keluar lalu masuk lagi.
 - 2026-10-01 — Setelah login jembatan, pengalihan ke `/` (bukan langsung ke route `home`), supaya Platform tidak menyebut nama route milik Core; `EntryController` yang mengarahkan ke `/beranda`.
 - 2026-10-01 — Sekolah yang ditangguhkan ditolak di opener dengan error generik, bukan dibukakan sesi yang lalu mentok di 403.
@@ -214,4 +220,10 @@ Diisi selama eksekusi; dokumen ini hidup.
 - Tidak ada primitif radio group di Shared; `PlanPicker` memakai input radio native di dalam label seukuran kartu, tanpa menambah dependensi.
 
 ### Hasil akhir
-Belum diisi.
+Keempat tahap selesai (2026-10-01) di branch `feat/tenant-onboarding`. Alur akhir: daftar atau diundang → verifikasi → isi data sekolah dan pilih paket → provider ACC atau tolak (ajukan ulang) → login dengan email dan password yang sama langsung ke `/beranda` sekolah, trial berjalan pada paket terpilih.
+
+Yang tersisa / tindak lanjut:
+- Alur belum dicoba di browser; verifikasi end-to-end manual di atas belum dijalankan.
+- Pesan aturan slug/paket dari `DefaultTenantApplications` masih berbahasa Inggris di form pemohon.
+- Console `Pemohon` menampilkan 200 akun terbaru tanpa paginasi atau pencarian.
+- Akun pemohon yang tidak pernah diverifikasi atau tidak pernah mengajukan tidak dibersihkan otomatis.

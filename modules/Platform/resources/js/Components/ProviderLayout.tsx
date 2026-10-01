@@ -6,10 +6,12 @@ import {
     LayoutDashboardIcon,
     LogOutIcon,
     SchoolIcon,
+    UserPlusIcon,
     UsersIcon,
 } from 'lucide-react';
 import type { ComponentType, ReactNode } from 'react';
 
+import { index as applicantsIndex } from '@/actions/Modules/Platform/App/Http/Controllers/ApplicantConsoleController';
 import { index as applicationsIndex } from '@/actions/Modules/Platform/App/Http/Controllers/ApplicationReviewController';
 import { destroy as providerLogout } from '@/actions/Modules/Platform/App/Http/Controllers/Auth/ProviderAuthenticatedSessionController';
 import {
@@ -76,6 +78,11 @@ const nav: NavEntry[] = [
         label: 'Pengajuan',
         href: consolePath(applicationsIndex.url()),
         icon: InboxIcon,
+    },
+    {
+        label: 'Pemohon',
+        href: consolePath(applicantsIndex.url()),
+        icon: UserPlusIcon,
     },
     {
         label: 'Langganan',

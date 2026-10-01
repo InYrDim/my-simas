@@ -180,6 +180,15 @@ Plan and status: `docs/ai/plan/fase-4/tenant-onboarding-plan.md`.
   to Identity's first-admin listener and is then CLEARED on the
   applicant (moved, not copied); `applicants.tenant_id` is set. One
   credential only: the school admin account.
+- The provider may also INVITE an applicant from the console
+  (`/applicants`, guard `provider`): the account starts without a
+  password and gets a link to set one. Invitation and forgot-password
+  links come from `ApplicantAccessLinks`: temporary signed URLs, signed
+  RELATIVE and prefixed with `TenantUrl::root()` (they are issued on
+  the console host), carrying a hash of email + current password so
+  each works once. Setting a password through one verifies the email.
+- Forgot password answers generically. An approved applicant is mailed
+  the SCHOOL reset page instead; an invited one, the invitation again.
 - From then on `/pemohon/masuk` opens the SCHOOL session for that email
   through `SchoolSessionOpener` and redirects to `/`. No applicant
   session is created for an approved applicant.

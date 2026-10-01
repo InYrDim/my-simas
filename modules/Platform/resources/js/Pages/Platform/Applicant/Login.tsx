@@ -1,6 +1,7 @@
 import { Link, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 
+import { create as forgotPassword } from '@/actions/Modules/Platform/App/Http/Controllers/Applicant/ForgotPasswordController';
 import { create as register } from '@/actions/Modules/Platform/App/Http/Controllers/Applicant/RegisterController';
 import { store } from '@/actions/Modules/Platform/App/Http/Controllers/Applicant/SessionController';
 import { Button } from '@shared/components/ui/button';
@@ -76,6 +77,13 @@ export default function Login() {
                         />
                         <FieldError>{form.errors.password}</FieldError>
                     </Field>
+
+                    <Link
+                        href={forgotPassword.url()}
+                        className="text-sm text-primary hover:underline"
+                    >
+                        Lupa kata sandi?
+                    </Link>
 
                     <Field orientation="horizontal">
                         <Checkbox
