@@ -217,7 +217,7 @@ changes flush the `TenantHydrator` cache entry for the tenant.
 Dev seeding: `PlatformDevSeeder` (local only, called from
 `DatabaseSeeder`) creates sekolah-a (Jakarta; core+identity) and
 sekolah-b (Makassar; core), a provider console login
-`provider@simas.test` / `password`, and one pending application
+`admin@simas.com` / `admin123`, and one pending application
 (sekolah-c) so the review → ACC → provisioning flow runs end-to-end
 without filling the public form. The dev login user
 `admin@sekolah-a.test` / `password` gets its admin-sekolah role from

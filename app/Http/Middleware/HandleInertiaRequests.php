@@ -40,7 +40,25 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
+                'provider' => $this->providerPayload($request),
             ],
         ];
+    }
+
+    /**
+     * The signed-in provider operator on the console host (the default
+     * web guard never carries it).
+     *
+     * @return array{name: string, email: string}|null
+     */
+    private function providerPayload(Request $request): ?array
+    {
+        $provider = $request->user('provider');
+
+        if ($provider === null) {
+            return null;
+        }
+
+        return ['name' => $provider->name, 'email' => $provider->email];
     }
 }

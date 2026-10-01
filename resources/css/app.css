@@ -46,3 +46,122 @@
         animation: none;
     }
 }
+
+/*
+ * Provider console theme (light) — the shadcn token set from the design
+ * reference, used verbatim: sky primary, amber accent, slate neutrals,
+ * square corners, Geist / JetBrains Mono, soft offset shadows. Names match
+ * shadcn so components can be swapped in later. Scoped to the
+ * `.console-theme` wrapper (ProviderLayout / ProviderLogin) so the school
+ * portal keeps its own palette.
+ */
+@theme inline {
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+}
+
+.console-theme {
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.2077 0.0398 265.7549);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.2077 0.0398 265.7549);
+    --primary: oklch(0.6934 0.1502 237.0928);
+    --primary-foreground: oklch(1 0 0);
+    --secondary: oklch(0.5586 0.0627 245.9549);
+    --secondary-foreground: oklch(1 0 0);
+    --muted: oklch(0.9683 0.0069 247.8956);
+    --muted-foreground: oklch(0.5544 0.0407 257.4166);
+    --accent: oklch(0.7298 0.156 69.7002);
+    --accent-foreground: oklch(1 0 0);
+    --destructive: oklch(0.6368 0.2078 25.3313);
+    --destructive-foreground: oklch(1 0 0);
+    --border: oklch(0.9288 0.0126 255.5078);
+    --input: oklch(0.9288 0.0126 255.5078);
+    --ring: oklch(0.6934 0.1502 237.0928);
+    --chart-1: oklch(0.6934 0.1502 237.0928);
+    --chart-2: oklch(0.5586 0.0627 245.9549);
+    --chart-3: oklch(0.7298 0.156 69.7002);
+    --chart-4: oklch(0.5701 0.0098 247.9992);
+    --chart-5: oklch(0.6231 0.188 259.8145);
+    --sidebar: oklch(0.9842 0.0034 247.8575);
+    --sidebar-foreground: oklch(0.2077 0.0398 265.7549);
+    --sidebar-primary: oklch(0.6934 0.1502 237.0928);
+    --sidebar-primary-foreground: oklch(1 0 0);
+    --sidebar-accent: oklch(0.9683 0.0069 247.8956);
+    --sidebar-accent-foreground: oklch(0.6934 0.1502 237.0928);
+    --sidebar-border: oklch(0.9288 0.0126 255.5078);
+    --sidebar-ring: oklch(0.6934 0.1502 237.0928);
+    --background: oklch(0.9842 0.0034 247.8575);
+    --foreground: oklch(0.2077 0.0398 265.7549);
+
+    --radius: 0rem;
+    --radius-xs: 0;
+    --radius-sm: 0;
+    --radius-md: 0;
+    --radius-lg: 0;
+    --radius-xl: 0;
+    --radius-2xl: 0;
+    --font-sans:
+        'Geist', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji';
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+    --tracking-normal: -0.01em;
+
+    font-family: var(--font-sans);
+    letter-spacing: var(--tracking-normal);
+    color: var(--foreground);
+    background-color: var(--background);
+}
+
+/* The reference's --shadow-sm and --shadow-md. */
+.console-theme .console-card {
+    box-shadow:
+        0 4px 10px -3px hsl(0 0% 0% / 0.1),
+        0 1px 2px -4px hsl(0 0% 0% / 0.1);
+}
+
+.console-theme .console-pop {
+    box-shadow:
+        0 4px 10px -3px hsl(0 0% 0% / 0.1),
+        0 2px 4px -4px hsl(0 0% 0% / 0.1);
+}
+
+.console-theme ::selection {
+    background-color: color-mix(in oklch, var(--primary) 25%, transparent);
+    color: var(--foreground);
+}
+
+.console-theme :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+}

@@ -54,11 +54,11 @@ class PlatformDevSeeder extends Seeder
     protected function seedProviderUser(): void
     {
         ProviderUser::query()->firstOrCreate(
-            ['email' => 'provider@simas.test'],
-            ['name' => 'Provider Admin', 'password' => 'password'],
+            ['email' => 'admin@simas.com'],
+            ['name' => 'Provider Admin', 'password' => 'admin123'],
         );
 
-        $this->command->info('Seeded provider user [provider@simas.test] (password: password).');
+        $this->command->info('Seeded provider user [admin@simas.com] (password: admin123).');
     }
 
     /**

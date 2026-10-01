@@ -1,15 +1,17 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import { consolePath } from '../../../Components/consolePath';
 
 import type { ApplicationData } from '@/types/ApplicationData';
 
 import {
     approve as approveApplication,
+    index as applicationsIndex,
     reject as rejectApplication,
 } from '@/actions/Modules/Platform/App/Http/Controllers/ApplicationReviewController';
 
-import { destroy as providerLogout } from '@/actions/Modules/Platform/App/Http/Controllers/Auth/ProviderAuthenticatedSessionController';
+import ProviderLayout from '../../../Components/ProviderLayout';
 
 interface ShowProps {
     application: ApplicationData;
@@ -39,77 +41,60 @@ export default function ApplicationsShow({ application }: ShowProps) {
         event.preventDefault();
 
         decideForm.post(
-            approveApplication.url({ application: application.id }),
+            consolePath(approveApplication.url({ application: application.id })),
         );
     }
 
     function reject(event: FormEvent) {
         event.preventDefault();
 
-        decideForm.post(rejectApplication.url({ application: application.id }));
+        decideForm.post(consolePath(rejectApplication.url({ application: application.id })));
     }
 
     return (
-        <div className="min-h-[100dvh] bg-zinc-950">
-            <header className="flex h-16 items-center justify-between border-b border-zinc-800 px-6">
-                <div className="flex items-center gap-6">
-                    <span className="text-sm font-semibold text-zinc-100">
-                        Console Provider
-                    </span>
-
-                    <Link
-                        href="/applications"
-                        className="text-sm text-zinc-400 transition-colors hover:text-zinc-200"
-                    >
-                        ← Pengajuan
-                    </Link>
-                </div>
-
-                <Link
-                    href={providerLogout.url()}
-                    method="post"
-                    as="button"
-                    className="text-sm text-zinc-400 transition-colors hover:text-zinc-200"
-                >
-                    Keluar
-                </Link>
-            </header>
-
+        <ProviderLayout width="max-w-2xl">
             <Head title={`${application.schoolName} — Review`} />
 
-            <main className="mx-auto max-w-2xl px-6 py-10">
+            <Link
+                href={consolePath(applicationsIndex.url())}
+                className="inline-flex min-h-11 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+                Kembali ke pengajuan
+            </Link>
+
+            <div>
                 <div className="flex items-center justify-between">
-                    <h1 className="text-xl font-semibold text-zinc-100">
+                    <h1 className="text-xl font-semibold text-foreground">
                         {application.schoolName}
                     </h1>
 
                     <span
                         className={
                             isPending(application.status)
-                                ? 'rounded-full border border-amber-800/60 bg-amber-950/40 px-2.5 py-0.5 text-xs font-medium text-amber-300'
-                                : 'rounded-full border border-zinc-700 bg-zinc-900 px-2.5 py-0.5 text-xs font-medium text-zinc-400'
+                                ? 'rounded-md border border-accent/40 bg-accent/10 px-2.5 py-0.5 text-xs font-medium text-foreground'
+                                : 'rounded-md border border-input bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground'
                         }
                     >
                         {application.status}
                     </span>
                 </div>
 
-                <dl className="mt-6 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-5 py-4 text-sm">
-                    <dt className="text-zinc-500">Pengaju</dt>
-                    <dd className="text-zinc-200">
+                <dl className="mt-6 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 rounded-lg border border-border bg-card px-5 py-4 text-sm">
+                    <dt className="text-muted-foreground">Pengaju</dt>
+                    <dd className="text-foreground">
                         {application.applicantName} (
                         {application.applicantEmail})
                     </dd>
 
-                    <dt className="text-zinc-500">Slug diajukan</dt>
-                    <dd className="font-mono text-zinc-200">
+                    <dt className="text-muted-foreground">Slug diajukan</dt>
+                    <dd className="font-mono text-foreground">
                         /{application.desiredSlug}
                     </dd>
 
                     {application.applicantMessage !== null && (
                         <>
-                            <dt className="text-zinc-500">Pesan</dt>
-                            <dd className="text-zinc-300">
+                            <dt className="text-muted-foreground">Pesan</dt>
+                            <dd className="text-foreground/80">
                                 {application.applicantMessage}
                             </dd>
                         </>
@@ -117,8 +102,8 @@ export default function ApplicationsShow({ application }: ShowProps) {
 
                     {application.adminNote !== null && (
                         <>
-                            <dt className="text-zinc-500">Catatan</dt>
-                            <dd className="text-zinc-300">
+                            <dt className="text-muted-foreground">Catatan</dt>
+                            <dd className="text-foreground/80">
                                 {application.adminNote}
                             </dd>
                         </>
@@ -126,7 +111,7 @@ export default function ApplicationsShow({ application }: ShowProps) {
                 </dl>
 
                 {decideForm.errors.application !== undefined && (
-                    <div className="mt-6 rounded-lg border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-300">
+                    <div className="mt-6 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                         {decideForm.errors.application}
                     </div>
                 )}
@@ -135,18 +120,18 @@ export default function ApplicationsShow({ application }: ShowProps) {
                     <>
                         <form
                             onSubmit={approve}
-                            className="mt-8 flex flex-col gap-4 rounded-lg border border-zinc-800 bg-zinc-900/50 p-5"
+                            className="mt-8 flex flex-col gap-4 rounded-lg border border-border bg-card p-5"
                             noValidate
                         >
-                            <h2 className="text-sm font-semibold text-zinc-100">
+                            <h2 className="text-sm font-semibold text-foreground">
                                 Setujui — koreksi data bila perlu
                             </h2>
-                            <p className="text-xs text-zinc-500">
+                            <p className="text-xs text-muted-foreground">
                                 Data di form ini menjadi data final tenant.
                             </p>
 
                             <label className="flex flex-col gap-1.5 text-sm">
-                                <span className="text-zinc-400">
+                                <span className="text-muted-foreground">
                                     Nama sekolah
                                 </span>
                                 <input
@@ -159,19 +144,19 @@ export default function ApplicationsShow({ application }: ShowProps) {
                                             event.target.value,
                                         )
                                     }
-                                    className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 focus:border-emerald-600 focus:outline-none"
+                                    className="rounded-lg border border-input bg-card px-3 py-2 text-foreground focus:border-ring focus:outline-none"
                                     required
                                 />
                                 {decideForm.errors.school_name !==
                                     undefined && (
-                                    <span className="text-xs text-red-400">
+                                    <span className="text-xs text-destructive">
                                         {decideForm.errors.school_name}
                                     </span>
                                 )}
                             </label>
 
                             <label className="flex flex-col gap-1.5 text-sm">
-                                <span className="text-zinc-400">
+                                <span className="text-muted-foreground">
                                     Slug sekolah
                                 </span>
                                 <input
@@ -184,19 +169,19 @@ export default function ApplicationsShow({ application }: ShowProps) {
                                             event.target.value,
                                         )
                                     }
-                                    className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 font-mono text-zinc-100 focus:border-emerald-600 focus:outline-none"
+                                    className="rounded-lg border border-input bg-card px-3 py-2 font-mono text-foreground focus:border-ring focus:outline-none"
                                     required
                                 />
                                 {decideForm.errors.desired_slug !==
                                     undefined && (
-                                    <span className="text-xs text-red-400">
+                                    <span className="text-xs text-destructive">
                                         {decideForm.errors.desired_slug}
                                     </span>
                                 )}
                             </label>
 
                             <label className="flex flex-col gap-1.5 text-sm">
-                                <span className="text-zinc-400">
+                                <span className="text-muted-foreground">
                                     Zona waktu
                                 </span>
                                 <select
@@ -208,7 +193,7 @@ export default function ApplicationsShow({ application }: ShowProps) {
                                             event.target.value,
                                         )
                                     }
-                                    className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 focus:border-emerald-600 focus:outline-none"
+                                    className="rounded-lg border border-input bg-card px-3 py-2 text-foreground focus:border-ring focus:outline-none"
                                 >
                                     {TIMEZONES.map((timezone) => (
                                         <option key={timezone} value={timezone}>
@@ -219,7 +204,7 @@ export default function ApplicationsShow({ application }: ShowProps) {
                             </label>
 
                             <label className="flex flex-col gap-1.5 text-sm">
-                                <span className="text-zinc-400">
+                                <span className="text-muted-foreground">
                                     Catatan (opsional)
                                 </span>
                                 <textarea
@@ -232,14 +217,14 @@ export default function ApplicationsShow({ application }: ShowProps) {
                                         )
                                     }
                                     rows={2}
-                                    className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 focus:border-emerald-600 focus:outline-none"
+                                    className="rounded-lg border border-input bg-card px-3 py-2 text-foreground focus:border-ring focus:outline-none"
                                 />
                             </label>
 
                             <button
                                 type="submit"
                                 disabled={decideForm.processing}
-                                className="mt-1 w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+                                className="mt-1 w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 {decideForm.processing
                                     ? 'Memproses...'
@@ -250,15 +235,15 @@ export default function ApplicationsShow({ application }: ShowProps) {
                         {rejecting ? (
                             <form
                                 onSubmit={reject}
-                                className="mt-4 flex flex-col gap-4 rounded-lg border border-red-900/50 bg-red-950/20 p-5"
+                                className="mt-4 flex flex-col gap-4 rounded-lg border border-destructive/30 bg-destructive/5 p-5"
                                 noValidate
                             >
-                                <h2 className="text-sm font-semibold text-red-200">
+                                <h2 className="text-sm font-semibold text-destructive">
                                     Tolak pengajuan ini?
                                 </h2>
 
                                 <label className="flex flex-col gap-1.5 text-sm">
-                                    <span className="text-zinc-400">
+                                    <span className="text-muted-foreground">
                                         Alasan (opsional)
                                     </span>
                                     <textarea
@@ -271,7 +256,7 @@ export default function ApplicationsShow({ application }: ShowProps) {
                                             )
                                         }
                                         rows={2}
-                                        className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 focus:border-red-600 focus:outline-none"
+                                        className="rounded-lg border border-input bg-card px-3 py-2 text-foreground focus:border-destructive focus:outline-none"
                                     />
                                 </label>
 
@@ -279,7 +264,7 @@ export default function ApplicationsShow({ application }: ShowProps) {
                                     <button
                                         type="submit"
                                         disabled={decideForm.processing}
-                                        className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-500 disabled:opacity-60"
+                                        className="rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-destructive/90 disabled:opacity-60"
                                     >
                                         Ya, tolak
                                     </button>
@@ -287,7 +272,7 @@ export default function ApplicationsShow({ application }: ShowProps) {
                                     <button
                                         type="button"
                                         onClick={() => setRejecting(false)}
-                                        className="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 transition-colors hover:bg-zinc-900"
+                                        className="rounded-lg border border-input px-4 py-2 text-sm text-foreground/80 transition-colors hover:bg-muted"
                                     >
                                         Batal
                                     </button>
@@ -297,14 +282,14 @@ export default function ApplicationsShow({ application }: ShowProps) {
                             <button
                                 type="button"
                                 onClick={() => setRejecting(true)}
-                                className="mt-4 text-sm text-red-400 transition-colors hover:text-red-300"
+                                className="mt-4 text-sm text-destructive transition-colors hover:text-destructive"
                             >
                                 Tolak pengajuan...
                             </button>
                         )}
                     </>
                 ) : (
-                    <p className="mt-8 rounded-lg border border-zinc-800 bg-zinc-900/50 px-5 py-4 text-sm text-zinc-400">
+                    <p className="mt-8 rounded-lg border border-border bg-card px-5 py-4 text-sm text-muted-foreground">
                         Pengajuan ini sudah diputuskan ({application.status}
                         {application.decidedAt !== null
                             ? `, ${application.decidedAt}`
@@ -312,7 +297,7 @@ export default function ApplicationsShow({ application }: ShowProps) {
                         ). Tidak ada aksi lagi.
                     </p>
                 )}
-            </main>
-        </div>
+            </div>
+        </ProviderLayout>
     );
 }

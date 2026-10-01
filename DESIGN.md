@@ -1,6 +1,6 @@
 ---
 name: SIMAS
-description: A flat, ruled school ledger — one green stamp for what is confirmed, three type sizes, and words instead of icons.
+description: A flat, ruled school ledger — one green stamp for what is confirmed, three type sizes, and words before icons (icons only in the provider console).
 colors:
   stamp-ink: "#047857"
   stamp-ink-deep: "#065f46"
@@ -162,9 +162,9 @@ components:
   topbar:
     backgroundColor: "{colors.ledger-paper}"
     height: "64px"
-  topbar-night:
+  sidebar-night:
     backgroundColor: "{colors.night-board}"
-    height: "64px"
+    width: "240px"
 ---
 
 # Design System: SIMAS — Buku Besar Sekolah
@@ -204,7 +204,7 @@ working through a queue alone. Unauthenticated public surfaces are the third cas
 paper and ink only.
 
 Confirmed rejections: no purple or indigo SaaS gradient, no glassmorphism or blur,
-no heavy or decorative drop shadows, no pill-shaped everything, no icons, no
+no heavy or decorative drop shadows, no pill-shaped everything, no icons on the school portal, no
 emoji, no illustration, no display or hero type, no gradients, no rounded
 everything.
 
@@ -214,7 +214,7 @@ everything.
 - Three type sizes, one family, two weights of emphasis (500, 600).
 - 8px corners for everything; pills reserved for status chips; 12px only on the raised auth card.
 - Flat surfaces separated by 1px rules and a change of paper tone; one shadow in the entire system.
-- Words, not icons — every control is labeled in Bahasa Indonesia.
+- Words first — every control is labeled in Bahasa Indonesia; icons exist only in the provider console, beside a label.
 - One centered column, fluid. One named breakpoint exists — `sm` (640px) — and a
   surface may reach for it only deliberately.
 - Two grounds (paper / night) sharing one component language and one voice.
@@ -273,6 +273,25 @@ at 50% over `night-board`, success is `stamp-ink` at 40% over `night-board` with
 The one value in the app that sits outside the palette is the Inertia navigation
 progress bar, `#4B5563` — a plain neutral grey rather than a zinc, and deliberately
 so: a navigation in progress is neither confirmed nor voided.
+
+### Console theme (supersedes the night ground and the green stamp for the provider console)
+The provider console is **light** and uses the shadcn token set from the design
+reference **verbatim** (`.console-theme` in `resources/css/app.css`; the school
+portal keeps paper + Stamp Ink). Tokens: `background`/`foreground`, `card`,
+`popover`, `muted`, `secondary`, `border`, `input`, `ring`, `chart-1..5`,
+`sidebar*`, **primary** (sky, `oklch(0.693 0.150 237)`, white
+`primary-foreground`), **accent** (amber `oklch(0.730 0.156 70)`), **destructive**
+(`oklch(0.637 0.208 25)`). Primary is the filled button, focus ring, current-page
+fill (`sidebar-accent` + `sidebar-accent-foreground`), icon accent on the active
+row, and chart bars (`chart-1`); accent tints the pending state; destructive is
+voided/blocked. Status chips and notices are a tinted fill with a tinted border and
+**neutral foreground text**, so the word stays legible. Shape and type follow the
+reference: **square corners** (radius 0), **Geist** (body) and **JetBrains Mono**
+(slugs, identifiers), letter-spacing -0.01em, and the reference's soft offset
+shadows (`console-card` = `--shadow-sm`, `console-pop` = `--shadow-md`) on panels,
+tooltips and the login card. This replaces "no shadow on the console". The One Green
+Rule becomes **one primary filled button per screen**. Known trade-off: white text on
+the reference primary and primary-coloured small text are about 3:1, below 4.5:1.
 
 ### Named Rules
 **The One Green Rule.** Stamp Ink appears only where something is confirmed,
@@ -337,8 +356,9 @@ content). Content is horizontally centered with 24px side gutters (spacing `3xl`
 Container widths are chosen by density, and the system uses three: `max-w-sm`/
 `max-w-md` (384/448px) for the centered auth and public-form cards, `max-w-3xl`
 (768px) for a single record being edited, `max-w-4xl` (896px) for the console's
-review pages, and `max-w-5xl` (1024px) for the widest record list. A 64px top bar
-(spacing `bar`, step 16) spans the full width, its content constrained to the page's container.
+review pages, and `max-w-5xl` (1024px) for the widest record list. On the portal a 64px top bar
+(spacing `bar`, step 16) spans the full width; on the console a 240px left sidebar
+replaces it and the column is centered in the space to its right.
 
 Vertical rhythm is a single ladder: 8px inside controls, 12px between closely
 related items, 16px between a control and its label, 20–24px inside panels, 32–40px
@@ -413,7 +433,7 @@ below are invariants rather than a component library.
   with an underline on hover. On night, Faint Pencil to Rule. A red text button is
   the console's inline destructive ("Tolak pengajuan ini?"), and it darkens rather
   than filling.
-- **No icon ever appears inside a button.** The label is the whole control.
+- **No icon appears inside a portal button.** The label is the whole control (console icon buttons carry an aria-label).
 
 ### Chips
 - **Style:** pill (`9999px`), 2px × 10px padding, 12px weight 500, 1px border in a
@@ -455,11 +475,23 @@ below are invariants rather than a component library.
   section name ("Pengguna") in 14px weight 600 Ledger Ink on the left; on the right,
   either the primary action or a pair of actions, in the order secondary-then-primary.
   A single text link ("Kembali") in Pencil Grey is the only "back" affordance.
-- **Top bar (console):** 64px, Night Board, 1px Night Rule underneath. "Console
-  Provider" in Chalk Bright weight 600; nav links and "Keluar" in Faint Pencil,
-  brightening to Rule on hover. Text only — no icon, no avatar, no user menu.
-- **No sidebar, no tabs, no breadcrumbs exist in the system.** Depth is expressed by
-  going back, not by nested navigation chrome.
+- **Sidebar (console):** left column on Night Board with a 1px Night Rule on its right
+  edge, full viewport height and sticky. It has two widths the operator toggles with a
+  panel button at the top (remembered per browser): **expanded** (256px, icon + label)
+  and a **collapsed icon rail** (72px, icon only; the label moves to a tooltip on hover
+  and keyboard focus and stays in the accessibility name). Rows are 44px tall with 8px
+  corners; idle rows are Faint Pencil, hover fills with `zinc-900` and brightens the
+  text; the current page is a `zinc-800` fill with Chalk Bright weight 600 and the icon
+  in Stamp Ink Bright. *Langganan* is an expandable group (chevron) whose sub-pages
+  are text-only rows under a 1px Night Rule guide; in the rail it is one icon that opens
+  its first page. The foot holds the operator's initials avatar, name and email, and an
+  icon "Keluar" button.
+- **Console icons:** the console (not the school portal) uses a small authored SVG set
+  (`Components/icons.tsx`): 24px grid, one 1.75 stroke, round caps, `currentColor`,
+  decorative (`aria-hidden`). Icons accompany labels and never replace them except in
+  the collapsed rail, where the text remains available as tooltip and accessible name.
+- **No breadcrumbs exist in the system, and tabs appear only inside a single record
+  (tenant detail).** The portal keeps its top bar and "Kembali" link.
 
 ### Flash banners
 - A 1px-bordered, 8px-cornered strip at 12px × 16px padding, 24px below the page
@@ -517,8 +549,9 @@ below are invariants rather than a component library.
   new surfaces must be at least 44px even though the recorded type scale stays at 14px.
 - **Don't add a display size, hero type, or marketing headline** anywhere in the
   product, and don't reach for a fourth type size to create hierarchy.
-- **Don't replace a word with an icon.** The system has no icon vocabulary; every
-  control is a labeled word in Bahasa Indonesia.
+- **Don't replace a word with an icon.** The school portal has no icon vocabulary and
+  the console's small set always sits beside a label (the collapsed rail keeps the
+  label as tooltip and accessible name).
 - **Don't put text in monospace** unless it is a slug, a host, or an identifier a
   human must verify character by character.
 - **Don't assume a breakpoint exists.** One is named — `sm` (640px) — and it is the

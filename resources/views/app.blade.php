@@ -10,6 +10,12 @@
 
         @fonts
 
+        @if (request()->getHost() === config('tenancy.console_domain'))
+            {{-- Console theme fonts: loaded in the browser (console host only), not at build time. --}}
+            <link rel="preconnect" href="https://fonts.bunny.net">
+            <link rel="stylesheet" href="https://fonts.bunny.net/css?family=geist:400,500,600|jetbrains-mono:400&display=swap">
+        @endif
+
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx', $pageVitePath])
         <x-inertia::head>
