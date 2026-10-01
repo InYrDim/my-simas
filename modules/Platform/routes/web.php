@@ -6,11 +6,11 @@ use Modules\Platform\App\Http\Controllers\Auth\ProviderAuthenticatedSessionContr
 use Modules\Platform\App\Http\Controllers\ProviderHomeController;
 use Modules\Platform\App\Http\Controllers\SchoolApplyController;
 
-// Public school application (Fase 2 Stage 7): central hosts, NO auth.
+// Public school application (Fase 2 Stage 7): NO auth.
 // IP throttle is safe here — the form needs no tenant context (the
 // tenant-keyed throttle pattern is for TENANT routes, e.g. Identity's
 // login). Rate: 5 submissions per IP per 10 minutes.
-Route::middleware(['web', 'central', 'throttle:5,10'])->group(function (): void {
+Route::middleware(['web', 'throttle:5,10'])->group(function (): void {
     Route::get('daftar-sekolah', [SchoolApplyController::class, 'create'])
         ->name('school.apply.create');
 
@@ -18,10 +18,12 @@ Route::middleware(['web', 'central', 'throttle:5,10'])->group(function (): void 
         ->name('school.apply.store');
 });
 
-// Provider console: CENTRAL hosts only, dedicated 'provider' guard.
-// This file is loaded via loadRoutesFrom() so the middleware groups
-// are declared explicitly here.
-Route::middleware(['web', 'central'])->prefix('platform')->name('platform.')->group(function (): void {
+// Provider console: the console host only (config tenancy.console_domain),
+// dedicated 'provider' guard. This file is loaded via loadRoutesFrom() so
+// the middleware groups are declared explicitly here. It MUST register
+// before the tenant routes: both define /login, and the domain-bound
+// route has to win on the console host.
+Route::domain((string) config('tenancy.console_domain'))->middleware('web')->name('platform.')->group(function (): void {
     Route::middleware('guest:provider')->group(function (): void {
         Route::get('login', [ProviderAuthenticatedSessionController::class, 'create'])
             ->name('login');
@@ -31,7 +33,7 @@ Route::middleware(['web', 'central'])->prefix('platform')->name('platform.')->gr
     });
 
     Route::middleware('auth:provider')->group(function (): void {
-        Route::get('/', ProviderHomeController::class)
+        Route::get('dashboard', ProviderHomeController::class)
             ->name('home');
 
         Route::post('logout', [ProviderAuthenticatedSessionController::class, 'destroy'])

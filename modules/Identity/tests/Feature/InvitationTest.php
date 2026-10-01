@@ -90,12 +90,12 @@ it('invites a new user: password-null row, token, tenant-host mail', function ()
     $admin = invAdmin($tenant);
 
     actingAs($admin)
-        ->post('http://inv-a.localhost/users/invite', [
+        ->post(school('inv-a', '/users/invite'), [
             'name' => 'Bu Sari',
             'email' => 'sari@inv-a.test',
             'role' => 'guru',
         ])
-        ->assertRedirect('http://inv-a.localhost/users')
+        ->assertRedirect(school('inv-a', '/users'))
         ->assertSessionHas('status');
 
     $row = invitedRow($tenant->id, 'sari@inv-a.test');
@@ -105,7 +105,7 @@ it('invites a new user: password-null row, token, tenant-host mail', function ()
         ->and($row->email_verified_at)->toBeNull()
         ->and(invTokenRow($tenant->id, 'sari@inv-a.test'))->not->toBeNull();
 
-    Mail::assertQueued(SetPasswordMail::class, fn (SetPasswordMail $mail): bool => str_contains($mail->setPasswordUrl, 'inv-a.localhost')
+    Mail::assertQueued(SetPasswordMail::class, fn (SetPasswordMail $mail): bool => str_contains($mail->setPasswordUrl, 'school='.$tenant->id)
         && str_contains($mail->setPasswordUrl, '/set-password?token='));
 });
 
@@ -116,7 +116,7 @@ it('completes the full loop: invite, set password, login', function () {
     $admin = invAdmin($tenant);
 
     actingAs($admin)
-        ->post('http://inv-b.localhost/users/invite', [
+        ->post(school('inv-b', '/users/invite'), [
             'name' => 'Pak Budi',
             'email' => 'budi@inv-b.test',
             'role' => 'staf-tu',
@@ -131,7 +131,7 @@ it('completes the full loop: invite, set password, login', function () {
     // acceptance route is guest-only and would bounce it.
     auth()->guard('web')->logout();
 
-    post('http://inv-b.localhost/set-password', [
+    post(school('inv-b', '/set-password'), [
         'token' => $plainToken,
         'email' => 'budi@inv-b.test',
         'password' => 'SandiBaruKuat123!',
@@ -148,7 +148,8 @@ it('completes the full loop: invite, set password, login', function () {
     // The activated account can log in on its own host.
     auth()->guard('web')->logout();
 
-    post('http://inv-b.localhost/login', [
+    post(school('inv-b', '/login'), [
+        'school' => schoolId('inv-b'),
         'email' => 'budi@inv-b.test',
         'password' => 'SandiBaruKuat123!',
     ])->assertRedirect();
@@ -163,7 +164,7 @@ it('re-inviting an invited user updates instead of duplicating and replaces the 
     $admin = invAdmin($tenant);
 
     actingAs($admin)
-        ->post('http://inv-c.localhost/users/invite', [
+        ->post(school('inv-c', '/users/invite'), [
             'name' => 'Nama Awal',
             'email' => 'ulang@inv-c.test',
         ])
@@ -173,7 +174,7 @@ it('re-inviting an invited user updates instead of duplicating and replaces the 
 
     // Invite again: corrected name, adds a role — same row, no dup.
     actingAs($admin)
-        ->post('http://inv-c.localhost/users/invite', [
+        ->post(school('inv-c', '/users/invite'), [
             'name' => 'Nama Dikoreksi',
             'email' => 'ulang@inv-c.test',
             'role' => 'guru',
@@ -215,7 +216,7 @@ it('refuses inviting an already-active account', function () {
     ]);
 
     actingAs($admin)
-        ->post('http://inv-d.localhost/users/invite', [
+        ->post(school('inv-d', '/users/invite'), [
             'name' => 'Sudah Aktif',
             'email' => 'aktif@inv-d.test',
         ])
@@ -240,7 +241,7 @@ it('an expired invitation token is refused', function () {
     invAdmin($tenant);
 
     actingAs(invAdmin($tenant, 'admin2@inv-e.test'))
-        ->post('http://inv-e.localhost/users/invite', [
+        ->post(school('inv-e', '/users/invite'), [
             'name' => 'Kadaluarsa',
             'email' => 'hangus@inv-e.test',
         ])
@@ -258,7 +259,7 @@ it('an expired invitation token is refused', function () {
         ->where('email', 'hangus@inv-e.test')
         ->update(['created_at' => now()->subHours(2)]);
 
-    post('http://inv-e.localhost/set-password', [
+    post(school('inv-e', '/set-password'), [
         'token' => $plainToken,
         'email' => 'hangus@inv-e.test',
         'password' => 'SandiBaruKuat123!',
@@ -277,7 +278,7 @@ it('a consumed token is one-shot: second acceptance fails', function () {
     invAdmin($tenant);
 
     actingAs(invAdmin($tenant, 'admin2@inv-f.test'))
-        ->post('http://inv-f.localhost/users/invite', [
+        ->post(school('inv-f', '/users/invite'), [
             'name' => 'Sekali Pakai',
             'email' => 'sekali@inv-f.test',
         ])
@@ -288,7 +289,7 @@ it('a consumed token is one-shot: second acceptance fails', function () {
     // End the admin session — the acceptance route is guest-only.
     auth()->guard('web')->logout();
 
-    post('http://inv-f.localhost/set-password', [
+    post(school('inv-f', '/set-password'), [
         'token' => $plainToken,
         'email' => 'sekali@inv-f.test',
         'password' => 'SandiBaruKuat123!',
@@ -298,7 +299,7 @@ it('a consumed token is one-shot: second acceptance fails', function () {
     auth()->guard('web')->logout();
 
     // Second attempt with the SAME token: the row is gone (one-shot).
-    post('http://inv-f.localhost/set-password', [
+    post(school('inv-f', '/set-password'), [
         'token' => $plainToken,
         'email' => 'sekali@inv-f.test',
         'password' => 'SandiLainKuat456!',
@@ -315,7 +316,7 @@ it('a deactivated user cannot accept an invitation', function () {
     invAdmin($tenant);
 
     actingAs(invAdmin($tenant, 'admin2@inv-g.test'))
-        ->post('http://inv-g.localhost/users/invite', [
+        ->post(school('inv-g', '/users/invite'), [
             'name' => 'Dinonaktifkan',
             'email' => 'nonaktif@inv-g.test',
         ])
@@ -331,7 +332,7 @@ it('a deactivated user cannot accept an invitation', function () {
     // End the admin session — the acceptance route is guest-only.
     auth()->guard('web')->logout();
 
-    post('http://inv-g.localhost/set-password', [
+    post(school('inv-g', '/set-password'), [
         'token' => $plainToken,
         'email' => 'nonaktif@inv-g.test',
         'password' => 'SandiBaruKuat123!',
@@ -351,7 +352,7 @@ it('an invited user without a password cannot log in', function () {
     $admin = invAdmin($tenant);
 
     actingAs($admin)
-        ->post('http://inv-h.localhost/users/invite', [
+        ->post(school('inv-h', '/users/invite'), [
             'name' => 'Belum Aktif',
             'email' => 'belum@inv-h.test',
         ])
@@ -361,7 +362,8 @@ it('an invited user without a password cannot log in', function () {
 
     // A NULL password verifies against nothing — login refuses with
     // the generic error (explicit pin from the plan).
-    post('http://inv-h.localhost/login', [
+    post(school('inv-h', '/login'), [
+        'school' => schoolId('inv-h'),
         'email' => 'belum@inv-h.test',
         'password' => 'SandiRahasia1!',
     ])->assertSessionHasErrors('email');
@@ -384,9 +386,9 @@ it('guru cannot reach the invitation routes', function () {
 
     actingAs($guru);
 
-    get('http://inv-i.localhost/users/invite')->assertForbidden();
+    get(school('inv-i', '/users/invite'))->assertForbidden();
 
-    post('http://inv-i.localhost/users/invite', [
+    post(school('inv-i', '/users/invite'), [
         'name' => 'X', 'email' => 'x@inv-i.test',
     ])->assertForbidden();
 
@@ -404,13 +406,13 @@ it('invitations are rate limited per tenant, email, and ip', function () {
     // The bucket key is (tenant, email, ip): five invites for the same
     // address pass, the sixth is throttled.
     foreach (range(1, 6) as $attempt) {
-        $response = post('http://inv-j.localhost/users/invite', [
+        $response = post(school('inv-j', '/users/invite'), [
             'name' => 'Uji '.$attempt,
             'email' => 'banyak@inv-j.test',
         ]);
 
         if ($attempt < 6) {
-            $response->assertRedirect('http://inv-j.localhost/users')
+            $response->assertRedirect(school('inv-j', '/users'))
                 ->assertSessionHasNoErrors();
         } else {
             $response->assertSessionHasErrors('email');

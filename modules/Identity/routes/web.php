@@ -22,7 +22,7 @@ Route::middleware('web')->group(function (): void {
 
         // Password reset (Fase 2, tenant-scoped tokens). Same pattern:
         // rate limiting lives in the controller with the tenant id in
-        // the key. Central hosts never serve these (no tenant context).
+        // the key. The school comes from the `school` field/query (emailed links carry it).
         Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
             ->name('password.request');
 

@@ -7,9 +7,8 @@ import { AuthShell } from '@shared/components/AuthShell';
 import { store as providerLoginStore } from '@/actions/Modules/Platform/App/Http/Controllers/Auth/ProviderAuthenticatedSessionController';
 
 /**
- * Provider console login (SaaS staff). Central hosts only — the page
- * lives on the /platform prefix of the central domain, never on a
- * school subdomain.
+ * Provider console login (SaaS staff). Served on the console host
+ * (console.localhost/login), never on a school's login path.
  */
 export default function ProviderLogin() {
     const form = useForm({

@@ -58,7 +58,7 @@ export default function ApplicationsShow({ application }: ShowProps) {
                     </span>
 
                     <Link
-                        href="/platform/applications"
+                        href="/applications"
                         className="text-sm text-zinc-400 transition-colors hover:text-zinc-200"
                     >
                         ← Pengajuan
@@ -172,7 +172,7 @@ export default function ApplicationsShow({ application }: ShowProps) {
 
                             <label className="flex flex-col gap-1.5 text-sm">
                                 <span className="text-zinc-400">
-                                    Slug (subdomain)
+                                    Slug sekolah
                                 </span>
                                 <input
                                     type="text"

@@ -9,19 +9,18 @@ use Modules\Platform\App\Contracts\TenantContext;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Defense-in-depth for session isolation across tenant hosts.
+ * Defense-in-depth for session isolation between schools.
  *
- * Primary defense: session cookies are host-only (SESSION_DOMAIN null)
- * so a browser never sends a tenant A cookie to tenant B. If cookies
- * DID leak (e.g. a misconfigured shared SESSION_DOMAIN), this
- * middleware still refuses the session: an authenticated user whose
- * tenant_id disagrees with the ambient tenant context is logged out
- * before the route runs.
+ * Schools share one host, so the primary defense is the session's own
+ * tenant (ResolveTenant resolves it from the session for logged-in
+ * users and scopes the user lookup with it). This middleware is the
+ * second layer: an authenticated user whose tenant_id disagrees with
+ * the ambient tenant context is logged out before the route runs.
  *
  * Generic by design: inspects `tenant_id` and `deactivated_at` on the
  * authenticated model via attributes (no Identity import — Platform
  * never sees user models). Users without a tenant_id attribute (e.g.
- * provider staff on central hosts) are untouched.
+ * provider staff on the console host) are untouched.
  *
  * Deactivation convention (Fase 2 Stage 3): a NULL `deactivated_at`
  * attribute means active; any non-null value means the account was

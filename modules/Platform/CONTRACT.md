@@ -70,10 +70,12 @@
   (own rows + global). Runs its own `TenantContext::run` (safe from
   central/CLI); fails closed on an unknown tenant id — never a global
   role.
-- `TenantUrl` (Fase 2): `host($tenantId)`, `scheme()`, `port()`,
-  `root($tenantId)` — the URL root for links built inside queued
-  mails (queue workers have no trustworthy request root). Scheme/port
-  from `config('tenancy.url_scheme')` / `url_port`.
+- `TenantUrl` (Fase 2): `host()`, `scheme()`, `port()`, `root()`,
+  `url($tenantId, $path, $query)` — links built inside queued mails
+  (queue workers have no trustworthy request root). Every tenant
+  shares the first central host; `url()` appends `school=<tenant id>`
+  so the link resolves the tenant on arrival. Scheme/port from
+  `config('tenancy.url_scheme')` / `url_port`.
 - `TenantApplications` (Fase 2) + `ApplicationData` readonly DTO
   (Contracts/DTOs): `submit(payload)` (slug reserved/taken checks,
   one pending application per email), `pending()`,
@@ -92,7 +94,7 @@
   `InvalidApplicationException` (slug conflicts at submit/approve).
 
 Internal (private): Tenant model + `TenantStatus` enum, TenantScope,
-`SubdomainTenantResolver` (interface `TenantResolver`), `TenantHydrator`,
+`SchoolCodeTenantResolver` (interface `TenantResolver`), `TenantHydrator`,
 `TenantBridge` (context-change seam; Spatie hooks in Stage 6),
 `ResolveTenant` middleware, `PlatformException` base,
 `TenantApplication` model + status enum, the application review
@@ -102,14 +104,24 @@ tenancy only through contracts/DTOs — never the Tenant model.
 
 ## Tenant resolution (the one strategy)
 
-- Host normalization: lowercase, strip port and trailing dot.
-- Host ∈ `config('tenancy.central_domains')` → **null** → request runs
-  without tenant (central). No fallback, no override.
-- `"{slug}.{central}"` (exactly one subdomain level) → lookup by slug.
-- Anything else → lookup by custom `domain` column.
-- No match → generic 404 (`TenantMissingException` → NotFoundHttpException).
+Tenants are NOT resolved from the host. A school is identified by its
+**school code** (the tenant id today; NPSN later — `SchoolCodeTenantResolver`
+is the only place that mapping lives):
+
+- Console host (`config('tenancy.console_domain')`, default
+  `console.localhost`) → never a tenant; hosts the provider console
+  (`/login`, `/dashboard`, `/applications`).
+- Logged-in session → the tenant stored in the session (`tenant_id`) is
+  authoritative; a `school` input cannot switch it.
+- Guest + `school` input (login/forgot-password form field, emailed
+  link query) → resolved, then remembered in the session.
+- Guest + session tenant → the school chosen earlier in the session.
+- Unknown/malformed code → NO tenant context (no 404): the controllers
+  answer generically (same error as a wrong password) so codes cannot
+  be probed. Malformed codes never reach the database.
 - Suspended tenant → 403 (resolver still resolves it; middleware decides).
 - Lookups cached (5 min) as plain ids; models re-hydrated via `TenantHydrator`.
+- Slug and custom `domain` columns are no longer used for resolution.
 
 `ResolveTenant` middleware: forgets context at request start (and in the
 `terminate` terminator — Octane-safe), resolves, adopts the DTO. Wired
@@ -227,9 +239,10 @@ in `modules/Shared/resources/js/types/tenant.ts` re-exported by root
 request with tenant context, an authenticated user whose `tenant_id`
 attribute differs from the resolved tenant is logged out and the
 session invalidated. Generic by design — inspects the `tenant_id`
-attribute, never imports Identity. Primary isolation is host-only
-session cookies (`SESSION_DOMAIN` unset); this middleware is the second
-layer if a cookie leaks (e.g. misconfigured shared session domain).
+attribute, never imports Identity. Primary isolation is the per-session tenant
+(`tenant_id` in the session); schools now share one host, so this
+middleware is the second layer: a session whose user belongs to another
+tenant is logged out.
 
 ## Allowed dependencies
 
@@ -265,8 +278,9 @@ every layer via the `php_internal` collector.
   migrations — proven by `php artisan migrate:fresh` ordering.
 - Central requests must NOT hit `currentOrFail()` (shared-props and
   central pages use `current()`/`id()` and handle null).
-- Session cookies stay host-only (`SESSION_DOMAIN` unset): a session from
-  tenant A is not sent to tenant B's host. Verified by test.
+- Schools share one host, so session isolation rests on the session's
+  own `tenant_id` + `EnsureSessionTenant`; a logged-in session ignores
+  a different `school` input. Verified by test.
 - `ProviderUser` lives here, not in Identity.
 - Deptrac notes: `ClassLikeConfig::create()` doubles backslashes — write
   patterns with single backslashes. NativePhp layer uses

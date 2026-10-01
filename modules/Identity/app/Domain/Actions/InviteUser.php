@@ -71,8 +71,10 @@ final class InviteUser
         DB::transaction(function () use ($user): void {
             $token = $this->minter->mint($user);
 
-            $url = $this->tenantUrl->root($this->context->currentOrFail()->id)
-                .'/set-password?token='.$token.'&email='.urlencode($user->email);
+            $url = $this->tenantUrl->url($this->context->currentOrFail()->id, 'set-password', [
+                'token' => $token,
+                'email' => $user->email,
+            ]);
 
             Mail::to($user->email)->queue(new SetPasswordMail($url, $user->name));
         });

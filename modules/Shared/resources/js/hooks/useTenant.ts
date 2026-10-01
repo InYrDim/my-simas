@@ -6,8 +6,8 @@ import type { Tenant, TenantModules } from '../types/tenant';
 export type { Tenant, TenantModules };
 
 /**
- * The current tenant as shared by the Platform module, or null on
- * central hosts. Reads only shared props — no Platform internals.
+ * The current tenant as shared by the Platform module, or null when
+ * no school is selected. Reads only shared props — no Platform internals.
  */
 export function useTenant(): Tenant | null {
     const { tenant } = usePage<SharedPageProps>().props;
@@ -16,8 +16,8 @@ export function useTenant(): Tenant | null {
 }
 
 /**
- * The list of module keys active for the current tenant (empty on
- * central hosts). Reads only shared props — no Platform internals.
+ * The list of module keys active for the current tenant (empty when
+ * no school is selected). Reads only shared props — no Platform internals.
  */
 export function useModules(): TenantModules {
     const { modules } = usePage<SharedPageProps>().props;

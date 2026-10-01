@@ -42,14 +42,4 @@ class TenantFactory extends Factory
             'status' => TenantStatus::Suspended,
         ]);
     }
-
-    /**
-     * Assign a custom domain to the tenant.
-     */
-    public function withDomain(?string $domain): static
-    {
-        return $this->state(fn (array $attributes): array => [
-            'domain' => $domain,
-        ]);
-    }
 }

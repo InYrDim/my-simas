@@ -23,8 +23,8 @@ use Modules\Platform\App\Contracts\TenantContext;
  * tenant-scoped token table with reset (the table is context-generic;
  * the page decides the effect — recorded decision).
  *
- * Runs on the TENANT host only (tokens are scoped by ambient context;
- * central has none). Rate limiting lives here, keyed with the tenant
+ * Needs a school context (tokens are scoped by ambient context): the
+ * emailed link carries the school code, which seeds the session. Rate limiting lives here, keyed with the tenant
  * id — the same pattern as login (middleware throttle cannot rely on
  * tenant context). Deactivated accounts may not activate: the token is
  * refused and the row deleted (one-shot, like a consumed reset).
@@ -65,7 +65,7 @@ final class SetPasswordController
 
         if ($tenantId === null) {
             throw ValidationException::withMessages([
-                'email' => __('Aktivasi akun hanya tersedia di subdomain sekolah.'),
+                'email' => __('Tautan tidak valid atau sudah kedaluwarsa.'),
             ]);
         }
 

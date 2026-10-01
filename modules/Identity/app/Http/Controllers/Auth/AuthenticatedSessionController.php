@@ -16,10 +16,10 @@ use Modules\Platform\App\Contracts\TenantContext;
  * Tenant-scoped session authentication (Fase 1 scope: login/logout
  * only — no registration, no password reset; Fase 2).
  *
- * The ambient tenant context (set by ResolveTenant from the subdomain)
- * scopes credential lookup: a user only ever logs into the tenant
- * their account belongs to. Central requests have no context and are
- * rejected before touching the database.
+ * The ambient tenant context (set by ResolveTenant from the submitted
+ * school code) scopes credential lookup: a user only ever logs into
+ * the tenant their account belongs to. An unknown school code leaves
+ * no context and is rejected before touching the users table.
  *
  * Rate limiting happens HERE (not in throttle: middleware) so the
  * bucket key can include the tenant id: middleware ordering cannot
@@ -59,20 +59,22 @@ final class AuthenticatedSessionController
      */
     public function store(Request $request): RedirectResponse
     {
-        $tenantId = $this->context->id();
-
-        if ($tenantId === null) {
-            // Login is a tenant concept; the central host has no login
-            // surface in Fase 1 (provider staff use the provider guard).
-            throw ValidationException::withMessages([
-                'email' => __('No tenant context — login is only available on a school subdomain.'),
-            ]);
-        }
-
         $credentials = $request->validate([
+            'school' => ['required', 'string'],
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
         ]);
+
+        $tenantId = $this->context->id();
+
+        if ($tenantId === null) {
+            // Unknown school code: the SAME generic error as a wrong
+            // password, so the form cannot be used to probe which
+            // school codes exist.
+            throw ValidationException::withMessages([
+                'email' => __('auth.failed'),
+            ]);
+        }
 
         $throttleKey = $this->throttleKey($tenantId, $credentials['email']);
 
@@ -85,7 +87,7 @@ final class AuthenticatedSessionController
             ]);
         }
 
-        if (! Auth::validate($credentials)) {
+        if (! Auth::validate($request->only('email', 'password'))) {
             RateLimiter::hit($throttleKey, self::DECAY_SECONDS);
 
             throw ValidationException::withMessages([
@@ -131,7 +133,7 @@ final class AuthenticatedSessionController
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('home');
+        return redirect()->route('login');
     }
 
     /**

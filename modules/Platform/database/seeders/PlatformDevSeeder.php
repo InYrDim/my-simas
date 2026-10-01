@@ -12,7 +12,8 @@ use Modules\Platform\App\Infrastructure\Modules\ModuleFlagManager;
 
 /**
  * Local-development tenants. NEVER runs outside local: it creates
- * predictable slugs (sekolah-a/sekolah-b) for subdomain testing.
+ * predictable slugs (sekolah-a/sekolah-b); log in with the school code
+ * printed below (the tenant id).
  */
 class PlatformDevSeeder extends Seeder
 {
@@ -39,7 +40,7 @@ class PlatformDevSeeder extends Seeder
                 }
             }
 
-            $this->command->info("Seeded tenant [{$tenant->slug}] ({$tenant->timezone}).");
+            $this->command->info("Seeded tenant [{$tenant->slug}] ({$tenant->timezone}) — school code: {$tenant->id}");
         }
 
         $this->seedProviderUser();
@@ -48,7 +49,7 @@ class PlatformDevSeeder extends Seeder
 
     /**
      * One provider staff account for the console (login at
-     * /platform/login on the central host).
+     * console.localhost/login).
      */
     protected function seedProviderUser(): void
     {

@@ -5,40 +5,19 @@ namespace Modules\Platform\App\Infrastructure\Tenancy;
 use Modules\Platform\App\Contracts\TenantUrl;
 
 /**
- * Default TenantUrl: derives the tenant host from the cached resolution
- * data (TenantHydrator attribute arrays — no fresh queries) and the
- * central domain from config. Mirrors SubdomainTenantResolver's
- * "exactly one subdomain level" convention:
- *
- * - tenant has a custom `domain` → that domain
- * - otherwise → {slug}.{first central domain}
- *
- * scheme/port come from config so dev (`http`, `:8000`) and production
- * (`https`, ``) differ without code changes.
+ * Default TenantUrl: every tenant shares the first central domain; the
+ * tenant is identified by the `school` query parameter (the school
+ * code, validated against the cached resolution data — no fresh
+ * queries). scheme/port come from config so dev (`http`, `:8000`) and
+ * production (`https`, ``) differ without code changes.
  */
 final class DefaultTenantUrl implements TenantUrl
 {
-    public function host(string $tenantId): string
+    public function host(): string
     {
-        $tenant = TenantHydrator::find($tenantId);
-
-        if ($tenant === null) {
-            throw new \InvalidArgumentException(
-                "Cannot build tenant URL: tenant [{$tenantId}] does not exist.",
-            );
-        }
-
-        $domain = $tenant->getAttribute('domain');
-
-        if (is_string($domain) && $domain !== '') {
-            return $domain;
-        }
-
         $central = (array) config('tenancy.central_domains', ['localhost']);
 
-        $base = $central[0] ?? 'localhost';
-
-        return $tenant->getAttribute('slug').'.'.$base;
+        return (string) ($central[0] ?? 'localhost');
     }
 
     public function scheme(): string
@@ -53,8 +32,26 @@ final class DefaultTenantUrl implements TenantUrl
         return $port === '' ? '' : ':'.$port;
     }
 
-    public function root(string $tenantId): string
+    public function root(): string
     {
-        return $this->scheme().'://'.$this->host($tenantId).$this->port();
+        return $this->scheme().'://'.$this->host().$this->port();
+    }
+
+    public function url(string $tenantId, string $path, array $query = []): string
+    {
+        $tenant = TenantHydrator::find($tenantId);
+
+        if ($tenant === null) {
+            throw new \InvalidArgumentException(
+                "Cannot build tenant URL: tenant [{$tenantId}] does not exist.",
+            );
+        }
+
+        return $this->root().'/'.ltrim($path, '/').'?'.http_build_query(
+            [...$query, 'school' => $tenantId],
+            '',
+            '&',
+            PHP_QUERY_RFC3986,
+        );
     }
 }

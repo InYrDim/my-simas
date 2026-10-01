@@ -9,3 +9,40 @@
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
 }
+
+/*
+ * Beranda (Core) — the one authored moment and the browser surfaces it
+ * draws itself. Scoped to this page on purpose: selection and focus
+ * treatment are a design-system decision, and one page does not get to
+ * make it for the others.
+ */
+.beranda .day-rule {
+    transform-origin: left;
+    animation: day-rule-stroked 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes day-rule-stroked {
+    from {
+        transform: scaleX(0);
+    }
+
+    to {
+        transform: scaleX(1);
+    }
+}
+
+.beranda ::selection {
+    background-color: var(--color-emerald-50);
+    color: var(--color-zinc-900);
+}
+
+.beranda :focus-visible {
+    outline: 2px solid var(--color-emerald-700);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .beranda .day-rule {
+        animation: none;
+    }
+}

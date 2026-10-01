@@ -39,19 +39,18 @@ final class PasswordResetLinkController
 
     public function store(Request $request): RedirectResponse
     {
+        $validated = $request->validate([
+            'school' => ['required', 'string'],
+            'email' => ['required', 'string', 'email'],
+        ]);
+
         $tenantId = $this->context->id();
 
         if ($tenantId === null) {
-            // Reset is a tenant concept: central hosts have no reset
-            // surface (provider staff use the provider console).
-            throw ValidationException::withMessages([
-                'email' => __('Password reset is only available on a school subdomain.'),
-            ]);
+            // Unknown school code: same generic response as an unknown
+            // email, so school codes cannot be probed here either.
+            return back()->with('status', __('Jika email terdaftar, tautan reset telah dikirim.'));
         }
-
-        $validated = $request->validate([
-            'email' => ['required', 'string', 'email'],
-        ]);
 
         $throttleKey = sprintf(
             'reset-link:%s:%s:%s',
@@ -75,7 +74,7 @@ final class PasswordResetLinkController
         // provider query; eligibility (active, has a password) is
         // enforced in sendPasswordResetNotification — skipping the send
         // silently. Either way the response is identical.
-        Password::broker()->sendResetLink($validated);
+        Password::broker()->sendResetLink(['email' => $validated['email']]);
 
         return back()->with('status', __('Jika email terdaftar, tautan reset telah dikirim.'));
     }

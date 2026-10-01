@@ -1,0 +1,4 @@
+QUESTION URL: http://127.0.0.1:51785/
+QUESTION KEY: 5d8861ff
+Open the URL for the user now: in-app browser when the harness has one, otherwise the system opener (macOS `open`, Linux `xdg-open`), otherwise show the URL.
+Then collect the answer with: C:\Users\iyede\code\___sra___\my-simas\.pi\skills\impeccable\scripts\impeccable.cmd serve-question --wait --key 5d8861ff

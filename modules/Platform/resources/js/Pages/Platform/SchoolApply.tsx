@@ -85,7 +85,7 @@ export default function SchoolApply({ timezones, status }: SchoolApplyProps) {
                         />
 
                         <AuthInput
-                            label="Slug (alamat subdomain)"
+                            label="Slug sekolah"
                             id="desired_slug"
                             name="desired_slug"
                             type="text"

@@ -31,7 +31,7 @@ function flagTenant(string $slug): string
 it('rejects routes behind an inactive module with 403', function () {
     flagTenant('sekolah-a');
 
-    get('http://sekolah-a.localhost/module-probe')->assertForbidden();
+    get(school('sekolah-a', '/module-probe'))->assertForbidden();
 });
 
 it('lets routes through when the module is enabled for the tenant', function () {
@@ -39,7 +39,7 @@ it('lets routes through when the module is enabled for the tenant', function () 
 
     app(ModuleFlagManager::class)->enable($a, 'probe-module');
 
-    get('http://sekolah-a.localhost/module-probe')->assertOk();
+    get(school('sekolah-a', '/module-probe'))->assertOk();
 });
 
 it('always allows always-active modules like core', function () {
@@ -53,7 +53,7 @@ it('treats an expired flag as inactive', function () {
 
     app(ModuleFlagManager::class)->enable($a, 'probe-module', now()->subHour());
 
-    get('http://sekolah-a.localhost/module-probe')->assertForbidden();
+    get(school('sekolah-a', '/module-probe'))->assertForbidden();
 });
 
 it('reflects enable and disable changes immediately (cache invalidated)', function () {

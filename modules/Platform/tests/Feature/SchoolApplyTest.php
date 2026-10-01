@@ -24,10 +24,10 @@ it('renders the public application form on the central host', function () {
         );
 });
 
-it('refuses the application form on a tenant host', function () {
+it('serves the application form even when a school is remembered in the session', function () {
     TenantFactory::new()->create(['slug' => 'sekolah-a']);
 
-    get('http://sekolah-a.localhost/daftar-sekolah')->assertNotFound();
+    get(school('sekolah-a', '/daftar-sekolah'))->assertOk();
 });
 
 it('stores a valid submission as a pending application', function () {

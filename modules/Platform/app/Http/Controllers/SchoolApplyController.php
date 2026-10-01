@@ -10,8 +10,7 @@ use Modules\Platform\App\Contracts\Exceptions\InvalidApplicationException;
 use Modules\Platform\App\Contracts\TenantApplications;
 
 /**
- * Public school application form (Fase 2 Stage 7): CENTRAL hosts only,
- * no auth — the applicant is not a user anywhere yet. Anti-spam without
+ * Public school application form (Fase 2 Stage 7): no auth — the applicant is not a user anywhere yet. Anti-spam without
  * dependencies: IP throttle on the routes (safe here — no tenant context
  * needed) plus a hidden honeypot field; a filled honeypot is rejected
  * SILENTLY (generic success, no row) so bots learn nothing.

@@ -8,14 +8,14 @@ import { useTenant } from '@shared/hooks/useTenant';
 import { store as requestReset } from '@/actions/Modules/Identity/App/Http/Controllers/Auth/PasswordResetLinkController';
 
 /**
- * "Forgot password" (tenant host). Always answers with the same
+ * "Forgot password" (school portal). Always answers with the same
  * generic confirmation — the server never discloses whether an email
  * exists, so this page only ever shows the neutral status message.
  */
 export default function ForgotPassword() {
     const tenant = useTenant();
 
-    const form = useForm({ email: '' });
+    const form = useForm({ school: '', email: '' });
 
     function submit(event: FormEvent) {
         event.preventDefault();
@@ -43,12 +43,26 @@ export default function ForgotPassword() {
                     noValidate
                 >
                     <AuthInput
+                        label="Kode sekolah"
+                        id="school"
+                        name="school"
+                        type="text"
+                        autoComplete="organization"
+                        autoFocus
+                        required
+                        value={form.data.school}
+                        error={form.errors.school}
+                        onChange={(event) =>
+                            form.setData('school', event.target.value)
+                        }
+                    />
+
+                    <AuthInput
                         label="Email"
                         id="email"
                         name="email"
                         type="email"
                         autoComplete="username"
-                        autoFocus
                         required
                         value={form.data.email}
                         error={form.errors.email}

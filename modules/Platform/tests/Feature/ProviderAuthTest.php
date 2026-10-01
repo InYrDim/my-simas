@@ -15,16 +15,17 @@ use function Pest\Laravel\post;
  * guard). Complements Identity's TenantAuthTest which proves the
  * tenant side of the guard separation.
  */
-it('renders the provider login page on the central host', function () {
-    get('http://localhost/platform/login')
+it('renders the provider login page on the console host', function () {
+    get('http://console.localhost/login')
         ->assertOk()
         ->assertSee('Console Provider', false);
 });
 
-it('refuses the provider console on a tenant host', function () {
+it('refuses the provider console on the school host', function () {
     TenantFactory::new()->create(['slug' => 'sekolah-a']);
 
-    get('http://sekolah-a.localhost/platform/login')->assertNotFound();
+    get(school('sekolah-a', '/dashboard'))->assertNotFound();
+    get('http://localhost/platform/login')->assertNotFound();
 });
 
 it('logs a provider user in on the central host', function () {
@@ -34,7 +35,7 @@ it('logs a provider user in on the central host', function () {
         'password' => 'password123',
     ]);
 
-    post('http://localhost/platform/login', [
+    post('http://console.localhost/login', [
         'email' => 'ops@simas.test',
         'password' => 'password123',
     ])->assertRedirect();
@@ -50,8 +51,8 @@ it('rejects wrong provider credentials', function () {
         'password' => 'password123',
     ]);
 
-    from('http://localhost/platform/login')
-        ->post('http://localhost/platform/login', [
+    from('http://console.localhost/login')
+        ->post('http://console.localhost/login', [
             'email' => 'ops@simas.test',
             'password' => 'wrong-password',
         ])->assertSessionHasErrors('email');
@@ -63,7 +64,7 @@ it('does not accept tenant credentials on the provider login', function () {
     TenantFactory::new()->create(['slug' => 'sekolah-a']);
 
     // provider_users is a separate table: this email does not exist there.
-    post('http://localhost/platform/login', [
+    post('http://console.localhost/login', [
         'email' => 'admin@sekolah-a.test',
         'password' => 'password',
     ])->assertSessionHasErrors('email');
@@ -78,13 +79,13 @@ it('throttles provider login attempts', function () {
     ]);
 
     for ($i = 0; $i < 5; $i++) {
-        post('http://localhost/platform/login', [
+        post('http://console.localhost/login', [
             'email' => 'ops@simas.test',
             'password' => 'wrong-password',
         ])->assertSessionHasErrors('email');
     }
 
-    post('http://localhost/platform/login', [
+    post('http://console.localhost/login', [
         'email' => 'ops@simas.test',
         'password' => 'wrong-password',
     ])->assertSessionHasErrors('email');
@@ -101,7 +102,7 @@ it('logs the provider user out', function () {
 
     expect(Auth::guard('provider')->check())->toBeTrue();
 
-    post('http://localhost/platform/logout')->assertRedirect();
+    post('http://console.localhost/logout')->assertRedirect();
 
     expect(Auth::guard('provider')->check())->toBeFalse();
 });

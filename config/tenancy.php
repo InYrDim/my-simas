@@ -5,11 +5,11 @@
 | Tenancy (Fase 1 — Platform module)
 |--------------------------------------------------------------------------
 |
-| Central domains are hosts that never resolve to a tenant: requests to
-| them run without tenant context (no fallback, no override). Tenant
-| hosts are either "{slug}.{central_domain}" or a custom domain stored
-| on the tenant record. Reserved slugs can never be provisioned because
-| they would shadow central/infrastructure hosts.
+| Tenants are NOT resolved from the host: a school is identified by its
+| school code (the tenant id today, NPSN later) typed on the login form
+| and remembered in the session. Central domains serve the school login
+| and the public application form; the console domain serves the
+| provider console and never carries a tenant.
 |
 */
 
@@ -20,6 +20,9 @@ return [
         ->filter()
         ->values()
         ->all(),
+
+    // Provider console host (login, applications review). Never a tenant.
+    'console_domain' => strtolower(trim((string) env('TENANCY_CONSOLE_DOMAIN', 'console.localhost'))),
 
     'reserved_slugs' => [
         'www', 'admin', 'api', 'app', 'central',

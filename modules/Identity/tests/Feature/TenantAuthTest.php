@@ -58,7 +58,8 @@ it('allows the same email across two tenants (composite unique)', function () {
 it('logs a user in on their own tenant host', function () {
     [, $user] = tenantUser('sekolah-a', 'budi@example.com');
 
-    post('http://sekolah-a.localhost/login', [
+    post(school('sekolah-a', '/login'), [
+        'school' => schoolId('sekolah-a'),
         'email' => 'budi@example.com',
         'password' => 'password123',
     ])->assertRedirect();
@@ -71,8 +72,9 @@ it('rejects tenant B credentials on tenant A host', function () {
     tenantUser('sekolah-a', 'siti@example.com');
 
     // Valid credential for tenant B, but posted on tenant A's host.
-    from('http://sekolah-a.localhost/login')
-        ->post('http://sekolah-a.localhost/login', [
+    from(school('sekolah-a', '/login'))
+        ->post(school('sekolah-a', '/login'), [
+            'school' => schoolId('sekolah-a'),
             'email' => 'budi@example.com',
             'password' => 'password123',
         ])->assertSessionHasErrors('email');
@@ -85,7 +87,8 @@ it('does not authenticate a tenant A session cookie on tenant B host', function 
     tenantUser('sekolah-b', 'siti@example.com');
 
     // Login on tenant A to obtain its session cookie.
-    $response = post('http://sekolah-a.localhost/login', [
+    $response = post(school('sekolah-a', '/login'), [
+        'school' => schoolId('sekolah-a'),
         'email' => 'budi@example.com',
         'password' => 'password123',
     ]);
@@ -103,7 +106,7 @@ it('does not authenticate a tenant A session cookie on tenant B host', function 
     // keeps sessions per-process, so the replay may resolve the user,
     // but EnsureSessionTenant (web group) must have logged it out — the
     // session user belongs to tenant A, not the resolved tenant B.
-    $probe = get('http://sekolah-b.localhost/auth-probe', [
+    $probe = get(school('sekolah-b', '/auth-probe'), [
         'Cookie' => $sessionCookie->getName().'='.$sessionCookie->getValue(),
     ]);
 
@@ -112,14 +115,66 @@ it('does not authenticate a tenant A session cookie on tenant B host', function 
     expect($probe->getContent())->not->toContain('budi@example.com');
 });
 
-it('rejects login without tenant context (central host)', function () {
+it('requires a school code to log in', function () {
     tenantUser('sekolah-a', 'budi@example.com');
 
     from('http://localhost/login')
         ->post('http://localhost/login', [
             'email' => 'budi@example.com',
             'password' => 'password123',
-        ])->assertSessionHasErrors('email');
+        ])->assertSessionHasErrors('school');
+
+    expect(auth()->user())->toBeNull();
+});
+
+it('refuses an unknown school code with the same generic error as a wrong password', function () {
+    tenantUser('sekolah-a', 'budi@example.com');
+
+    foreach (['01ARZ3NDEKTSV4RRFFQ69G5FAV', 'sekolah-a', 'nonsense'] as $code) {
+        from('http://localhost/login')
+            ->post('http://localhost/login', [
+                'school' => $code,
+                'email' => 'budi@example.com',
+                'password' => 'password123',
+            ])->assertSessionHasErrors(['email' => __('auth.failed')]);
+    }
+
+    expect(auth()->user())->toBeNull();
+});
+
+it('remembers the school after login so later pages need no school code', function () {
+    [$tenantId, $user] = tenantUser('sekolah-a', 'budi@example.com');
+
+    post('http://localhost/login', [
+        'school' => $tenantId,
+        'email' => 'budi@example.com',
+        'password' => 'password123',
+    ])->assertRedirect()
+        ->assertSessionHas('tenant_id', $tenantId);
+
+    get('/auth-probe')->assertSee('user:budi@example.com', false);
+});
+
+it('keeps a logged-in user on their own school even if another school code is sent', function () {
+    [$tenantA, $userA] = tenantUser('sekolah-a', 'budi@example.com');
+    [$tenantB] = tenantUser('sekolah-b', 'siti@example.com');
+
+    $this->withSession([
+        'tenant_id' => $tenantA,
+        auth()->guard('web')->getName() => $userA->id,
+    ]);
+
+    get('/auth-probe?school='.$tenantB)->assertSee('user:budi@example.com', false);
+});
+
+it('does not log in on the console host', function () {
+    [$tenantId] = tenantUser('sekolah-a', 'budi@example.com');
+
+    post('http://console.localhost/login', [
+        'school' => $tenantId,
+        'email' => 'budi@example.com',
+        'password' => 'password123',
+    ])->assertSessionHasErrors('email');
 
     expect(auth()->user())->toBeNull();
 });
@@ -130,7 +185,8 @@ it('throttles logins per tenant and email', function () {
 
     // 5 failed attempts on tenant A exhaust that tenant's bucket...
     for ($i = 0; $i < 5; $i++) {
-        post('http://sekolah-a.localhost/login', [
+        post(school('sekolah-a', '/login'), [
+            'school' => schoolId('sekolah-a'),
             'email' => 'budi@example.com',
             'password' => 'wrong-password',
         ])->assertSessionHasErrors('email');
@@ -138,13 +194,15 @@ it('throttles logins per tenant and email', function () {
 
     // ...6th attempt on tenant A is throttled (rendered as a redirect
     // with the throttle error for plain form posts; 429 for JSON).
-    post('http://sekolah-a.localhost/login', [
+    post(school('sekolah-a', '/login'), [
+        'school' => schoolId('sekolah-a'),
         'email' => 'budi@example.com',
         'password' => 'wrong-password',
     ])->assertSessionHasErrors('email');
 
     // The SAME email on tenant B still gets a normal attempt (per-tenant buckets).
-    post('http://sekolah-b.localhost/login', [
+    post(school('sekolah-b', '/login'), [
+        'school' => schoolId('sekolah-b'),
         'email' => 'budi@example.com',
         'password' => 'wrong-password',
     ])->assertSessionHasErrors('email');
@@ -157,7 +215,7 @@ it('logs the user out', function () {
 
     expect(auth()->user()?->is($user))->toBeTrue();
 
-    post('http://sekolah-a.localhost/logout')->assertRedirect();
+    post(school('sekolah-a', '/logout'))->assertRedirect();
 
     expect(auth()->user())->toBeNull();
 });
@@ -165,5 +223,5 @@ it('logs the user out', function () {
 it('keeps guest access to the login page on a tenant host', function () {
     TenantFactory::new()->create(['slug' => 'sekolah-a']);
 
-    get('http://sekolah-a.localhost/login')->assertOk();
+    get(school('sekolah-a', '/login'))->assertOk();
 });

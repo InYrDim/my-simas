@@ -201,7 +201,7 @@ it('does not let a provider session authenticate tenant routes', function () {
 
     actingAs($provider, 'provider');
 
-    get('http://sekolah-a.localhost/tenant-guard-probe')
+    get(school('sekolah-a', '/tenant-guard-probe'))
         ->assertOk()
         ->assertSee('tenant-none', false);
 });

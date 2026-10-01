@@ -65,15 +65,15 @@ it('provisions the first admin pinned to the approved tenant with the right role
         )->toBeTrue();
 });
 
-it('queues a set-password mail with a tenant-hosted link', function () {
+it('queues a set-password mail with a school-coded link', function () {
     Mail::fake();
 
     $tenant = TenantFactory::new()->create(['slug' => 'baru-b']);
 
     dispatchApproved($tenant->id);
 
-    Mail::assertQueued(SetPasswordMail::class, function (SetPasswordMail $mail): bool {
-        return str_contains($mail->setPasswordUrl, 'baru-b.localhost')
+    Mail::assertQueued(SetPasswordMail::class, function (SetPasswordMail $mail) use ($tenant): bool {
+        return str_contains($mail->setPasswordUrl, 'school='.$tenant->id)
             && str_contains($mail->setPasswordUrl, '/set-password?token=');
     });
 });
@@ -149,7 +149,7 @@ it('accepts the emailed token: password set, email verified, auto-login', functi
         ->where('tenant_id', $tenant->id)
         ->first();
 
-    post('http://baru-d.localhost/set-password', [
+    post(school('baru-d', '/set-password'), [
         'token' => $plainToken,
         'email' => 'kepsek@baru-d.test',
         'password' => 'SandiBaruKuat123!',
@@ -184,7 +184,7 @@ it('refuses activation for a deactivated account', function () {
 
     $plainToken = mintFreshToken($tenant, 'kepsek@baru-e.test');
 
-    post('http://baru-e.localhost/set-password', [
+    post(school('baru-e', '/set-password'), [
         'token' => $plainToken,
         'email' => 'kepsek@baru-e.test',
         'password' => 'SandiBaruKuat123!',
@@ -203,7 +203,7 @@ it('refuses activation for a deactivated account', function () {
 it('serves the set-password form only on the tenant host', function () {
     $tenant = TenantFactory::new()->create(['slug' => 'baru-f']);
 
-    get('http://baru-f.localhost/set-password?token=x&email=a@b.test')
+    get(school('baru-f', '/set-password?token=x&email=a@b.test'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('Identity/Auth/SetPassword')

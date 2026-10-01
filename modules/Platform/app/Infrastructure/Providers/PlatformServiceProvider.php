@@ -13,7 +13,6 @@ use Modules\Platform\App\Contracts\TenantModules;
 use Modules\Platform\App\Contracts\TenantRoles;
 use Modules\Platform\App\Contracts\TenantStorage;
 use Modules\Platform\App\Contracts\TenantUrl;
-use Modules\Platform\App\Http\Middleware\EnsureCentralHost;
 use Modules\Platform\App\Http\Middleware\EnsureModuleActive;
 use Modules\Platform\App\Http\Middleware\ResolveTenant;
 use Modules\Platform\App\Infrastructure\Commands\PermissionsSyncCommand;
@@ -39,7 +38,7 @@ use Modules\Platform\App\Infrastructure\Tenancy\DefaultTenantUrl;
 use Modules\Platform\App\Infrastructure\Tenancy\PartitionedTenantCache;
 use Modules\Platform\App\Infrastructure\Tenancy\PartitionedTenantStorage;
 use Modules\Platform\App\Infrastructure\Tenancy\RegistersTenantMacro;
-use Modules\Platform\App\Infrastructure\Tenancy\SubdomainTenantResolver;
+use Modules\Platform\App\Infrastructure\Tenancy\SchoolCodeTenantResolver;
 use Modules\Platform\App\Infrastructure\Tenancy\TenantQueueContext;
 
 class PlatformServiceProvider extends ServiceProvider
@@ -55,7 +54,7 @@ class PlatformServiceProvider extends ServiceProvider
         $this->app->singleton(DefaultTenantContext::class);
         $this->app->alias(DefaultTenantContext::class, TenantContext::class);
 
-        $this->app->singleton(SubdomainTenantResolver::class);
+        $this->app->singleton(SchoolCodeTenantResolver::class);
 
         // Tenant-partitioned cache/storage: interface-aliased singletons
         // so interface and concrete type-hints share one instance.
@@ -194,7 +193,6 @@ class PlatformServiceProvider extends ServiceProvider
 
         $router->aliasMiddleware('module', EnsureModuleActive::class);
 
-        $router->aliasMiddleware('central', EnsureCentralHost::class);
     }
 
     /**

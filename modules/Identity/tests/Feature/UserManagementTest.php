@@ -74,7 +74,7 @@ it('lets the school admin view the user list', function () {
     umUser($tenant, 'guru@um-a.test', 'guru');
 
     actingAs($admin)
-        ->get('http://um-a.localhost/users')
+        ->get(school('um-a', '/users'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('Identity/Users/Index')
@@ -87,14 +87,14 @@ it('creates a user from the form: verified, hashed, optional role', function () 
     $admin = umUser($tenant, 'admin@um-b.test', 'admin-sekolah');
 
     actingAs($admin)
-        ->from('http://um-b.localhost/users/create')
-        ->post('http://um-b.localhost/users', [
+        ->from(school('um-b', '/users/create'))
+        ->post(school('um-b', '/users'), [
             'name' => 'Bu Rina',
             'email' => 'rina@um-b.test',
             'password' => 'SandiRahasia1!',
             'role' => 'guru',
         ])
-        ->assertRedirect('http://um-b.localhost/users')
+        ->assertRedirect(school('um-b', '/users'))
         ->assertSessionHas('status');
 
     $user = app(TenantContext::class)->run(
@@ -119,7 +119,7 @@ it('rejects duplicate emails within the tenant but allows them across tenants', 
     umUser($b, 'duplikat@shared.test');
 
     actingAs($admin)
-        ->post('http://um-c-a.localhost/users', [
+        ->post(school('um-c-a', '/users'), [
             'name' => 'Duplikat',
             'email' => 'admin@um-c-a.test', // taken in THIS tenant
             'password' => 'SandiRahasia1!',
@@ -128,12 +128,12 @@ it('rejects duplicate emails within the tenant but allows them across tenants', 
 
     // The same email exists in tenant B — creating it in tenant A is fine.
     actingAs($admin)
-        ->post('http://um-c-a.localhost/users', [
+        ->post(school('um-c-a', '/users'), [
             'name' => 'Lain Tenant',
             'email' => 'duplikat@shared.test',
             'password' => 'SandiRahasia1!',
         ])
-        ->assertRedirect('http://um-c-a.localhost/users')
+        ->assertRedirect(school('um-c-a', '/users'))
         ->assertSessionHasNoErrors();
 });
 
@@ -143,7 +143,7 @@ it('syncs name and roles from the edit form', function () {
     $guru = umUser($tenant, 'guru@um-d.test', 'guru');
 
     actingAs($admin)
-        ->put('http://um-d.localhost/users/'.$guru->id, [
+        ->put(school('um-d', '/users/').$guru->id, [
             'name' => 'Guru Rebrand',
             'roles' => ['staf-tu'],
         ])
@@ -166,13 +166,13 @@ it('sends the reset link through the Stage 4 machinery', function () {
     $guru = umUser($tenant, 'guru@um-e.test', 'guru');
 
     actingAs($admin)
-        ->post('http://um-e.localhost/users/'.$guru->id.'/send-reset')
+        ->post(school('um-e', '/users/').$guru->id.'/send-reset')
         ->assertRedirect()
         ->assertSessionHas('status');
 
     Mail::assertQueued(
         ResetPasswordMail::class,
-        fn (ResetPasswordMail $mail): bool => str_contains($mail->resetUrl, 'um-e.localhost'),
+        fn (ResetPasswordMail $mail): bool => str_contains($mail->resetUrl, 'school='.$tenant->id),
     );
 
     // A token row was minted for the TARGET's tenant.
@@ -189,20 +189,20 @@ it('guru is forbidden on every management route', function () {
 
     actingAs($guru);
 
-    get('http://um-f.localhost/users')->assertForbidden();
-    get('http://um-f.localhost/users/create')->assertForbidden();
+    get(school('um-f', '/users'))->assertForbidden();
+    get(school('um-f', '/users/create'))->assertForbidden();
 
-    post('http://um-f.localhost/users', [
+    post(school('um-f', '/users'), [
         'name' => 'X', 'email' => 'x@um-f.test', 'password' => 'SandiRahasia1!',
     ])->assertForbidden();
 
-    put('http://um-f.localhost/users/'.$other->id, [
+    put(school('um-f', '/users/').$other->id, [
         'name' => 'X', 'roles' => [],
     ])->assertForbidden();
 
-    patch('http://um-f.localhost/users/'.$other->id.'/deactivate')->assertForbidden();
-    patch('http://um-f.localhost/users/'.$other->id.'/reactivate')->assertForbidden();
-    post('http://um-f.localhost/users/'.$other->id.'/send-reset')->assertForbidden();
+    patch(school('um-f', '/users/').$other->id.'/deactivate')->assertForbidden();
+    patch(school('um-f', '/users/').$other->id.'/reactivate')->assertForbidden();
+    post(school('um-f', '/users/').$other->id.'/send-reset')->assertForbidden();
 });
 
 it('cross-tenant ids are 404 even for a permitted admin', function () {
@@ -214,14 +214,14 @@ it('cross-tenant ids are 404 even for a permitted admin', function () {
     actingAs($admin);
 
     // The scope hides the id BEFORE the policy ever runs.
-    get('http://um-g-a.localhost/users/'.$victim->id.'/edit')->assertNotFound();
+    get(school('um-g-a', '/users/').$victim->id.'/edit')->assertNotFound();
 
-    put('http://um-g-a.localhost/users/'.$victim->id, [
+    put(school('um-g-a', '/users/').$victim->id, [
         'name' => 'Diubah', 'roles' => [],
     ])->assertNotFound();
 
-    patch('http://um-g-a.localhost/users/'.$victim->id.'/deactivate')->assertNotFound();
-    post('http://um-g-a.localhost/users/'.$victim->id.'/send-reset')->assertNotFound();
+    patch(school('um-g-a', '/users/').$victim->id.'/deactivate')->assertNotFound();
+    post(school('um-g-a', '/users/').$victim->id.'/send-reset')->assertNotFound();
 
     expect($victim->refresh()->name)->not->toBe('Diubah')
         ->and($victim->refresh()->deactivated_at)->toBeNull();
@@ -233,7 +233,7 @@ it('deactivating from the UI closes access on the next login (Stage 3 traversal)
     $guru = umUser($tenant, 'guru@um-h.test', 'guru');
 
     actingAs($admin)
-        ->patch('http://um-h.localhost/users/'.$guru->id.'/deactivate')
+        ->patch(school('um-h', '/users/').$guru->id.'/deactivate')
         ->assertRedirect()
         ->assertSessionHas('status');
 
@@ -245,8 +245,9 @@ it('deactivating from the UI closes access on the next login (Stage 3 traversal)
     auth()->guard('web')->logout();
 
     // And the login form refuses the account with the generic error.
-    from('http://um-h.localhost/login')
-        ->post('http://um-h.localhost/login', [
+    from(school('um-h', '/login'))
+        ->post(school('um-h', '/login'), [
+            'school' => schoolId('um-h'),
             'email' => 'guru@um-h.test',
             'password' => 'SandiRahasia1!',
         ])
@@ -259,7 +260,7 @@ it('shows the anti-lockout flags and refuses the invariants through the UI', fun
 
     // Edit page marks isSelf + isLastActiveAdmin for the tenant's only admin.
     actingAs($admin)
-        ->get('http://um-i.localhost/users/'.$admin->id.'/edit')
+        ->get(school('um-i', '/users/').$admin->id.'/edit')
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('Identity/Users/Edit')
@@ -268,7 +269,7 @@ it('shows the anti-lockout flags and refuses the invariants through the UI', fun
 
     // The action refuses deactivating the last active admin anyway.
     actingAs($admin)
-        ->patch('http://um-i.localhost/users/'.$admin->id.'/deactivate')
+        ->patch(school('um-i', '/users/').$admin->id.'/deactivate')
         ->assertSessionHasErrors('user');
 
     expect($admin->refresh()->deactivated_at)->toBeNull();
@@ -283,21 +284,21 @@ it('shows the anti-lockout flags and refuses the invariants through the UI', fun
     $admin = $admin->fresh();
 
     actingAs($admin)
-        ->get('http://um-i.localhost/users/'.$second->id.'/edit')
+        ->get(school('um-i', '/users/').$second->id.'/edit')
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->where('isSelf', false)
             ->where('isLastActiveAdmin', false));
 
     actingAs($admin->fresh())
-        ->patch('http://um-i.localhost/users/'.$second->id.'/deactivate')
+        ->patch(school('um-i', '/users/').$second->id.'/deactivate')
         ->assertRedirect();
 
     expect($second->refresh()->deactivated_at)->not->toBeNull();
 
     // Reactivate restores access.
     actingAs($admin->fresh())
-        ->patch('http://um-i.localhost/users/'.$second->id.'/reactivate')
+        ->patch(school('um-i', '/users/').$second->id.'/reactivate')
         ->assertRedirect();
 
     expect($second->refresh()->deactivated_at)->toBeNull();
@@ -311,6 +312,6 @@ it('routes are 403 when the identity module is inactive', function () {
     expect(app(TenantModules::class)->isEnabled('identity', $tenant->id))->toBeFalse();
 
     actingAs($admin)
-        ->get('http://um-j-off.localhost/users')
+        ->get(school('um-j-off', '/users'))
         ->assertForbidden();
 });

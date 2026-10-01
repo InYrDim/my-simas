@@ -3,24 +3,25 @@
 namespace Modules\Platform\App\Contracts;
 
 /**
- * Resolves the public host for a tenant — the URL root that password
- * reset / set-password links must point at.
+ * Builds the public URLs for a tenant — what password reset /
+ * set-password links must point at.
  *
  * Needed because these emails are built INSIDE the queue, where the
  * request root cannot be trusted (a worker has no request at all).
- * Scheme and port are configurable so dev hosts like
- * `sekolah-a.localhost:8000` work without hardcoding environments.
+ * Tenants share the central host: a link carries the school code as a
+ * `school` query parameter, which the tenant resolver turns back into
+ * the tenant. Scheme and port are configurable so dev hosts like
+ * `localhost:8000` work without hardcoding environments.
  */
 interface TenantUrl
 {
     /**
-     * The tenant's host, e.g. "sekolah-a.simas.test" or a custom
-     * domain. Throws when the tenant does not exist.
+     * The host tenant links point at (first central domain).
      */
-    public function host(string $tenantId): string;
+    public function host(): string;
 
     /**
-     * The scheme ("http"/"https") for tenant hosts. Defaults from
+     * The scheme ("http"/"https"). Defaults from
      * config('tenancy.url_scheme').
      */
     public function scheme(): string;
@@ -32,8 +33,16 @@ interface TenantUrl
     public function port(): string;
 
     /**
-     * Full root URL for the tenant: scheme + host + port, no trailing
-     * slash — prefix any tenant route path with it.
+     * Root URL: scheme + host + port, no trailing slash.
      */
-    public function root(string $tenantId): string;
+    public function root(): string;
+
+    /**
+     * Full URL for a tenant route path, carrying the school code so the
+     * link resolves the tenant on arrival. Throws when the tenant does
+     * not exist.
+     *
+     * @param  array<string, string>  $query  extra query parameters
+     */
+    public function url(string $tenantId, string $path, array $query = []): string;
 }

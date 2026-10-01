@@ -94,8 +94,9 @@ it('refuses login for a deactivated user with the generic error', function () {
 
     $user->forceFill(['deactivated_at' => now()])->save();
 
-    from('http://sekolah-a.localhost/login')
-        ->post('http://sekolah-a.localhost/login', [
+    from(school('sekolah-a', '/login'))
+        ->post(school('sekolah-a', '/login'), [
+            'school' => schoolId('sekolah-a'),
             'email' => 'budi@example.com',
             'password' => 'password123',
         ])->assertSessionHasErrors('email');
@@ -111,13 +112,13 @@ it('ends the live session of a user deactivated mid-session', function () {
     actingAs($user);
 
     // Session is alive before deactivation.
-    $before = get('http://sekolah-a.localhost/auth-probe');
+    $before = get(school('sekolah-a', '/auth-probe'));
     expect($before->getContent())->toContain('budi@example.com');
 
     $user->forceFill(['deactivated_at' => now()])->save();
 
     // EnsureSessionTenant inspects the attribute on the NEXT request.
-    $after = get('http://sekolah-a.localhost/auth-probe');
+    $after = get(school('sekolah-a', '/auth-probe'));
 
     expect($after->getContent())->not->toContain('budi@example.com')
         ->and(auth()->user())->toBeNull();
@@ -132,7 +133,8 @@ it('does not deactivate the tenant identity across tenants', function () {
     $userA->forceFill(['deactivated_at' => now()])->save();
 
     // Tenant B's budi still logs in on its own host.
-    post('http://sekolah-b.localhost/login', [
+    post(school('sekolah-b', '/login'), [
+        'school' => schoolId('sekolah-b'),
         'email' => 'budi@example.com',
         'password' => 'password123',
     ])->assertRedirect();
@@ -205,7 +207,8 @@ it('restores access on reactivation', function () {
 
     expect($user->refresh()->deactivated_at)->toBeNull();
 
-    post('http://sekolah-a.localhost/login', [
+    post(school('sekolah-a', '/login'), [
+        'school' => schoolId('sekolah-a'),
         'email' => 'budi@example.com',
         'password' => 'password123',
     ])->assertRedirect();

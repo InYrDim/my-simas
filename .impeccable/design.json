@@ -1,0 +1,632 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2025-09-30T00:00:00.000Z",
+  "title": "Design System: SIMAS — Buku Besar Sekolah",
+  "extensions": {
+    "colorMeta": {
+      "stamp-ink": {
+        "role": "primary",
+        "displayName": "Stamp Ink",
+        "canonical": "oklch(47.3% 0.111 163.2)",
+        "tonalRamp": [
+          "oklch(15% 0.05 165)",
+          "oklch(30% 0.09 164)",
+          "oklch(45% 0.115 163)",
+          "oklch(55% 0.13 162)",
+          "oklch(65% 0.14 162)",
+          "oklch(75% 0.13 163)",
+          "oklch(85% 0.10 164)",
+          "oklch(95% 0.05 165)"
+        ]
+      },
+      "stamp-ink-deep": {
+        "role": "primary",
+        "displayName": "Stamp Ink Deep",
+        "canonical": "oklch(40.9% 0.096 163.2)",
+        "purpose": "Hover/pressed fill; text on a success wash.",
+        "tonalRamp": [
+          "oklch(15% 0.05 165)",
+          "oklch(30% 0.09 164)",
+          "oklch(45% 0.115 163)",
+          "oklch(55% 0.13 162)",
+          "oklch(65% 0.14 162)",
+          "oklch(75% 0.13 163)",
+          "oklch(85% 0.10 164)",
+          "oklch(95% 0.05 165)"
+        ]
+      },
+      "stamp-ink-bright": {
+        "role": "primary",
+        "displayName": "Stamp Ink Bright",
+        "canonical": "oklch(59.6% 0.145 163.2)",
+        "purpose": "Focus border and ring; primary fill on the night ground.",
+        "tonalRamp": [
+          "oklch(15% 0.05 165)",
+          "oklch(30% 0.09 164)",
+          "oklch(45% 0.115 163)",
+          "oklch(55% 0.13 162)",
+          "oklch(65% 0.14 162)",
+          "oklch(75% 0.13 163)",
+          "oklch(85% 0.10 164)",
+          "oklch(95% 0.05 165)"
+        ]
+      },
+      "stamp-wash": {
+        "role": "primary",
+        "displayName": "Stamp Wash",
+        "canonical": "oklch(97.7% 0.021 156.7)",
+        "purpose": "Success surface and role-chip ground on paper.",
+        "tonalRamp": [
+          "oklch(15% 0.05 165)",
+          "oklch(30% 0.09 164)",
+          "oklch(45% 0.115 163)",
+          "oklch(55% 0.13 162)",
+          "oklch(65% 0.14 162)",
+          "oklch(75% 0.13 163)",
+          "oklch(85% 0.10 164)",
+          "oklch(95% 0.05 165)"
+        ]
+      },
+      "stamp-wash-line": {
+        "role": "primary",
+        "displayName": "Stamp Wash Line",
+        "canonical": "oklch(87% 0.083 156.7)",
+        "purpose": "Border of a success wash and of a role chip.",
+        "tonalRamp": [
+          "oklch(15% 0.05 165)",
+          "oklch(30% 0.09 164)",
+          "oklch(45% 0.115 163)",
+          "oklch(55% 0.13 162)",
+          "oklch(65% 0.14 162)",
+          "oklch(75% 0.13 163)",
+          "oklch(85% 0.10 164)",
+          "oklch(95% 0.05 165)"
+        ]
+      },
+      "stamp-mist": {
+        "role": "primary",
+        "displayName": "Stamp Mist",
+        "canonical": "oklch(87.2% 0.15 160.4)",
+        "purpose": "Success text on the night ground.",
+        "tonalRamp": [
+          "oklch(15% 0.05 165)",
+          "oklch(30% 0.09 164)",
+          "oklch(45% 0.115 163)",
+          "oklch(55% 0.13 162)",
+          "oklch(65% 0.14 162)",
+          "oklch(75% 0.13 163)",
+          "oklch(85% 0.10 164)",
+          "oklch(95% 0.05 165)"
+        ]
+      },
+      "void-red": {
+        "role": "tertiary",
+        "displayName": "Void Red",
+        "canonical": "oklch(57.7% 0.245 27.3)",
+        "purpose": "Destructive fill, invalid field stroke, error text.",
+        "tonalRamp": [
+          "oklch(15% 0.06 25)",
+          "oklch(30% 0.11 25)",
+          "oklch(45% 0.15 25)",
+          "oklch(55% 0.18 26)",
+          "oklch(65% 0.20 27)",
+          "oklch(75% 0.16 28)",
+          "oklch(85% 0.10 30)",
+          "oklch(95% 0.05 30)"
+        ]
+      },
+      "void-red-bright": {
+        "role": "tertiary",
+        "displayName": "Void Red Bright",
+        "canonical": "oklch(63.7% 0.237 25.3)",
+        "purpose": "Hover state of the destructive fill.",
+        "tonalRamp": [
+          "oklch(15% 0.06 25)",
+          "oklch(30% 0.11 25)",
+          "oklch(45% 0.15 25)",
+          "oklch(55% 0.18 26)",
+          "oklch(65% 0.20 27)",
+          "oklch(75% 0.16 28)",
+          "oklch(85% 0.10 30)",
+          "oklch(95% 0.05 30)"
+        ]
+      },
+      "void-red-deep": {
+        "role": "tertiary",
+        "displayName": "Void Red Deep",
+        "canonical": "oklch(50.5% 0.213 27.5)",
+        "purpose": "Text on a void wash; border of a void panel on night.",
+        "tonalRamp": [
+          "oklch(15% 0.06 25)",
+          "oklch(30% 0.11 25)",
+          "oklch(45% 0.15 25)",
+          "oklch(55% 0.18 26)",
+          "oklch(65% 0.20 27)",
+          "oklch(75% 0.16 28)",
+          "oklch(85% 0.10 30)",
+          "oklch(95% 0.05 30)"
+        ]
+      },
+      "void-red-mist": {
+        "role": "tertiary",
+        "displayName": "Void Red Mist",
+        "canonical": "oklch(70.4% 0.17 25.8)",
+        "purpose": "Error text on the night ground.",
+        "tonalRamp": [
+          "oklch(15% 0.06 25)",
+          "oklch(30% 0.11 25)",
+          "oklch(45% 0.15 25)",
+          "oklch(55% 0.18 26)",
+          "oklch(65% 0.20 27)",
+          "oklch(75% 0.16 28)",
+          "oklch(85% 0.10 30)",
+          "oklch(95% 0.05 30)"
+        ]
+      },
+      "void-wash": {
+        "role": "tertiary",
+        "displayName": "Void Wash",
+        "canonical": "oklch(97.1% 0.013 17.4)",
+        "purpose": "Deactivated-account notice and error banner ground on paper.",
+        "tonalRamp": [
+          "oklch(15% 0.06 25)",
+          "oklch(30% 0.11 25)",
+          "oklch(45% 0.15 25)",
+          "oklch(55% 0.18 26)",
+          "oklch(65% 0.20 27)",
+          "oklch(75% 0.16 28)",
+          "oklch(85% 0.10 30)",
+          "oklch(95% 0.05 30)"
+        ]
+      },
+      "void-wash-line": {
+        "role": "tertiary",
+        "displayName": "Void Wash Line",
+        "canonical": "oklch(93.2% 0.032 17.7)",
+        "purpose": "Border of a void wash.",
+        "tonalRamp": [
+          "oklch(15% 0.06 25)",
+          "oklch(30% 0.11 25)",
+          "oklch(45% 0.15 25)",
+          "oklch(55% 0.18 26)",
+          "oklch(65% 0.20 27)",
+          "oklch(75% 0.16 28)",
+          "oklch(85% 0.10 30)",
+          "oklch(95% 0.05 30)"
+        ]
+      },
+      "provisional-amber": {
+        "role": "secondary",
+        "displayName": "Provisional Amber",
+        "canonical": "oklch(87.9% 0.128 76.3)",
+        "purpose": "The pending chip text on the night ground. Amber means awaiting a human stamp — nothing else.",
+        "tonalRamp": [
+          "oklch(15% 0.05 75)",
+          "oklch(30% 0.09 75)",
+          "oklch(45% 0.12 78)",
+          "oklch(55% 0.14 80)",
+          "oklch(65% 0.15 82)",
+          "oklch(75% 0.14 84)",
+          "oklch(85% 0.10 86)",
+          "oklch(95% 0.05 88)"
+        ]
+      },
+      "ledger-paper": {
+        "role": "neutral",
+        "displayName": "Ledger Paper",
+        "canonical": "oklch(100% 0 0)",
+        "purpose": "The record surface on the school portal; text on every filled button.",
+        "tonalRamp": [
+          "oklch(15% 0.005 260)",
+          "oklch(28% 0.006 260)",
+          "oklch(42% 0.007 260)",
+          "oklch(55% 0.008 260)",
+          "oklch(65% 0.008 260)",
+          "oklch(75% 0.008 260)",
+          "oklch(85% 0.007 260)",
+          "oklch(95% 0.006 260)"
+        ]
+      },
+      "form-grey": {
+        "role": "neutral",
+        "displayName": "Form Grey",
+        "canonical": "oklch(98.5% 0.002 260)",
+        "purpose": "The school portal's page ground; record-row hover tint.",
+        "tonalRamp": [
+          "oklch(15% 0.005 260)",
+          "oklch(28% 0.006 260)",
+          "oklch(42% 0.007 260)",
+          "oklch(55% 0.008 260)",
+          "oklch(65% 0.008 260)",
+          "oklch(75% 0.008 260)",
+          "oklch(85% 0.007 260)",
+          "oklch(95% 0.006 260)"
+        ]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Rule",
+        "canonical": "oklch(91.1% 0.005 286.3)",
+        "purpose": "The hairline on paper; body text on the night ground.",
+        "tonalRamp": [
+          "oklch(15% 0.005 260)",
+          "oklch(28% 0.006 260)",
+          "oklch(42% 0.007 260)",
+          "oklch(55% 0.008 260)",
+          "oklch(65% 0.008 260)",
+          "oklch(75% 0.008 260)",
+          "oklch(85% 0.007 260)",
+          "oklch(95% 0.006 260)"
+        ]
+      },
+      "rule-strong": {
+        "role": "neutral",
+        "displayName": "Rule Strong",
+        "canonical": "oklch(86.4% 0.007 286.3)",
+        "purpose": "Input stroke on paper; field labels on the night ground.",
+        "tonalRamp": [
+          "oklch(15% 0.005 260)",
+          "oklch(28% 0.006 260)",
+          "oklch(42% 0.007 260)",
+          "oklch(55% 0.008 260)",
+          "oklch(65% 0.008 260)",
+          "oklch(75% 0.008 260)",
+          "oklch(85% 0.007 260)",
+          "oklch(95% 0.006 260)"
+        ]
+      },
+      "pencil-grey": {
+        "role": "neutral",
+        "displayName": "Pencil Grey",
+        "canonical": "oklch(55.7% 0.011 259.8)",
+        "purpose": "Secondary text, hints, empty-state copy, label text in console definition lists.",
+        "tonalRamp": [
+          "oklch(15% 0.005 260)",
+          "oklch(28% 0.006 260)",
+          "oklch(42% 0.007 260)",
+          "oklch(55% 0.008 260)",
+          "oklch(65% 0.008 260)",
+          "oklch(75% 0.008 260)",
+          "oklch(85% 0.007 260)",
+          "oklch(95% 0.006 260)"
+        ]
+      },
+      "pencil-deep": {
+        "role": "neutral",
+        "displayName": "Pencil Deep",
+        "canonical": "oklch(43.9% 0.011 259.8)",
+        "purpose": "Mid-weight label needing more presence than Pencil Grey.",
+        "tonalRamp": [
+          "oklch(15% 0.005 260)",
+          "oklch(28% 0.006 260)",
+          "oklch(42% 0.007 260)",
+          "oklch(55% 0.008 260)",
+          "oklch(65% 0.008 260)",
+          "oklch(75% 0.008 260)",
+          "oklch(85% 0.007 260)",
+          "oklch(95% 0.006 260)"
+        ]
+      },
+      "faint-pencil": {
+        "role": "neutral",
+        "displayName": "Faint Pencil",
+        "canonical": "oklch(70.8% 0.014 261.3)",
+        "purpose": "Meta text, placeholders, slugs, console navigation links.",
+        "tonalRamp": [
+          "oklch(15% 0.005 260)",
+          "oklch(28% 0.006 260)",
+          "oklch(42% 0.007 260)",
+          "oklch(55% 0.008 260)",
+          "oklch(65% 0.008 260)",
+          "oklch(75% 0.008 260)",
+          "oklch(85% 0.007 260)",
+          "oklch(95% 0.006 260)"
+        ]
+      },
+      "ledger-ink": {
+        "role": "neutral",
+        "displayName": "Ledger Ink",
+        "canonical": "oklch(21% 0.006 285.9)",
+        "purpose": "Headings and strong text on paper; the public form's submit fill; console panels at 50%.",
+        "tonalRamp": [
+          "oklch(15% 0.005 260)",
+          "oklch(28% 0.006 260)",
+          "oklch(42% 0.007 260)",
+          "oklch(55% 0.008 260)",
+          "oklch(65% 0.008 260)",
+          "oklch(75% 0.008 260)",
+          "oklch(85% 0.007 260)",
+          "oklch(95% 0.006 260)"
+        ]
+      },
+      "board-ink": {
+        "role": "neutral",
+        "displayName": "Board Ink",
+        "canonical": "oklch(37.1% 0.011 259.8)",
+        "purpose": "Field labels on paper; hover of the ink button; console input strokes.",
+        "tonalRamp": [
+          "oklch(15% 0.005 260)",
+          "oklch(28% 0.006 260)",
+          "oklch(42% 0.007 260)",
+          "oklch(55% 0.008 260)",
+          "oklch(65% 0.008 260)",
+          "oklch(75% 0.008 260)",
+          "oklch(85% 0.007 260)",
+          "oklch(95% 0.006 260)"
+        ]
+      },
+      "chalk-bright": {
+        "role": "neutral",
+        "displayName": "Chalk Bright",
+        "canonical": "oklch(96.8% 0.001 286.4)",
+        "purpose": "Headings and strong text on the night ground.",
+        "tonalRamp": [
+          "oklch(15% 0.005 260)",
+          "oklch(28% 0.006 260)",
+          "oklch(42% 0.007 260)",
+          "oklch(55% 0.008 260)",
+          "oklch(65% 0.008 260)",
+          "oklch(75% 0.008 260)",
+          "oklch(85% 0.007 260)",
+          "oklch(95% 0.006 260)"
+        ]
+      },
+      "night-board": {
+        "role": "neutral",
+        "displayName": "Night Board",
+        "canonical": "oklch(12.3% 0.005 285.8)",
+        "purpose": "The provider console's page ground.",
+        "tonalRamp": [
+          "oklch(15% 0.005 260)",
+          "oklch(28% 0.006 260)",
+          "oklch(42% 0.007 260)",
+          "oklch(55% 0.008 260)",
+          "oklch(65% 0.008 260)",
+          "oklch(75% 0.008 260)",
+          "oklch(85% 0.007 260)",
+          "oklch(95% 0.006 260)"
+        ]
+      },
+      "night-rule": {
+        "role": "neutral",
+        "displayName": "Night Rule",
+        "canonical": "oklch(23.7% 0.006 285.8)",
+        "purpose": "The console's hairline and hover border step.",
+        "tonalRamp": [
+          "oklch(15% 0.005 260)",
+          "oklch(28% 0.006 260)",
+          "oklch(42% 0.007 260)",
+          "oklch(55% 0.008 260)",
+          "oklch(65% 0.008 260)",
+          "oklch(75% 0.008 260)",
+          "oklch(85% 0.007 260)",
+          "oklch(95% 0.006 260)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "title": {
+        "displayName": "Page Title",
+        "purpose": "The single heading of a page. Never a hero, never repeated."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Default and floor: labels, buttons, paragraphs, list values. No text below 14px."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Form labels and weight-500 emphasis inside body copy. Weight is the only emphasis tool."
+      },
+      "meta": {
+        "displayName": "Meta",
+        "purpose": "Errors, hints, timestamps, chips, status words, empty states. The only smaller size."
+      },
+      "slug": {
+        "displayName": "Slug",
+        "purpose": "The only monospace in the product: slugs, hosts, and identifiers a human must verify."
+      }
+    },
+    "shadows": [
+      {
+        "name": "card-lift",
+        "value": "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+        "purpose": "The raised auth and public-form card only. The entire shadow budget of the system."
+      }
+    ],
+    "motion": [
+      {
+        "name": "transition-colors",
+        "value": "150ms cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "The system's only transition — Tailwind's default duration and timing. Color, background-color, border-color."
+      },
+      {
+        "name": "button-press",
+        "value": "transform: translateY(1px)",
+        "purpose": "Primary (Stamp) buttons depress 1px on active. Nothing else moves; nothing bounces or slides."
+      },
+      {
+        "name": "navigation-progress",
+        "value": "#4B5563",
+        "purpose": "The Inertia progress bar on every navigation — the one off-palette value in the app (gray-600, not zinc). It is intentionally neutral: a navigation is in progress, not confirmed."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Button — Stamp (primary)",
+      "kind": "button",
+      "refersTo": "button-stamp",
+      "description": "The one filled action on an authenticated school surface: the only green that means go, done, or permitted.",
+      "html": "<button class=\"ds-btn-stamp\">Simpan Pengguna</button>",
+      "css": ".ds-btn-stamp { background: #047857; color: #ffffff; border: 1px solid transparent; border-radius: 8px; padding: 10px 16px; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 600; line-height: 1.43; cursor: pointer; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1), transform 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-stamp:hover { background: #065f46; } .ds-btn-stamp:active { transform: translateY(1px); } .ds-btn-stamp:focus-visible { outline: 2px solid #059669; outline-offset: 2px; } .ds-btn-stamp[disabled] { opacity: 0.6; cursor: not-allowed; }"
+    },
+    {
+      "name": "Button — Ink (public surface)",
+      "kind": "button",
+      "refersTo": "button-ink",
+      "description": "The submit of an unauthenticated public form. Never green: green is a credential of a verified session.",
+      "html": "<button class=\"ds-btn-ink\">Daftarkan sekolah</button>",
+      "css": ".ds-btn-ink { background: #18181b; color: #ffffff; border: 1px solid transparent; border-radius: 8px; padding: 10px 16px; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 600; line-height: 1.43; cursor: pointer; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-ink:hover { background: #3f3f46; } .ds-btn-ink:active { transform: translateY(1px); } .ds-btn-ink:focus-visible { outline: 2px solid #059669; outline-offset: 2px; } .ds-btn-ink[disabled] { opacity: 0.6; cursor: not-allowed; }"
+    },
+    {
+      "name": "Button — Void (destructive)",
+      "kind": "button",
+      "refersTo": "button-void",
+      "description": "Deactivation and rejection only. No press offset — a void is committed, not pressed.",
+      "html": "<button class=\"ds-btn-void\">Ya, tolak</button>",
+      "css": ".ds-btn-void { background: #dc2626; color: #ffffff; border: 1px solid transparent; border-radius: 8px; padding: 8px 16px; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 600; line-height: 1.43; cursor: pointer; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-void:hover { background: #ef4444; } .ds-btn-void:focus-visible { outline: 2px solid #dc2626; outline-offset: 2px; } .ds-btn-void[disabled] { opacity: 0.6; cursor: not-allowed; }"
+    },
+    {
+      "name": "Input — Text field",
+      "kind": "input",
+      "refersTo": "input-text",
+      "description": "Label above, error below, placeholder never the label. Focus turns the stroke green with a 20%-opacity ring.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-label\" for=\"ds-f\">Nama lengkap</label><input id=\"ds-f\" class=\"ds-input\" type=\"text\" placeholder=\"contoh: Siti Rahma\" aria-invalid=\"true\" aria-describedby=\"ds-f-err\"><p id=\"ds-f-err\" class=\"ds-error\">Email sudah digunakan.</p></div>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 8px; max-width: 360px; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; } .ds-label { font-size: 14px; font-weight: 500; line-height: 1.43; color: #3f3f46; } .ds-input { width: 100%; background: #ffffff; color: #18181b; border: 1px solid #d4d4d8; border-radius: 8px; padding: 8px 12px; font-family: inherit; font-size: 14px; line-height: 1.43; transition: border-color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-input::placeholder { color: #a1a1aa; } .ds-input:focus { outline: none; border-color: #059669; box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.2); } .ds-input[aria-invalid='true'] { border-color: #ef4444; } .ds-error { font-size: 12px; line-height: 1.33; color: #dc2626; }"
+    },
+    {
+      "name": "Card — Ledger record panel",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "A record on paper: 8px corners, 1px hairline, 24px padding, no shadow. The raised variant (12px, 32px, one shadow) belongs only to the pre-context auth card.",
+      "html": "<div class=\"ds-card\"><p class=\"ds-card-title\">Daftar Pengguna</p><p class=\"ds-card-sub\">Kelola akun staf sekolah: profil, peran, dan status aktif.</p></div>",
+      "css": ".ds-card { background: #ffffff; border: 1px solid #e4e4e7; border-radius: 8px; padding: 24px; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; } .ds-card-title { margin: 0; font-size: 20px; font-weight: 600; line-height: 1.4; color: #18181b; } .ds-card-sub { margin: 4px 0 0; font-size: 14px; line-height: 1.43; color: #71717a; } .ds-card-raised { border-radius: 12px; padding: 32px; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); }"
+    },
+    {
+      "name": "Panel — Night (console)",
+      "kind": "card",
+      "refersTo": "panel-night",
+      "description": "The same record on the night ground: translucent ink panel, night hairline, bright chalk text. No shadow — a shadow on night is invisible. The panel also owns the console's action set: a void, a ghost cancel, and a brighter stamp fill that holds up against the night ground.",
+      "html": "<div class=\"ds-night\"><div class=\"ds-panel-night\"><p class=\"ds-night-title\">Setujui — koreksi data bila perlu</p><p class=\"ds-night-sub\">Data di form ini menjadi data final tenant.</p><div class=\"ds-night-actions\"><button class=\"ds-btn-void\">Ya, tolak</button><button class=\"ds-btn-ghost-night\">Batalkan</button><button class=\"ds-btn-stamp-night\">Setujui &amp; buat tenant</button></div></div></div>",
+      "css": ".ds-night { background: #09090b; padding: 24px; border-radius: 8px; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; } .ds-panel-night { background: rgba(24, 24, 27, 0.5); border: 1px solid #27272a; border-radius: 8px; padding: 20px; } .ds-night-title { margin: 0; font-size: 14px; font-weight: 600; line-height: 1.43; color: #f4f4f5; } .ds-night-sub { margin: 4px 0 0; font-size: 12px; line-height: 1.33; color: #71717a; } .ds-night-actions { display: flex; gap: 12px; margin-top: 16px; } .ds-btn-void { background: #dc2626; color: #ffffff; border: 1px solid transparent; border-radius: 8px; padding: 8px 16px; font-family: inherit; font-size: 14px; font-weight: 600; line-height: 1.43; cursor: pointer; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-void:hover { background: #ef4444; } .ds-btn-ghost-night { background: transparent; color: #e4e4e7; border: 1px solid #3f3f46; border-radius: 8px; padding: 8px 16px; font-family: inherit; font-size: 14px; font-weight: 600; line-height: 1.43; cursor: pointer; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-ghost-night:hover { background: rgba(24, 24, 27, 0.5); } .ds-btn-stamp-night { background: #059669; color: #ffffff; border: 1px solid transparent; border-radius: 8px; padding: 10px 16px; font-family: inherit; font-size: 14px; font-weight: 600; line-height: 1.43; cursor: pointer; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-stamp-night:hover { background: #10b981; } .ds-btn-ghost-night:focus-visible { outline: 2px solid #059669; outline-offset: 2px; }"
+    },
+    {
+      "name": "Chip — Role",
+      "kind": "chip",
+      "refersTo": "chip-role",
+      "description": "A pill means status, nothing else. Role chips are green on a green wash; the muted variant marks the absence of a role.",
+      "html": "<span class=\"ds-chip-role\">Admin Sekolah</span> <span class=\"ds-chip-muted\">tanpa peran</span>",
+      "css": ".ds-chip-role { display: inline-block; background: #ecfdf5; border: 1px solid #a7f3d0; color: #047857; border-radius: 9999px; padding: 2px 10px; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; font-size: 12px; font-weight: 500; line-height: 1.33; } .ds-chip-muted { display: inline-block; background: #fafafa; border: 1px solid #e4e4e7; color: #71717a; border-radius: 9999px; padding: 2px 10px; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; font-size: 12px; font-weight: 500; line-height: 1.33; }"
+    },
+    {
+      "name": "Chip — Pending",
+      "kind": "chip",
+      "refersTo": "chip-pending",
+      "description": "An entry received but not yet stamped by a human. Amber is never a warning about the user's own work.",
+      "html": "<span class=\"ds-chip-pending\">pending</span>",
+      "css": ".ds-chip-pending { display: inline-block; background: rgba(69, 26, 3, 0.4); border: 1px solid rgba(146, 64, 14, 0.6); color: #fcd34d; border-radius: 9999px; padding: 2px 10px; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; font-size: 12px; font-weight: 500; line-height: 1.33; }"
+    },
+    {
+      "name": "Banner — Flash",
+      "kind": "card",
+      "refersTo": "banner-success",
+      "description": "A fact that just happened. Not dismissible, never color-only: the sentence states what happened.",
+      "html": "<p class=\"ds-banner-success\">Pengguna berhasil disimpan.</p>",
+      "css": ".ds-banner-success { margin: 0; background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; border-radius: 8px; padding: 12px 16px; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; font-size: 14px; line-height: 1.43; } .ds-banner-void { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }"
+    },
+    {
+      "name": "Record row",
+      "kind": "card",
+      "refersTo": "list-row",
+      "description": "The system's signature pattern: a 12px stack of hairline cards, whole row clickable, status right-aligned. Hover steps the border and tints the ground — never a shadow.",
+      "html": "<a class=\"ds-row\" href=\"#\"><span><span class=\"ds-row-name\">Siti Rahma</span><span class=\"ds-row-email\">siti@sekolah-a.test</span></span><span class=\"ds-row-status\">aktif</span></a>",
+      "css": ".ds-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; background: #ffffff; border: 1px solid #e4e4e7; border-radius: 8px; padding: 16px 20px; text-decoration: none; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; transition: border-color 150ms cubic-bezier(0.4, 0, 0.2, 1), background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-row:hover { border-color: #d4d4d8; background: #fafafa; } .ds-row:focus-visible { outline: 2px solid #059669; outline-offset: 2px; } .ds-row-name { display: block; font-size: 14px; font-weight: 500; line-height: 1.43; color: #18181b; } .ds-row-email { display: block; margin-top: 2px; font-size: 12px; line-height: 1.33; color: #71717a; } .ds-row-status { font-size: 12px; font-weight: 500; line-height: 1.33; color: #71717a; }"
+    },
+    {
+      "name": "Top bar",
+      "kind": "nav",
+      "refersTo": "topbar",
+      "description": "64px, text only, hairline underneath. No sidebar, no tabs, no breadcrumbs, no avatar — depth is expressed by going back.",
+      "html": "<nav class=\"ds-topbar\"><span class=\"ds-topbar-name\">Pengguna</span><span class=\"ds-topbar-actions\"><a class=\"ds-topbar-ghost\" href=\"#\">Undang</a><a class=\"ds-topbar-stamp\" href=\"#\">Tambah Pengguna</a></span></nav>",
+      "css": ".ds-topbar { display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 24px; background: #ffffff; border-bottom: 1px solid #e4e4e7; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; } .ds-topbar-name { font-size: 14px; font-weight: 600; color: #18181b; } .ds-topbar-actions { display: flex; align-items: center; gap: 12px; } .ds-topbar-stamp { border: 1px solid #047857; border-radius: 8px; padding: 8px 16px; font-size: 14px; font-weight: 600; color: #047857; text-decoration: none; background: #ffffff; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-topbar-stamp:hover { background: #ecfdf5; } .ds-topbar-ghost { font-size: 14px; color: #71717a; text-decoration: none; transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-topbar-ghost:hover { color: #18181b; }"
+    },
+    {
+      "name": "Top bar — Night (console)",
+      "kind": "nav",
+      "refersTo": "topbar-night",
+      "description": "The same 64px bar on the night ground: chalk for the section name, faint pencil for links. No avatar, no user menu, no icon — the operator's name is not on the page.",
+      "html": "<nav class=\"ds-topbar-night\"><span class=\"ds-night-title\">Console Provider</span><span class=\"ds-topbar-night-links\"><a href=\"#\">Pengajuan</a><a href=\"#\">Sekolah</a><a href=\"#\">Keluar</a></span></nav>",
+      "css": ".ds-topbar-night { display: flex; align-items: center; justify-content: space-between; height: 64px; padding: 0 24px; background: #09090b; border-bottom: 1px solid #27272a; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; } .ds-topbar-night .ds-night-title { font-size: 14px; font-weight: 600; color: #f4f4f5; } .ds-topbar-night-links { display: flex; align-items: center; gap: 16px; } .ds-topbar-night-links a { font-size: 14px; color: #a1a1aa; text-decoration: none; transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-topbar-night-links a:hover { color: #e4e4e7; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Buku Besar Sekolah",
+    "overview": "SIMAS is a ledger, not a dashboard. The metaphor is the bound register a school keeps\nin its headmaster's office: ruled lines, one ink, a stamp that means *this is\nconfirmed*, and nothing on the page that isn't an entry, a rule, or the name of a\nthing. The interface never performs. It records, marks, and gets out of the way of\nthe person who has the job to do — the teacher on a phone at 7am, the school admin\nat a desk, the provider operator clearing an approval queue at night.\n\nThe personality is calm, exact, and unhurried, in plain Bahasa Indonesia. The copy\nregister is institutional and serviceable: *Daftarkan sekolah Anda*, *Tidak ada\npengajuan pending. Semua beres.* No marketing enthusiasm, no cheerfulness, no\nplayfulness. The single green in the system is not decorative — it is a stamp, and\nstamps are rare by definition. Everything else is paper, rule, and grey pencil.\n\nDensity is deliberate. The system runs on three type sizes (20px title, 14px body,\n12px meta) at a 14px base, with 8px corners, 1px rules, and generous page padding\n(24px sides, 40px top) so that a dense list of records still breathes. The product's\nprimary user is on a low-end Android phone on a slow connection, so the system spends\nits weight on legibility and does almost nothing with motion: color transitions and\na 1px press on primary buttons are the entire motion vocabulary.\n\nTwo grounds, one language. The school portal is paper (`form-grey` page, white\nrecords, `rule` hairlines). The provider console is the same ledger at night\n(`night-board` page, translucent night panels, `night-rule` hairlines) — the same\nvoice and the same component shapes, lit differently, because that operator is\nworking through a queue alone. Unauthenticated public surfaces are the third case:\npaper and ink only.",
+    "keyCharacteristics": [
+      "One green (Stamp Ink) and one meaning: confirmed, permitted, actionable.",
+      "Three type sizes, one family, two weights of emphasis (500, 600).",
+      "8px corners for everything; pills reserved for status chips; 12px only on the raised auth card.",
+      "Flat surfaces separated by 1px rules and a change of paper tone; one shadow in the entire system.",
+      "Words, not icons — every control is labeled in Bahasa Indonesia.",
+      "One centered column, fluid, with no breakpoints defined anywhere in the system.",
+      "Two grounds (paper / night) sharing one component language and one voice."
+    ],
+    "rules": [
+      {
+        "name": "The One Green Rule",
+        "body": "Stamp Ink appears only where something is confirmed, permitted, or actionable. One filled green button per screen, plus links, focus, and success. If a second green region appears, one of them is wrong.",
+        "section": "colors"
+      },
+      {
+        "name": "The Public Form Rule",
+        "body": "On an unauthenticated public surface, the submit is Ledger Ink, not green (the school application form's Daftarkan sekolah button is ink). Green is a credential of a verified session; the public form has not earned one.",
+        "section": "colors"
+      },
+      {
+        "name": "The Void Rule",
+        "body": "Red means voided or blocked — a user is deactivated, an application is rejected, a field is invalid. Nothing in this system hard-deletes a record, so red never appears on a \"remove permanently\" control.",
+        "section": "colors"
+      },
+      {
+        "name": "The Provisional Rule",
+        "body": "Amber is only ever pending. Never a warning about the user's own work, never a caution before an action.",
+        "section": "colors"
+      },
+      {
+        "name": "The Three-Size Rule",
+        "body": "Twenty, fourteen, twelve. If a screen seems to need a fourth size, it needs less text or a clearer title instead. A ledger has no cover.",
+        "section": "typography"
+      },
+      {
+        "name": "The Weight Is the Emphasis Rule",
+        "body": "Hierarchy comes from 400 → 500 → 600 and from grey level, never from a new size, a color shift, or an italic. Ledger Ink for headings, Pencil Grey for secondary, Faint Pencil for meta.",
+        "section": "typography"
+      },
+      {
+        "name": "The Slug Rule",
+        "body": "Monospace is reserved for identifiers a human must verify or type. Never for prose, labels, or numbers that merely happen to be numeric.",
+        "section": "typography"
+      },
+      {
+        "name": "The Ruled Surface Rule",
+        "body": "Separate surfaces with a 1px rule before you consider a shadow. If a component needs elevation to be legible, it needs a rule instead.",
+        "section": "elevation"
+      },
+      {
+        "name": "The One Shadow Rule",
+        "body": "shadow-sm on a centered card is the entire shadow budget. No lifted hover states, no elevated modals, no shadow on the console (a shadow on night-board is invisible anyway — the night ground separates with tone and rule).",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use the palette's own semantics and always pair color with a word: green is confirmed, red is voided, amber is pending — and every chip, banner, and status line in the system says the word too (aktif, nonaktif, pending). Never let color be the only carrier.",
+      "Do keep body text at 14px and page titles at 20px, reaching for 12px meta rather than inventing a size.",
+      "Do use 8px corners for anything interactive or surface-level, pills only for status chips, and 12px only on the raised auth card.",
+      "Do separate surfaces with a 1px Rule (paper) or Night Rule (night) before considering any shadow.",
+      "Do mirror the ground: paper surfaces take Ledger Paper / Form Grey / Rule, the console takes Night Board / translucent night panels / Night Rule. Translucency is a night-only device.",
+      "Do put the label above the field with the error below it, and keep aria-invalid and aria-describedby wired to that error — the existing auth input sets this precedent and every new field must match it.",
+      "Do write every user-facing string in plain, serviceable Bahasa Indonesia: one statement, no marketing register, provider referred to as \"tim kami\"."
+    ],
+    "donts": [
+      "Don't add a second accent. There is one green and it means one thing; a new hue for a new feature breaks the stamp.",
+      "Don't use green for a submit on an unauthenticated public surface — the public application form's button is ink.",
+      "Don't use red to mean \"cancel,\" and don't build a hard-delete control: this system voids and marks records, it never removes them.",
+      "Don't introduce gradients, glass, blur, or shadows into surfaces that are currently ruled and flat, and don't lift record rows on hover.",
+      "Don't ship interactive targets at 16px. The current checkbox is 16px; that is a gap, not a precedent. The primary user is on a low-end phone — touch targets on new surfaces must be at least 44px even though the recorded type scale stays at 14px.",
+      "Don't add a display size, hero type, or marketing headline anywhere in the product, and don't reach for a fourth type size to create hierarchy.",
+      "Don't replace a word with an icon. The system has no icon vocabulary; every control is a labeled word in Bahasa Indonesia.",
+      "Don't put text in monospace unless it is a slug, a host, or an identifier a human must verify character by character.",
+      "Don't assume a breakpoint exists. None are defined; new surfaces must introduce responsive behavior deliberately, mobile-first."
+    ]
+  }
+}

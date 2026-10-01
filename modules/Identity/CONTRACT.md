@@ -15,7 +15,12 @@
 ## Public interface (Contracts/)
 
 - `ResolvesUsers` — resolves a user by unique email; returns `UserRecord`.
+  Also `currentTenantSummary()`: counts (total/active/awaitingActivation/
+  deactivated/withoutRole) of the CURRENT tenant, so a module outside
+  Identity can report on a school without importing the `User` model.
+  Fails closed without tenant context.
 - `UserRecord` — read-only DTO (id, name, email, emailVerifiedAt, roles).
+- `UserSummary` — read-only DTO (total, active, awaitingActivation, deactivated, withoutRole).
 
 Binding: `ResolvesUsers` → `DefaultUserResolver` (singleton), registered
 in `IdentityServiceProvider`; override in tests via the container.
@@ -39,7 +44,7 @@ in `IdentityServiceProvider`; override in tests via the container.
 - `TenantApproved` (PlatformPublic) → `ProvisionFirstAdmin`: creates
   the first admin-sekolah user (password null), mints a tenant-scoped
   set-password token, queues `SetPasswordMail` with a `TenantUrl`
-  tenant-host link. Idempotent; runs inside the approval transaction
+  school-coded link. Idempotent; runs inside the approval transaction
   (failure rolls the approval back). Both listeners register in
   `IdentityServiceProvider`.
 

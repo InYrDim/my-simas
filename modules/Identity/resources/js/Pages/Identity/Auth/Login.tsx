@@ -9,14 +9,15 @@ import { store as loginStore } from '@/actions/Modules/Identity/App/Http/Control
 import { create as forgotPassword } from '@/actions/Modules/Identity/App/Http/Controllers/Auth/PasswordResetLinkController';
 
 /**
- * Tenant login (school portal). Rendered on a school subdomain; the
- * tenant context is resolved server-side from the host before this
- * page is ever served, and the school name comes from shared props.
+ * Tenant login (school portal). The school is identified by the school
+ * code typed here (tenant id today, NPSN later) and remembered in the
+ * session server-side; there is no per-school host.
  */
 export default function Login() {
     const tenant = useTenant();
 
     const form = useForm({
+        school: '',
         email: '',
         password: '',
         remember: false,
@@ -40,12 +41,26 @@ export default function Login() {
         >
             <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
                 <AuthInput
+                    label="Kode sekolah"
+                    id="school"
+                    name="school"
+                    type="text"
+                    autoComplete="organization"
+                    autoFocus
+                    required
+                    value={form.data.school}
+                    error={form.errors.school}
+                    onChange={(event) =>
+                        form.setData('school', event.target.value)
+                    }
+                />
+
+                <AuthInput
                     label="Email"
                     id="email"
                     name="email"
                     type="email"
                     autoComplete="username"
-                    autoFocus
                     required
                     value={form.data.email}
                     error={form.errors.email}
