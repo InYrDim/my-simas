@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Vite;
 use Modules\Platform\App\Domain\Models\Tenant;
 use Tests\TestCase;
 
@@ -36,6 +37,37 @@ foreach (glob(__DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'modules'.DIR
         ->use(RefreshDatabase::class)
         ->in($featureDir);
 }
+
+/*
+|--------------------------------------------------------------------------
+| Browser (end-to-end) tests
+|--------------------------------------------------------------------------
+|
+| tests/Browser drives a real browser through Pest's browser plugin. The
+| folder is NOT listed in phpunit.xml: it runs only via phpunit.e2e.xml
+| (`composer test:e2e`), so the main suite needs neither Playwright nor
+| built assets.
+|
+*/
+
+pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
+    ->beforeEach(function (): void {
+        // The plugin serves every request from this one PHP process.
+        // Inertia memoises its server-side render per "request scope",
+        // which never ends here: with SSR on, every full page load after
+        // the first would be answered with the first page's HTML.
+        config(['inertia.ssr.enabled' => false]);
+
+        // Always the built assets, even while `npm run dev` is running
+        // (public/hot would point the pages at the dev server).
+        Vite::useHotFile(storage_path('framework/testing/e2e-no-hot-file'));
+    })
+    ->afterEach(function (): void {
+        // A test may have switched to the console host (Support/hosts.php).
+        pest()->browser()->withHost(null);
+    })
+    ->in('Browser');
 
 foreach (glob(__DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'modules'.DIRECTORY_SEPARATOR.'*'.DIRECTORY_SEPARATOR.'tests'.DIRECTORY_SEPARATOR.'Unit') ?: [] as $unitDir) {
     pest()->extend(TestCase::class)
