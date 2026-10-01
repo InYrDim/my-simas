@@ -15,7 +15,7 @@ use Modules\Platform\App\Contracts\TenantNavigation;
 final class DefaultTenantNavigation implements TenantNavigation
 {
     /**
-     * @var array<string, array{module: string, label: string, icon: string, route: string, permission: ?string, order: int, match: 'exact'|'prefix', children: list<array{label: string, route: string, permission: ?string, match: 'exact'|'prefix'}>}>
+     * @var array<string, array{module: string, label: string, icon: string, group: ?string, route: string, permission: ?string, order: int, match: 'exact'|'prefix', children: list<array{label: string, route: string, permission: ?string, match: 'exact'|'prefix'}>}>
      */
     private array $items = [];
 
@@ -31,6 +31,7 @@ final class DefaultTenantNavigation implements TenantNavigation
                 'module' => $module,
                 'label' => $item['label'],
                 'icon' => $item['icon'],
+                'group' => $item['group'] ?? null,
                 'route' => $item['route'],
                 'permission' => $item['permission'] ?? null,
                 'order' => $item['order'] ?? 100,
@@ -76,6 +77,7 @@ final class DefaultTenantNavigation implements TenantNavigation
         return array_map(fn (array $item): array => [
             'label' => $item['label'],
             'icon' => $item['icon'],
+            'group' => $item['group'],
             'href' => route($item['route'], absolute: false),
             'match' => $item['match'],
             'children' => array_map(fn (array $child): array => [

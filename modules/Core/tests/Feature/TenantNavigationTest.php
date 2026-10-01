@@ -72,7 +72,7 @@ it('nests visible children and drops a group with none visible', function () {
             'label' => 'Grup',
             'icon' => 'folder',
             'route' => 'password.request',
-            'order' => 45,
+            'order' => 60,
             'children' => [
                 ['label' => 'Pengguna', 'route' => 'identity.users.index', 'permission' => 'identity.users.view'],
             ],

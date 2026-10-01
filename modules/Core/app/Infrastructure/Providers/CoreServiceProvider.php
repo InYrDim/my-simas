@@ -56,6 +56,7 @@ class CoreServiceProvider extends ServiceProvider
                 'label' => 'Master Data',
                 'icon' => 'database',
                 'route' => 'core.master.school',
+                'group' => 'Data Induk',
                 'order' => 20,
                 'children' => [
                     ['label' => 'Profil Sekolah', 'route' => 'core.master.school'],
@@ -74,6 +75,7 @@ class CoreServiceProvider extends ServiceProvider
                 'label' => 'Akademik',
                 'icon' => 'graduation-cap',
                 'route' => 'core.academic.placement',
+                'group' => 'Data Induk',
                 'order' => 30,
                 'children' => [
                     ['label' => 'Penempatan Siswa', 'route' => 'core.academic.placement'],
@@ -87,13 +89,15 @@ class CoreServiceProvider extends ServiceProvider
                 'label' => 'Impor Data',
                 'icon' => 'upload',
                 'route' => 'core.manage.import',
+                'group' => 'Data Induk',
                 'order' => 40,
             ],
             [
                 'label' => 'Statistik & Laporan',
                 'icon' => 'chart-column',
                 'route' => 'core.insight.statistics',
-                'order' => 42,
+                'group' => 'Operasional',
+                'order' => 55,
                 'children' => [
                     ['label' => 'Statistik', 'route' => 'core.insight.statistics'],
                     ['label' => 'Laporan', 'route' => 'core.insight.reports'],
@@ -103,7 +107,8 @@ class CoreServiceProvider extends ServiceProvider
                 'label' => 'Integrasi',
                 'icon' => 'plug',
                 'route' => 'core.integration.whatsapp',
-                'order' => 60,
+                'group' => 'Administrasi',
+                'order' => 80,
                 'children' => [
                     ['label' => 'WhatsApp', 'route' => 'core.integration.whatsapp'],
                 ],

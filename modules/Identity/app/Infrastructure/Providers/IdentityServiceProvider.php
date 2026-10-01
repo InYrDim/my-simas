@@ -119,13 +119,15 @@ class IdentityServiceProvider extends ServiceProvider
                 'icon' => 'users',
                 'route' => 'identity.users.index',
                 'permission' => 'identity.users.view',
-                'order' => 50,
+                'group' => 'Administrasi',
+                'order' => 70,
             ],
             [
                 'label' => 'Sistem',
                 'icon' => 'shield-check',
                 'route' => 'identity.system.roles',
                 'permission' => 'identity.users.view',
+                'group' => 'Administrasi',
                 'order' => 90,
                 'children' => [
                     ['label' => 'Peran', 'route' => 'identity.system.roles', 'permission' => 'identity.users.view'],

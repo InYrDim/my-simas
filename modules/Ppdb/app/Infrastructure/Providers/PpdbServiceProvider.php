@@ -39,7 +39,8 @@ class PpdbServiceProvider extends ServiceProvider
                 'label' => 'PPDB',
                 'icon' => 'user-plus',
                 'route' => 'ppdb.overview',
-                'order' => 36,
+                'group' => 'Operasional',
+                'order' => 52,
                 'children' => [
                     ['label' => 'Ringkasan', 'route' => 'ppdb.overview', 'match' => 'exact'],
                     ['label' => 'Pendaftar', 'route' => 'ppdb.applicants'],

@@ -39,7 +39,8 @@ class AttendanceServiceProvider extends ServiceProvider
                 'label' => 'Absensi',
                 'icon' => 'clipboard-check',
                 'route' => 'attendance.overview',
-                'order' => 35,
+                'group' => 'Operasional',
+                'order' => 50,
                 'children' => [
                     ['label' => 'Rekap Hari Ini', 'route' => 'attendance.overview', 'match' => 'exact'],
                     ['label' => 'Input Absensi', 'route' => 'attendance.input'],
