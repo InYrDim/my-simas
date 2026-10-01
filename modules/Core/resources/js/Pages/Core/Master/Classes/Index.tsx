@@ -2,7 +2,12 @@ import { Link } from '@inertiajs/react';
 import { PlusIcon } from 'lucide-react';
 import { useState } from 'react';
 
-import { classShow } from '@/actions/Modules/Core/App/Http/Controllers/MasterDataController';
+import {
+    destroy,
+    show,
+    store,
+    update,
+} from '@/actions/Modules/Core/App/Http/Controllers/ClassGroupController';
 import {
     DataTable,
     EmptyState,
@@ -11,6 +16,7 @@ import {
 import { Button } from '@shared/components/ui/button';
 import { TableCell, TableRow } from '@shared/components/ui/table';
 
+import ConfirmAction from '../../../../Components/ConfirmAction';
 import FormDialog from '../../../../Components/FormDialog';
 import { InputField, SelectField } from '../../../../Components/FormField';
 import MasterPage from '../../../../Components/MasterPage';
@@ -19,8 +25,78 @@ import type {
     ClassGroup,
     Grade,
     Major,
+    Room,
     SchoolSummary,
 } from '../../../../types/master';
+
+function ClassForm({
+    group,
+    school,
+    years,
+    grades,
+    majors,
+    rooms,
+    defaultYear,
+}: {
+    group?: ClassGroup;
+    school: SchoolSummary;
+    years: AcademicYear[];
+    grades: Grade[];
+    majors: Major[];
+    rooms: Room[];
+    defaultYear: string;
+}) {
+    return (
+        <>
+            <InputField
+                label="Nama kelas"
+                id="name"
+                placeholder="X IPA 1"
+                defaultValue={group?.name}
+            />
+            <SelectField
+                label="Tahun ajaran"
+                id="academic_year_id"
+                options={years.map((item) => ({
+                    value: String(item.id),
+                    label: item.name,
+                }))}
+                defaultValue={String(group?.yearId ?? defaultYear)}
+            />
+            <SelectField
+                label="Tingkat"
+                id="grade_id"
+                options={grades.map((item) => ({
+                    value: String(item.id),
+                    label: `Kelas ${item.name}`,
+                }))}
+                defaultValue={group === undefined ? undefined : String(group.gradeId)}
+            />
+            {school.hasMajors && (
+                <SelectField
+                    label="Jurusan"
+                    id="major_id"
+                    optionalLabel="Tanpa jurusan"
+                    options={majors.map((item) => ({
+                        value: String(item.id),
+                        label: `${item.code} — ${item.name}`,
+                    }))}
+                    defaultValue={group?.majorId == null ? undefined : String(group.majorId)}
+                />
+            )}
+            <SelectField
+                label="Ruangan"
+                id="room_id"
+                optionalLabel="Belum ditentukan"
+                options={rooms.map((item) => ({
+                    value: String(item.id),
+                    label: item.name,
+                }))}
+                defaultValue={group?.roomId == null ? undefined : String(group.roomId)}
+            />
+        </>
+    );
+}
 
 /**
  * Kelas / Rombel of one academic year, filterable by grade and major.
@@ -30,16 +106,18 @@ export default function ClassesIndex({
     classes,
     grades,
     majors,
+    rooms,
     years,
 }: {
     school: SchoolSummary;
     classes: ClassGroup[];
     grades: Grade[];
     majors: Major[];
+    rooms: Room[];
     years: AcademicYear[];
 }) {
     const [year, setYear] = useState(
-        String(years.find((item) => item.status === 'active')?.id ?? ''),
+        String(years.find((item) => item.status === 'active')?.id ?? years[0]?.id ?? ''),
     );
     const [grade, setGrade] = useState('');
     const [major, setMajor] = useState('');
@@ -51,13 +129,20 @@ export default function ClassesIndex({
             (major === '' || item.major === major),
     );
 
+    const gradeOptions = grades.map((item) => ({
+        value: String(item.id),
+        label: `Kelas ${item.name}`,
+    }));
+
     return (
         <MasterPage
             school={school}
             title="Kelas"
             description="Rombongan belajar per tahun ajaran, lengkap dengan wali kelas dan ruangan."
+            mock={false}
             actions={
                 <FormDialog
+                    route={store()}
                     title="Tambah kelas"
                     trigger={
                         <Button>
@@ -66,14 +151,13 @@ export default function ClassesIndex({
                         </Button>
                     }
                 >
-                    <InputField label="Nama kelas" id="name" placeholder="X IPA 1" />
-                    <SelectField
-                        label="Tingkat"
-                        id="grade"
-                        options={grades.map((item) => ({
-                            value: String(item.id),
-                            label: `Kelas ${item.name}`,
-                        }))}
+                    <ClassForm
+                        school={school}
+                        years={years}
+                        grades={grades}
+                        majors={majors}
+                        rooms={rooms}
+                        defaultYear={year}
                     />
                 </FormDialog>
             }
@@ -93,10 +177,7 @@ export default function ClassesIndex({
                     allLabel="Semua tingkat"
                     value={grade}
                     onChange={setGrade}
-                    options={grades.map((item) => ({
-                        value: String(item.id),
-                        label: `Kelas ${item.name}`,
-                    }))}
+                    options={gradeOptions}
                 />
                 {school.hasMajors && (
                     <OptionSelect
@@ -116,21 +197,61 @@ export default function ClassesIndex({
                 <EmptyState>Belum ada kelas untuk tahun ajaran ini.</EmptyState>
             ) : (
                 <DataTable
-                    head={['Kelas', school.homeroomLabel, 'Ruangan', 'Siswa']}
+                    head={[
+                        'Kelas',
+                        school.homeroomLabel,
+                        'Ruangan',
+                        'Siswa',
+                        '',
+                    ]}
                 >
                     {rows.map((item) => (
                         <TableRow key={item.id}>
                             <TableCell className="font-medium">
                                 <Link
-                                    href={classShow.url({ id: item.id })}
+                                    href={show.url(item.id)}
                                     className="hover:underline"
                                 >
                                     {item.name}
                                 </Link>
                             </TableCell>
-                            <TableCell>{item.homeroom}</TableCell>
-                            <TableCell>{item.room}</TableCell>
+                            <TableCell>{item.homeroom ?? '—'}</TableCell>
+                            <TableCell>{item.room ?? '—'}</TableCell>
                             <TableCell>{item.students}</TableCell>
+                            <TableCell>
+                                <div className="flex justify-end gap-2">
+                                    <FormDialog
+                                        route={update(item.id)}
+                                        title={`Ubah ${item.name}`}
+                                        trigger={
+                                            <Button variant="ghost" size="sm">
+                                                Ubah
+                                            </Button>
+                                        }
+                                    >
+                                        <ClassForm
+                                            group={item}
+                                            school={school}
+                                            years={years}
+                                            grades={grades}
+                                            majors={majors}
+                                            rooms={rooms}
+                                            defaultYear={year}
+                                        />
+                                    </FormDialog>
+                                    <ConfirmAction
+                                        route={destroy(item.id)}
+                                        title={`Hapus ${item.name}?`}
+                                        description="Kelas akan dihapus dari tahun ajaran ini."
+                                        confirmLabel="Hapus"
+                                        trigger={
+                                            <Button variant="ghost" size="sm">
+                                                Hapus
+                                            </Button>
+                                        }
+                                    />
+                                </div>
+                            </TableCell>
                         </TableRow>
                     ))}
                 </DataTable>

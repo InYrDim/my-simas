@@ -9,6 +9,7 @@ use Modules\Platform\Database\Factories\TenantFactory;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
+use function Pest\Laravel\put;
 
 /**
  * Master-data and data-action mockup pages: every route renders its Inertia component for
@@ -33,15 +34,11 @@ dataset('masterPages', [
     'semesters' => ['/master/semester', 'Core/Master/Semesters/Index'],
     'grades' => ['/master/tingkat-jurusan', 'Core/Master/Grades/Index'],
     'classes' => ['/master/kelas', 'Core/Master/Classes/Index'],
-    'class' => ['/master/kelas/1', 'Core/Master/Classes/Show'],
     'subjects' => ['/master/mata-pelajaran', 'Core/Master/Subjects/Index'],
     'teachers' => ['/master/guru', 'Core/Master/Teachers/Index'],
-    'teacher' => ['/master/guru/2', 'Core/Master/Teachers/Show'],
     'students' => ['/master/siswa', 'Core/Master/Students/Index'],
-    'student' => ['/master/siswa/1', 'Core/Master/Students/Show'],
     'rooms' => ['/master/ruangan', 'Core/Master/Rooms/Index'],
     'extracurriculars' => ['/master/ekstrakurikuler', 'Core/Master/Extracurriculars/Index'],
-    'extracurricular' => ['/master/ekstrakurikuler/1', 'Core/Master/Extracurriculars/Show'],
     'placement' => ['/akademik/penempatan', 'Core/Academic/Placement/Index'],
     'assignments' => ['/akademik/pengampu', 'Core/Academic/Assignments/Index'],
     'homerooms' => ['/akademik/wali-kelas', 'Core/Academic/Homerooms/Index'],
@@ -74,20 +71,19 @@ it('returns 404 for an unknown record', function () {
     get(school($slug, '/master/guru/999'))->assertNotFound();
 });
 
-it('previews each jenjang and keeps it for the session', function () {
+it('shapes the pages still on mock data by the schools saved jenjang', function () {
     $slug = masterTenant();
 
-    get(school($slug, '/master/sekolah?jenjang=smk'))->assertInertia(fn (Assert $page) => $page
+    put(school($slug, '/master/sekolah'), ['level' => 'smk'])->assertRedirect();
+
+    get(school($slug, '/akademik/wali-kelas'))->assertInertia(fn (Assert $page) => $page
         ->where('school.level', 'smk')
         ->where('school.hasMajors', true)
     );
 
-    get(school($slug, '/master/tingkat-jurusan'))->assertInertia(fn (Assert $page) => $page
-        ->where('school.level', 'smk')
-        ->has('majors', 3)
-    );
+    put(school($slug, '/master/sekolah'), ['level' => 'sd'])->assertRedirect();
 
-    get(school($slug, '/master/sekolah?jenjang=sd'))->assertInertia(fn (Assert $page) => $page
+    get(school($slug, '/akademik/wali-kelas'))->assertInertia(fn (Assert $page) => $page
         ->where('school.hasMajors', false)
         ->where('school.homeroomLabel', 'Guru Kelas')
     );

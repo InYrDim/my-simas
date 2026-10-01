@@ -1,5 +1,7 @@
 import { CalendarDaysIcon } from 'lucide-react';
 
+import { update } from '@/actions/Modules/Core/App/Http/Controllers/SemesterController';
+
 import { DataTable, Panel } from '@shared/components/page-parts';
 import { Button } from '@shared/components/ui/button';
 import { TableCell, TableRow } from '@shared/components/ui/table';
@@ -18,8 +20,8 @@ function SemesterForm({ semester }: { semester: SemesterRow }) {
                 {semester.year} · Semester {semester.name}
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
-                <InputField label="Mulai" id="start" type="date" defaultValue={semester.start} />
-                <InputField label="Selesai" id="end" type="date" defaultValue={semester.end} />
+                <InputField label="Mulai" id="start_date" type="date" defaultValue={semester.start} />
+                <InputField label="Selesai" id="end_date" type="date" defaultValue={semester.end} />
             </div>
         </>
     );
@@ -42,8 +44,9 @@ export default function SemestersIndex({
         <MasterPage
             school={school}
             title="Semester"
-            description="Hanya satu semester yang berjalan. Penilaian, absensi, dan laporan mengikuti semester ini."
+            description="Semester yang berjalan mengikuti tanggalnya di tahun ajaran aktif. Penilaian, absensi, dan laporan mengikuti semester ini."
             width="max-w-5xl"
+            mock={false}
         >
             {current !== undefined && current.week !== null ? (
                 <Panel className="mb-8">
@@ -61,6 +64,7 @@ export default function SemestersIndex({
                             </p>
                         </div>
                         <FormDialog
+                            route={update(current.id)}
                             title={`Ubah semester ${current.name} ${current.year}`}
                             trigger={<Button variant="outline">Ubah tanggal</Button>}
                         >
@@ -91,7 +95,7 @@ export default function SemestersIndex({
             ) : (
                 <Panel className="mb-8">
                     <p className="text-sm text-muted-foreground">
-                        Belum ada semester yang berjalan. Pilih satu dari daftar di bawah.
+                        Belum ada semester yang berjalan. Aktifkan tahun ajaran, atau periksa tanggal semesternya.
                     </p>
                 </Panel>
             )}
@@ -110,12 +114,8 @@ export default function SemestersIndex({
                         </TableCell>
                         <TableCell>
                             <div className="flex justify-end gap-2">
-                                {semester.status === 'upcoming' && (
-                                    <Button size="sm" variant="outline">
-                                        Jadikan berjalan
-                                    </Button>
-                                )}
                                 <FormDialog
+                                    route={update(semester.id)}
                                     title={`Ubah semester ${semester.name} ${semester.year}`}
                                     trigger={
                                         <Button size="sm" variant="outline">

@@ -1,0 +1,48 @@
+<?php
+
+namespace Modules\Core\Tests\Feature;
+
+use Modules\Identity\Database\Factories\UserFactory;
+use Modules\Platform\App\Contracts\PermissionRegistry;
+use Modules\Platform\App\Contracts\TenantContext;
+use Modules\Platform\Database\Factories\TenantFactory;
+
+use function Pest\Laravel\actingAs;
+use function Pest\Laravel\get;
+
+function masterUserWithRole(string $slug, ?string $role): string
+{
+    $tenant = TenantFactory::new()->create(['slug' => $slug]);
+    $user = UserFactory::new()->forTenant($tenant->id)->create(['email' => "user@{$slug}.test"]);
+
+    if ($role !== null) {
+        app(TenantContext::class)->run($tenant->id, fn () => $user->assignTenantRole($role));
+    }
+
+    actingAs($user);
+
+    return $tenant->slug;
+}
+
+it('registers the core master permissions', function () {
+    expect(app(PermissionRegistry::class)->forModule('core'))
+        ->toBe(['core.master.view', 'core.master.manage']);
+});
+
+it('lets every default school role view master data', function (string $role) {
+    $slug = masterUserWithRole("perm-{$role}", $role);
+
+    get(school($slug, '/master/sekolah'))->assertOk();
+})->with(['admin-sekolah', 'guru', 'staf-tu']);
+
+it('refuses a signed-in user without the view permission', function () {
+    $slug = masterUserWithRole('perm-none', null);
+
+    get(school($slug, '/master/sekolah'))->assertForbidden();
+});
+
+it('sends guests to the login', function () {
+    $tenant = TenantFactory::new()->create(['slug' => 'perm-guest']);
+
+    get(school($tenant->slug, '/master/sekolah'))->assertRedirect();
+});

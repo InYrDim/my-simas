@@ -24,18 +24,20 @@ return [
             'identity.users.update',
             'identity.users.deactivate',
             'identity.users.sendReset',
+            'core.master.view',
+            'core.master.manage',
         ],
     ],
 
     'guru' => [
         'label' => 'Guru',
         'description' => 'Pengajar: mencatat kegiatan belajar mengajar dan absensi kelasnya.',
-        'permissions' => [],
+        'permissions' => ['core.master.view'],
     ],
 
     'staf-tu' => [
         'label' => 'Staf/TU',
         'description' => 'Tata usaha: mengurus data administrasi sekolah sehari-hari.',
-        'permissions' => [],
+        'permissions' => ['core.master.view'],
     ],
 ];

@@ -1,25 +1,26 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { ChevronLeftIcon, FlaskConicalIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-import { OptionSelect, PageHeader } from '@shared/components/page-parts';
+import { PageHeader } from '@shared/components/page-parts';
 import TenantShell from '@shared/components/TenantShell';
 import { Alert, AlertDescription } from '@shared/components/ui/alert';
 
 import type { SchoolSummary } from '../types/master';
 
 /**
- * Frame for every master-data page: tenant shell, title, and — while the
- * pages are mockups — a notice with a jenjang switcher so each school
- * level can be previewed. The switcher and notice go away with the mock.
+ * Frame for every master-data page: tenant shell, title, and the notice
+ * for pages that are still mockups (`mock`, on by default until a page is
+ * backed by the database). Refusals that belong to no field (a year that
+ * cannot be deleted, ...) arrive as `errors.status` and show as an alert.
  */
 export default function MasterPage({
-    school,
     title,
     description,
     actions,
     back,
     width = 'max-w-6xl',
+    mock = true,
     children,
 }: {
     school: SchoolSummary;
@@ -28,35 +29,29 @@ export default function MasterPage({
     actions?: ReactNode;
     back?: { href: string; label: string };
     width?: string;
+    mock?: boolean;
     children: ReactNode;
 }) {
-    const { url } = usePage();
-    const path = url.split('?')[0];
+    const { errors } = usePage<{ errors: Record<string, string> }>().props;
 
     return (
         <TenantShell width={width}>
             <Head title={title} />
 
-            <Alert className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                <FlaskConicalIcon />
-                <AlertDescription className="flex-1">
-                    Tampilan contoh — data belum tersimpan.
-                </AlertDescription>
-                <div className="w-44">
-                    <OptionSelect
-                        label="Pratinjau jenjang"
-                        value={school.level}
-                        options={school.levelOptions}
-                        onChange={(jenjang) =>
-                            router.get(
-                                path,
-                                { jenjang },
-                                { preserveState: true, replace: true },
-                            )
-                        }
-                    />
-                </div>
-            </Alert>
+            {mock && (
+                <Alert className="mb-6">
+                    <FlaskConicalIcon />
+                    <AlertDescription>
+                        Tampilan contoh — data belum tersimpan.
+                    </AlertDescription>
+                </Alert>
+            )}
+
+            {errors?.status !== undefined && (
+                <Alert variant="destructive" className="mb-6">
+                    <AlertDescription>{errors.status}</AlertDescription>
+                </Alert>
+            )}
 
             {back !== undefined && (
                 <Link

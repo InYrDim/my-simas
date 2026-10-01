@@ -1,8 +1,20 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\Core\App\Http\Controllers\AcademicYearController;
 use Modules\Core\App\Http\Controllers\BerandaController;
+use Modules\Core\App\Http\Controllers\ClassGroupController;
+use Modules\Core\App\Http\Controllers\ExtracurricularController;
+use Modules\Core\App\Http\Controllers\ExtracurricularMemberController;
+use Modules\Core\App\Http\Controllers\GradeController;
+use Modules\Core\App\Http\Controllers\MajorController;
 use Modules\Core\App\Http\Controllers\MasterDataController;
+use Modules\Core\App\Http\Controllers\RoomController;
+use Modules\Core\App\Http\Controllers\SchoolProfileController;
+use Modules\Core\App\Http\Controllers\SemesterController;
+use Modules\Core\App\Http\Controllers\StudentController;
+use Modules\Core\App\Http\Controllers\SubjectController;
+use Modules\Core\App\Http\Controllers\TeacherController;
 
 // Module routes are registered via loadRoutesFrom() and do NOT inherit
 // the root web group automatically — always declare the group here.
@@ -13,23 +25,66 @@ Route::middleware('web')->group(function (): void {
     Route::middleware('auth')->group(function (): void {
         Route::get('beranda', BerandaController::class)->name('home');
 
-        // Master data = base records that must exist (mockup phase: static
-        // sample data, nothing persisted).
-        Route::prefix('master')->name('core.master.')->controller(MasterDataController::class)->group(function (): void {
-            Route::get('sekolah', 'school')->name('school');
-            Route::get('tahun-ajaran', 'academicYears')->name('years');
-            Route::get('semester', 'semesters')->name('semesters');
-            Route::get('tingkat-jurusan', 'grades')->name('grades');
-            Route::get('kelas', 'classes')->name('classes');
-            Route::get('kelas/{id}', 'classShow')->whereNumber('id')->name('classes.show');
-            Route::get('mata-pelajaran', 'subjects')->name('subjects');
-            Route::get('guru', 'teachers')->name('teachers');
-            Route::get('guru/{id}', 'teacherShow')->whereNumber('id')->name('teachers.show');
-            Route::get('siswa', 'students')->name('students');
-            Route::get('siswa/{id}', 'studentShow')->whereNumber('id')->name('students.show');
-            Route::get('ruangan', 'rooms')->name('rooms');
-            Route::get('ekstrakurikuler', 'extracurriculars')->name('extracurriculars');
-            Route::get('ekstrakurikuler/{id}', 'extracurricularShow')->whereNumber('id')->name('extracurriculars.show');
+        // Master data = base records that must exist. Reads need
+        // core.master.view, writes core.master.manage. Pages not yet backed
+        // by the database (see docs/ai/plan/fase-3) still read mock data.
+        Route::prefix('master')->name('core.master.')->middleware('can:core.master.view')->group(function (): void {
+            Route::get('sekolah', [SchoolProfileController::class, 'show'])->name('school');
+            Route::get('tahun-ajaran', [AcademicYearController::class, 'index'])->name('years');
+            Route::get('semester', [SemesterController::class, 'index'])->name('semesters');
+            Route::get('tingkat-jurusan', [GradeController::class, 'index'])->name('grades');
+            Route::get('kelas', [ClassGroupController::class, 'index'])->name('classes');
+            Route::get('kelas/{classGroup}', [ClassGroupController::class, 'show'])->whereNumber('classGroup')->name('classes.show');
+            Route::get('mata-pelajaran', [SubjectController::class, 'index'])->name('subjects');
+            Route::get('ruangan', [RoomController::class, 'index'])->name('rooms');
+
+            Route::get('guru', [TeacherController::class, 'index'])->name('teachers');
+            Route::get('guru/{teacher}', [TeacherController::class, 'show'])->whereNumber('teacher')->name('teachers.show');
+            Route::get('siswa', [StudentController::class, 'index'])->name('students');
+            Route::get('siswa/{student}', [StudentController::class, 'show'])->whereNumber('student')->name('students.show');
+            Route::get('ekstrakurikuler', [ExtracurricularController::class, 'index'])->name('extracurriculars');
+            Route::get('ekstrakurikuler/{extracurricular}', [ExtracurricularController::class, 'show'])->whereNumber('extracurricular')->name('extracurriculars.show');
+
+            Route::middleware('can:core.master.manage')->group(function (): void {
+                Route::put('sekolah', [SchoolProfileController::class, 'update'])->name('school.update');
+
+                Route::post('tahun-ajaran', [AcademicYearController::class, 'store'])->name('years.store');
+                Route::put('tahun-ajaran/{year}', [AcademicYearController::class, 'update'])->whereNumber('year')->name('years.update');
+                Route::post('tahun-ajaran/{year}/aktifkan', [AcademicYearController::class, 'activate'])->whereNumber('year')->name('years.activate');
+                Route::delete('tahun-ajaran/{year}', [AcademicYearController::class, 'destroy'])->whereNumber('year')->name('years.destroy');
+
+                Route::put('semester/{semester}', [SemesterController::class, 'update'])->whereNumber('semester')->name('semesters.update');
+
+                Route::post('jurusan', [MajorController::class, 'store'])->name('majors.store');
+                Route::put('jurusan/{major}', [MajorController::class, 'update'])->whereNumber('major')->name('majors.update');
+                Route::delete('jurusan/{major}', [MajorController::class, 'destroy'])->whereNumber('major')->name('majors.destroy');
+
+                Route::post('kelas', [ClassGroupController::class, 'store'])->name('classes.store');
+                Route::put('kelas/{classGroup}', [ClassGroupController::class, 'update'])->whereNumber('classGroup')->name('classes.update');
+                Route::delete('kelas/{classGroup}', [ClassGroupController::class, 'destroy'])->whereNumber('classGroup')->name('classes.destroy');
+
+                Route::post('mata-pelajaran', [SubjectController::class, 'store'])->name('subjects.store');
+                Route::put('mata-pelajaran/{subject}', [SubjectController::class, 'update'])->whereNumber('subject')->name('subjects.update');
+                Route::delete('mata-pelajaran/{subject}', [SubjectController::class, 'destroy'])->whereNumber('subject')->name('subjects.destroy');
+
+                Route::post('guru', [TeacherController::class, 'store'])->name('teachers.store');
+                Route::put('guru/{teacher}', [TeacherController::class, 'update'])->whereNumber('teacher')->name('teachers.update');
+                Route::delete('guru/{teacher}', [TeacherController::class, 'destroy'])->whereNumber('teacher')->name('teachers.destroy');
+
+                Route::post('siswa', [StudentController::class, 'store'])->name('students.store');
+                Route::put('siswa/{student}', [StudentController::class, 'update'])->whereNumber('student')->name('students.update');
+                Route::delete('siswa/{student}', [StudentController::class, 'destroy'])->whereNumber('student')->name('students.destroy');
+
+                Route::post('ekstrakurikuler', [ExtracurricularController::class, 'store'])->name('extracurriculars.store');
+                Route::put('ekstrakurikuler/{extracurricular}', [ExtracurricularController::class, 'update'])->whereNumber('extracurricular')->name('extracurriculars.update');
+                Route::delete('ekstrakurikuler/{extracurricular}', [ExtracurricularController::class, 'destroy'])->whereNumber('extracurricular')->name('extracurriculars.destroy');
+                Route::post('ekstrakurikuler/{extracurricular}/anggota', [ExtracurricularMemberController::class, 'store'])->whereNumber('extracurricular')->name('extracurriculars.members.store');
+                Route::delete('ekstrakurikuler/{extracurricular}/anggota/{student}', [ExtracurricularMemberController::class, 'destroy'])->whereNumber(['extracurricular', 'student'])->name('extracurriculars.members.destroy');
+
+                Route::post('ruangan', [RoomController::class, 'store'])->name('rooms.store');
+                Route::put('ruangan/{room}', [RoomController::class, 'update'])->whereNumber('room')->name('rooms.update');
+                Route::delete('ruangan/{room}', [RoomController::class, 'destroy'])->whereNumber('room')->name('rooms.destroy');
+            });
         });
 
         // Academic management: actions and schedules that work on the base

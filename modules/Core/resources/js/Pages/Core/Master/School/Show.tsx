@@ -1,15 +1,11 @@
+import { update } from '@/actions/Modules/Core/App/Http/Controllers/SchoolProfileController';
+
 import { Button } from '@shared/components/ui/button';
-import { Checkbox } from '@shared/components/ui/checkbox';
-import {
-    Field,
-    FieldGroup,
-    FieldLabel,
-    FieldLegend,
-    FieldSet,
-} from '@shared/components/ui/field';
+import { FieldGroup } from '@shared/components/ui/field';
 import { DefinitionList, Panel } from '@shared/components/page-parts';
 
 import { InputField, SelectField } from '../../../../Components/FormField';
+import MasterForm from '../../../../Components/MasterForm';
 import MasterPage from '../../../../Components/MasterPage';
 import type { SchoolSummary } from '../../../../types/master';
 
@@ -24,24 +20,22 @@ export default function SchoolShow({ school }: { school: SchoolSummary }) {
             title="Profil Sekolah"
             description="Identitas resmi sekolah yang dipakai di seluruh modul."
             width="max-w-4xl"
+            mock={false}
         >
-            <form
-                key={school.level}
-                onSubmit={(event) => event.preventDefault()}
-                className="flex flex-col gap-6"
-            >
+            <MasterForm route={update()} className="flex flex-col gap-6">
                 <Panel title="Identitas">
                     <FieldGroup>
-                        <InputField
-                            label="Nama sekolah"
-                            id="name"
-                            defaultValue={school.name}
-                        />
                         <div className="grid gap-6 sm:grid-cols-2">
                             <InputField
                                 label="NPSN"
                                 id="npsn"
                                 defaultValue={school.npsn}
+                            />
+                            <SelectField
+                                label="Jenjang"
+                                id="level"
+                                options={school.levelOptions}
+                                defaultValue={school.level}
                             />
                             <SelectField
                                 label="Status"
@@ -56,32 +50,6 @@ export default function SchoolShow({ school }: { school: SchoolSummary }) {
                                 defaultValue={school.accreditation}
                             />
                         </div>
-
-                        <FieldSet>
-                            <FieldLegend variant="label">Jenjang</FieldLegend>
-                            <div className="flex flex-wrap gap-x-6 gap-y-3">
-                                {school.levelOptions.map((option) => (
-                                    <Field
-                                        key={option.value}
-                                        orientation="horizontal"
-                                        className="w-auto"
-                                    >
-                                        <Checkbox
-                                            id={`level-${option.value}`}
-                                            defaultChecked={
-                                                option.value === school.level
-                                            }
-                                        />
-                                        <FieldLabel
-                                            htmlFor={`level-${option.value}`}
-                                            className="font-normal"
-                                        >
-                                            {option.label}
-                                        </FieldLabel>
-                                    </Field>
-                                ))}
-                            </div>
-                        </FieldSet>
                     </FieldGroup>
                 </Panel>
 
@@ -117,7 +85,7 @@ export default function SchoolShow({ school }: { school: SchoolSummary }) {
                         />
                         <InputField
                             label="NIP"
-                            id="headmasterNip"
+                            id="headmaster_nip"
                             defaultValue={school.headmasterNip}
                         />
                     </div>
@@ -126,6 +94,7 @@ export default function SchoolShow({ school }: { school: SchoolSummary }) {
                 <Panel title="Dikelola platform">
                     <DefinitionList
                         rows={[
+                            ['Nama sekolah', school.name],
                             ['Kode sekolah', <code key="c">{school.code}</code>],
                             ['Zona waktu', school.timezone],
                         ]}
@@ -135,7 +104,7 @@ export default function SchoolShow({ school }: { school: SchoolSummary }) {
                 <div className="flex justify-end">
                     <Button type="submit">Simpan perubahan</Button>
                 </div>
-            </form>
+            </MasterForm>
         </MasterPage>
     );
 }

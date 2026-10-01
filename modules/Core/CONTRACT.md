@@ -2,11 +2,18 @@
 
 ## Owns
 
-- Database tables: none yet (master-data tables arrive with the first
-  Core feature)
-- Core domain concepts: SIMAS master data (schools, academic years,
-  classes, subjects — placeholder for Fase 1+), and the school landing
-  record (`Beranda Sekolah`, route `home`).
+- Database tables (all tenant-scoped, no foreign keys except
+  `tenant_id`; relations are plain indexed columns): `school_profiles`,
+  `academic_years`, `semesters`, `grades`, `majors`, `rooms`, `subjects`,
+  `classes`, `teachers`, `students`, `student_class_history`,
+  `extracurriculars`, `extracurricular_members`.
+- Core domain concepts: SIMAS master data (school profile, academic years
+  and semesters, grades and majors, classes, subjects, rooms, teachers,
+  students, extracurriculars), and the school landing record
+  (`Beranda Sekolah`, route `home`).
+- Permissions: `core.master.view` (read) and `core.master.manage`
+  (create/update/delete), attached to the default roles through
+  Identity's `config/roles.php` (names only).
 
 ## Public interface (Contracts/)
 
@@ -56,19 +63,32 @@
 
 ## Surfaces
 
-- Master data (mockup phase), split into three sidebar entries:
-  - **Master Data** (`/master/*`) — base records that must exist: profil
+- Master data, split into three sidebar entries:
+  - **Master Data** (`/master/*`, database-backed; reads need
+    `core.master.view`, writes `core.master.manage`) — base records that
+    must exist: profil
     sekolah, tahun ajaran, tingkat & jurusan, kelas, mata pelajaran, guru
     & tendik, siswa, ruangan, ekstrakurikuler.
-  - **Akademik** (`/akademik/*`) — academic management on top of those
-    records: penempatan siswa (naik/pindah/lulus), pengampu mapel, wali
-    kelas, jam pelajaran, kalender akademik.
-  - **Impor Data** (`/kelola/impor`) — bulk CSV import of base records.
-  `MasterDataController` reads static data from
-  `Infrastructure/Mock/MasterMockData`; nothing is persisted and the
-  jenjang can be previewed with `?jenjang=sd|smp|sma|smk`. The DB phase
-  replaces the mock behind the controller (teachers/students keep an
-  optional plain `user_id` column, no FK to Identity).
+  - **Akademik** (`/akademik/*`, still mockup) — academic management on
+    top of those records: penempatan siswa (naik/pindah/lulus), pengampu
+    mapel, wali kelas, jam pelajaran, kalender akademik. Until built,
+    `classes.homeroom_teacher_id` stays empty and nothing writes
+    `student_class_history` except the student form.
+  - **Impor Data** (`/kelola/impor`, still mockup) — bulk CSV import of
+    base records.
+  `MasterDataController` serves the remaining mockup pages from
+  `Infrastructure/Mock/MasterMockData`, shaped by the school's real jenjang.
+  Master data is one thin controller per entity over Domain Actions
+  (`Save*`/`Delete*`), FormRequests gated by `core.master.manage`, and
+  JsonResources that keep the page props the React pages were built on.
+  The "Tambah tahun ajaran" form is pre-filled by `SuggestAcademicYear`
+  (latest year + 1, or the running year for a school with none).
+  Rules enforced in Actions: one active academic year per school (the
+  previous one is archived), semesters stay inside their year and never
+  overlap, grades follow the jenjang (`SyncDefaultGrades`, frozen once
+  classes exist), a major/room/class/teacher still in use cannot be
+  deleted. Teachers and students keep an optional plain `user_id` (no FK,
+  no relation to Identity's User).
 - `modules/Core/resources/js/Pages/Core/Beranda.tsx` — the school's
   landing record, phone-first, dated on the tenant's own clock. Surface
   brief: `.impeccable/surfaces/modules-core-resources-js-pages-core-beranda-tsx.md`.

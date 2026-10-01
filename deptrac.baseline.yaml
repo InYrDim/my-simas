@@ -19,3 +19,29 @@ deptrac:
             - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
             - 'Modules\Platform\App\Infrastructure\Permissions\TenantRoleResolver'
             - 'Modules\Platform\App\Infrastructure\Permissions\TenantPermissionBridge'
+        Modules\Core\App\Domain\Models\SchoolProfile:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Core\App\Domain\Models\AcademicYear:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Core\App\Domain\Models\Semester:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Core\App\Domain\Models\Grade:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Core\App\Domain\Models\Major:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Core\App\Domain\Models\Room:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Core\App\Domain\Models\Subject:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Core\App\Domain\Models\ClassGroup:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Core\App\Domain\Models\Teacher:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Core\App\Domain\Models\Student:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Core\App\Domain\Models\StudentClassHistory:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Core\App\Domain\Models\Extracurricular:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Core\App\Domain\Models\ExtracurricularMember:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'

@@ -2,11 +2,16 @@ import { Link } from '@inertiajs/react';
 
 import {
     assignments as assignmentsPage,
-    classes as classesIndex,
     placement,
-    studentShow,
 } from '@/actions/Modules/Core/App/Http/Controllers/MasterDataController';
-import { DataTable, DefinitionList, Panel } from '@shared/components/page-parts';
+import { show as studentShow } from '@/actions/Modules/Core/App/Http/Controllers/StudentController';
+import { index as classesIndex } from '@/actions/Modules/Core/App/Http/Controllers/ClassGroupController';
+import {
+    DataTable,
+    DefinitionList,
+    EmptyState,
+    Panel,
+} from '@shared/components/page-parts';
 import { Button } from '@shared/components/ui/button';
 import { TableCell, TableRow } from '@shared/components/ui/table';
 
@@ -35,8 +40,9 @@ export default function ClassesShow({
         <MasterPage
             school={school}
             title={`Kelas ${group.name}`}
-            description="Tahun ajaran 2025/2026"
+            description={`Tahun ajaran ${group.year}`}
             back={{ href: classesIndex.url(), label: 'Semua kelas' }}
+            mock={false}
             actions={
                 <>
                     <Button asChild variant="outline">
@@ -52,8 +58,8 @@ export default function ClassesShow({
                 <Panel title="Ringkasan" className="lg:col-span-1">
                     <DefinitionList
                         rows={[
-                            [school.homeroomLabel, group.homeroom],
-                            ['Ruangan', group.room],
+                            [school.homeroomLabel, group.homeroom ?? '—'],
+                            ['Ruangan', group.room ?? '—'],
                             ['Tingkat', `Kelas ${group.grade}`],
                             ['Jurusan', group.major ?? '—'],
                             ['Jumlah siswa', group.students],
@@ -63,36 +69,44 @@ export default function ClassesShow({
 
                 <div className="flex flex-col gap-6 lg:col-span-2">
                     <Panel title="Pengampu mata pelajaran">
-                        <DataTable head={['Mata pelajaran', 'Guru', 'JP/minggu']}>
-                            {assignments.map((row) => (
-                                <TableRow key={`${row.subject}-${row.teacher}`}>
-                                    <TableCell>{row.subject}</TableCell>
-                                    <TableCell>{row.teacher}</TableCell>
-                                    <TableCell>{row.hours}</TableCell>
-                                </TableRow>
-                            ))}
-                        </DataTable>
+                        {assignments.length === 0 ? (
+                            <EmptyState>Belum ada pengampu untuk kelas ini.</EmptyState>
+                        ) : (
+                            <DataTable head={['Mata pelajaran', 'Guru', 'JP/minggu']}>
+                                {assignments.map((row) => (
+                                    <TableRow key={`${row.subject}-${row.teacher}`}>
+                                        <TableCell>{row.subject}</TableCell>
+                                        <TableCell>{row.teacher}</TableCell>
+                                        <TableCell>{row.hours}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </DataTable>
+                        )}
                     </Panel>
 
                     <Panel title="Daftar siswa">
-                        <DataTable head={['Nama', 'NIS', 'Status']}>
-                            {students.map((student) => (
-                                <TableRow key={student.id}>
-                                    <TableCell className="font-medium">
-                                        <Link
-                                            href={studentShow.url({ id: student.id })}
-                                            className="hover:underline"
-                                        >
-                                            {student.name}
-                                        </Link>
-                                    </TableCell>
-                                    <TableCell>{student.nis}</TableCell>
-                                    <TableCell>
-                                        <StatusBadge status={student.status} />
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </DataTable>
+                        {students.length === 0 ? (
+                            <EmptyState>Belum ada siswa di kelas ini.</EmptyState>
+                        ) : (
+                            <DataTable head={['Nama', 'NIS', 'Status']}>
+                                {students.map((student) => (
+                                    <TableRow key={student.id}>
+                                        <TableCell className="font-medium">
+                                            <Link
+                                                href={studentShow.url(student.id)}
+                                                className="hover:underline"
+                                            >
+                                                {student.name}
+                                            </Link>
+                                        </TableCell>
+                                        <TableCell>{student.nis}</TableCell>
+                                        <TableCell>
+                                            <StatusBadge status={student.status} />
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </DataTable>
+                        )}
                     </Panel>
                 </div>
             </div>

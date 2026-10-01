@@ -1,6 +1,11 @@
 import type { ComponentProps } from 'react';
 
-import { Field, FieldDescription, FieldLabel } from '@shared/components/ui/field';
+import {
+    Field,
+    FieldDescription,
+    FieldError,
+    FieldLabel,
+} from '@shared/components/ui/field';
 import { Input } from '@shared/components/ui/input';
 import {
     Select,
@@ -10,46 +15,76 @@ import {
     SelectValue,
 } from '@shared/components/ui/select';
 
-/** Label + Input (uncontrolled) for the mockup forms. */
+import { useFieldError } from './MasterForm';
+
+/** Label + Input (uncontrolled) with its server validation message. */
 export function InputField({
     label,
     id,
+    name,
     hint,
     ...props
 }: { label: string; id: string; hint?: string } & Omit<
     ComponentProps<typeof Input>,
     'id'
 >) {
+    const error = useFieldError(name ?? id);
+
     return (
-        <Field>
+        <Field data-invalid={error !== undefined}>
             <FieldLabel htmlFor={id}>{label}</FieldLabel>
-            <Input id={id} name={id} {...props} />
+            <Input
+                id={id}
+                name={name ?? id}
+                aria-invalid={error !== undefined}
+                {...props}
+            />
             {hint !== undefined && <FieldDescription>{hint}</FieldDescription>}
+            {error !== undefined && <FieldError>{error}</FieldError>}
         </Field>
     );
 }
 
-/** Label + shared Select (uncontrolled) for the mockup forms. */
+/** Label + shared Select (uncontrolled) with its server validation message. */
 export function SelectField({
     label,
     id,
+    name,
     options,
     defaultValue,
+    optionalLabel,
 }: {
     label: string;
     id: string;
+    name?: string;
     options: string[] | { value: string; label: string }[];
-    defaultValue?: string;
+    defaultValue?: string | null;
+    /** Adds a "no choice" item (sent as `none`, which the server reads as null). */
+    optionalLabel?: string;
 }) {
-    const items = options.map((option) =>
+    const error = useFieldError(name ?? id);
+    const choices = options.map((option) =>
         typeof option === 'string' ? { value: option, label: option } : option,
     );
+    const items =
+        optionalLabel === undefined
+            ? choices
+            : [{ value: 'none', label: optionalLabel }, ...choices];
 
     return (
-        <Field>
+        <Field data-invalid={error !== undefined}>
             <FieldLabel htmlFor={id}>{label}</FieldLabel>
-            <Select name={id} defaultValue={defaultValue ?? items[0]?.value}>
-                <SelectTrigger id={id}>
+            <Select
+                name={name ?? id}
+                defaultValue={
+                    defaultValue !== undefined &&
+                    defaultValue !== null &&
+                    defaultValue !== ''
+                        ? defaultValue
+                        : items[0]?.value
+                }
+            >
+                <SelectTrigger id={id} aria-invalid={error !== undefined}>
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -60,6 +95,7 @@ export function SelectField({
                     ))}
                 </SelectContent>
             </Select>
+            {error !== undefined && <FieldError>{error}</FieldError>}
         </Field>
     );
 }

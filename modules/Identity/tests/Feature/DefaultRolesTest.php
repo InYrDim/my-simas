@@ -51,7 +51,7 @@ it('seeds the three default roles for a new tenant via TenantCreated', function 
         ->and($roles)->toContain('staf-tu');
 });
 
-it('gives admin-sekolah the identity.users permission set and leaves the others empty', function () {
+it('gives admin-sekolah the identity.users and core.master permission sets and the others only core.master.view', function () {
     /** @var Tenant $tenant */
     $tenant = TenantFactory::new()->create();
 
@@ -64,13 +64,15 @@ it('gives admin-sekolah the identity.users permission set and leaves the others 
     $staf = tenantRolePermissionNames($tenant->id, 'staf-tu');
 
     expect($admin)->toBe([
+        'core.master.manage',
+        'core.master.view',
         'identity.users.create',
         'identity.users.deactivate',
         'identity.users.sendReset',
         'identity.users.update',
         'identity.users.view',
-    ])->and($guru)->toBe([])
-        ->and($staf)->toBe([]);
+    ])->and($guru)->toBe(['core.master.view'])
+        ->and($staf)->toBe(['core.master.view']);
 });
 
 it('creates the global permission rows as a side effect of seeding', function () {

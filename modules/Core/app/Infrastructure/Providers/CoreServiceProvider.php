@@ -4,6 +4,7 @@ namespace Modules\Core\App\Infrastructure\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Modules\Platform\App\Contracts\ModuleRegistry;
+use Modules\Platform\App\Contracts\PermissionRegistry;
 use Modules\Platform\App\Contracts\TenantNavigation;
 
 class CoreServiceProvider extends ServiceProvider
@@ -13,7 +14,7 @@ class CoreServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->mergeConfigFrom(__DIR__.'/../../../config/permission_labels.php', 'permission_labels');
     }
 
     /**
@@ -22,6 +23,8 @@ class CoreServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->registerModuleKey();
+        $this->loadMigrationsFrom(__DIR__.'/../../../database/migrations');
+        $this->registerPermissions();
         $this->registerNavigation();
         $this->loadRoutesFrom(__DIR__.'/../../../routes/web.php');
         // API routes bring their own middleware grouping inside the file.
@@ -41,6 +44,18 @@ class CoreServiceProvider extends ServiceProvider
     }
 
     /**
+     * Register the permission names this module owns. Attached to the
+     * default roles through Identity's config/roles.php (names only).
+     */
+    protected function registerPermissions(): void
+    {
+        $this->app->make(PermissionRegistry::class)->register('core', [
+            'core.master.view',
+            'core.master.manage',
+        ]);
+    }
+
+    /**
      * Register this module's school-side sidebar entries.
      */
     protected function registerNavigation(): void
@@ -56,6 +71,7 @@ class CoreServiceProvider extends ServiceProvider
                 'label' => 'Master Data',
                 'icon' => 'database',
                 'route' => 'core.master.school',
+                'permission' => 'core.master.view',
                 'group' => 'Data Induk',
                 'order' => 20,
                 'children' => [

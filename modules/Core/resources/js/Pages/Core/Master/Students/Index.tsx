@@ -1,21 +1,28 @@
 import { Link } from '@inertiajs/react';
 import { PlusIcon, UploadIcon } from 'lucide-react';
-import { useState } from 'react';
 
+import { importData } from '@/actions/Modules/Core/App/Http/Controllers/MasterDataController';
 import {
-    importData,
-    studentShow,
-} from '@/actions/Modules/Core/App/Http/Controllers/MasterDataController';
+    index,
+    show,
+    store,
+} from '@/actions/Modules/Core/App/Http/Controllers/StudentController';
 import { DataTable, EmptyState, OptionSelect } from '@shared/components/page-parts';
 import { Button } from '@shared/components/ui/button';
 import { Input } from '@shared/components/ui/input';
 import { TableCell, TableRow } from '@shared/components/ui/table';
 
 import FormDialog from '../../../../Components/FormDialog';
-import { InputField, SelectField } from '../../../../Components/FormField';
+import ListPager, { useListFilters } from '../../../../Components/ListPager';
 import MasterPage from '../../../../Components/MasterPage';
 import StatusBadge from '../../../../Components/StatusBadge';
-import type { ClassGroup, SchoolSummary, Student } from '../../../../types/master';
+import StudentForm from '../../../../Components/StudentForm';
+import type {
+    ClassOption,
+    Pagination,
+    SchoolSummary,
+    Student,
+} from '../../../../types/master';
 
 const statusOptions = [
     { value: 'active', label: 'Aktif' },
@@ -28,30 +35,27 @@ const statusOptions = [
 export default function StudentsIndex({
     school,
     students,
+    pagination,
+    filters: initial,
     classes,
 }: {
     school: SchoolSummary;
     students: Student[];
-    classes: ClassGroup[];
+    pagination: Pagination;
+    filters: { q: string; class: string; status: string };
+    classes: ClassOption[];
 }) {
-    const [query, setQuery] = useState('');
-    const [classId, setClassId] = useState('');
-    const [status, setStatus] = useState('');
-
-    const rows = students.filter(
-        (student) =>
-            `${student.name} ${student.nis} ${student.nisn}`
-                .toLowerCase()
-                .includes(query.toLowerCase()) &&
-            (classId === '' || String(student.classId) === classId) &&
-            (status === '' || student.status === status),
-    );
+    const url = index.url();
+    const { filters, set } = useListFilters(url, initial);
+    const filtered =
+        initial.q !== '' || initial.class !== '' || initial.status !== '';
 
     return (
         <MasterPage
             school={school}
             title="Siswa"
             description="Data siswa dan status keanggotaannya. Siswa tidak wajib punya akun login."
+            mock={false}
             actions={
                 <>
                     <Button asChild variant="outline">
@@ -62,6 +66,7 @@ export default function StudentsIndex({
                     </Button>
 
                     <FormDialog
+                        route={store()}
                         title="Tambah siswa"
                         trigger={
                             <Button>
@@ -70,19 +75,7 @@ export default function StudentsIndex({
                             </Button>
                         }
                     >
-                        <InputField label="Nama lengkap" id="name" />
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <InputField label="NIS" id="nis" />
-                            <InputField label="NISN" id="nisn" />
-                        </div>
-                        <SelectField
-                            label="Jenis kelamin"
-                            id="gender"
-                            options={[
-                                { value: 'L', label: 'Laki-laki' },
-                                { value: 'P', label: 'Perempuan' },
-                            ]}
-                        />
+                        <StudentForm classes={classes} />
                     </FormDialog>
                 </>
             }
@@ -91,14 +84,14 @@ export default function StudentsIndex({
                 <Input
                     aria-label="Cari siswa"
                     placeholder="Cari nama, NIS, atau NISN…"
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
+                    value={filters.q}
+                    onChange={(event) => set('q', event.target.value)}
                 />
                 <OptionSelect
                     label="Kelas"
                     allLabel="Semua kelas"
-                    value={classId}
-                    onChange={setClassId}
+                    value={filters.class}
+                    onChange={(value) => set('class', value)}
                     options={classes.map((item) => ({
                         value: String(item.id),
                         label: item.name,
@@ -107,28 +100,31 @@ export default function StudentsIndex({
                 <OptionSelect
                     label="Status"
                     allLabel="Semua status"
-                    value={status}
-                    onChange={setStatus}
+                    value={filters.status}
+                    onChange={(value) => set('status', value)}
                     options={statusOptions}
                 />
             </div>
 
-            {rows.length === 0 ? (
-                <EmptyState>Tidak ada siswa yang cocok.</EmptyState>
+            {students.length === 0 ? (
+                <EmptyState>
+                    {filtered ? 'Tidak ada siswa yang cocok.' : 'Belum ada siswa.'}
+                </EmptyState>
             ) : (
                 <DataTable head={['Nama', 'NIS / NISN', 'Kelas', 'Status']}>
-                    {rows.map((student) => (
+                    {students.map((student) => (
                         <TableRow key={student.id}>
                             <TableCell className="font-medium">
                                 <Link
-                                    href={studentShow.url({ id: student.id })}
+                                    href={show.url(student.id)}
                                     className="hover:underline"
                                 >
                                     {student.name}
                                 </Link>
                             </TableCell>
                             <TableCell className="font-mono text-xs">
-                                {student.nis} / {student.nisn}
+                                {student.nis}
+                                {student.nisn !== null && ` / ${student.nisn}`}
                             </TableCell>
                             <TableCell>{student.class ?? '—'}</TableCell>
                             <TableCell>
@@ -138,6 +134,8 @@ export default function StudentsIndex({
                     ))}
                 </DataTable>
             )}
+
+            <ListPager url={url} filters={initial} pagination={pagination} />
         </MasterPage>
     );
 }

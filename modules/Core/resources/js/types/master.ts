@@ -29,7 +29,7 @@ export interface Semester {
 
 /** One semester across all years, as listed on the Semester page. */
 export interface SemesterRow {
-    id: string;
+    id: number;
     year: string;
     name: string;
     start: string;
@@ -48,6 +48,14 @@ export interface AcademicYear {
     end: string;
     status: 'active' | 'draft' | 'archived';
     semesters: Semester[];
+}
+
+/** Pre-filled values for the "Tambah tahun ajaran" form. */
+export interface AcademicYearSuggestion {
+    name: string;
+    curriculum: string;
+    start_date: string;
+    end_date: string;
 }
 
 export interface Grade {
@@ -70,12 +78,15 @@ export interface ClassGroup {
     name: string;
     gradeId: number;
     grade: string;
+    majorId: number | null;
     major: string | null;
-    homeroom: string;
-    homeroomId: number;
-    room: string;
+    homeroom: string | null;
+    homeroomId: number | null;
+    roomId: number | null;
+    room: string | null;
     students: number;
     yearId: number;
+    year: string;
 }
 
 export interface Subject {
@@ -85,7 +96,6 @@ export interface Subject {
     group: string;
     kkm: number;
     grades: string;
-    teacher: string;
 }
 
 export interface Assignment {
@@ -95,11 +105,26 @@ export interface Assignment {
     hours: number;
 }
 
+/** Paging state of a server-side list. */
+export interface Pagination {
+    page: number;
+    lastPage: number;
+    total: number;
+    from: number;
+    to: number;
+}
+
+/** A class as offered in a select. */
+export interface ClassOption {
+    id: number;
+    name: string;
+}
+
 export interface Teacher {
     id: number;
     name: string;
-    nip: string;
-    nuptk: string;
+    nip: string | null;
+    nuptk: string | null;
     employment: string;
     duty: string;
     hasAccount: boolean;
@@ -110,14 +135,14 @@ export interface Student {
     id: number;
     name: string;
     nis: string;
-    nisn: string;
+    nisn: string | null;
     gender: 'L' | 'P';
-    birth: string;
+    birth: string | null;
     class: string | null;
     classId: number | null;
     status: 'active' | 'graduated' | 'transferred' | 'left';
-    guardian: string;
-    guardianPhone: string;
+    guardian: string | null;
+    guardianPhone: string | null;
     hasAccount: boolean;
 }
 
@@ -157,7 +182,8 @@ export interface Extracurricular {
     name: string;
     schedule: string;
     kind: string;
-    coach: string;
+    coach: string | null;
+    coachId: number | null;
     members: number;
     memberList?: Student[];
 }
