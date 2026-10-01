@@ -1,7 +1,24 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 
-import { AuthInput } from '@shared/components/AuthInput';
+import TenantShell from '@shared/components/TenantShell';
+import { Alert, AlertDescription } from '@shared/components/ui/alert';
+import { Button } from '@shared/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+} from '@shared/components/ui/card';
+import { Checkbox } from '@shared/components/ui/checkbox';
+import {
+    Field,
+    FieldDescription,
+    FieldGroup,
+    FieldLabel,
+    FieldLegend,
+    FieldSet,
+} from '@shared/components/ui/field';
 
 import {
     deactivate as deactivateUser,
@@ -9,6 +26,8 @@ import {
     sendReset as sendResetLink,
     update as usersUpdate,
 } from '@/actions/Modules/Identity/App/Http/Controllers/UsersManagementController';
+
+import TextField from '../../../Components/TextField';
 
 interface EditProps {
     user: {
@@ -26,7 +45,7 @@ interface EditProps {
 
 /**
  * Edit a user (school admin): profile name, role assign/remove via
- * dropdown (full sync), deactivate/reactivate, and the reset-link
+ * checkboxes (full sync), deactivate/reactivate, and the reset-link
  * sender. Anti-lockout: the deactivate button is disabled for self and
  * the tenant's last active admin — the server refuses them regardless.
  */
@@ -55,113 +74,110 @@ export default function UsersEdit({
         form.put(usersUpdate.url({ userId: user.id }));
     }
 
+    function toggleRole(name: string, checked: boolean) {
+        form.setData(
+            'roles',
+            checked
+                ? [...form.data.roles, name]
+                : form.data.roles.filter((role) => role !== name),
+        );
+    }
+
     return (
-        <div className="min-h-[100dvh] bg-zinc-50">
-            <header className="border-b border-zinc-200 bg-white">
-                <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-6">
-                    <span className="text-sm font-semibold text-zinc-900">
-                        Pengguna
-                    </span>
-
-                    <Link
-                        href="/users"
-                        className="text-sm text-zinc-500 transition-colors hover:text-zinc-800"
-                    >
-                        Kembali
-                    </Link>
-                </div>
-            </header>
-
+        <TenantShell width="max-w-3xl">
             <Head title={`Edit — ${user.name}`} />
 
-            <main className="mx-auto max-w-3xl px-6 py-10">
-                <h1 className="text-xl font-semibold text-zinc-900">
-                    {user.name}
-                </h1>
+            <Link
+                href="/users"
+                className="mb-6 inline-block text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+                Kembali
+            </Link>
 
-                <p className="mt-1 text-sm text-zinc-500">{user.email}</p>
+            <h1 className="text-xl font-semibold">{user.name}</h1>
 
-                {!user.isActive && (
-                    <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <p className="mt-1 text-sm text-muted-foreground">{user.email}</p>
+
+            {!user.isActive && (
+                <Alert variant="destructive" className="mt-6">
+                    <AlertDescription>
                         Akun ini sedang dinonaktifkan — tidak dapat masuk.
-                    </div>
-                )}
+                    </AlertDescription>
+                </Alert>
+            )}
 
-                <form
-                    onSubmit={submit}
-                    className="mt-8 flex flex-col gap-5 rounded-lg border border-zinc-200 bg-white p-6"
-                    noValidate
-                >
-                    <AuthInput
-                        label="Nama lengkap"
-                        id="name"
-                        name="name"
-                        type="text"
-                        autoComplete="name"
-                        required
-                        value={form.data.name}
-                        error={form.errors.name}
-                        onChange={(event) =>
-                            form.setData('name', event.target.value)
-                        }
-                    />
+            <Card className="mt-8">
+                <CardContent>
+                    <form onSubmit={submit} noValidate>
+                        <FieldGroup>
+                            <TextField
+                                label="Nama lengkap"
+                                id="name"
+                                type="text"
+                                autoComplete="name"
+                                required
+                                value={form.data.name}
+                                error={form.errors.name}
+                                onChange={(event) =>
+                                    form.setData('name', event.target.value)
+                                }
+                            />
 
-                    <div className="flex flex-col gap-2">
-                        <label
-                            htmlFor="roles"
-                            className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
-                        >
-                            Peran
-                        </label>
+                            <FieldSet>
+                                <FieldLegend variant="label">Peran</FieldLegend>
 
-                        <select
-                            id="roles"
-                            name="roles"
-                            multiple
-                            value={form.data.roles}
-                            onChange={(event) => {
-                                const selected = Array.from(
-                                    event.target.selectedOptions,
-                                    (option) => option.value,
-                                );
+                                {Object.entries(roleLabels).map(
+                                    ([name, label]) => (
+                                        <Field
+                                            key={name}
+                                            orientation="horizontal"
+                                        >
+                                            <Checkbox
+                                                id={`role-${name}`}
+                                                checked={form.data.roles.includes(
+                                                    name,
+                                                )}
+                                                onCheckedChange={(checked) =>
+                                                    toggleRole(
+                                                        name,
+                                                        checked === true,
+                                                    )
+                                                }
+                                            />
+                                            <FieldLabel
+                                                htmlFor={`role-${name}`}
+                                                className="font-normal"
+                                            >
+                                                {label}
+                                            </FieldLabel>
+                                        </Field>
+                                    ),
+                                )}
 
-                                form.setData('roles', selected);
-                            }}
-                            className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 dark:bg-zinc-950 dark:text-zinc-100"
-                            size={Math.min(
-                                Object.keys(roleLabels).length || 1,
-                                5,
-                            )}
-                        >
-                            {Object.entries(roleLabels).map(([name, label]) => (
-                                <option key={name} value={name}>
-                                    {label}
-                                </option>
-                            ))}
-                        </select>
+                                <FieldDescription>
+                                    Pilih satu atau lebih peran.
+                                </FieldDescription>
+                            </FieldSet>
 
-                        <p className="text-xs text-zinc-500">
-                            Tahan Ctrl/CMD untuk memilih lebih dari satu.
-                        </p>
-                    </div>
+                            <Button type="submit" disabled={form.processing}>
+                                {form.processing
+                                    ? 'Menyimpan...'
+                                    : 'Simpan perubahan'}
+                            </Button>
+                        </FieldGroup>
+                    </form>
+                </CardContent>
+            </Card>
 
-                    <button
-                        type="submit"
-                        disabled={form.processing}
-                        className="w-full rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                        {form.processing ? 'Menyimpan...' : 'Simpan perubahan'}
-                    </button>
-                </form>
-
-                <section className="mt-8 flex flex-col gap-3 rounded-lg border border-zinc-200 bg-white p-6">
-                    <h2 className="text-sm font-semibold text-zinc-900">
-                        Aksi akun
-                    </h2>
-
+            <Card className="mt-8">
+                <CardHeader>
+                    <CardTitle>Aksi akun</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-3">
                     {user.isActive ? (
-                        <button
+                        <Button
                             type="button"
+                            variant="destructive"
                             disabled={deactivateDisabled}
                             title={deactivateHint}
                             onClick={() =>
@@ -171,13 +187,13 @@ export default function UsersEdit({
                                     { preserveScroll: true },
                                 )
                             }
-                            className="w-full rounded-lg border border-red-300 px-4 py-2.5 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             Nonaktifkan akun
-                        </button>
+                        </Button>
                     ) : (
-                        <button
+                        <Button
                             type="button"
+                            variant="outline"
                             onClick={() =>
                                 router.patch(
                                     reactivateUser.url({ userId: user.id }),
@@ -185,15 +201,15 @@ export default function UsersEdit({
                                     { preserveScroll: true },
                                 )
                             }
-                            className="w-full rounded-lg border border-emerald-300 px-4 py-2.5 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50"
                         >
                             Aktifkan kembali
-                        </button>
+                        </Button>
                     )}
 
-                    {user.hasPassword && (
-                        <button
+                    {user.hasPassword ? (
+                        <Button
                             type="button"
+                            variant="outline"
                             onClick={() =>
                                 router.post(
                                     sendResetLink.url({ userId: user.id }),
@@ -201,21 +217,18 @@ export default function UsersEdit({
                                     { preserveScroll: true },
                                 )
                             }
-                            className="w-full rounded-lg border border-zinc-300 px-4 py-2.5 text-sm font-semibold text-zinc-700 transition-colors hover:bg-zinc-50"
                         >
                             Kirim tautan reset kata sandi
-                        </button>
-                    )}
-
-                    {!user.hasPassword && (
-                        <p className="text-xs text-zinc-500">
+                        </Button>
+                    ) : (
+                        <p className="text-xs text-muted-foreground">
                             Akun ini belum mengaktifkan kata sandi (undangan
                             belum diterima). Tautan reset tidak berlaku untuk
                             akun tanpa kata sandi.
                         </p>
                     )}
-                </section>
-            </main>
-        </div>
+                </CardContent>
+            </Card>
+        </TenantShell>
     );
 }

@@ -315,6 +315,12 @@ here is under `Contracts/` except what is listed at the end of this section.
 Public additions: `Contracts/TenantDirectory` (read-only tenant lookup for
 other modules' provider pages) and `TenantRoles::rolePermissions()`.
 
+School-side navigation: `Contracts/TenantNavigation` is the registry for the
+tenant sidebar. Each module registers its own entries (label, lucide icon
+name, named route, optional permission, order) from its service provider;
+`ShareTenantContext` shares the `tenantNav` prop (lazy), filtered by active
+module and Gate. The generic `TenantShell` in Shared renders it.
+
 ## Explicitly NOT exposed
 
 - `Plan`, `Subscription`, `Invoice`, `SubscriptionManager`, `InvoiceIssuer`,

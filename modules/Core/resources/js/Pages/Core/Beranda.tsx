@@ -1,9 +1,9 @@
 import { Head, Link } from '@inertiajs/react';
 
-import {
-    index as usersIndex,
-    invite as usersInvite,
-} from '@/actions/Modules/Identity/App/Http/Controllers/UsersManagementController';
+import TenantShell from '@shared/components/TenantShell';
+import { Button } from '@shared/components/ui/button';
+
+import { invite as usersInvite } from '@/actions/Modules/Identity/App/Http/Controllers/UsersManagementController';
 
 type Accounts = {
     total: number;
@@ -73,9 +73,7 @@ function dayLine(accounts: Accounts): DayLine {
 
 /**
  * Beranda Sekolah — today's page of the school's own record, dated on
- * the school's own clock. No icons, no cards, no shadows: the sheet is
- * held by its rules, and the only green on the page means confirmed or
- * go.
+ * the school's own clock, inside the tenant shell.
  */
 export default function Beranda({
     school,
@@ -95,53 +93,36 @@ export default function Beranda({
     ].join(' · ');
 
     return (
-        <div className="beranda min-h-[100dvh] bg-zinc-50 text-zinc-900">
+        <TenantShell width="max-w-xl">
             <Head title={school.name} />
 
-            <header className="border-b border-zinc-200 bg-white">
-                <div className="mx-auto flex h-16 max-w-xl items-center justify-between px-6">
-                    <span className="text-sm font-semibold text-zinc-900">
-                        Beranda
-                    </span>
-
-                    {can.viewUsers && (
-                        <Link
-                            href={usersIndex.url()}
-                            className="-mr-1 rounded px-1 py-2 text-sm text-zinc-500 transition-colors hover:text-zinc-900"
-                        >
-                            Pengguna
-                        </Link>
-                    )}
-                </div>
-            </header>
-
-            <main className="mx-auto max-w-xl px-6 py-8 sm:py-10">
+            <div>
                 {/* The sheet header: the school, and the day on its own
                     clock. One rule underneath holds the two together. */}
                 <div className="sm:flex sm:items-baseline sm:justify-between sm:gap-8">
-                    <h1 className="text-xl leading-7 font-semibold text-balance text-zinc-900">
+                    <h1 className="text-xl leading-7 font-semibold text-balance text-foreground">
                         {school.name}
                     </h1>
 
                     <div className="mt-2 sm:mt-0 sm:shrink-0 sm:text-right">
-                        <p className="text-xl leading-7 font-medium whitespace-nowrap text-zinc-500">
+                        <p className="text-xl leading-7 font-medium whitespace-nowrap text-muted-foreground">
                             <time dateTime={today.iso}>{today.label}</time>
                         </p>
 
-                        <p className="mt-0.5 font-mono text-xs text-zinc-400">
+                        <p className="mt-0.5 font-mono text-xs text-muted-foreground">
                             {school.timezone}
                         </p>
                     </div>
                 </div>
 
-                <div className="day-rule mt-8 border-t border-zinc-200 pt-5">
-                    <p className="text-sm leading-6 text-balance text-zinc-900">
+                <div className="day-rule mt-8 border-t border-border pt-5">
+                    <p className="text-sm leading-6 text-balance text-foreground">
                         {line.lead}{' '}
                         <span
                             className={
                                 line.confirmed
-                                    ? 'font-semibold text-emerald-700'
-                                    : 'font-semibold text-zinc-900'
+                                    ? 'font-semibold text-primary'
+                                    : 'font-semibold text-foreground'
                             }
                         >
                             {line.word}
@@ -150,51 +131,48 @@ export default function Beranda({
                     </p>
 
                     {can.invite && (
-                        <Link
-                            href={usersInvite.url()}
-                            className="mt-5 flex min-h-11 w-full items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 active:translate-y-px"
-                        >
-                            Undang staf
-                        </Link>
+                        <Button asChild className="mt-5 w-full">
+                            <Link href={usersInvite.url()}>Undang staf</Link>
+                        </Button>
                     )}
                 </div>
 
                 {/* The rest of the record: quiet, ruled, 12px. Numbers
                     never replace the day's sentence; they only back it. */}
-                <dl className="mt-10 border-t border-zinc-200">
-                    <div className="flex items-baseline justify-between gap-6 border-b border-zinc-200 py-3">
-                        <dt className="text-xs text-zinc-500">Kode sekolah</dt>
-                        <dd className="font-mono text-xs text-zinc-900">
+                <dl className="mt-10 border-t border-border">
+                    <div className="flex items-baseline justify-between gap-6 border-b border-border py-3">
+                        <dt className="text-xs text-muted-foreground">Kode sekolah</dt>
+                        <dd className="font-mono text-xs text-foreground">
                             {school.slug}
                         </dd>
                     </div>
 
-                    <div className="flex items-baseline justify-between gap-6 border-b border-zinc-200 py-3">
-                        <dt className="text-xs text-zinc-500">Peran</dt>
-                        <dd className="text-right text-xs text-zinc-900">
+                    <div className="flex items-baseline justify-between gap-6 border-b border-border py-3">
+                        <dt className="text-xs text-muted-foreground">Peran</dt>
+                        <dd className="text-right text-xs text-foreground">
                             {roles.join(' · ')}
                         </dd>
                     </div>
 
-                    <div className="flex items-baseline justify-between gap-6 border-b border-zinc-200 py-3">
-                        <dt className="text-xs text-zinc-500">Akun</dt>
-                        <dd className="text-right text-xs text-zinc-900">
+                    <div className="flex items-baseline justify-between gap-6 border-b border-border py-3">
+                        <dt className="text-xs text-muted-foreground">Akun</dt>
+                        <dd className="text-right text-xs text-foreground">
                             {accountSummary}
                         </dd>
                     </div>
 
                     {accounts.deactivated > 0 && (
-                        <div className="flex items-baseline justify-between gap-6 border-b border-zinc-200 py-3">
-                            <dt className="text-xs text-zinc-500">
+                        <div className="flex items-baseline justify-between gap-6 border-b border-border py-3">
+                            <dt className="text-xs text-muted-foreground">
                                 Dinonaktifkan
                             </dt>
-                            <dd className="text-right text-xs text-zinc-900">
+                            <dd className="text-right text-xs text-foreground">
                                 {accounts.deactivated} · tetap tersimpan
                             </dd>
                         </div>
                     )}
                 </dl>
-            </main>
-        </div>
+            </div>
+        </TenantShell>
     );
 }

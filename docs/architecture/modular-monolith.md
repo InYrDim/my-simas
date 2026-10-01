@@ -458,3 +458,7 @@ surface minimal) — fixed in Fase 2 Stage 4.
   context. Its console route registers before the tenant `/users` routes.
 - Platform additions to its public surface: `TenantDirectory`,
   `TenantRoles::rolePermissions()`.
+- School-side shell: Platform's `Contracts/TenantNavigation` (modules register
+  their own sidebar entries; shared prop `tenantNav` is filtered by active
+  module + Gate) feeds Shared's generic `TenantShell`, used by Core's Beranda
+  and Identity's `/users` pages. Icon names are kebab-case lucide names, loaded lazily by the shell.

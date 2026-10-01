@@ -16,6 +16,7 @@ use Modules\Platform\App\Contracts\Events\TenantApproved;
 use Modules\Platform\App\Contracts\Events\TenantCreated;
 use Modules\Platform\App\Contracts\ModuleRegistry;
 use Modules\Platform\App\Contracts\PermissionRegistry;
+use Modules\Platform\App\Contracts\TenantNavigation;
 
 class IdentityServiceProvider extends ServiceProvider
 {
@@ -49,6 +50,7 @@ class IdentityServiceProvider extends ServiceProvider
         $this->registerRoutes();
         $this->registerPolicies();
         $this->registerIdentityPermissions();
+        $this->registerNavigation();
         $this->listenForTenantCreated();
         $this->listenForTenantApproved();
     }
@@ -102,6 +104,22 @@ class IdentityServiceProvider extends ServiceProvider
             'identity.users.update',
             'identity.users.deactivate',
             'identity.users.sendReset',
+        ]);
+    }
+
+    /**
+     * Register this module's school-side sidebar entries.
+     */
+    protected function registerNavigation(): void
+    {
+        $this->app->make(TenantNavigation::class)->register('identity', [
+            [
+                'label' => 'Pengguna',
+                'icon' => 'users',
+                'route' => 'identity.users.index',
+                'permission' => 'identity.users.view',
+                'order' => 50,
+            ],
         ]);
     }
 

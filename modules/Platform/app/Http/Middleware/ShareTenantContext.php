@@ -8,6 +8,7 @@ use Inertia\Inertia;
 use Modules\Platform\App\Contracts\ModuleRegistry;
 use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Contracts\TenantModules;
+use Modules\Platform\App\Contracts\TenantNavigation;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -15,6 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * - `tenant`:  { name, slug, timezone } — null on central hosts
  * - `modules`: active module keys for the current tenant
+ * - `tenantNav`: sidebar entries the signed-in user may see (lazy)
  *
  * Runs AFTER ResolveTenant (reads its context) and BEFORE
  * HandleInertiaRequests (whose share() merges with these props).
@@ -27,6 +29,7 @@ final class ShareTenantContext
         private readonly TenantContext $context,
         private readonly TenantModules $modules,
         private readonly ModuleRegistry $registry,
+        private readonly TenantNavigation $navigation,
     ) {}
 
     /**
@@ -37,6 +40,8 @@ final class ShareTenantContext
         Inertia::share([
             'tenant' => $this->sharedTenant(),
             'modules' => $this->sharedModules(),
+            // Lazy: the Gate needs the signed-in user, resolved at render.
+            'tenantNav' => fn (): array => $this->navigation->forCurrentUser(),
         ]);
 
         return $next($request);

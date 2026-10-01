@@ -56,6 +56,19 @@
 
 ## Surfaces
 
+- Master data (mockup phase), split into three sidebar entries:
+  - **Master Data** (`/master/*`) — base records that must exist: profil
+    sekolah, tahun ajaran, tingkat & jurusan, kelas, mata pelajaran, guru
+    & tendik, siswa, ruangan, ekstrakurikuler.
+  - **Akademik** (`/akademik/*`) — academic management on top of those
+    records: penempatan siswa (naik/pindah/lulus), pengampu mapel, wali
+    kelas, jam pelajaran, kalender akademik.
+  - **Impor Data** (`/kelola/impor`) — bulk CSV import of base records.
+  `MasterDataController` reads static data from
+  `Infrastructure/Mock/MasterMockData`; nothing is persisted and the
+  jenjang can be previewed with `?jenjang=sd|smp|sma|smk`. The DB phase
+  replaces the mock behind the controller (teachers/students keep an
+  optional plain `user_id` column, no FK to Identity).
 - `modules/Core/resources/js/Pages/Core/Beranda.tsx` — the school's
   landing record, phone-first, dated on the tenant's own clock. Surface
   brief: `.impeccable/surfaces/modules-core-resources-js-pages-core-beranda-tsx.md`.

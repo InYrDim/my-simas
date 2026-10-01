@@ -11,6 +11,7 @@ use Modules\Platform\App\Contracts\TenantCache;
 use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Contracts\TenantDirectory;
 use Modules\Platform\App\Contracts\TenantModules;
+use Modules\Platform\App\Contracts\TenantNavigation;
 use Modules\Platform\App\Contracts\TenantRoles;
 use Modules\Platform\App\Contracts\TenantStorage;
 use Modules\Platform\App\Contracts\TenantUrl;
@@ -33,6 +34,7 @@ use Modules\Platform\App\Infrastructure\Modules\DefaultModuleRegistry;
 use Modules\Platform\App\Infrastructure\Modules\DefaultTenantModules;
 use Modules\Platform\App\Infrastructure\Modules\ModuleFlagManager;
 use Modules\Platform\App\Infrastructure\Modules\TenantModulesCache;
+use Modules\Platform\App\Infrastructure\Navigation\DefaultTenantNavigation;
 use Modules\Platform\App\Infrastructure\Onboarding\DefaultTenantApplications;
 use Modules\Platform\App\Infrastructure\Permissions\DefaultPermissionRegistry;
 use Modules\Platform\App\Infrastructure\Permissions\DefaultTenantRoles;
@@ -100,6 +102,11 @@ class PlatformServiceProvider extends ServiceProvider
         // Permission layer (Stage 6): registry + sync + the Spatie seam.
         $this->app->singleton(DefaultPermissionRegistry::class);
         $this->app->alias(DefaultPermissionRegistry::class, PermissionRegistry::class);
+
+        // School-side sidebar registry: each module registers its own
+        // entries; the tenant shell reads the filtered list.
+        $this->app->singleton(DefaultTenantNavigation::class);
+        $this->app->alias(DefaultTenantNavigation::class, TenantNavigation::class);
 
         $this->app->singleton(TenantRoleResolver::class);
         $this->app->singleton(PermissionSync::class);
