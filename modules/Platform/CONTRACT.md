@@ -78,11 +78,17 @@
   shares the first central host; `url()` appends `school=<tenant id>`
   so the link resolves the tenant on arrival. Scheme/port from
   `config('tenancy.url_scheme')` / `url_port`.
-- `TenantApplications` (Fase 2) + `ApplicationData` readonly DTO
-  (Contracts/DTOs): `submit(payload)` (slug reserved/taken checks,
-  one pending application per email), `pending()`,
+- `TenantApplications` (Fase 2, reshaped in Fase 4) + `ApplicationData`
+  readonly DTO (Contracts/DTOs, now with `applicantId`, `planKey`,
+  `submittedAt`): `submit($applicantId, $school)` (ONE application per
+  applicant; slug reserved/taken checks; plan must be selectable; name
+  and email come from the applicant account), `resubmit($applicantId,
+  $school)` (a REJECTED application back to pending on the same row, the
+  provider's note kept), `forApplicant($applicantId)`, `pending()`,
   `approve($id, $decidedBy, $payload)` — REVALIDATES the corrected
-  slug, creates the tenant, enables onboarding modules from
+  slug (and a provider-corrected `plan_key`), creates the tenant, starts
+  the trial on the application's plan (fallback
+  `config('billing.trial_plan')`), enables onboarding modules from
   `config('tenancy.onboarding_modules')` (default `['identity']`;
   Platform reads the config, never hardcodes modules), fires
   `TenantApproved` INSIDE the transaction; `reject($id, $note,
@@ -150,10 +156,19 @@ Plan and status: `docs/ai/plan/fase-4/tenant-onboarding-plan.md`.
 - Email verification uses a temporary signed URL (60 min) carrying a hash
   of the email; no token table. Mail views live under the `Platform::`
   view namespace (`modules/Platform/mail`).
-- Tahap 1 state: the school form at `/pemohon` submits through the
-  existing `TenantApplications::submit()` with the applicant's own name
-  and email; binding by `applicant_id`, plan choice and `resubmit`
-  arrive in Tahap 2, the hand-over to the school session in Tahap 3.
+- An application belongs to its applicant through
+  `tenant_applications.applicant_id` (unique, plain column). Rows from
+  before accounts existed have it null and still approve/reject.
+- Onboarding at `/pemohon` offers the selectable plans
+  (`Plan::selectable()`, provider's `sort_order`); the choice is stored
+  in `tenant_applications.plan_key`. The trial starts at APPROVAL, on
+  that plan — before approval there is no tenant to subscribe.
+- The applicant is mailed the decision AFTER the approval transaction
+  committed (`ApplicantDecisionNotifier`; links from `TenantUrl::root()`
+  because decisions are made on the console host).
+- Still to come (Tahap 3): handing the applicant's password to the
+  school admin and opening the school session from the applicant login.
+  Until then approval also sends Identity's set-password mail.
 
 ## Queue context propagation (Stage 4)
 

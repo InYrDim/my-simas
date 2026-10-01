@@ -10,4 +10,17 @@ export interface ApplicationData {
     adminNote: string | null;
     decidedAt: string | null;
     decidedBy: number | null;
+    applicantId: number | null;
+    planKey: string | null;
+    submittedAt: string | null;
+}
+
+/** A plan as offered to an applicant during onboarding. */
+export interface PlanOption {
+    key: string;
+    name: string;
+    priceMonthly: number;
+    priceYearly: number;
+    maxUsers: number | null;
+    modules: string[];
 }

@@ -12,6 +12,8 @@ use Modules\Platform\App\Contracts\Exceptions\ApplicationNotPendingException;
 use Modules\Platform\App\Contracts\Exceptions\InvalidApplicationException;
 use Modules\Platform\App\Contracts\TenantApplications;
 use Modules\Platform\App\Domain\Exceptions\BillingException;
+use Modules\Platform\App\Domain\Models\Applicant;
+use Modules\Platform\App\Domain\Models\Plan;
 use Modules\Platform\App\Domain\Models\ProviderUser;
 use Modules\Platform\App\Domain\Models\Tenant;
 use Modules\Platform\App\Domain\Models\TenantApplication;
@@ -33,43 +35,103 @@ use Modules\Platform\App\Infrastructure\Modules\ModuleFlagManager;
  *     Identity seeds default roles; a failing listener aborts here),
  *  3. enable config('tenancy.onboarding_modules') flags (flagged
  *     modules only — core is always active and never listed),
- *  4. stamp the decision columns,
- *  5. fire TenantApproved (Identity provisions the first admin).
+ *  4. start the trial on the application's plan,
+ *  5. stamp the decision columns,
+ *  6. fire TenantApproved (Identity provisions the first admin).
+ *
+ * The applicant is told about the decision by mail AFTER the transaction
+ * committed (ApplicantDecisionNotifier) — a mail must never announce a
+ * school that was rolled back.
  *
  * Platform reads the onboarding config; it never hardcodes modules.
  */
 final class DefaultTenantApplications implements TenantApplications
 {
     /**
-     * Required keys for submit/approve payloads.
+     * Required school keys for submit/resubmit payloads.
      *
      * @var array<int, string>
      */
-    private const REQUIRED = ['school_name', 'desired_slug', 'applicant_name', 'applicant_email'];
+    private const REQUIRED = ['school_name', 'desired_slug'];
 
     public function __construct(
         private readonly ModuleFlagManager $flags,
         private readonly SubscriptionManager $subscriptions,
+        private readonly ApplicantDecisionNotifier $notifier,
     ) {}
 
     public static function payloadKeys(): array
     {
-        return ['school_name', 'desired_slug', 'timezone', 'applicant_name', 'applicant_email', 'applicant_message'];
+        return ['school_name', 'desired_slug', 'timezone', 'plan_key', 'applicant_message'];
     }
 
-    public function submit(array $payload): void
+    public function submit(int $applicantId, array $school): ApplicationData
     {
-        $this->assertPayload($payload);
+        $applicant = $this->applicant($applicantId);
 
-        $application = TenantApplication::query()->create([
-            'school_name' => $this->str($payload, 'school_name'),
-            'desired_slug' => $this->normalizedSlug($payload),
-            'timezone' => $this->normalizedTimezone($payload),
-            'applicant_name' => $this->str($payload, 'applicant_name'),
-            'applicant_email' => $this->normalizedEmail($payload),
-            'applicant_message' => $payload['applicant_message'] ?? null,
+        $existing = TenantApplication::query()->where('applicant_id', $applicant->id)->first();
+
+        if ($existing !== null) {
+            throw new InvalidApplicationException($existing->status === TenantApplicationStatus::Rejected
+                ? 'The application was rejected; resubmit it instead of submitting a new one.'
+                : "The applicant already has a {$existing->status->value} application.");
+        }
+
+        $this->assertPayload($school, $applicant->email);
+
+        $application = new TenantApplication;
+        $application->forceFill([
+            'applicant_id' => $applicant->id,
+            'applicant_name' => $applicant->name,
+            'applicant_email' => mb_strtolower($applicant->email),
+            ...$this->schoolAttributes($school),
             'status' => TenantApplicationStatus::Pending,
-        ]);
+            'submitted_at' => now(),
+        ])->save();
+
+        return $this->toData($application);
+    }
+
+    public function resubmit(int $applicantId, array $school): ApplicationData
+    {
+        $applicant = $this->applicant($applicantId);
+
+        $application = TenantApplication::query()
+            ->where('applicant_id', $applicant->id)
+            ->lockForUpdate()
+            ->first();
+
+        if ($application === null) {
+            throw new InvalidApplicationException('The applicant has no application to resubmit.');
+        }
+
+        if ($application->status !== TenantApplicationStatus::Rejected) {
+            throw new ApplicationNotPendingException(
+                "Application [{$application->id}] is not rejected (current: {$application->status->value})."
+            );
+        }
+
+        $this->assertPayload($school, $applicant->email, ignoreApplicationId: $application->id);
+
+        // The provider's note stays: the reviewer sees what was asked for.
+        $application->forceFill([
+            'applicant_name' => $applicant->name,
+            'applicant_email' => mb_strtolower($applicant->email),
+            ...$this->schoolAttributes($school),
+            'status' => TenantApplicationStatus::Pending,
+            'submitted_at' => now(),
+            'decided_at' => null,
+            'decided_by' => null,
+        ])->save();
+
+        return $this->toData($application);
+    }
+
+    public function forApplicant(int $applicantId): ?ApplicationData
+    {
+        $application = TenantApplication::query()->where('applicant_id', $applicantId)->first();
+
+        return $application === null ? null : $this->toData($application);
     }
 
     public function pending(): iterable
@@ -104,7 +166,18 @@ final class DefaultTenantApplications implements TenantApplications
         ];
         $this->assertSchoolData($final, ignoreApplicationId: $application->id);
 
-        $tenantId = DB::transaction(function () use ($application, $final, $decidedBy, $payload): string {
+        // A plan the provider picks here must be selectable. The plan the
+        // applicant picked earlier is NOT re-checked: if it was archived
+        // meanwhile, the trial simply does not start (see startTrial).
+        $correctedPlan = $this->planKey($payload);
+
+        if ($correctedPlan !== null) {
+            $this->assertPlanSelectable($correctedPlan);
+        }
+
+        $planKey = $correctedPlan ?? $application->plan_key;
+
+        $tenantId = DB::transaction(function () use ($application, $final, $planKey, $decidedBy, $payload): string {
             $tenant = Tenant::query()->create([
                 'name' => $final['school_name'],
                 'slug' => $final['desired_slug'],
@@ -118,12 +191,13 @@ final class DefaultTenantApplications implements TenantApplications
                 $this->flags->enable($tenant->id, $module);
             }
 
-            $this->startTrial($tenant->id);
+            $this->startTrial($tenant->id, $planKey);
 
             $application->forceFill([
                 'school_name' => $final['school_name'],
                 'desired_slug' => $final['desired_slug'],
                 'timezone' => $final['timezone'],
+                'plan_key' => $planKey,
                 'status' => TenantApplicationStatus::Approved,
                 'admin_note' => $payload['admin_note'] ?? null,
                 'decided_at' => now(),
@@ -142,18 +216,24 @@ final class DefaultTenantApplications implements TenantApplications
             return $tenant->id;
         });
 
-        return $this->toData($application->refresh());
+        $application->refresh();
+
+        $this->notifier->approved($application, $tenantId);
+
+        return $this->toData($application);
     }
 
     /**
-     * New tenants start on a trial. A missing trial plan (master data not
-     * seeded) must not block onboarding: the tenant just has no
-     * subscription until the provider assigns one.
+     * New tenants start on a trial of the chosen plan, or of the default
+     * trial plan when the application carries none. A missing plan
+     * (master data not seeded, or archived since the applicant chose it)
+     * must not block onboarding: the tenant just has no subscription
+     * until the provider assigns one.
      */
-    private function startTrial(string $tenantId): void
+    private function startTrial(string $tenantId, ?string $planKey): void
     {
         try {
-            $this->subscriptions->startTrial($tenantId, (string) config('billing.trial_plan'));
+            $this->subscriptions->startTrial($tenantId, $planKey ?? (string) config('billing.trial_plan'));
         } catch (BillingException $e) {
             Log::warning('Trial not started for new tenant: '.$e->getMessage(), ['tenant_id' => $tenantId]);
         }
@@ -178,20 +258,51 @@ final class DefaultTenantApplications implements TenantApplications
             'decided_by' => $decidedBy,
         ])->save();
 
+        $this->notifier->rejected($application);
+
         return $this->toData($application);
     }
 
+    private function applicant(int $applicantId): Applicant
+    {
+        $applicant = Applicant::query()->find($applicantId);
+
+        if ($applicant === null) {
+            throw new InvalidApplicationException("Applicant [{$applicantId}] does not exist.");
+        }
+
+        return $applicant;
+    }
+
     /**
-     * Full submission-shape validation (applicant identity required).
+     * The columns a submission writes from the school payload.
      *
-     * @param  array<string, mixed>  $payload
+     * @param  array<string, mixed>  $school
+     * @return array<string, mixed>
      */
-    private function assertPayload(array $payload): void
+    private function schoolAttributes(array $school): array
+    {
+        return [
+            'school_name' => $this->str($school, 'school_name'),
+            'desired_slug' => $this->normalizedSlug($school),
+            'timezone' => $this->normalizedTimezone($school),
+            'plan_key' => $this->planKey($school),
+            'applicant_message' => $school['applicant_message'] ?? null,
+        ];
+    }
+
+    /**
+     * Full submission-shape validation for a school payload coming from
+     * the applicant with the given email.
+     *
+     * @param  array<string, mixed>  $school
+     */
+    private function assertPayload(array $school, string $applicantEmail, ?int $ignoreApplicationId = null): void
     {
         $errors = [];
 
         foreach (self::REQUIRED as $key) {
-            if (! isset($payload[$key]) || trim((string) $payload[$key]) === '') {
+            if (! isset($school[$key]) || trim((string) $school[$key]) === '') {
                 $errors[] = "The {$key} is required.";
             }
         }
@@ -200,7 +311,13 @@ final class DefaultTenantApplications implements TenantApplications
             throw new InvalidApplicationException(implode(' ', $errors));
         }
 
-        $this->assertSchoolData($payload);
+        $this->assertSchoolData([...$school, 'applicant_email' => $applicantEmail], $ignoreApplicationId);
+
+        $planKey = $this->planKey($school);
+
+        if ($planKey !== null) {
+            $this->assertPlanSelectable($planKey);
+        }
     }
 
     /**
@@ -208,8 +325,8 @@ final class DefaultTenantApplications implements TenantApplications
      * reserved list, taken (incl. trashed tenants), duplicate pending
      * application, valid IANA timezone, plus the applicant-email
      * uniqueness among pending applications. ignoreApplicationId
-     * excludes the application under approval from the pending checks
-     * (its own row must not block its own approval).
+     * excludes the application under approval or resubmission from the
+     * pending checks (its own row must not block itself).
      *
      * @param  array<string, mixed>  $payload
      */
@@ -259,6 +376,26 @@ final class DefaultTenantApplications implements TenantApplications
     }
 
     /**
+     * A plan can be chosen only while it is active and not archived.
+     */
+    private function assertPlanSelectable(string $planKey): void
+    {
+        if (! Plan::query()->selectable()->where('key', $planKey)->exists()) {
+            throw new InvalidApplicationException("The plan [{$planKey}] is not available.");
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function planKey(array $payload): ?string
+    {
+        $planKey = trim((string) ($payload['plan_key'] ?? ''));
+
+        return $planKey !== '' ? $planKey : null;
+    }
+
+    /**
      * @param  array<string, mixed>  $payload
      */
     private function str(array $payload, string $key): string
@@ -301,18 +438,6 @@ final class DefaultTenantApplications implements TenantApplications
 
     private function toData(TenantApplication $application): ApplicationData
     {
-        return new ApplicationData(
-            id: (int) $application->id,
-            schoolName: $application->school_name,
-            desiredSlug: $application->desired_slug,
-            timezone: $application->timezone,
-            applicantName: $application->applicant_name,
-            applicantEmail: $application->applicant_email,
-            applicantMessage: $application->applicant_message,
-            status: $application->status->value,
-            adminNote: $application->admin_note,
-            decidedAt: $application->decided_at?->toIso8601String(),
-            decidedBy: $application->decided_by,
-        );
+        return ApplicationDataMapper::map($application);
     }
 }

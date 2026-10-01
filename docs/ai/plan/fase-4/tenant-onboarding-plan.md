@@ -73,8 +73,8 @@ Setelah ini, calon admin sekolah bisa membuat akun, mengisi data sekolah dan mem
 - `DefaultTenantApplications::approve()` memanggil `SubscriptionManager::startTrial()` dengan `plan_key` pengajuan, fallback `config('billing.trial_plan')`. Perilaku lama dipertahankan: paket hilang hanya menulis log warning dan tidak menggagalkan ACC.
 
 ### Platform — kontrak publik (`modules/Platform/app/Contracts/`)
-- `TenantApplications`: `submit(int $applicantId, array $school)` (signature berubah), `resubmit(int $id, array $school)` (hanya dari *rejected*), `forApplicant(int $applicantId): ?ApplicationData`.
-- `DTOs/ApplicationData`: tambah `planKey`.
+- `TenantApplications`: `submit(int $applicantId, array $school)` (signature berubah), `resubmit(int $applicantId, array $school)` (hanya dari *rejected*), `forApplicant(int $applicantId): ?ApplicationData`.
+- `DTOs/ApplicationData`: tambah `applicantId`, `planKey`, `submittedAt`.
 - `Events/TenantApproved`: tambah `?string $passwordHash = null` (event sinkron dalam transaksi, tidak di-queue).
 - **Baru** `SchoolSessionOpener::attempt(string $tenantId, string $email, string $password, bool $remember): bool` — default Platform mengembalikan `false`; Identity mengikat implementasinya.
 - **Baru** `TenantSession::remember(string $tenantId): void` — membungkus `ResolveTenant::SESSION_KEY` yang internal.
@@ -102,7 +102,7 @@ Legenda: ⬜ belum · 🟡 berjalan · ✅ selesai. Berhenti di antara tahap dan
 | Tahap | Cakupan | Status | Catatan |
 | --- | --- | --- | --- |
 | 1 | Akun pemohon: daftar (mengganti `/daftar-sekolah`), login/keluar, verifikasi email | ✅ | Tabel `applicants`, guard `applicant`, daftar + honeypot, login/keluar, verifikasi lewat signed URL, halaman pemohon (shadcn). Form data sekolah sudah pindah ke `/pemohon` memakai kontrak `submit()` lama (lihat Log keputusan). 411 tes lulus, Deptrac 0 pelanggaran, build sukses. Halaman belum dibuka di browser. |
-| 2 | Onboarding: data sekolah + pilih paket, status, ajukan ulang, trial pada paket terpilih, email keputusan | ⬜ | |
+| 2 | Onboarding: data sekolah + pilih paket, status, ajukan ulang, trial pada paket terpilih, email keputusan | ✅ | Pengajuan terikat ke akun (`applicant_id`, satu per pemohon), pilih paket di onboarding, trial pada paket itu saat ACC (provider bisa mengoreksi), ajukan ulang di baris yang sama, email disetujui/ditolak. 428 tes lulus, Deptrac 0 pelanggaran, tipe TS bersih. Halaman belum dibuka di browser. |
 | 3 | Jembatan ACC: password dipindah, login pemohon membuka sesi sekolah | ⬜ | |
 | 4 | Provider mengundang pemohon; lupa kata sandi pemohon | ⬜ | |
 
@@ -124,15 +124,15 @@ Legenda: ⬜ belum · 🟡 berjalan · ✅ selesai. Berhenti di antara tahap dan
 **Selesai bila:** pengunjung bisa mendaftar, memverifikasi email, login, dan keluar sebagai pemohon; tanpa verifikasi ia tertahan di halaman pemberitahuan. Bukti: `php artisan test --compact modules/Platform` → lulus.
 
 ### Tahap 2 — Onboarding, paket, keputusan
-- [ ] Migrasi `applicant_id`, `plan_key`, `submitted_at` pada `tenant_applications` — `modules/Platform/database/migrations/`
-- [ ] Kontrak `submit` / `resubmit` / `forApplicant` dan `planKey` di DTO — `modules/Platform/app/Contracts/TenantApplications.php`, `modules/Platform/app/Contracts/DTOs/ApplicationData.php`
-- [ ] Implementasi + validasi paket + trial pada paket terpilih — `modules/Platform/app/Infrastructure/Onboarding/DefaultTenantApplications.php`
-- [ ] Controller onboarding (tampil, ajukan, ajukan ulang) — `modules/Platform/app/Http/Controllers/Applicant/OnboardingController.php`
-- [ ] Halaman `Onboarding` (form dua langkah, status, catatan penolakan) — `modules/Platform/resources/js/Pages/Platform/Applicant/Onboarding.tsx`
-- [ ] Review provider menampilkan pemohon dan paket, paket bisa dikoreksi — `modules/Platform/app/Http/Controllers/ApplicationReviewController.php`, `modules/Platform/resources/js/Pages/Platform/Applications/`
-- [ ] Mail disetujui (kode sekolah, paket, akhir trial) dan ditolak (catatan) — `modules/Platform/app/Infrastructure/Mail/`
-- [ ] Seeder dev memakai akun pemohon — `modules/Platform/database/seeders/PlatformDevSeeder.php`
-- [ ] Tes: satu pengajuan per pemohon, aturan slug, validasi paket, tolak → ajukan ulang, isolasi antar pemohon, trial pada paket terpilih dan fallback — `modules/Platform/tests/Feature/ApplicantOnboardingTest.php`; sesuaikan `TenantApplicationsTest.php`, `ProviderReviewTest.php`
+- [x] Migrasi `applicant_id` (unik), `plan_key`, `submitted_at` pada `tenant_applications` — `modules/Platform/database/migrations/0005_01_01_000001_add_applicant_and_plan_to_tenant_applications_table.php`
+- [x] Kontrak `submit` / `resubmit` / `forApplicant`; `applicantId`, `planKey`, `submittedAt` di DTO — `modules/Platform/app/Contracts/TenantApplications.php`, `modules/Platform/app/Contracts/DTOs/ApplicationData.php`
+- [x] Implementasi + validasi paket + trial pada paket terpilih — `modules/Platform/app/Infrastructure/Onboarding/DefaultTenantApplications.php`, `ApplicationDataMapper.php`
+- [x] Controller onboarding (tampil, ajukan, ajukan ulang) + route `PUT /pemohon/pengajuan` — `modules/Platform/app/Http/Controllers/Applicant/OnboardingController.php`, `modules/Platform/routes/web.php`
+- [x] Halaman `Onboarding` (data sekolah, pilih paket, status, catatan penolakan) + `PlanPicker` — `modules/Platform/resources/js/Pages/Platform/Applicant/Onboarding.tsx`, `modules/Platform/resources/js/Components/PlanPicker.tsx`
+- [x] Review provider menampilkan pemohon dan paket, paket bisa dikoreksi — `modules/Platform/app/Http/Controllers/ApplicationReviewController.php`, `modules/Platform/resources/js/Pages/Platform/Applications/Show.tsx`
+- [x] Mail disetujui (kode sekolah, paket, akhir trial) dan ditolak (catatan), dikirim setelah transaksi selesai — `modules/Platform/app/Infrastructure/Mail/`, `modules/Platform/app/Infrastructure/Onboarding/ApplicantDecisionNotifier.php`, `modules/Platform/mail/`
+- [x] Seeder dev memakai akun pemohon (`kepsek@sekolah-c.test` / `password`) — `modules/Platform/database/seeders/PlatformDevSeeder.php`
+- [x] Tes — `modules/Platform/tests/Feature/ApplicantOnboardingTest.php` (baru, 15 tes); disesuaikan: `SchoolApplyTest.php`, `TenantApplicationsTest.php`, `BillingSubscriptionTest.php`
 
 **Selesai bila:** pemohon terverifikasi bisa mengajukan dengan paket, melihat status, dan mengajukan ulang setelah ditolak; ACC membuat tenant dengan trial pada paket itu. Bukti: `php artisan test --compact modules/Platform` → lulus.
 
@@ -190,6 +190,9 @@ Legenda: ⬜ belum · 🟡 berjalan · ✅ selesai. Berhenti di antara tahap dan
 Diisi selama eksekusi; dokumen ini hidup.
 
 ### Log keputusan
+- 2026-10-01 — `resubmit` menerima `applicantId`, bukan id pengajuan: kepemilikan melekat pada pemohon yang login, jadi tidak ada id yang bisa ditukar untuk menyentuh pengajuan orang lain.
+- 2026-10-01 — Paket yang dipilih pemohon tidak divalidasi ulang saat ACC; hanya paket hasil koreksi provider yang wajib bisa dipilih. Bila paket pemohon sudah diarsipkan, ACC tetap jalan tanpa langganan (perilaku lama: log warning).
+- 2026-10-01 — Email keputusan hanya dikirim untuk pengajuan yang punya akun pemohon; baris lama tanpa akun tidak punya login pemohon untuk dituju.
 - 2026-10-01 — Tahap 1 memindahkan form data sekolah ke `/pemohon` (di balik akun terverifikasi) memakai `TenantApplications::submit()` yang ada, dengan nama/email dari akun dan pengajuan terakhir dicari lewat email. Alasan: `/daftar-sekolah` lama dihapus di tahap ini, jadi tanpa itu tidak ada cara mengajukan sekolah sampai Tahap 2. Pengikatan `applicant_id`, pilih paket, dan `resubmit` tetap di Tahap 2; untuk sementara ajukan ulang setelah ditolak membuat baris pengajuan baru.
 - 2026-10-01 — Halaman pemohon memakai primitif shadcn dari Shared (`Card`, `Field`, `Input`), bukan `AuthShell`/`AuthInput`, mengikuti `.ai/rules/js.md`.
 - 2026-10-01 — Throttle IP hanya di POST `/daftar-sekolah` (dulu GET ikut terkena), supaya membuka form tidak memakan kuota.
@@ -199,7 +202,10 @@ Diisi selama eksekusi; dokumen ini hidup.
 - `auth:applicant` tidak dipakai: `redirectGuestsTo` di `bootstrap/app.php` sadar-host dan mengirim tamu ke login **sekolah**. Pemohon memakai middleware sendiri (`AuthenticateApplicant`); `guest:` juga diganti pengecekan di controller.
 - Di tes, `actingAs($x, 'applicant')` menjadikan guard itu guard default, sehingga route sekolah (`auth`) tampak terbuka bagi pemohon. Itu artefak tes: pemisahan guard diuji lewat login sungguhan (POST `/pemohon/masuk`).
 - Model yang dipegang guard tidak ikut ter-refresh dalam satu proses tes; setelah verifikasi, tes memakai `actingAs($applicant->fresh(), ...)`.
-- ACC masih mengirim email atur kata sandi (jalur lama) sampai Tahap 3; pesan di halaman status sudah menyesuaikan.
+- ACC masih mengirim email atur kata sandi (jalur lama) sampai Tahap 3, jadi pemohon yang disetujui menerima dua email: "disetujui" dari Platform dan "aktivasi akun" dari Identity. Teks email dan halaman status sudah menyebut itu; keduanya perlu diubah di Tahap 3.
+- Tautan di email keputusan dibuat dari `TenantUrl::root()`, bukan `route()`: keputusan diambil di host console, dan `route()` akan membawa host itu.
+- Pesan aturan slug/paket dari `DefaultTenantApplications` masih berbahasa Inggris dan tampil apa adanya di form pemohon (perilaku lama form publik). Belum diterjemahkan.
+- Tidak ada primitif radio group di Shared; `PlanPicker` memakai input radio native di dalam label seukuran kartu, tanpa menambah dependensi.
 
 ### Hasil akhir
 Belum diisi.

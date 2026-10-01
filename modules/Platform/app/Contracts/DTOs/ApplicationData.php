@@ -3,9 +3,11 @@
 namespace Modules\Platform\App\Contracts\DTOs;
 
 /**
- * Read-only snapshot of a tenant application for the provider console.
- * The internal model is never handed to other modules.
- */ final readonly class ApplicationData
+ * Read-only snapshot of a tenant application, for the provider console
+ * and the applicant's own onboarding page. The internal model is never
+ * handed to other modules.
+ */
+final readonly class ApplicationData
 {
     public function __construct(
         public int $id,
@@ -19,5 +21,8 @@ namespace Modules\Platform\App\Contracts\DTOs;
         public ?string $adminNote,
         public ?string $decidedAt,
         public ?int $decidedBy,
+        public ?int $applicantId = null,
+        public ?string $planKey = null,
+        public ?string $submittedAt = null,
     ) {}
 }

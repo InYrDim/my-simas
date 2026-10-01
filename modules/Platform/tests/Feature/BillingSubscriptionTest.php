@@ -14,6 +14,7 @@ use Modules\Platform\App\Infrastructure\Billing\BillingSummary;
 use Modules\Platform\App\Infrastructure\Billing\InvoiceIssuer;
 use Modules\Platform\App\Infrastructure\Billing\PaymentGateway;
 use Modules\Platform\App\Infrastructure\Billing\SubscriptionManager;
+use Modules\Platform\Database\Factories\ApplicantFactory;
 use Modules\Platform\Database\Factories\PlanFactory;
 use Modules\Platform\Database\Factories\ProviderUserFactory;
 use Modules\Platform\Database\Factories\SubscriptionFactory;
@@ -57,11 +58,9 @@ it('starts a trial automatically when an application is approved', function () {
     PlanFactory::new()->create(['key' => 'starter']);
     $applications = app(TenantApplications::class);
 
-    $applications->submit([
+    $applications->submit(ApplicantFactory::new()->create()->id, [
         'school_name' => 'SMA Negeri Uji Coba',
         'desired_slug' => 'sman-uji',
-        'applicant_name' => 'Budi Santoso',
-        'applicant_email' => 'budi@sman-uji.sch.id',
     ]);
 
     $applications->approve($applications->pending()[0]->id, ProviderUserFactory::new()->create()->id);
@@ -75,11 +74,9 @@ it('starts a trial automatically when an application is approved', function () {
 it('still approves an application when no trial plan is seeded', function () {
     $applications = app(TenantApplications::class);
 
-    $applications->submit([
+    $applications->submit(ApplicantFactory::new()->create()->id, [
         'school_name' => 'SMA Negeri Uji Coba',
         'desired_slug' => 'sman-uji',
-        'applicant_name' => 'Budi Santoso',
-        'applicant_email' => 'budi@sman-uji.sch.id',
     ]);
 
     $applications->approve($applications->pending()[0]->id, ProviderUserFactory::new()->create()->id);

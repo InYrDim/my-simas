@@ -9,6 +9,7 @@ use Modules\Platform\App\Contracts\Exceptions\InvalidApplicationException;
 use Modules\Platform\App\Contracts\TenantApplications;
 use Modules\Platform\App\Contracts\TenantModules;
 use Modules\Platform\App\Contracts\TenantRoles;
+use Modules\Platform\App\Domain\Models\Applicant;
 use Modules\Platform\App\Domain\Models\ProviderUser;
 use Modules\Platform\App\Domain\Models\Tenant;
 use Modules\Platform\Database\Factories\ProviderUserFactory;
@@ -34,6 +35,23 @@ function providerDecider(): ProviderUser
     return $provider;
 }
 
+/**
+ * Submit through the contract as the applicant named in the payload
+ * (the account is created on first use, so two submissions with the
+ * same email come from the SAME applicant).
+ *
+ * @param  array<string, mixed>  $payload
+ */
+function submitApplication(array $payload): ApplicationData
+{
+    $applicant = Applicant::query()->firstOrCreate(
+        ['email' => mb_strtolower((string) $payload['applicant_email'])],
+        ['name' => $payload['applicant_name'], 'password' => 'password'],
+    );
+
+    return applications()->submit($applicant->id, $payload);
+}
+
 function validApplicationPayload(): array
 {
     return [
@@ -47,7 +65,7 @@ function validApplicationPayload(): array
 }
 
 it('accepts a valid application as pending', function () {
-    applications()->submit(validApplicationPayload());
+    submitApplication(validApplicationPayload());
 
     $pending = applications()->pending();
 
@@ -66,7 +84,7 @@ it('rejects submissions violating slug rules', function (string $slug, ?string $
         TenantApplicationFactory::new()->create(['desired_slug' => 'taken-slug']);
     }
 
-    applications()->submit([...validApplicationPayload(), 'desired_slug' => $slug]);
+    submitApplication([...validApplicationPayload(), 'desired_slug' => $slug]);
 })
     ->throws(InvalidApplicationException::class)
     ->with([
@@ -77,34 +95,68 @@ it('rejects submissions violating slug rules', function (string $slug, ?string $
     ]);
 
 it('rejects a second pending application for the same applicant email', function () {
-    applications()->submit(validApplicationPayload());
+    submitApplication(validApplicationPayload());
 
-    applications()->submit([
+    submitApplication([
         ...validApplicationPayload(),
         'desired_slug' => 'other-school',
         'applicant_email' => 'budi@sman-uji.sch.id',
     ]);
 })->throws(InvalidApplicationException::class, 'pending application');
 
-it('allows the same applicant email again after rejection', function () {
+it('sends a rejected application back to review on the same row', function () {
     $decider = providerDecider();
-    applications()->submit(validApplicationPayload());
+    $submitted = submitApplication(validApplicationPayload());
+    applications()->reject($submitted->id, 'Belum lengkap', $decider->id);
 
-    $application = applications()->pending()[0];
-    applications()->reject($application->id, 'Belum lengkap', $decider->id);
+    $resubmitted = applications()->resubmit($submitted->applicantId, [
+        ...validApplicationPayload(),
+        'school_name' => 'SMA Negeri Uji Coba Lengkap',
+    ]);
 
-    applications()->submit(validApplicationPayload());
-
-    expect(applications()->pending())->toHaveCount(1);
+    expect($resubmitted->id)->toBe($submitted->id)
+        ->and($resubmitted->status)->toBe('pending')
+        ->and($resubmitted->schoolName)->toBe('SMA Negeri Uji Coba Lengkap')
+        ->and($resubmitted->decidedAt)->toBeNull()
+        ->and($resubmitted->decidedBy)->toBeNull()
+        // The provider's note stays for the next review.
+        ->and($resubmitted->adminNote)->toBe('Belum lengkap')
+        ->and(applications()->pending())->toHaveCount(1)
+        ->and(DB::table('tenant_applications')->count())->toBe(1);
 });
 
+it('refuses to submit a new application after a rejection, and to resubmit one that is not rejected', function () {
+    $decider = providerDecider();
+    $submitted = submitApplication(validApplicationPayload());
+
+    expect(fn () => applications()->resubmit($submitted->applicantId, validApplicationPayload()))
+        ->toThrow(ApplicationNotPendingException::class);
+
+    applications()->reject($submitted->id, null, $decider->id);
+
+    expect(fn () => submitApplication(validApplicationPayload()))
+        ->toThrow(InvalidApplicationException::class, 'resubmit');
+});
+
+it('returns the application of an applicant, or null when there is none', function () {
+    $submitted = submitApplication(validApplicationPayload());
+    $other = Applicant::query()->create(['name' => 'Lain', 'email' => 'lain@sman-uji.sch.id', 'password' => 'password']);
+
+    expect(applications()->forApplicant($submitted->applicantId)?->id)->toBe($submitted->id)
+        ->and(applications()->forApplicant($other->id))->toBeNull();
+});
+
+it('rejects a submission from an unknown applicant', function () {
+    applications()->submit(999_999, validApplicationPayload());
+})->throws(InvalidApplicationException::class, 'does not exist');
+
 it('rejects invalid timezone on submit', function () {
-    applications()->submit([...validApplicationPayload(), 'timezone' => 'Not/AZone']);
+    submitApplication([...validApplicationPayload(), 'timezone' => 'Not/AZone']);
 })->throws(InvalidApplicationException::class);
 
 it('approves transactionally: tenant + default roles + onboarding flags + decision stamped', function () {
     $decider = providerDecider();
-    applications()->submit(validApplicationPayload());
+    submitApplication(validApplicationPayload());
     $id = applications()->pending()[0]->id;
 
     $data = applications()->approve($id, $decider->id);
@@ -176,7 +228,7 @@ it('fires TenantApproved inside approval with the right payload', function () {
     Event::fake([TenantApproved::class]);
 
     $decider = providerDecider();
-    applications()->submit(validApplicationPayload());
+    submitApplication(validApplicationPayload());
     $id = applications()->pending()[0]->id;
 
     applications()->approve($id, $decider->id);
@@ -192,7 +244,7 @@ it('fires TenantApproved inside approval with the right payload', function () {
 
 it('does not fire TenantApproved when tenant creation or listeners fail (transaction rolls back)', function () {
     $decider = providerDecider();
-    applications()->submit(validApplicationPayload());
+    submitApplication(validApplicationPayload());
     $id = applications()->pending()[0]->id;
 
     // TenantApproved listener that explodes: approval must abort AND

@@ -7,21 +7,21 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Platform\App\Contracts\Exceptions\ApplicationNotPendingException;
 use Modules\Platform\App\Contracts\Exceptions\InvalidApplicationException;
 use Modules\Platform\App\Contracts\TenantApplications;
 use Modules\Platform\App\Domain\Models\Applicant;
-use Modules\Platform\App\Domain\Models\TenantApplication;
-use Modules\Platform\App\Domain\Models\TenantApplicationStatus;
+use Modules\Platform\App\Domain\Models\Plan;
 
 /**
- * The applicant's onboarding page: fill in the school and submit it for
- * provider review, then follow its status.
+ * The applicant's onboarding page: fill in the school, choose a plan and
+ * submit for provider review, then follow the status. A rejected
+ * application is corrected and resubmitted on the same row.
  *
- * Tahap 1 scope: the school form goes through the existing
- * TenantApplications::submit() with the applicant's own name and email,
- * and the latest application for that email is shown. Binding the
- * application to the account, plan choice and resubmission arrive with
- * Tahap 2 (docs/ai/plan/fase-4/tenant-onboarding-plan.md).
+ * Domain rules (one application per applicant, slug and plan checks)
+ * live in the TenantApplications contract; this controller only
+ * translates HTTP ⇄ contract. The applicant's identity always comes
+ * from the session, never from the form.
  */
 final class OnboardingController
 {
@@ -39,57 +39,87 @@ final class OnboardingController
     public function show(): Response
     {
         $applicant = $this->applicant();
-        $application = $this->latestApplication($applicant);
 
         return Inertia::render('Platform/Applicant/Onboarding', [
             'applicant' => ['name' => $applicant->name, 'email' => $applicant->email],
             'timezones' => self::TIMEZONES,
-            'application' => $application === null ? null : [
-                'schoolName' => $application->school_name,
-                'desiredSlug' => $application->desired_slug,
-                'timezone' => $application->timezone,
-                'status' => $application->status->value,
-                'adminNote' => $application->admin_note,
-            ],
+            'plans' => $this->plans(),
+            'trialDays' => (int) config('billing.trial_days', 14),
+            'application' => $this->applications->forApplicant($applicant->id),
         ]);
     }
 
+    /**
+     * First submission.
+     */
     public function store(Request $request): RedirectResponse
     {
-        $applicant = $this->applicant();
-        $latest = $this->latestApplication($applicant);
-
-        if ($latest !== null && $latest->status !== TenantApplicationStatus::Rejected) {
-            return back()->withErrors([
-                'application' => 'Anda sudah memiliki pengajuan yang sedang diproses atau sudah disetujui.',
-            ]);
-        }
-
-        $validated = $request->validate([
-            'school_name' => ['required', 'string', 'max:255'],
-            'desired_slug' => ['required', 'string', 'max:255'],
-            'timezone' => ['nullable', 'string', 'max:255'],
-            'applicant_message' => ['nullable', 'string', 'max:2000'],
-        ], [
-            'school_name.required' => 'Nama sekolah wajib diisi.',
-            'desired_slug.required' => 'Kode sekolah wajib diisi.',
-        ]);
-
         try {
-            $this->applications->submit([
-                ...$validated,
-                'applicant_name' => $applicant->name,
-                'applicant_email' => $applicant->email,
-            ]);
+            $this->applications->submit($this->applicant()->id, $this->validated($request));
         } catch (InvalidApplicationException $e) {
-            return back()->withErrors([
-                'application' => $e->getMessage(),
-            ]);
+            return back()->withErrors(['application' => $e->getMessage()]);
         }
 
         return redirect()
             ->route('applicant.home')
             ->with('status', 'Pengajuan terkirim — mohon tunggu ACC dari provider.');
+    }
+
+    /**
+     * Resubmission of a rejected application.
+     */
+    public function update(Request $request): RedirectResponse
+    {
+        try {
+            $this->applications->resubmit($this->applicant()->id, $this->validated($request));
+        } catch (InvalidApplicationException|ApplicationNotPendingException $e) {
+            return back()->withErrors(['application' => $e->getMessage()]);
+        }
+
+        return redirect()
+            ->route('applicant.home')
+            ->with('status', 'Pengajuan dikirim ulang — mohon tunggu ACC dari provider.');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function validated(Request $request): array
+    {
+        return $request->validate([
+            'school_name' => ['required', 'string', 'max:255'],
+            'desired_slug' => ['required', 'string', 'max:255'],
+            'timezone' => ['nullable', 'string', 'max:255'],
+            'plan_key' => ['required', 'string', 'max:255'],
+            'applicant_message' => ['nullable', 'string', 'max:2000'],
+        ], [
+            'school_name.required' => 'Nama sekolah wajib diisi.',
+            'desired_slug.required' => 'Kode sekolah wajib diisi.',
+            'plan_key.required' => 'Pilih salah satu paket.',
+        ]);
+    }
+
+    /**
+     * The plans an applicant may choose from, cheapest first as ordered
+     * by the provider.
+     *
+     * @return list<array{key: string, name: string, priceMonthly: int, priceYearly: int, maxUsers: int|null, modules: array<int, string>}>
+     */
+    private function plans(): array
+    {
+        return Plan::query()
+            ->selectable()
+            ->orderBy('sort_order')
+            ->get()
+            ->map(fn (Plan $plan): array => [
+                'key' => $plan->key,
+                'name' => $plan->name,
+                'priceMonthly' => $plan->price_monthly,
+                'priceYearly' => $plan->price_yearly,
+                'maxUsers' => $plan->max_users,
+                'modules' => $plan->modules,
+            ])
+            ->all();
     }
 
     private function applicant(): Applicant
@@ -98,13 +128,5 @@ final class OnboardingController
         $applicant = Auth::guard('applicant')->user();
 
         return $applicant;
-    }
-
-    private function latestApplication(Applicant $applicant): ?TenantApplication
-    {
-        return TenantApplication::query()
-            ->where('applicant_email', mb_strtolower($applicant->email))
-            ->orderByDesc('id')
-            ->first();
     }
 }

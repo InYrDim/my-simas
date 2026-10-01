@@ -12,17 +12,22 @@ use Modules\Platform\Database\Factories\TenantApplicationFactory;
 
 /**
  * Internal Platform model — never exposed to other modules. Central
- * onboarding row: the applicant is NOT a user (identity columns here);
- * decided_by references provider_users within this module.
+ * onboarding row: the applicant is NOT a school user. `applicant_id`
+ * points at the Applicant account that submitted it (null on rows from
+ * before accounts existed); the name/email columns are a snapshot of
+ * that account. decided_by references provider_users within this module.
  *
  * @property int $id
+ * @property int|null $applicant_id
  * @property string $school_name
  * @property string $desired_slug
  * @property string $timezone
+ * @property string|null $plan_key
  * @property string $applicant_name
  * @property string $applicant_email
  * @property string|null $applicant_message
  * @property TenantApplicationStatus $status
+ * @property Carbon|null $submitted_at
  * @property string|null $admin_note
  * @property Carbon|null $decided_at
  * @property int|null $decided_by
@@ -31,9 +36,9 @@ use Modules\Platform\Database\Factories\TenantApplicationFactory;
  */
 #[UseFactory(TenantApplicationFactory::class)]
 #[Fillable([
-    'school_name', 'desired_slug', 'timezone', 'applicant_name',
+    'applicant_id', 'school_name', 'desired_slug', 'timezone', 'plan_key', 'applicant_name',
     'applicant_email', 'applicant_message', 'status', 'admin_note',
-    'decided_at', 'decided_by',
+    'submitted_at', 'decided_at', 'decided_by',
 ])]
 class TenantApplication extends Model
 {
@@ -51,6 +56,7 @@ class TenantApplication extends Model
     {
         return [
             'status' => TenantApplicationStatus::class,
+            'submitted_at' => 'datetime',
             'decided_at' => 'datetime',
         ];
     }

@@ -3,6 +3,7 @@
 namespace Modules\Platform\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Modules\Platform\App\Domain\Models\Applicant;
 use Modules\Platform\App\Domain\Models\TenantApplication;
 use Modules\Platform\App\Domain\Models\TenantApplicationStatus;
 
@@ -41,6 +42,32 @@ class TenantApplicationFactory extends Factory
     {
         return $this->state(fn (array $attributes): array => [
             'status' => TenantApplicationStatus::Pending,
+        ]);
+    }
+
+    /**
+     * An application submitted from an applicant account: bound by id,
+     * with the account's name and email as the snapshot.
+     */
+    public function forApplicant(Applicant $applicant): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'applicant_id' => $applicant->id,
+            'applicant_name' => $applicant->name,
+            'applicant_email' => $applicant->email,
+            'submitted_at' => now(),
+        ]);
+    }
+
+    /**
+     * Rejected by the provider with a note.
+     */
+    public function rejected(string $note = 'Data belum lengkap.'): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'status' => TenantApplicationStatus::Rejected,
+            'admin_note' => $note,
+            'decided_at' => now(),
         ]);
     }
 }

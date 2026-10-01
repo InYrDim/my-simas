@@ -4,6 +4,7 @@ namespace Modules\Platform\Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Modules\Platform\App\Contracts\ModuleRegistry;
+use Modules\Platform\App\Domain\Models\Applicant;
 use Modules\Platform\App\Domain\Models\Plan;
 use Modules\Platform\App\Domain\Models\ProviderUser;
 use Modules\Platform\App\Domain\Models\Subscription;
@@ -96,29 +97,41 @@ class PlatformDevSeeder extends Seeder
     /**
      * One pending application (sekolah-c) so the review → ACC →
      * provisioning flow can be exercised end-to-end without filling
-     * the public form. Idempotent: skipped when a pending row for this
-     * applicant already exists.
+     * the onboarding form (applicant login kepsek@sekolah-c.test /
+     * password). Idempotent: skipped when this applicant already has
+     * an application in any state (one application per applicant).
      */
     protected function seedPendingApplication(): void
     {
         $exists = TenantApplication::query()
             ->where('applicant_email', 'kepsek@sekolah-c.test')
-            ->where('status', TenantApplicationStatus::Pending)
             ->exists();
 
         if ($exists) {
             return;
         }
 
-        TenantApplication::query()->create([
+        // The applicant account behind the application: log in at
+        // /pemohon/masuk with kepsek@sekolah-c.test / password.
+        $applicant = Applicant::query()->firstOrNew(['email' => 'kepsek@sekolah-c.test']);
+        $applicant->forceFill([
+            'name' => 'Kepala Sekolah C',
+            'password' => 'password',
+            'email_verified_at' => now(),
+        ])->save();
+
+        (new TenantApplication)->forceFill([
+            'applicant_id' => $applicant->id,
             'school_name' => 'SMA Sekolah C',
             'desired_slug' => 'sekolah-c',
             'timezone' => 'Asia/Jakarta',
-            'applicant_name' => 'Kepala Sekolah C',
-            'applicant_email' => 'kepsek@sekolah-c.test',
+            'plan_key' => (string) config('billing.trial_plan'),
+            'applicant_name' => $applicant->name,
+            'applicant_email' => $applicant->email,
             'applicant_message' => 'Mohon di-ACC, kami siap mulai semester ini.',
             'status' => TenantApplicationStatus::Pending,
-        ]);
+            'submitted_at' => now(),
+        ])->save();
 
         $this->command->info('Seeded pending application [sekolah-c].');
     }

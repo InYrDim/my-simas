@@ -31,6 +31,8 @@ import ProviderLayout from '../../../Components/ProviderLayout';
 
 interface ShowProps {
     application: ApplicationData;
+    /** Selectable plans; the provider may correct the applicant's choice. */
+    plans: { key: string; name: string }[];
 }
 
 const TIMEZONES = ['Asia/Jakarta', 'Asia/Makassar', 'Asia/Jayapura'];
@@ -43,11 +45,15 @@ const isPending = (status: string) => status === 'pending';
  * payload becomes the FINAL tenant data (grill Q9). Reject asks for a
  * confirmation note. Decided applications render read-only.
  */
-export default function ApplicationsShow({ application }: ShowProps) {
+export default function ApplicationsShow({ application, plans }: ShowProps) {
+    const planName = (key: string | null) =>
+        key === null ? 'Paket trial default' : (plans.find((plan) => plan.key === key)?.name ?? key);
+
     const decideForm = useForm({
         school_name: application.schoolName,
         desired_slug: application.desiredSlug,
         timezone: application.timezone,
+        plan_key: application.planKey ?? '',
         admin_note: '',
     });
 
@@ -80,7 +86,12 @@ export default function ApplicationsShow({ application }: ShowProps) {
                 /{application.desiredSlug}
             </span>,
         ],
+        ['Paket dipilih', planName(application.planKey)],
     ];
+
+    if (application.applicantId === null) {
+        rows.push(['Akun pemohon', 'Tidak ada (pengajuan lama, tanpa akun)']);
+    }
 
     if (application.applicantMessage !== null) {
         rows.push(['Pesan', application.applicantMessage]);
@@ -167,6 +178,25 @@ export default function ApplicationsShow({ application }: ShowProps) {
                                         options={TIMEZONES.map((timezone) => ({
                                             value: timezone,
                                             label: timezone,
+                                        }))}
+                                    />
+                                </Field>
+                                <Field>
+                                    <FieldLabel>Paket (trial dimulai di paket ini)</FieldLabel>
+                                    <OptionSelect
+                                        label="Paket"
+                                        allLabel={
+                                            application.planKey === null
+                                                ? 'Paket trial default'
+                                                : undefined
+                                        }
+                                        value={decideForm.data.plan_key}
+                                        onChange={(planKey) =>
+                                            decideForm.setData('plan_key', planKey)
+                                        }
+                                        options={plans.map((plan) => ({
+                                            value: plan.key,
+                                            label: plan.name,
                                         }))}
                                     />
                                 </Field>

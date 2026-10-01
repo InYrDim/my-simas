@@ -61,6 +61,11 @@ Route::middleware('web')->name('applicant.')->group(function (): void {
             Route::post('pengajuan', [OnboardingController::class, 'store'])
                 ->middleware('throttle:10,10')
                 ->name('application.store');
+
+            // Correct a rejected application and send it back to review.
+            Route::put('pengajuan', [OnboardingController::class, 'update'])
+                ->middleware('throttle:10,10')
+                ->name('application.update');
         });
     });
 });
