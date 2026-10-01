@@ -57,9 +57,8 @@
  * Provider console theme (light) — the shadcn token set from the design
  * reference, used verbatim: sky primary, amber accent, slate neutrals,
  * square corners, Geist / JetBrains Mono, soft offset shadows. Names match
- * shadcn so components can be swapped in later. Scoped to the
- * `.console-theme` wrapper (ProviderLayout / ProviderLogin) so the school
- * portal keeps its own palette.
+ * shadcn so components can be swapped in later. Applied on :root so the
+ * school portal (tenant shell and its pages) shares it with the console.
  */
 @theme inline {
     --color-background: var(--background);
@@ -96,6 +95,7 @@
     --color-sidebar-ring: var(--sidebar-ring);
 }
 
+:root,
 .console-theme {
     --card: oklch(1 0 0);
     --card-foreground: oklch(0.2077 0.0398 265.7549);
@@ -154,24 +154,24 @@
 }
 
 /* The reference's --shadow-sm and --shadow-md. */
-.console-theme .console-card {
+.console-card {
     box-shadow:
         0 4px 10px -3px hsl(0 0% 0% / 0.1),
         0 1px 2px -4px hsl(0 0% 0% / 0.1);
 }
 
-.console-theme .console-pop {
+.console-pop {
     box-shadow:
         0 4px 10px -3px hsl(0 0% 0% / 0.1),
         0 2px 4px -4px hsl(0 0% 0% / 0.1);
 }
 
-.console-theme ::selection {
+:root ::selection {
     background-color: color-mix(in oklch, var(--primary) 25%, transparent);
     color: var(--foreground);
 }
 
-.console-theme :focus-visible {
+:root :focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
 }

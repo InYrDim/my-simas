@@ -1,11 +1,11 @@
 import { Link, usePage } from '@inertiajs/react';
-import { ChevronRightIcon, LogOutIcon } from 'lucide-react';
+import { ChevronRightIcon } from 'lucide-react';
 import { DynamicIcon } from 'lucide-react/dynamic';
 import type { IconName } from 'lucide-react/dynamic';
 import type { ReactNode } from 'react';
 
+import AccountMenu from '@shared/components/AccountMenu';
 import { Alert, AlertDescription } from '@shared/components/ui/alert';
-import { Avatar, AvatarFallback } from '@shared/components/ui/avatar';
 import {
     Collapsible,
     CollapsibleContent,
@@ -144,9 +144,12 @@ export default function TenantShell({
                                         );
                                     }
 
-                                    const active = item.children.some((child) =>
-                                        isCurrent(path, child),
-                                    );
+                                    // The most specific child wins, so /users/roles
+                                    // does not also light up its /users sibling.
+                                    const current = item.children
+                                        .filter((child) => isCurrent(path, child))
+                                        .sort((a, b) => b.href.length - a.href.length)[0];
+                                    const active = current !== undefined;
 
                                     return (
                                         <Collapsible
@@ -172,7 +175,7 @@ export default function TenantShell({
                                                             <SidebarMenuSubItem key={child.href}>
                                                                 <SidebarMenuSubButton
                                                                     asChild
-                                                                    isActive={isCurrent(path, child)}
+                                                                    isActive={child === current}
                                                                 >
                                                                     <Link href={child.href}>
                                                                         <span>{child.label}</span>
@@ -195,46 +198,29 @@ export default function TenantShell({
                     <SidebarMenu>
                         {user !== null && (
                             <SidebarMenuItem>
-                                <SidebarMenuButton size="lg" tooltip={user.name}>
-                                    <Avatar size="sm">
-                                        <AvatarFallback>
-                                            {initials(user.name)}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <span className="grid flex-1 text-left leading-tight">
-                                        <span className="truncate text-sm font-medium">
-                                            {user.name}
-                                        </span>
-                                        <span className="truncate text-xs text-muted-foreground">
-                                            {user.email}
-                                        </span>
-                                    </span>
-                                </SidebarMenuButton>
+                                <AccountMenu
+                                    user={user}
+                                    schoolName={schoolName}
+                                    schoolCode={tenant?.slug ?? ''}
+                                    logoutHref={logoutHref}
+                                />
                             </SidebarMenuItem>
                         )}
-                        <SidebarMenuItem>
-                            <SidebarMenuButton asChild tooltip="Keluar">
-                                <Link href={logoutHref} method="post" as="button">
-                                    <LogOutIcon />
-                                    <span>Keluar</span>
-                                </Link>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
                     </SidebarMenu>
                 </SidebarFooter>
                 <SidebarRail />
             </Sidebar>
 
             <SidebarInset>
-                <header className="flex h-16 shrink-0 items-center gap-3 px-6">
+                <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-3 border-b border-border bg-card/90 px-4 sm:px-6">
                     <SidebarTrigger aria-label="Buka atau tutup menu" />
                     <Separator orientation="vertical" className="h-4" />
-                    <span className="text-sm text-muted-foreground">
+                    <span className="truncate text-sm font-medium text-foreground">
                         {schoolName}
                     </span>
                 </header>
 
-                <main className={`mx-auto w-full px-6 py-10 ${width}`}>
+                <main className={`mx-auto w-full px-4 py-8 sm:px-6 sm:py-10 ${width}`}>
                     {props.flash?.status && (
                         <Alert className="mb-6">
                             <AlertDescription>{props.flash.status}</AlertDescription>
