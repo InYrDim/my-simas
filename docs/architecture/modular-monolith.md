@@ -63,8 +63,8 @@ Vendor/Laravel  ←  Shared  ←  Platform (Fase 1)  ←  Identity  ←  Core  �
 | Shared   | `Shared`   | Generic technical utilities           | Everything (by definition)                                       |
 | Platform | `Platform` | Tenancy, module registry, permissions | `Modules\Platform\App\Contracts`                                 |
 | Identity | `Identity` | Tenant-scoped users, auth lifecycle, user management | `Modules\Identity\App\Contracts` (`ResolvesUsers`, `UserRecord`, `AccountProvisioner`, `NewAccount`) |
-| Core     | `Core`     | Master data, academic management, CSV import, statistics and reports | `Modules\Core\App\Contracts` (`ReportRegistry`, `Report`, `StatisticsRegistry`, `StatisticsProvider`, DTOs) |
-| Attendance | `Attendance` | Daily attendance (Absensi) — mockup | `Modules\Attendance\App\Contracts` (none yet)                  |
+| Core     | `Core`     | Master data, academic management, CSV import, statistics and reports, WhatsApp notices | `Modules\Core\App\Contracts` (`StudentDirectory`, `ClassDirectory`, `BellSchedule`, `ReportRegistry`, `Report`, `StatisticsRegistry`, `StatisticsProvider`, `NoticeRegistry`, `GuardianNotifier`, DTOs) |
+| Attendance | `Attendance` | Student attendance (Absensi): gate, daily, per lesson, QR | `Modules\Attendance\App\Contracts` (none — nothing uses it)   |
 | Ppdb     | `Ppdb`     | Admissions (PPDB) — mockup            | `Modules\Ppdb\App\Contracts` (none yet)                         |
 
 Each module folder follows the module template:
@@ -572,3 +572,48 @@ surface minimal) — fixed in Fase 2 Stage 4.
   back to a school page calls `app('auth')->shouldUse('web')` and
   `refreshSignedInUsers()` first, or the Gate asks the provider's user
   for a school permission (403).
+
+## Attendance (Fase 10)
+
+The first feature module with real data. Details:
+`modules/Attendance/CONTRACT.md`.
+
+- **A feature module reads Core through contracts, never models.** Core's
+  `StudentDirectory`, `ClassDirectory` and `BellSchedule` hand out DTOs for
+  the current school; Attendance keeps plain ids (`student_id`,
+  `class_id`, `period_slot_id`, ...) and has no relation to Core's tables.
+  It exposes nothing itself.
+- **It plugs in through registries.** Permissions (`attendance.*`) with
+  Platform's `PermissionRegistry`, sidebar entries with `TenantNavigation`
+  (each child carries its permission; a student sees only "QR Absensi"),
+  four notice kinds with Core's `NoticeRegistry`, two reports and the
+  attendance figures with Core's `ReportRegistry` / `StatisticsRegistry`.
+  Core never imports Attendance.
+- **Two kinds of record.** `daily_attendances`: one row per student and
+  day — the status (hadir, terlambat, sakit, izin, alpa) and the gate
+  times. `lesson_sessions` + `lesson_attendances`: one class in one lesson
+  slot of one day. There is no timetable: any teacher may record any
+  class; the classes a teacher teaches or leads are offered first.
+- **One-time QR.** The student's page (`attendance.qr.show` + an account
+  linked to an active student) asks for a random code kept in
+  `TenantCache` for 60 seconds; staff scan it (camera, handheld scanner,
+  or a manual pick by name/NIS). No table, nothing about the student in
+  the code, one live code per student, used up by the scan.
+- **The school's clock, on every database.** Days are stored as the
+  school's own `Y-m-d` (never cast to a date object), times of day are
+  compared on the tenant timezone, timestamps are converted to the
+  application timezone before saving, and months are grouped in PHP.
+- **Notices never check the switch.** Attendance says what happened
+  (`GuardianNotifier`); whether a message goes out is the school's choice
+  on Integrasi › WhatsApp. Only today's events are announced, and an
+  absence only when the status just changed to it.
+- **No scheduler.** Nothing marks absence automatically at the end of a
+  day; a student without a record is "belum diabsen". Shared hosting runs
+  only the queue cron (see WhatsApp per school).
+- **After the release** run `php artisan migrate` and
+  `php artisan roles:sync` (new permissions for all four default roles).
+- **Every school has it, for now.** A plan switches off the modules it
+  does not list, so `attendance` is in every plan
+  (`BillingMasterDataSeeder`), and a one-off Platform migration added it
+  to the plans and schools that existed before. Which plan keeps it is
+  decided later, by editing the plans in the provider console.

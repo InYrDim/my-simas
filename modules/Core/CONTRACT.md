@@ -30,6 +30,28 @@
 
 ## Public interface (Contracts/)
 
+Read access to school records (Fase 10) — a feature module never sees
+Core's models; it asks these, always for the current school, and gets
+DTOs.
+
+- `StudentDirectory` — `find(id)`, `findByUserId(userId)` (the student
+  whose record carries that login account), `many(ids)` (keyed by id),
+  `ofClass(classId)` (active students, by name) and `search(term, limit)`
+  (active students by name or NIS).
+- `ClassDirectory` — `ofActiveYear()`, `ofYear(academicYearId)` (by name,
+  natural order), `find(id)`, `subjectsOf(classId)` (from
+  `teaching_assignments`) and `idsTaughtBy(userId)` (classes of the active
+  year the teacher behind that account teaches or leads; empty when the
+  account is no teacher's).
+- `BellSchedule` — `slotsOn(day)` (1 = Senin ... 6 = Sabtu, by start time)
+  and `find(slotId)`.
+- `DTOs/StudentRecord` (id, name, NIS, class id and name, active — no
+  guardian details), `DTOs/ClassRecord` (id, name, academic year id,
+  homeroom teacher's name, number of active students),
+  `DTOs/ClassSubject` (subject, teacher, and the teacher's account id
+  when there is one), `DTOs/BellSlot` (id, day, start and end as `H:i`,
+  type, `isLesson`).
+
 Statistik & Laporan — a module adds its own reports and figures from its
 service provider; Core lists them, checks module flag and permission, and
 renders them. Core registers its own the same way.
@@ -52,9 +74,13 @@ renders them. Core registers its own the same way.
 
 Reports and providers are resolved from the container and run inside the
 tenant context of the request. Registering a report or figure under the
-key of an announced entry (`config/insight.php`, e.g. `attendance-monthly`,
-`ppdb-applicants`, figure `attendance-rate`, panel `attendance-trend`)
-replaces its "Segera hadir" placeholder.
+key of an announced entry (`config/insight.php`, e.g. `ppdb-applicants`)
+replaces its "Segera hadir" placeholder. Attendance registers
+`attendance-monthly`, `attendance-class`, the figure `attendance-rate` and
+the panel `attendance-trend`. A registered report key stops being
+announced for every school — a school without that module sees neither
+the report nor a placeholder; an announced figure or panel stays "Segera
+hadir" for a school whose module does not provide it.
 
 WhatsApp notices to guardians (Fase 9) — a module says what happened
 about a student; whether a message goes out, and how it reads, is the
@@ -64,8 +90,9 @@ school's choice on Integrasi › WhatsApp.
   notice, registered from the owning module's provider. Offered only
   while its module is active for the school; every kind starts switched
   off. Registering the key of an announced kind (`config/notices.php`:
-  `attendance.absent`, `attendance.gate`, `ppdb.result`) replaces its
-  "Segera hadir" placeholder.
+  `ppdb.result`) replaces its "Segera hadir" placeholder. Attendance
+  registers `attendance.gate-in`, `attendance.gate-out`,
+  `attendance.absent` and `attendance.lesson-absent`.
 - `GuardianNotifier::notify(GuardianNotice $notice): void` — sends the
   notice to the student's guardian from the school's number. Kind off →
   nothing happens and nothing is logged. Kind on → the message is logged
@@ -99,6 +126,7 @@ school's choice on Integrasi › WhatsApp.
 ## Explicitly NOT exposed
 
 - Everything outside `app/Contracts`: models, actions, controllers, the
+  directory implementations (`Infrastructure/Directory/Eloquent*`), the
   registries' read side (`Infrastructure/Insight/Default*Registry` —
   catalogue, find, figures, panels) and the CSV reader/writer. Other
   modules register through the contracts and never read the catalogue.
@@ -249,8 +277,10 @@ school's choice on Integrasi › WhatsApp.
     `teaching-load` sums `teaching_assignments` per teacher and needs
     `core.academic.view`.
   - Announced, not built ("Segera hadir", labels in `config/insight.php`):
-    Jadwal Pelajaran (no timetable table yet), the Kehadiran and PPDB
-    reports, and the attendance figure and trend.
+    Jadwal Pelajaran (no timetable table yet) and the PPDB reports. The
+    Kehadiran reports and the attendance figure and trend are
+    Attendance's (Fase 10); `config/insight.php` still announces them for
+    the Statistik page of a school without that module.
 - **Integrasi › WhatsApp** (`/integrasi/whatsapp`, Fase 9; the page, its
   actions and the sidebar entry need `core.integration.manage`) —
   `WhatsappController` over Platform's `WhatsappChannel`. Core never sees
@@ -280,8 +310,8 @@ school's choice on Integrasi › WhatsApp.
     `NoticeRegistry` for the school's active modules, then the announced
     ones. `PUT pemberitahuan/{kind}` (`SaveNoticeSetting`) keeps the
     switch and the school's wording; wording that is empty or equal to
-    the default is not stored. No module registers a kind yet: Absensi
-    and PPDB do in their own phases.
+    the default is not stored. Attendance registers four kinds (Fase
+    10); PPDB does in its own phase.
   - **History.** The page lists `whatsapp_messages` newest first, 15 per
     page, with the number masked (`62812••••7890`) and without the
     message body; it re-reads itself while a message is still queued.

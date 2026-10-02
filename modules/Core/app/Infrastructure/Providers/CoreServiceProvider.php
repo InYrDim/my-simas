@@ -3,14 +3,20 @@
 namespace Modules\Core\App\Infrastructure\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Modules\Core\App\Contracts\BellSchedule;
+use Modules\Core\App\Contracts\ClassDirectory;
 use Modules\Core\App\Contracts\GuardianNotifier;
 use Modules\Core\App\Contracts\NoticeRegistry;
 use Modules\Core\App\Contracts\ReportRegistry;
 use Modules\Core\App\Contracts\StatisticsRegistry;
+use Modules\Core\App\Contracts\StudentDirectory;
 use Modules\Core\App\Domain\Reports\StudentListReport;
 use Modules\Core\App\Domain\Reports\StudentMutationReport;
 use Modules\Core\App\Domain\Reports\TeachingLoadReport;
 use Modules\Core\App\Domain\Statistics\SchoolStatistics;
+use Modules\Core\App\Infrastructure\Directory\EloquentBellSchedule;
+use Modules\Core\App\Infrastructure\Directory\EloquentClassDirectory;
+use Modules\Core\App\Infrastructure\Directory\EloquentStudentDirectory;
 use Modules\Core\App\Infrastructure\Insight\DefaultReportRegistry;
 use Modules\Core\App\Infrastructure\Insight\DefaultStatisticsRegistry;
 use Modules\Core\App\Infrastructure\Whatsapp\DefaultGuardianNotifier;
@@ -45,6 +51,12 @@ class CoreServiceProvider extends ServiceProvider
         $this->app->alias(DefaultNoticeRegistry::class, NoticeRegistry::class);
 
         $this->app->singleton(GuardianNotifier::class, DefaultGuardianNotifier::class);
+
+        // Read access to students, classes and the bell schedule for the
+        // feature modules, which never see Core's models.
+        $this->app->bind(StudentDirectory::class, EloquentStudentDirectory::class);
+        $this->app->bind(ClassDirectory::class, EloquentClassDirectory::class);
+        $this->app->bind(BellSchedule::class, EloquentBellSchedule::class);
     }
 
     /**

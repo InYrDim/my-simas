@@ -19,11 +19,11 @@ function rolesOf(string $tenantId): array
     return app(TenantRoles::class)->rolePermissions($tenantId);
 }
 
-it('gives a new school the siswa role without permissions', function () {
+it('gives a new school the siswa role with only its own QR permission', function () {
     $tenant = TenantFactory::new()->create();
 
     expect(rolesOf($tenant->id))->toHaveKey('siswa')
-        ->and(rolesOf($tenant->id)['siswa'])->toBe([]);
+        ->and(rolesOf($tenant->id)['siswa'])->toBe(['attendance.qr.show']);
 });
 
 it('adds a role and a permission that came after the school was created', function () {

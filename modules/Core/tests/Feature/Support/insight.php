@@ -46,11 +46,11 @@ final class ManagersOnlyReport extends FakeReport
     }
 }
 
-final class AttendanceMonthlyReport extends FakeReport
+final class PpdbApplicantsReport extends FakeReport
 {
     public function definition(): ReportDefinition
     {
-        return new ReportDefinition('attendance-monthly', 'Kehadiran', 'Rekap Kehadiran Bulanan', 'Hadir, sakit, izin, dan alpa.', order: 50);
+        return new ReportDefinition('ppdb-applicants', 'Penerimaan (PPDB)', 'Daftar Pendaftar PPDB', 'Pendaftar menurut jalur.', order: 70);
     }
 }
 

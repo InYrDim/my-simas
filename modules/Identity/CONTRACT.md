@@ -156,7 +156,8 @@ container.
   self-deactivation; last ACTIVE admin-sekolah protected, checked
   under the target's own tenant context).
 - Roles: machine names from `config/roles.php` (`admin-sekolah`,
-  `guru`, `staf-tu`, and `siswa` — no permissions yet); labels live in
+  `guru`, `staf-tu`, and `siswa` — which holds only `attendance.qr.show`,
+  its own attendance QR); labels live in
   config only. Permissions
   `identity.users.{view,create,update,deactivate,sendReset}` are
   registered via `PermissionRegistry` and attached to admin-sekolah on

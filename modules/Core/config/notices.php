@@ -7,8 +7,6 @@
  */
 return [
     'upcoming' => [
-        ['key' => 'attendance.absent', 'title' => 'Siswa tidak hadir', 'description' => 'Dikirim saat siswa ditandai sakit, izin, atau alpa.', 'recipient' => 'Wali murid'],
-        ['key' => 'attendance.gate', 'title' => 'Siswa masuk dan pulang', 'description' => 'Dikirim saat siswa tercatat di gerbang sekolah.', 'recipient' => 'Wali murid'],
         ['key' => 'ppdb.result', 'title' => 'Hasil seleksi PPDB', 'description' => 'Dikirim saat hasil seleksi diumumkan.', 'recipient' => 'Pendaftar'],
     ],
 ];

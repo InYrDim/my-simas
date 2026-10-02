@@ -55,3 +55,11 @@ deptrac:
             - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
         Modules\Core\App\Domain\Models\WhatsappNoticeSetting:
             - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Attendance\App\Domain\Models\AttendanceSetting:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Attendance\App\Domain\Models\DailyAttendance:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Attendance\App\Domain\Models\LessonSession:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Attendance\App\Domain\Models\LessonAttendance:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'

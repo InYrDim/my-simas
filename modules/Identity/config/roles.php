@@ -29,24 +29,39 @@ return [
             'core.academic.view',
             'core.academic.manage',
             'core.integration.manage',
+            'attendance.view',
+            'attendance.daily.record',
+            'attendance.lesson.record',
+            'attendance.settings.manage',
         ],
     ],
 
     'guru' => [
         'label' => 'Guru',
         'description' => 'Pengajar: mencatat kegiatan belajar mengajar dan absensi kelasnya.',
-        'permissions' => ['core.master.view', 'core.academic.view'],
+        'permissions' => [
+            'core.master.view',
+            'core.academic.view',
+            'attendance.view',
+            'attendance.daily.record',
+            'attendance.lesson.record',
+        ],
     ],
 
     'staf-tu' => [
         'label' => 'Staf/TU',
         'description' => 'Tata usaha: mengurus data administrasi sekolah sehari-hari.',
-        'permissions' => ['core.master.view', 'core.academic.view'],
+        'permissions' => [
+            'core.master.view',
+            'core.academic.view',
+            'attendance.view',
+            'attendance.daily.record',
+        ],
     ],
 
     'siswa' => [
         'label' => 'Siswa',
         'description' => 'Peserta didik: masuk dengan NIS untuk layanan siswa.',
-        'permissions' => [],
+        'permissions' => ['attendance.qr.show'],
     ],
 ];

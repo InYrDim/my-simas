@@ -61,7 +61,7 @@ function switchNotice(Tenant $tenant, string $kind, bool $enabled = true, ?strin
 /**
  * @param  array<string, string>  $variables
  */
-function notifyGuardian(Tenant $tenant, int $studentId, array $variables = [], string $kind = 'attendance.absent'): void
+function notifyGuardian(Tenant $tenant, int $studentId, array $variables = [], string $kind = 'uji.absent'): void
 {
     inSchool($tenant, fn () => app(GuardianNotifier::class)->notify(new GuardianNotice($studentId, $kind, $variables)));
 }
@@ -70,14 +70,14 @@ it('sends the guardian the filled-in wording when the school switched the kind o
     registerAbsenceNotice();
     $tenant = schoolAs('notice-on');
     $student = studentWithGuardian($tenant);
-    switchNotice($tenant, 'attendance.absent');
+    switchNotice($tenant, 'uji.absent');
 
     notifyGuardian($tenant, $student->id, ['status' => 'izin', 'tanggal' => '2 Oktober 2026']);
 
     $message = inSchool($tenant, fn () => WhatsappMessage::query()->sole());
 
     expect($message->status)->toBe(WhatsappMessageStatus::Pending)
-        ->and($message->kind)->toBe('attendance.absent')
+        ->and($message->kind)->toBe('uji.absent')
         ->and($message->student_id)->toBe($student->id)
         ->and($message->recipient_name)->toBe('Ibu Santoso')
         ->and($message->phone)->toBe('6281234567890')
@@ -92,7 +92,7 @@ it('does nothing while the kind is off', function (?bool $enabled) {
     $student = studentWithGuardian($tenant);
 
     if ($enabled !== null) {
-        switchNotice($tenant, 'attendance.absent', $enabled);
+        switchNotice($tenant, 'uji.absent', $enabled);
     }
 
     notifyGuardian($tenant, $student->id);
@@ -106,7 +106,7 @@ it('uses the schools own wording over the default', function () {
     registerAbsenceNotice();
     $tenant = schoolAs('notice-wording');
     $student = studentWithGuardian($tenant);
-    switchNotice($tenant, 'attendance.absent', true, 'Info: {nama_siswa} {status}.');
+    switchNotice($tenant, 'uji.absent', true, 'Info: {nama_siswa} {status}.');
 
     notifyGuardian($tenant, $student->id, ['status' => 'alpa']);
 
@@ -117,7 +117,7 @@ it('leaves a variable nobody filled in as written', function () {
     registerAbsenceNotice();
     $tenant = schoolAs('notice-unknown-var');
     $student = studentWithGuardian($tenant);
-    switchNotice($tenant, 'attendance.absent', true, '{nama_siswa} {status} {jam_ke}');
+    switchNotice($tenant, 'uji.absent', true, '{nama_siswa} {status} {jam_ke}');
 
     notifyGuardian($tenant, $student->id, ['status' => 'sakit']);
 
@@ -128,7 +128,7 @@ it('does not let the caller replace the student, guardian or school name', funct
     registerAbsenceNotice();
     $tenant = schoolAs('notice-own-names');
     $student = studentWithGuardian($tenant);
-    switchNotice($tenant, 'attendance.absent', true, '{nama_siswa} / {nama_wali} / {nama_sekolah}');
+    switchNotice($tenant, 'uji.absent', true, '{nama_siswa} / {nama_wali} / {nama_sekolah}');
 
     notifyGuardian($tenant, $student->id, ['nama_siswa' => 'X', 'nama_wali' => 'Y', 'nama_sekolah' => 'Z']);
 
@@ -139,7 +139,7 @@ it('logs the notice without queueing it when the guardian has no usable number',
     registerAbsenceNotice();
     $tenant = schoolAs('notice-no-number');
     $student = studentWithGuardian($tenant, ['guardian_phone' => $phone, 'guardian_name' => null]);
-    switchNotice($tenant, 'attendance.absent');
+    switchNotice($tenant, 'uji.absent');
 
     notifyGuardian($tenant, $student->id);
 
@@ -163,7 +163,7 @@ it('refuses a kind whose module the school does not have', function () {
     registerAbsenceNotice('attendance');
     $tenant = schoolAs('notice-no-module');
     $student = studentWithGuardian($tenant);
-    switchNotice($tenant, 'attendance.absent');
+    switchNotice($tenant, 'uji.absent');
 
     notifyGuardian($tenant, $student->id);
 })->throws(UnknownNoticeKindException::class);
@@ -173,7 +173,7 @@ it('never reaches a student or a switch of another school', function () {
 
     $other = TenantFactory::new()->create(['slug' => 'notice-other']);
     $foreign = studentWithGuardian($other);
-    switchNotice($other, 'attendance.absent');
+    switchNotice($other, 'uji.absent');
 
     $tenant = schoolAs('notice-own');
     $student = studentWithGuardian($tenant);
@@ -182,7 +182,7 @@ it('never reaches a student or a switch of another school', function () {
     notifyGuardian($tenant, $student->id);
 
     // Switched on here, but the student belongs to the other school.
-    switchNotice($tenant, 'attendance.absent');
+    switchNotice($tenant, 'uji.absent');
     notifyGuardian($tenant, $foreign->id);
 
     expect(inSchool($tenant, fn () => WhatsappMessage::query()->count()))->toBe(0)
@@ -194,18 +194,18 @@ it('never reaches a student or a switch of another school', function () {
 it('lists registered kinds with the schools choice, then the announced ones', function () {
     registerAbsenceNotice();
     $tenant = schoolAs('notice-list');
-    switchNotice($tenant, 'attendance.absent', true, 'Info: {nama_siswa} {status}.');
+    switchNotice($tenant, 'uji.absent', true, 'Info: {nama_siswa} {status}.');
 
     get(school($tenant->slug, '/integrasi/whatsapp'))->assertOk()->assertInertia(fn (Assert $page) => $page
-        ->where('kinds.0.key', 'attendance.absent')
+        ->where('kinds.0.key', 'uji.absent')
         ->where('kinds.0.available', true)
         ->where('kinds.0.enabled', true)
         ->where('kinds.0.template', 'Info: {nama_siswa} {status}.')
         ->where('kinds.0.defaultTemplate', absenceNotice()->template)
         ->where('kinds.0.sample.status', 'sakit')
         ->where('kinds.0.sample.nama_siswa', 'Aditya Pratama')
-        // The announced "attendance.absent" is gone: a module registered it.
-        ->where('kinds', fn ($kinds) => collect($kinds)->pluck('key')->all() === ['attendance.absent', 'attendance.gate', 'ppdb.result'])
+        // Registered kinds first, then what is only announced.
+        ->where('kinds', fn ($kinds) => collect($kinds)->pluck('key')->all() === ['uji.absent', 'ppdb.result'])
         ->where('kinds.1.available', false)
         ->where('kinds.1.enabled', false)
     );
@@ -215,7 +215,7 @@ it('announces the kinds nobody built yet, and offers a kind off with its default
     $tenant = schoolAs('notice-upcoming');
 
     get(school($tenant->slug, '/integrasi/whatsapp'))->assertInertia(fn (Assert $page) => $page
-        ->where('kinds', fn ($kinds) => collect($kinds)->pluck('key')->all() === ['attendance.absent', 'attendance.gate', 'ppdb.result']
+        ->where('kinds', fn ($kinds) => collect($kinds)->pluck('key')->all() === ['ppdb.result']
             && collect($kinds)->every(fn ($kind) => $kind['available'] === false))
     );
 
@@ -243,18 +243,18 @@ it('lets an admin switch a kind on and reword it', function () {
     registerAbsenceNotice();
     $tenant = schoolAs('notice-save');
 
-    put(school($tenant->slug, '/integrasi/whatsapp/pemberitahuan/attendance.absent'), [
+    put(school($tenant->slug, '/integrasi/whatsapp/pemberitahuan/uji.absent'), [
         'enabled' => true,
         'template' => 'Info: {nama_siswa} {status}.',
     ])->assertRedirect()->assertSessionHasNoErrors();
 
     $setting = inSchool($tenant, fn () => WhatsappNoticeSetting::query()->sole());
 
-    expect($setting->kind)->toBe('attendance.absent')
+    expect($setting->kind)->toBe('uji.absent')
         ->and($setting->enabled)->toBeTrue()
         ->and($setting->template)->toBe('Info: {nama_siswa} {status}.');
 
-    put(school($tenant->slug, '/integrasi/whatsapp/pemberitahuan/attendance.absent'), [
+    put(school($tenant->slug, '/integrasi/whatsapp/pemberitahuan/uji.absent'), [
         'enabled' => false,
         'template' => 'Info: {nama_siswa} {status}.',
     ])->assertSessionHasNoErrors();
@@ -265,9 +265,9 @@ it('lets an admin switch a kind on and reword it', function () {
 it('stores no wording when it is empty or the same as the default', function (?string $template) {
     registerAbsenceNotice();
     $tenant = schoolAs('notice-default');
-    switchNotice($tenant, 'attendance.absent', true, 'Kata-kata lama.');
+    switchNotice($tenant, 'uji.absent', true, 'Kata-kata lama.');
 
-    put(school($tenant->slug, '/integrasi/whatsapp/pemberitahuan/attendance.absent'), [
+    put(school($tenant->slug, '/integrasi/whatsapp/pemberitahuan/uji.absent'), [
         'enabled' => true,
         'template' => $template,
     ])->assertSessionHasNoErrors();
@@ -283,7 +283,7 @@ it('validates the switch and the wording', function (array $payload, string $fie
     registerAbsenceNotice();
     $tenant = schoolAs('notice-invalid');
 
-    put(school($tenant->slug, '/integrasi/whatsapp/pemberitahuan/attendance.absent'), $payload)->assertSessionHasErrors($field);
+    put(school($tenant->slug, '/integrasi/whatsapp/pemberitahuan/uji.absent'), $payload)->assertSessionHasErrors($field);
 
     expect(inSchool($tenant, fn () => WhatsappNoticeSetting::query()->count()))->toBe(0);
 })->with([
@@ -301,11 +301,11 @@ it('keeps the settings away from other roles and guests', function (string $role
     registerAbsenceNotice();
     $tenant = schoolAs("notice-{$role}", $role);
 
-    put(school($tenant->slug, '/integrasi/whatsapp/pemberitahuan/attendance.absent'), ['enabled' => true])->assertForbidden();
+    put(school($tenant->slug, '/integrasi/whatsapp/pemberitahuan/uji.absent'), ['enabled' => true])->assertForbidden();
 
     signOutOfSchool();
 
-    put(school($tenant->slug, '/integrasi/whatsapp/pemberitahuan/attendance.absent'), ['enabled' => true])->assertRedirect();
+    put(school($tenant->slug, '/integrasi/whatsapp/pemberitahuan/uji.absent'), ['enabled' => true])->assertRedirect();
 
     expect(inSchool($tenant, fn () => WhatsappNoticeSetting::query()->count()))->toBe(0);
 })->with(['guru', 'staf-tu', 'siswa']);
@@ -314,7 +314,7 @@ it('keeps each schools settings to itself', function () {
     registerAbsenceNotice();
 
     $other = TenantFactory::new()->create(['slug' => 'notice-settings-other']);
-    switchNotice($other, 'attendance.absent', true, 'Kata-kata sekolah lain.');
+    switchNotice($other, 'uji.absent', true, 'Kata-kata sekolah lain.');
 
     $tenant = schoolAs('notice-settings-own');
 
@@ -323,7 +323,7 @@ it('keeps each schools settings to itself', function () {
         ->where('kinds.0.template', absenceNotice()->template)
     );
 
-    put(school($tenant->slug, '/integrasi/whatsapp/pemberitahuan/attendance.absent'), ['enabled' => false])->assertSessionHasNoErrors();
+    put(school($tenant->slug, '/integrasi/whatsapp/pemberitahuan/uji.absent'), ['enabled' => false])->assertSessionHasNoErrors();
 
     expect(inSchool($other, fn () => WhatsappNoticeSetting::query()->sole()->enabled))->toBeTrue()
         ->and(inSchool($other, fn () => WhatsappNoticeSetting::query()->sole()->template))->toBe('Kata-kata sekolah lain.');
@@ -333,7 +333,7 @@ it('names a notice by its title in the message log', function () {
     registerAbsenceNotice();
     $tenant = schoolAs('notice-log');
     $student = studentWithGuardian($tenant);
-    switchNotice($tenant, 'attendance.absent');
+    switchNotice($tenant, 'uji.absent');
 
     notifyGuardian($tenant, $student->id);
 

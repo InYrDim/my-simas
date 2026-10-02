@@ -10,7 +10,7 @@ use Modules\Core\App\Contracts\NoticeRegistry;
  * one from its service provider.
  */
 
-function absenceNotice(string $key = 'attendance.absent'): NoticeKind
+function absenceNotice(string $key = 'uji.absent'): NoticeKind
 {
     return new NoticeKind(
         key: $key,
@@ -22,7 +22,7 @@ function absenceNotice(string $key = 'attendance.absent'): NoticeKind
     );
 }
 
-function registerAbsenceNotice(string $module = 'core', string $key = 'attendance.absent'): NoticeKind
+function registerAbsenceNotice(string $module = 'core', string $key = 'uji.absent'): NoticeKind
 {
     $kind = absenceNotice($key);
 

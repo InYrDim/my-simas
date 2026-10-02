@@ -52,7 +52,7 @@ it('seeds the default roles for a new tenant via TenantCreated', function () {
         ->and($roles)->toContain('siswa');
 });
 
-it('gives admin-sekolah the identity.users and core permission sets and the others only the core view permissions', function () {
+it('gives admin-sekolah the identity.users, core and attendance permission sets and the others the view and recording permissions', function () {
     /** @var Tenant $tenant */
     $tenant = TenantFactory::new()->create();
 
@@ -65,6 +65,10 @@ it('gives admin-sekolah the identity.users and core permission sets and the othe
     $staf = tenantRolePermissionNames($tenant->id, 'staf-tu');
 
     expect($admin)->toBe([
+        'attendance.daily.record',
+        'attendance.lesson.record',
+        'attendance.settings.manage',
+        'attendance.view',
         'core.academic.manage',
         'core.academic.view',
         'core.integration.manage',
@@ -75,8 +79,8 @@ it('gives admin-sekolah the identity.users and core permission sets and the othe
         'identity.users.sendReset',
         'identity.users.update',
         'identity.users.view',
-    ])->and($guru)->toBe(['core.academic.view', 'core.master.view'])
-        ->and($staf)->toBe(['core.academic.view', 'core.master.view']);
+    ])->and($guru)->toBe(['attendance.daily.record', 'attendance.lesson.record', 'attendance.view', 'core.academic.view', 'core.master.view'])
+        ->and($staf)->toBe(['attendance.daily.record', 'attendance.view', 'core.academic.view', 'core.master.view']);
 });
 
 it('creates the global permission rows as a side effect of seeding', function () {

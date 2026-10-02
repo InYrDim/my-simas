@@ -3,40 +3,22 @@
 namespace Modules\Attendance\Tests\Feature;
 
 use Inertia\Testing\AssertableInertia as Assert;
-use Modules\Identity\Database\Factories\UserFactory;
-use Modules\Platform\App\Contracts\TenantContext;
-use Modules\Platform\App\Domain\Models\Tenant;
-use Modules\Platform\App\Infrastructure\Modules\ModuleFlagManager;
-use Modules\Platform\Database\Factories\TenantFactory;
 
-use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
 
-/**
- * Absensi mockup pages: every route renders for a signed-in user of a
- * tenant that has the module enabled, and is blocked without the flag.
+require_once __DIR__.'/Support/helpers.php';
+
+/*
+ * Every Absensi page renders for a signed-in admin of a school that has
+ * the module enabled. (The module flag itself: AttendanceAccessTest.)
  */
-function attendanceTenant(bool $enabled = true): Tenant
-{
-    $tenant = TenantFactory::new()->create(['slug' => $enabled ? 'absensi-on' : 'absensi-off']);
-
-    if ($enabled) {
-        app(ModuleFlagManager::class)->enable($tenant->id, 'attendance');
-    }
-
-    $user = UserFactory::new()->forTenant($tenant->id)->create(['email' => "admin@{$tenant->slug}.test"]);
-
-    app(TenantContext::class)->run($tenant->id, fn () => $user->assignTenantRole('admin-sekolah'));
-
-    actingAs($user);
-
-    return $tenant;
-}
-
 dataset('attendancePages', [
     'overview' => ['/absensi', 'Attendance/Overview'],
     'input' => ['/absensi/input', 'Attendance/Input'],
+    'lessons' => ['/absensi/jam-pelajaran', 'Attendance/Lessons'],
+    'scan' => ['/absensi/pindai', 'Attendance/Scan'],
     'monthly' => ['/absensi/rekap', 'Attendance/Monthly'],
+    'settings' => ['/absensi/pengaturan', 'Attendance/Settings'],
 ]);
 
 it('renders each absensi page for a school user', function (string $path, string $component) {
@@ -52,15 +34,5 @@ it('lists the Absensi group in the sidebar when the module is enabled', function
 
     get(school($tenant->slug, '/beranda'))->assertInertia(fn (Assert $page) => $page
         ->where('tenantNav', fn ($nav) => collect($nav)->pluck('label')->contains('Absensi'))
-    );
-});
-
-it('hides and blocks Absensi for a tenant without the module', function () {
-    $tenant = attendanceTenant(enabled: false);
-
-    get(school($tenant->slug, '/absensi'))->assertForbidden();
-
-    get(school($tenant->slug, '/beranda'))->assertInertia(fn (Assert $page) => $page
-        ->where('tenantNav', fn ($nav) => ! collect($nav)->pluck('label')->contains('Absensi'))
     );
 });

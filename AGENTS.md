@@ -394,3 +394,23 @@ the server. Env: `OPENWA_API_BASE_URL`, `OPENWA_ADMIN_API_KEY`,
 (`Http::fake` + `Http::preventStrayRequests`) and never call the real
 one. Details: modules/Platform/CONTRACT.md, modules/Core/CONTRACT.md,
 docs/architecture/modular-monolith.md.
+
+## Attendance (Fase 10)
+
+The first feature module with real data: gate in/out, daily status
+(hadir, terlambat, sakit, izin, alpa) and attendance per lesson, by a
+student's one-time QR or by hand. It reads Core only through
+`StudentDirectory`, `ClassDirectory` and `BellSchedule` (DTOs; plain ids in
+its own tables) and exposes nothing. It registers permissions
+`attendance.*`, sidebar entries, four notice kinds (`attendance.gate-in`,
+`.gate-out`, `.absent`, `.lesson-absent`), two reports and the attendance
+figures through the registries; it never checks the WhatsApp switch. The
+QR is a 60-second code in `TenantCache` (no table); the page needs
+`attendance.qr.show` and an account linked to an active student. Days are
+the school's own `Y-m-d` strings, timestamps go through
+`SchoolClock::stored()`, months are grouped in PHP. No timetable (any
+teacher may record any class; own classes are offered first) and no
+scheduler (nothing marks absence automatically). After a release:
+`php artisan migrate` and `php artisan roles:sync`. Details:
+modules/Attendance/CONTRACT.md, modules/Core/CONTRACT.md,
+docs/architecture/modular-monolith.md.
