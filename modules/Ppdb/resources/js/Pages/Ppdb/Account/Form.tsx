@@ -6,7 +6,7 @@ import { Panel } from '@shared/components/page-parts';
 import { Alert, AlertDescription } from '@shared/components/ui/alert';
 import { Button } from '@shared/components/ui/button';
 
-import ApplicantFields, { type ApplicantData, type FormFields } from '../../../Components/ApplicantFields';
+import FormRenderer, { formBinding, initialAnswers, type ApplicantData, type FormFieldDef, type StoredFile } from '../../../Components/FormRenderer';
 import PortalPage from '../../../Components/PortalPage';
 
 type Option = { value: string; label: string };
@@ -14,7 +14,9 @@ type Option = { value: string; label: string };
 interface FormProps {
     period: string;
     paths: Option[];
-    formFields: FormFields;
+    fields: FormFieldDef[];
+    answers: Record<string, string | string[]>;
+    files: Record<string, StoredFile>;
     applicant: {
         pathId: string;
         name: string;
@@ -35,7 +37,7 @@ interface FormProps {
  * The applicant's registration form: filled once, and again only when the
  * committee asks for a correction (then the committee's note shows on top).
  */
-export default function Form({ period, paths, formFields, applicant, defaultName }: FormProps) {
+export default function Form({ period, paths, fields, answers, files, applicant, defaultName }: FormProps) {
     const form = useForm<ApplicantData>({
         wave_id: '',
         path_id: applicant?.pathId ?? '',
@@ -48,8 +50,10 @@ export default function Form({ period, paths, formFields, applicant, defaultName
         address: applicant?.address ?? '',
         guardian_name: applicant?.guardianName ?? '',
         guardian_phone: applicant?.guardianPhone ?? '',
+        answers: initialAnswers(fields, answers),
     });
     const errors: Partial<Record<string, string>> = form.errors;
+    const binding = formBinding(form.data, errors, (key, value) => form.setData(key as keyof ApplicantData, value as never));
     const correcting = applicant !== null;
     const refusal = errors.period ?? errors.application ?? errors.school;
 
@@ -64,9 +68,12 @@ export default function Form({ period, paths, formFields, applicant, defaultName
                 onSubmit={(event) => {
                     event.preventDefault();
 
+                    // A file in the form makes Inertia send multipart, which only POST carries: a correction says it is a PUT.
                     if (correcting) {
-                        form.put(update.url());
+                        form.transform((data) => ({ ...data, _method: 'put' }));
+                        form.post(update.url());
                     } else {
+                        form.transform((data) => data);
                         form.post(store.url());
                     }
                 }}
@@ -85,7 +92,7 @@ export default function Form({ period, paths, formFields, applicant, defaultName
                 )}
 
                 <Panel>
-                    <ApplicantFields data={form.data} errors={errors} onChange={(key, value) => form.setData(key, value)} paths={paths} fields={formFields} />
+                    <FormRenderer fields={fields} paths={paths} storedFiles={files} {...binding} />
                 </Panel>
 
                 <div className="flex gap-3">

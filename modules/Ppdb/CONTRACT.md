@@ -6,7 +6,9 @@
   `ppdb_accounts` — an applicant's own account (name, email, password, and
   the one school it joined: `tenant_id`, the only foreign key). **Tenant-scoped**
   (no foreign keys but `tenant_id`; every other id is a plain indexed column):
-  `ppdb_periods` (an admissions period; one is active), `ppdb_waves`
+  `ppdb_periods` (an admissions period; one is active), `ppdb_form_fields`
+  (the fields of a period's registration form) and `ppdb_applicant_answers`
+  (answers to the custom ones), `ppdb_waves`
   (registration waves with open and close days), `ppdb_paths` (admission
   paths with their quota) and `ppdb_applicants` (the applicants, with
   score, decision and the student made at re-registration).
@@ -20,7 +22,7 @@
   reports — admin, staf-tu), `ppdb.applicants.manage` (enter, change,
   verify, cancel, re-register — admin, staf-tu), `ppdb.selection.manage`
   (scores, decisions, announcing — admin) and `ppdb.settings.manage`
-  (periods, waves, paths and quota, the registration form's fields, the
+  (periods, waves, paths and quota, the registration form builder, the
   school's code and link — admin).
   An applicant's account has no permissions: it is not a school user.
 
@@ -57,7 +59,7 @@ Never another feature module (Attendance), not even via its Public surface.
 - **What it registers** (`PpdbServiceProvider`): the module key `ppdb`
   (enabled per tenant), its permissions, the sidebar entries (the whole
   group needs `ppdb.view`, "Pengaturan" needs `ppdb.settings.manage`), two
-  reports (`ppdb-applicants`, `ppdb-result`) and one statistics provider with
+  reports (`ppdb-applicants` with a column per custom field, `ppdb-result`) and one statistics provider with
   Core's `ReportRegistry` / `StatisticsRegistry`, the `Ppdb::` mail views
   (`modules/Ppdb/mail`) and the two stand-ins below. It reads Core only
   through `StudentAdmission`; it never imports Core's models.
@@ -97,20 +99,42 @@ Never another feature module (Attendance), not even via its Public surface.
   Only while the committee asks for a correction ("Perlu perbaikan") the
   applicant may change the data (`UpdateOwnApplication`); saving sends it
   back to "Menunggu verifikasi".
-- **The form is the school's to adjust, per period** (`ppdb_periods.form_fields`,
-  JSON, empty = the usual form). The path, name and gender are always asked
-  (selection and `StudentAdmission` need them); birth place, birth date, NISN,
-  origin school, address and the guardian's name and phone are each Required,
-  Optional or Off (`Domain/Support/FormFields`, `FieldRequirement`;
-  `SaveFormFields`; Settings › Formulir pendaftaran). The rules are built from
-  the period's form: the committee's request uses the applicant's period (the
-  running one for a new applicant); the applicant's request looks the period up
-  inside the school the account joined (a correction follows the period the
-  registration is in, not the running one). A field that is Off has no rule,
-  so a value sent for it is dropped; switching a field off never deletes what
-  applicants already gave (the detail page still shows it). A new period
-  copies the form of the school's latest period. The columns of those fields
-  are nullable for that reason.
+- **The form is the school's to build, per period** (Formulir page,
+  `ppdb.settings.manage`). A period's form is rows in `ppdb_form_fields`,
+  in order: the ten built-in fields of the applicant record (`key` = its
+  column; the path, name and gender are locked: always asked, required,
+  never archived) and the custom ones a school adds (`key` empty; types text,
+  paragraph, number, date, select, checkboxes, file, and a section heading).
+  Every period is seeded with the ten built-in rows when it is created and a
+  new period copies the form of the school's latest one (`CopyFormFields`; an
+  archived custom field is left behind). `SaveForm` saves the whole list in
+  order, all or nothing, and refuses a list that leaves a field out (a stale
+  page); a custom field's type is locked once it has answers; archiving keeps
+  every answer and the detail page still shows it; a field is deleted
+  (`DeleteFormField`) only while nobody answered it; a closed period's form is
+  read-only. The basic validation per type lives in `rules` (`CustomFieldRules`:
+  max length and format, number range, future dates, file size and kinds).
+  `FormRules` turns the form into validation rules: built-in values at the
+  column name, custom answers at `answers.<field id>`; an archived field has no
+  rule so what is sent for it is dropped. The committee's request uses the
+  applicant's period (the running one for a new applicant); the applicant's
+  own request looks the period up inside the school the account joined, and a
+  correction follows the period the registration is in. Answers are rows in
+  `ppdb_applicant_answers` (text; JSON for checkboxes and files),
+  `SaveAnswers` takes only asked custom fields and leaves a field not sent as
+  it was. The built-in columns of the applicant are nullable for the fields a
+  school may archive.
+- **Uploaded files** stay in the school's private partition
+  (`TenantStorage`, module `ppdb`: `applicants/{applicant}/{field}-{random}.{ext}`),
+  named by the server; the answer keeps the sender's name (stripped of any
+  path), size and type. Only a field's own size (100–5120 KB) and kinds (PDF,
+  JPG/PNG) are accepted, checked by content. A replaced file is removed once
+  the save commits, a file written for a failed save is removed again, and
+  cancelling a registration removes its files. Downloads are attachments with
+  `nosniff`: the committee at `/ppdb/pendaftar/{id}/berkas/{field}`
+  (`ppdb.view`), the account at `/calon-siswa/formulir/berkas/{field}` (its own
+  registration only); the path always comes from the answer row. `DocumentCheck`
+  stays a stand-in: verifying is still the committee's decision.
 - **The committee** enters walk-ins without an account (`source = staff`,
   any wave, `account_id` empty), verifies (`VerifyApplicant`; "Perlu
   perbaikan" needs a note the applicant reads), changes data (the path is
@@ -135,8 +159,8 @@ Never another feature module (Attendance), not even via its Public surface.
   (verifying says the documents are complete) and `ResultAnnouncer`
   (announcing tells nobody) are interfaces in `Domain/Support` with
   always-true implementations in `Infrastructure/Stubs`, bound in the
-  provider. WhatsApp results (`ppdb.result` stays "Segera hadir" in Core),
-  document upload and a public result page are not built.
+  provider. WhatsApp results (`ppdb.result` stays "Segera hadir" in Core)
+  and a public result page are not built.
 - **Days** are the school's own `Y-m-d` strings (`Domain/Support/SchoolDay`
   over `TenantContext::timezone()`); a wave is upcoming, open or closed
   from the school's today and is never stored. Reports count an applicant

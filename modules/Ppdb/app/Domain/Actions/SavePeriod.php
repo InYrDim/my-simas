@@ -21,6 +21,10 @@ final class SavePeriod
      */
     public const DEFAULT_PATHS = ['Zonasi', 'Prestasi', 'Afirmasi', 'Mutasi'];
 
+    public function __construct(
+        private readonly CopyFormFields $copyForm,
+    ) {}
+
     /**
      * @param  array{name: string, entry_year: int, status: string}  $data
      *
@@ -45,11 +49,13 @@ final class SavePeriod
                 'status' => $status,
             ]);
 
-            if ($isNew) {
-                $period->form_fields = AdmissionPeriod::query()->latest('id')->first()?->form_fields;
-            }
+            $previous = $isNew ? AdmissionPeriod::query()->latest('id')->first() : null;
 
             $period->save();
+
+            if ($previous !== null) {
+                $this->copyForm->handle($previous, $period);
+            }
 
             if ($isNew) {
                 foreach (self::DEFAULT_PATHS as $index => $name) {

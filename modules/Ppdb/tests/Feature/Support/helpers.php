@@ -8,11 +8,14 @@ use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Domain\Models\Tenant;
 use Modules\Platform\App\Infrastructure\Modules\ModuleFlagManager;
 use Modules\Platform\Database\Factories\TenantFactory;
+use Modules\Ppdb\App\Domain\Enums\FieldType;
 use Modules\Ppdb\App\Domain\Enums\PeriodStatus;
 use Modules\Ppdb\App\Domain\Models\AdmissionPath;
 use Modules\Ppdb\App\Domain\Models\AdmissionPeriod;
 use Modules\Ppdb\App\Domain\Models\AdmissionWave;
 use Modules\Ppdb\App\Domain\Models\Applicant;
+use Modules\Ppdb\App\Domain\Models\ApplicantAnswer;
+use Modules\Ppdb\App\Domain\Models\FormField;
 use Modules\Ppdb\App\Domain\Models\PpdbAccount;
 use Modules\Ppdb\Database\Factories\PpdbAccountFactory;
 
@@ -213,4 +216,37 @@ function ownApplicationForm(AdmissionPath $path, array $overrides = []): array
         'guardian_phone' => '081234567890',
         ...$overrides,
     ];
+}
+
+/**
+ * A custom field of the period.
+ *
+ * @param  list<string>  $options
+ * @param  array<string, mixed>  $rules
+ * @param  array<string, mixed>  $attributes
+ */
+function customField(Tenant $tenant, AdmissionPeriod $period, FieldType $type, array $options = [], array $rules = [], array $attributes = []): FormField
+{
+    static $order = 100;
+
+    return ppdbSchool($tenant, fn () => FormField::factory()->create([
+        'period_id' => $period->id,
+        'type' => $type,
+        'label' => 'Pertanyaan '.$type->value,
+        'options' => $options === [] ? null : $options,
+        'rules' => $rules === [] ? null : $rules,
+        'sort_order' => ++$order,
+        ...$attributes,
+    ]));
+}
+
+/**
+ * The stored answer of the applicant to the field, or null.
+ */
+function storedAnswer(Tenant $tenant, Applicant $applicant, FormField $field): ?string
+{
+    return ppdbSchool($tenant, fn () => ApplicantAnswer::query()
+        ->where('applicant_id', $applicant->id)
+        ->where('field_id', $field->id)
+        ->value('value'));
 }

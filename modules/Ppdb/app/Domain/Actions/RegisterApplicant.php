@@ -34,11 +34,13 @@ final class RegisterApplicant
     public function __construct(
         private readonly ApplicantChecks $checks,
         private readonly SchoolDay $day,
+        private readonly SaveAnswers $saveAnswers,
     ) {}
 
     /**
      * @param  array<string, mixed>  $data  the applicant's own fields (Applicant::DATA_FIELDS)
      * @param  PpdbAccount|null  $account  the applicant's account; required for source Online, ignored otherwise
+     * @param  array<array-key, mixed>  $answers  answers to the period's custom fields, by field id
      *
      * @throws ValidationException when the period is not running, a choice is wrong or the account cannot register
      */
@@ -48,6 +50,7 @@ final class RegisterApplicant
         ApplicantSource $source,
         ?int $recordedBy = null,
         ?PpdbAccount $account = null,
+        array $answers = [],
     ): Applicant {
         if ($period->status !== PeriodStatus::Active) {
             throw ValidationException::withMessages(['period' => 'Pendaftaran hanya untuk periode PPDB yang sedang berjalan.']);
@@ -65,17 +68,23 @@ final class RegisterApplicant
 
         for ($attempt = 1; ; $attempt++) {
             try {
-                return DB::transaction(fn (): Applicant => Applicant::query()->create([
-                    ...$data,
-                    'period_id' => $period->id,
-                    'account_id' => $account?->id,
-                    'number' => $this->nextNumber($period),
-                    'source' => $source,
-                    'registered_on' => $this->day->today(),
-                    'status' => ApplicantStatus::Submitted,
-                    'decision' => Decision::Pending,
-                    'recorded_by' => $recordedBy,
-                ]));
+                return DB::transaction(function () use ($period, $data, $source, $recordedBy, $account, $answers): Applicant {
+                    $applicant = Applicant::query()->create([
+                        ...$data,
+                        'period_id' => $period->id,
+                        'account_id' => $account?->id,
+                        'number' => $this->nextNumber($period),
+                        'source' => $source,
+                        'registered_on' => $this->day->today(),
+                        'status' => ApplicantStatus::Submitted,
+                        'decision' => Decision::Pending,
+                        'recorded_by' => $recordedBy,
+                    ]);
+
+                    $this->saveAnswers->handle($applicant, $period, $answers);
+
+                    return $applicant;
+                });
             } catch (UniqueConstraintViolationException $exception) {
                 // Two registrations asked for the same number at once — or
                 // the account registered twice at once.

@@ -434,10 +434,13 @@ Core's `StudentAdmission::admit()` makes the student at re-registration
 `ppdb.selection.manage`, `ppdb.settings.manage`. The decision stays hidden
 on the applicant's page until the results are announced; document check
 and result announcing are always-true stand-ins (`DocumentCheck`,
-`ResultAnnouncer`); each period sets which form fields are Required,
-Optional or Off (`ppdb_periods.form_fields`; path, name, gender fixed; Off
-keeps old answers; a new period copies the latest); WhatsApp results and
-document upload are not built;
+`ResultAnnouncer`); each period's registration form is built by the school
+on PPDB › Formulir (`ppdb_form_fields`: the ten built-in fields, path/name/
+gender locked, plus custom text, paragraph, number, date, select,
+checkboxes, file and section fields; answers in `ppdb_applicant_answers`;
+archiving keeps answers, delete only without answers; a new period copies
+the latest; uploads live in `TenantStorage` and download as attachments);
+WhatsApp results are not built;
 `ppdb` is in no plan yet. After a release: `php artisan migrate` and
 `php artisan roles:sync`. Details: modules/Ppdb/CONTRACT.md,
 modules/Core/CONTRACT.md, docs/architecture/modular-monolith.md.

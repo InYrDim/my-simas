@@ -9,10 +9,12 @@ use Modules\Platform\App\Domain\Models\Tenant;
 use Modules\Ppdb\App\Domain\Enums\ApplicantSource;
 use Modules\Ppdb\App\Domain\Enums\ApplicantStatus;
 use Modules\Ppdb\App\Domain\Enums\Decision;
+use Modules\Ppdb\App\Domain\Enums\FieldType;
 use Modules\Ppdb\App\Domain\Enums\PeriodStatus;
 use Modules\Ppdb\App\Domain\Models\AdmissionPath;
 use Modules\Ppdb\App\Domain\Models\AdmissionPeriod;
 use Modules\Ppdb\App\Domain\Models\AdmissionWave;
+use Modules\Ppdb\App\Domain\Models\ApplicantAnswer;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 use function Pest\Laravel\get;
@@ -84,6 +86,26 @@ it('downloads the applicants of the academic year with their path, wave and stat
         ['PPDB-27-0001', 'Nadia Putri', 'Perempuan', 'SMPN 3 Bandung', 'Zonasi', 'Gelombang 1', '12 Januari 2027', 'Menunggu verifikasi', 'Online'],
         ['PPDB-27-0002', 'Rafi Maulana', 'Laki-laki', 'SMP Al-Azhar', 'Prestasi', 'Gelombang 1', '3 Februari 2027', 'Terverifikasi', 'Panitia'],
     ]);
+});
+
+it('adds the custom fields of the form as columns of the applicant list', function () {
+    [$tenant, $period, $wave, $zonasi] = admissionsSchool('laporan-ppdb-kustom');
+    $hobby = customField($tenant, $period, FieldType::Checkboxes, ['Membaca', 'Olahraga'], attributes: ['label' => 'Hobi']);
+    $diploma = customField($tenant, $period, FieldType::File, attributes: ['label' => 'Ijazah']);
+    $unused = customField($tenant, $period, FieldType::Text, attributes: ['label' => 'Tanpa Jawaban', 'archived_at' => now()]);
+    customField($tenant, $period, FieldType::Section, attributes: ['label' => 'Bagian']);
+    $nadia = ppdbApplicant($tenant, $period, $wave, $zonasi, ['name' => 'Nadia', 'number' => 'PPDB-27-0001', 'registered_on' => '2027-01-12']);
+    ppdbApplicant($tenant, $period, $wave, $zonasi, ['name' => 'Rafi', 'number' => 'PPDB-27-0002', 'registered_on' => '2027-01-13']);
+    ppdbSchool($tenant, fn () => ApplicantAnswer::factory()->create(['applicant_id' => $nadia->id, 'field_id' => $hobby->id, 'value' => '["Membaca","Olahraga"]']));
+    ppdbSchool($tenant, fn () => ApplicantAnswer::factory()->create(['applicant_id' => $nadia->id, 'field_id' => $diploma->id, 'value' => '{"path":"x.pdf","name":"ijazah.pdf","size":1,"mime":"application/pdf"}']));
+
+    $response = get(school($tenant->slug, '/statistik-laporan/laporan/ppdb-applicants/unduh'))->assertOk();
+    $rows = admissionsCsv($response);
+
+    expect($unused->label)->toBe('Tanpa Jawaban')
+        ->and(array_slice($rows[0], 9))->toBe(['Hobi', 'Ijazah'])
+        ->and(array_slice($rows[1], 9))->toBe(['Membaca, Olahraga', 'Ada'])
+        ->and(array_slice($rows[2], 9))->toBe(['', '']);
 });
 
 it('downloads the selection result path by path, highest score first, verified applicants only', function () {

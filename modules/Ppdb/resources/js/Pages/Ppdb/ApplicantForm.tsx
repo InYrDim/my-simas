@@ -2,11 +2,12 @@ import { Link, useForm } from '@inertiajs/react';
 
 import { store } from '@/actions/Modules/Ppdb/App/Http/Controllers/ApplicantController';
 import { applicants } from '@/routes/ppdb';
-import { EmptyState, Panel } from '@shared/components/page-parts';
+import { EmptyState, OptionSelect, Panel } from '@shared/components/page-parts';
 import { Alert, AlertDescription } from '@shared/components/ui/alert';
 import { Button } from '@shared/components/ui/button';
+import { Field, FieldError, FieldLabel } from '@shared/components/ui/field';
 
-import ApplicantFields, { type ApplicantData, type FormFields } from '../../Components/ApplicantFields';
+import FormRenderer, { formBinding, initialAnswers, type ApplicantData, type FormFieldDef } from '../../Components/FormRenderer';
 import PpdbPage from '../../Components/PpdbPage';
 
 type Option = { value: string; label: string };
@@ -16,12 +17,12 @@ export default function ApplicantForm({
     period,
     waves,
     paths,
-    formFields,
+    fields,
 }: {
     period: { id: number; name: string } | null;
     waves: Option[];
     paths: Option[];
-    formFields: FormFields;
+    fields: FormFieldDef[];
 }) {
     const form = useForm<ApplicantData>({
         wave_id: waves.length === 1 ? waves[0].value : '',
@@ -35,8 +36,10 @@ export default function ApplicantForm({
         address: '',
         guardian_name: '',
         guardian_phone: '',
+        answers: initialAnswers(fields, {}),
     });
     const errors: Partial<Record<string, string>> = form.errors;
+    const binding = formBinding(form.data, errors, (key, value) => form.setData(key as keyof ApplicantData, value as never));
 
     if (period === null || waves.length === 0) {
         return (
@@ -67,13 +70,23 @@ export default function ApplicantForm({
                     </Alert>
                 )}
                 <Panel>
-                    <ApplicantFields
-                        data={form.data}
-                        errors={errors}
-                        onChange={(key, value) => form.setData(key, value)}
-                        waves={waves}
+                    <FormRenderer
+                        fields={fields}
                         paths={paths}
-                        fields={formFields}
+                        {...binding}
+                        before={
+                            <Field data-invalid={errors.wave_id !== undefined}>
+                                <FieldLabel>Gelombang</FieldLabel>
+                                <OptionSelect
+                                    label="Gelombang"
+                                    placeholder="Pilih gelombang"
+                                    value={form.data.wave_id}
+                                    onChange={(value) => form.setData('wave_id', value)}
+                                    options={waves}
+                                />
+                                {errors.wave_id !== undefined && <FieldError>{errors.wave_id}</FieldError>}
+                            </Field>
+                        }
                     />
                 </Panel>
                 <div className="mt-6 flex gap-3">

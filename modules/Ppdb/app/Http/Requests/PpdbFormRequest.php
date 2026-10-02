@@ -26,6 +26,16 @@ abstract class PpdbFormRequest extends FormRequest
             'in' => ':attribute tidak valid.',
             'array' => ':attribute tidak valid.',
             'distinct' => ':attribute tidak boleh ganda.',
+            'numeric' => ':attribute harus berupa angka.',
+            'min.numeric' => ':attribute tidak boleh kurang dari :min.',
+            'max.numeric' => ':attribute tidak boleh lebih dari :max.',
+            'email' => ':attribute harus berupa alamat email yang valid.',
+            'file' => ':attribute harus berupa berkas.',
+            'mimes' => ':attribute harus berupa berkas dengan jenis: :values.',
+            'max.file' => ':attribute terlalu besar (maksimal :max KB).',
+            'uploaded' => ':attribute gagal diunggah. Ukuran berkas mungkin melebihi batas server.',
+            'regex' => ':attribute formatnya tidak sesuai.',
+            'before_or_equal' => ':attribute tidak boleh di masa depan.',
         ];
     }
 }

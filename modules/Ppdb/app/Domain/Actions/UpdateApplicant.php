@@ -3,6 +3,7 @@
 namespace Modules\Ppdb\App\Domain\Actions;
 
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\Ppdb\App\Domain\Enums\Decision;
 use Modules\Ppdb\App\Domain\Models\AdmissionPeriod;
@@ -19,14 +20,16 @@ final class UpdateApplicant
 {
     public function __construct(
         private readonly ApplicantChecks $checks,
+        private readonly SaveAnswers $saveAnswers,
     ) {}
 
     /**
      * @param  array<string, mixed>  $data
+     * @param  array<array-key, mixed>  $answers  answers to the period's custom fields, by field id
      *
      * @throws ValidationException
      */
-    public function handle(Applicant $applicant, array $data): Applicant
+    public function handle(Applicant $applicant, array $data, array $answers = []): Applicant
     {
         if ($applicant->isEnrolled()) {
             throw ValidationException::withMessages(['applicant' => 'Pendaftar yang sudah daftar ulang tidak bisa diubah.']);
@@ -42,7 +45,10 @@ final class UpdateApplicant
 
         $this->checks->choices($period, $data, $applicant);
 
-        $applicant->fill($data)->save();
+        DB::transaction(function () use ($applicant, $data, $period, $answers): void {
+            $applicant->fill($data)->save();
+            $this->saveAnswers->handle($applicant, $period, $answers);
+        });
 
         return $applicant;
     }

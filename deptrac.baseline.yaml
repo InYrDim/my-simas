@@ -71,3 +71,7 @@ deptrac:
             - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
         Modules\Ppdb\App\Domain\Models\Applicant:
             - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Ppdb\App\Domain\Models\FormField:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Ppdb\App\Domain\Models\ApplicantAnswer:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'

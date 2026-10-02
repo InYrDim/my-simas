@@ -16,10 +16,13 @@ use Modules\Ppdb\App\Domain\Models\AdmissionPath;
 use Modules\Ppdb\App\Domain\Models\AdmissionPeriod;
 use Modules\Ppdb\App\Domain\Models\AdmissionWave;
 use Modules\Ppdb\App\Domain\Models\Applicant;
+use Modules\Ppdb\App\Domain\Models\FormField;
 use Modules\Ppdb\App\Domain\Models\PpdbAccount;
-use Modules\Ppdb\App\Domain\Support\FormFields;
+use Modules\Ppdb\App\Domain\Queries\FormFieldList;
+use Modules\Ppdb\App\Domain\Support\AnswerFiles;
 use Modules\Ppdb\App\Domain\Support\SchoolDay;
 use Modules\Ppdb\App\Http\Requests\Account\ApplicationRequest;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * The applicant's own registration form: send it once, and correct it when
@@ -32,6 +35,7 @@ final class ApplicationController
     public function __construct(
         private readonly TenantContext $context,
         private readonly SchoolDay $day,
+        private readonly FormFieldList $form,
     ) {}
 
     public function form(): Response|RedirectResponse
@@ -61,7 +65,9 @@ final class ApplicationController
             return Inertia::render('Ppdb/Account/Form', [
                 'period' => $period->name,
                 'paths' => $period->paths->map(fn (AdmissionPath $path): array => ['value' => (string) $path->id, 'label' => $path->name])->values()->all(),
-                'formFields' => FormFields::values($period->formFields()),
+                'fields' => $this->form->for($period),
+                'answers' => $application === null ? new \stdClass : $this->form->answersOf($application),
+                'files' => $application === null ? new \stdClass : $this->form->filesOf($application, fn (FormField $field): string => route('ppdb.account.form.file', ['field' => $field->id])),
                 'applicant' => $application === null ? null : [
                     'pathId' => (string) $application->path_id,
                     'name' => $application->name,
@@ -95,7 +101,7 @@ final class ApplicationController
                 throw ValidationException::withMessages(['period' => 'Pendaftaran belum dibuka atau sudah ditutup.']);
             }
 
-            return $register->handle($period, $request->validated(), ApplicantSource::Online, null, $account);
+            return $register->handle($period, $request->validated(), ApplicantSource::Online, null, $account, $request->answersData());
         });
 
         return redirect()
@@ -114,10 +120,32 @@ final class ApplicationController
         $this->context->run($account->tenant_id, function () use ($account, $request, $update): void {
             $applicant = Applicant::query()->where('account_id', $account->id)->firstOrFail();
 
-            $update->handle($applicant, $request->validated());
+            $update->handle($applicant, $request->validated(), $request->answersData());
         });
 
         return redirect()->route('ppdb.account.home')->with('status', 'Perbaikan dikirim ke panitia.');
+    }
+
+    /**
+     * Downloads a file the account uploaded to its own registration; the
+     * field is read inside the school the account joined.
+     */
+    public function file(int $field, AnswerFiles $files): StreamedResponse
+    {
+        $account = $this->account();
+
+        abort_if($account->tenant_id === null, 404);
+
+        $response = $this->context->run($account->tenant_id, function () use ($account, $field, $files): ?StreamedResponse {
+            $application = Applicant::query()->where('account_id', $account->id)->first();
+            $formField = FormField::query()->find($field);
+
+            return $application === null || $formField === null ? null : $files->download($application, $formField);
+        });
+
+        abort_if($response === null, 404);
+
+        return $response;
     }
 
     private function account(): PpdbAccount

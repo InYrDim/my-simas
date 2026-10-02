@@ -8,8 +8,10 @@ use Modules\Ppdb\App\Http\Controllers\Account\PortalController;
 use Modules\Ppdb\App\Http\Controllers\Account\RegisterController;
 use Modules\Ppdb\App\Http\Controllers\Account\SessionController;
 use Modules\Ppdb\App\Http\Controllers\Account\VerificationController as AccountVerificationController;
+use Modules\Ppdb\App\Http\Controllers\AnswerFileController;
 use Modules\Ppdb\App\Http\Controllers\ApplicantController;
 use Modules\Ppdb\App\Http\Controllers\EnrollmentController;
+use Modules\Ppdb\App\Http\Controllers\FormController;
 use Modules\Ppdb\App\Http\Controllers\OverviewController;
 use Modules\Ppdb\App\Http\Controllers\SelectionController;
 use Modules\Ppdb\App\Http\Controllers\SettingsController;
@@ -71,6 +73,7 @@ Route::middleware('web')->group(function (): void {
             Route::get('formulir', [ApplicationController::class, 'form'])->name('form');
             Route::post('formulir', [ApplicationController::class, 'store'])->name('form.store');
             Route::put('formulir', [ApplicationController::class, 'update'])->name('form.update');
+            Route::get('formulir/berkas/{field}', [ApplicationController::class, 'file'])->whereNumber('field')->name('form.file');
         });
     });
 
@@ -84,6 +87,10 @@ Route::middleware('web')->group(function (): void {
             Route::get('pendaftar/{applicant}', [ApplicantController::class, 'show'])
                 ->whereNumber('applicant')
                 ->name('applicants.show');
+
+            Route::get('pendaftar/{applicant}/berkas/{field}', AnswerFileController::class)
+                ->whereNumber(['applicant', 'field'])
+                ->name('applicants.file');
 
             Route::get('seleksi', [SelectionController::class, 'index'])->name('selection');
 
@@ -112,8 +119,13 @@ Route::middleware('web')->group(function (): void {
                 Route::put('pengaturan/gelombang/{wave}', 'updateWave')->name('settings.waves.update');
                 Route::delete('pengaturan/gelombang/{wave}', 'destroyWave')->name('settings.waves.destroy');
                 Route::put('pengaturan/periode/{period}/jalur', 'updatePaths')->name('settings.paths.update');
-                Route::put('pengaturan/periode/{period}/formulir', 'updateForm')->name('settings.form.update');
                 Route::delete('pengaturan/jalur/{path}', 'destroyPath')->name('settings.paths.destroy');
+            });
+
+            Route::middleware('can:ppdb.settings.manage')->controller(FormController::class)->group(function (): void {
+                Route::get('formulir', 'show')->name('form');
+                Route::put('formulir/{period}', 'update')->name('form.update');
+                Route::delete('formulir/kolom/{field}', 'destroy')->name('form.fields.destroy');
             });
         });
 });

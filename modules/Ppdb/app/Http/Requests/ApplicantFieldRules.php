@@ -2,49 +2,34 @@
 
 namespace Modules\Ppdb\App\Http\Requests;
 
-use Illuminate\Validation\Rule;
-use Modules\Ppdb\App\Domain\Enums\FieldRequirement;
-use Modules\Ppdb\App\Domain\Support\FormFields;
+use Modules\Ppdb\App\Domain\Models\AdmissionPeriod;
+use Modules\Ppdb\App\Domain\Models\Applicant;
+use Modules\Ppdb\App\Domain\Support\FormRules;
 
 /**
  * The rules and names of an applicant's own fields, shared by the
  * committee's form and the applicant's own form (which has no wave: the
- * wave open today is the applicant's). Which of the adjustable fields are
- * asked, and whether they are required, is the period's choice.
+ * wave open today is the applicant's). Which fields are asked, and whether
+ * they are required, is the period's form.
  */
 final class ApplicantFieldRules
 {
     /**
-     * @param  array<string, FieldRequirement>|null  $fields  the period's form; the usual one when there is no period
+     * @param  AdmissionPeriod|null  $period  the form's period; the usual form when there is none
+     * @param  Applicant|null  $applicant  who is changing their registration (a file they sent already counts as given)
      * @return array<string, mixed>
      */
-    public static function rules(?array $fields = null): array
+    public static function rules(?AdmissionPeriod $period = null, ?Applicant $applicant = null): array
     {
-        return [
-            'path_id' => ['required', 'integer'],
-            'name' => ['required', 'string', 'max:255'],
-            'gender' => ['required', Rule::in(['L', 'P'])],
-            ...FormFields::rules($fields ?? FormFields::defaults()),
-        ];
+        return app(FormRules::class)->forPeriod($period, $applicant);
     }
 
     /**
      * @return array<string, string>
      */
-    public static function attributes(): array
+    public static function attributes(?AdmissionPeriod $period = null): array
     {
-        $names = [
-            'wave_id' => 'Gelombang',
-            'path_id' => 'Jalur',
-            'name' => 'Nama lengkap',
-            'gender' => 'Jenis kelamin',
-        ];
-
-        foreach (FormFields::keys() as $key) {
-            $names[$key] = FormFields::label($key);
-        }
-
-        return $names;
+        return app(FormRules::class)->attributesFor($period);
     }
 
     /**

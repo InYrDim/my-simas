@@ -6,7 +6,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\Ppdb\App\Domain\Enums\Decision;
 use Modules\Ppdb\App\Domain\Models\Applicant;
+use Modules\Ppdb\App\Domain\Models\ApplicantAnswer;
 use Modules\Ppdb\App\Domain\Models\PpdbAccount;
+use Modules\Ppdb\App\Domain\Support\AnswerFiles;
 
 /**
  * Removes an applicant's registration (a wrong school, a duplicate, a
@@ -16,6 +18,10 @@ use Modules\Ppdb\App\Domain\Models\PpdbAccount;
  */
 final class CancelApplication
 {
+    public function __construct(
+        private readonly AnswerFiles $files,
+    ) {}
+
     /**
      * @throws ValidationException
      */
@@ -27,7 +33,15 @@ final class CancelApplication
             ]);
         }
 
-        DB::transaction(function () use ($applicant): void {
+        $files = $this->files->pathsOf($applicant);
+
+        DB::transaction(function () use ($applicant, $files): void {
+            ApplicantAnswer::query()->where('applicant_id', $applicant->id)->delete();
+            DB::afterCommit(function () use ($files): void {
+                foreach ($files as $path) {
+                    $this->files->delete($path);
+                }
+            });
             $applicant->delete();
 
             // The applicant's account is free to join a school again. The

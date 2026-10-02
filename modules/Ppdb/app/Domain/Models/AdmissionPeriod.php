@@ -9,9 +9,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Platform\App\Contracts\Concerns\BelongsToTenant;
-use Modules\Ppdb\App\Domain\Enums\FieldRequirement;
+use Modules\Ppdb\App\Domain\Actions\SeedFormFields;
 use Modules\Ppdb\App\Domain\Enums\PeriodStatus;
-use Modules\Ppdb\App\Domain\Support\FormFields;
 use Modules\Ppdb\Database\Factories\AdmissionPeriodFactory;
 
 /**
@@ -23,11 +22,10 @@ use Modules\Ppdb\Database\Factories\AdmissionPeriodFactory;
  * @property string $name
  * @property int $entry_year the year the new students start
  * @property PeriodStatus $status
- * @property array<string, string>|null $form_fields requirement by field key; null is the usual form
  * @property CarbonInterface|null $results_published_at
  */
 #[UseFactory(AdmissionPeriodFactory::class)]
-#[Fillable(['name', 'entry_year', 'status', 'form_fields', 'results_published_at'])]
+#[Fillable(['name', 'entry_year', 'status', 'results_published_at'])]
 class AdmissionPeriod extends Model
 {
     /** @use HasFactory<AdmissionPeriodFactory> */
@@ -44,13 +42,25 @@ class AdmissionPeriod extends Model
     }
 
     /**
-     * What this period's registration form asks for, by field key.
-     *
-     * @return array<string, FieldRequirement>
+     * Every period has a registration form: its fields start as the usual
+     * ten built-in ones.
      */
-    public function formFields(): array
+    protected static function booted(): void
     {
-        return FormFields::resolve($this->form_fields);
+        static::created(function (self $period): void {
+            app(SeedFormFields::class)->handle($period);
+        });
+    }
+
+    /**
+     * The fields of this period's registration form, in order (archived
+     * ones included).
+     *
+     * @return HasMany<FormField, $this>
+     */
+    public function fields(): HasMany
+    {
+        return $this->hasMany(FormField::class, 'period_id')->orderBy('sort_order')->orderBy('id');
     }
 
     /**
@@ -77,7 +87,6 @@ class AdmissionPeriod extends Model
         return [
             'entry_year' => 'integer',
             'status' => PeriodStatus::class,
-            'form_fields' => 'array',
             'results_published_at' => 'datetime',
         ];
     }

@@ -7,7 +7,6 @@ import {
     destroyWave,
     storePeriod,
     storeWave,
-    updateForm,
     updatePaths,
     updatePeriod,
     updateWave,
@@ -50,21 +49,12 @@ interface Path {
     quota: number;
 }
 
-interface FormField {
-    key: string;
-    label: string;
-    value: string;
-}
-
 interface SettingsProps {
     periods: Period[];
     selected: Period | null;
     waves: Wave[];
     paths: Path[];
     statuses: { value: string; label: string }[];
-    formFields: FormField[];
-    requirements: { value: string; label: string }[];
-    fixedFields: string[];
     school: { name: string; code: string; joinUrl: string };
 }
 
@@ -366,66 +356,11 @@ function PathsForm({ periodId, paths }: { periodId: number; paths: Path[] }) {
     );
 }
 
-/** Which fields of the registration form the period asks: required, optional or not used. */
-function FormFieldsForm({
-    periodId,
-    fields,
-    requirements,
-    fixed,
-}: {
-    periodId: number;
-    fields: FormField[];
-    requirements: { value: string; label: string }[];
-    fixed: string[];
-}) {
-    const form = useForm({
-        fields: Object.fromEntries(fields.map((field) => [field.key, field.value])) as Record<string, string>,
-    });
-    const errors: FormErrors = form.errors;
-
-    return (
-        <form
-            className="flex flex-col gap-4"
-            onSubmit={(event) => {
-                event.preventDefault();
-                form.put(updateForm.url({ period: periodId }), {
-                    preserveScroll: true,
-                    onSuccess: () => form.setDefaults(),
-                });
-            }}
-        >
-            <p className="text-sm text-muted-foreground">
-                Pilih isian yang diminta formulir periode ini. {fixed.join(', ')} selalu diminta. Mematikan sebuah isian tidak menghapus
-                jawaban pendaftar yang sudah masuk.
-            </p>
-            <div className="flex flex-col gap-3">
-                {fields.map((field) => (
-                    <Field key={field.key} data-invalid={errors[`fields.${field.key}`] !== undefined} className="sm:grid sm:grid-cols-[1fr_12rem] sm:items-center">
-                        <FieldLabel>{field.label}</FieldLabel>
-                        <OptionSelect
-                            label={field.label}
-                            value={form.data.fields[field.key]}
-                            onChange={(value) => form.setData('fields', { ...form.data.fields, [field.key]: value })}
-                            options={requirements}
-                        />
-                        {errors[`fields.${field.key}`] !== undefined && <FieldError>{errors[`fields.${field.key}`]}</FieldError>}
-                    </Field>
-                ))}
-            </div>
-            <div>
-                <Button type="submit" disabled={form.processing || !form.isDirty}>
-                    Simpan formulir
-                </Button>
-            </div>
-        </form>
-    );
-}
-
 /**
  * Pengaturan PPDB: the school's code and link for applicants, its periods,
- * and the waves, paths and registration form of the chosen period.
+ * and the waves and paths of the chosen period.
  */
-export default function Settings({ periods, selected, waves, paths, statuses, formFields, requirements, fixedFields, school }: SettingsProps) {
+export default function Settings({ periods, selected, waves, paths, statuses, school }: SettingsProps) {
     const [creating, setCreating] = useState(selected === null);
     const [editingWave, setEditingWave] = useState<Wave | null>(null);
     const [addingWave, setAddingWave] = useState(false);
@@ -437,7 +372,7 @@ export default function Settings({ periods, selected, waves, paths, statuses, fo
     return (
         <PpdbPage
             title="Pengaturan PPDB"
-            description="Periode, gelombang, jalur dan kuota, isian formulir, serta tautan pendaftaran sekolah."
+            description="Periode, gelombang, jalur dan kuota, serta tautan pendaftaran sekolah."
             width="max-w-3xl"
         >
             <div className="flex flex-col gap-6">
@@ -612,15 +547,6 @@ export default function Settings({ periods, selected, waves, paths, statuses, fo
                             />
                         </Panel>
 
-                        <Panel title="Formulir pendaftaran">
-                            <FormFieldsForm
-                                key={`form-${selected.id}-${formFields.map((field) => `${field.key}:${field.value}`).join('|')}`}
-                                periodId={selected.id}
-                                fields={formFields}
-                                requirements={requirements}
-                                fixed={fixedFields}
-                            />
-                        </Panel>
                     </>
                 )}
             </div>

@@ -4,7 +4,6 @@ namespace Modules\Ppdb\App\Http\Requests\Account;
 
 use Illuminate\Support\Facades\Auth;
 use Modules\Platform\App\Contracts\TenantContext;
-use Modules\Ppdb\App\Domain\Enums\FieldRequirement;
 use Modules\Ppdb\App\Domain\Models\AdmissionPeriod;
 use Modules\Ppdb\App\Domain\Models\Applicant;
 use Modules\Ppdb\App\Domain\Models\PpdbAccount;
@@ -23,11 +22,16 @@ use Modules\Ppdb\App\Http\Requests\PpdbFormRequest;
 final class ApplicationRequest extends PpdbFormRequest
 {
     /**
+     * @var array{rules: array<string, mixed>, attributes: array<string, string>}|null
+     */
+    private ?array $form = null;
+
+    /**
      * @return array<string, mixed>
      */
     public function rules(): array
     {
-        return ApplicantFieldRules::rules($this->formFields());
+        return $this->form()['rules'];
     }
 
     /**
@@ -35,7 +39,7 @@ final class ApplicationRequest extends PpdbFormRequest
      */
     public function attributes(): array
     {
-        return ApplicantFieldRules::attributes();
+        return $this->form()['attributes'];
     }
 
     /**
@@ -47,24 +51,43 @@ final class ApplicationRequest extends PpdbFormRequest
     }
 
     /**
-     * @return array<string, FieldRequirement>|null null when the account has no school or the school no period
+     * The answers to the period's custom fields, by field id.
+     *
+     * @return array<array-key, mixed>
      */
-    private function formFields(): ?array
+    public function answersData(): array
     {
+        $answers = $this->validated('answers', []);
+
+        return is_array($answers) ? $answers : [];
+    }
+
+    /**
+     * The rules and names of the period's form; the usual form when the
+     * account has no school or the school no period.
+     *
+     * @return array{rules: array<string, mixed>, attributes: array<string, string>}
+     */
+    private function form(): array
+    {
+        if ($this->form !== null) {
+            return $this->form;
+        }
+
         $account = Auth::guard('ppdb')->user();
 
         if (! $account instanceof PpdbAccount || $account->tenant_id === null) {
-            return null;
+            return $this->form = ['rules' => ApplicantFieldRules::rules(), 'attributes' => ApplicantFieldRules::attributes()];
         }
 
-        return app(TenantContext::class)->run($account->tenant_id, function () use ($account): ?array {
+        return $this->form = app(TenantContext::class)->run($account->tenant_id, function () use ($account): array {
             $application = Applicant::query()->where('account_id', $account->id)->first();
 
             $period = $application === null
                 ? AdmissionPeriod::active()
                 : AdmissionPeriod::query()->find($application->period_id);
 
-            return $period?->formFields();
+            return ['rules' => ApplicantFieldRules::rules($period, $application), 'attributes' => ApplicantFieldRules::attributes($period)];
         });
     }
 }

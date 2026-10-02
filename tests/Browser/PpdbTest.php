@@ -12,6 +12,7 @@ use Modules\Ppdb\App\Domain\Models\AdmissionPath;
 use Modules\Ppdb\App\Domain\Models\AdmissionPeriod;
 use Modules\Ppdb\App\Domain\Models\AdmissionWave;
 use Modules\Ppdb\App\Domain\Models\Applicant;
+use Modules\Ppdb\App\Domain\Models\ApplicantAnswer;
 use Modules\Ppdb\App\Domain\Models\PpdbAccount;
 use Modules\Ppdb\App\Infrastructure\Mail\AccountVerificationMail;
 use Modules\Ppdb\Database\Factories\PpdbAccountFactory;
@@ -198,12 +199,12 @@ it('takes an applicant from a school link to the announced result and a place as
         ->assertNoJavaScriptErrors();
 });
 
-it('asks an applicant only the fields the admin kept on the form', function () {
+it('builds the form the applicant fills in: archived field gone, new question added, shown in the preview', function () {
     [$tenant, $adminEmail] = ppdbSchoolWithAdmin();
     PpdbAccountFactory::new()->joined($tenant->id)->create(['email' => 'siti@contoh.test']);
     onCentralHost();
 
-    // --- The admin switches NISN off and makes the origin school optional
+    // --- The admin archives NISN, makes the origin school optional and adds a question
     $staff = visit('/login');
 
     $staff->fill('school', $tenant->id)
@@ -212,17 +213,21 @@ it('asks an applicant only the fields the admin kept on the form', function () {
         ->press('Masuk')
         ->assertPathIs('/beranda');
 
-    $staff->navigate('/ppdb/pengaturan')
-        ->assertSee('Formulir pendaftaran')
-        ->click('internal:role=combobox[name="NISN"i]')
-        ->click('internal:role=option[name="Tidak dipakai"i]')
-        ->click('internal:role=combobox[name="Asal sekolah"i]')
-        ->click('internal:role=option[name="Opsional"i]')
+    $staff->navigate('/ppdb/formulir')
+        ->assertSee('Kolom formulir')
+        ->assertSee('Pratinjau')
+        ->click('internal:role=button[name="Arsipkan NISN"i]')
+        ->click('internal:role=button[name="Ubah Asal sekolah"i]')
+        ->click('internal:role=switch[name="Wajib diisi"i]')
+        ->press('Tambah kolom')
+        ->click('internal:role=menuitem[name="Pilihan tunggal"i]')
+        ->fill('internal:label="Label pertanyaan"s', 'Program')
+        ->assertSee('Program')
         ->press('Simpan formulir')
         ->assertSee('Formulir pendaftaran disimpan.')
         ->assertNoJavaScriptErrors();
 
-    // --- The applicant's form follows: no NISN, and the form is sent without the origin school
+    // --- The applicant's form follows: no NISN, an optional origin school and the new question
     $applicant = visit('/calon-siswa/masuk');
 
     $applicant->fill('email', 'siti@contoh.test')
@@ -233,12 +238,14 @@ it('asks an applicant only the fields the admin kept on the form', function () {
     $applicant->navigate('/calon-siswa/formulir')
         ->assertDontSee('NISN')
         ->assertSee('Asal sekolah')
-        ->assertSee('(opsional)')
+        ->assertSee('Program')
         ->fill('#applicant-name', 'Nadia Putri Anggraini')
         ->click('internal:role=combobox[name="Jalur"i]')
         ->click('internal:role=option[name="Zonasi"i]')
         ->click('internal:role=combobox[name="Jenis kelamin"i]')
         ->click('internal:role=option[name="Perempuan"i]')
+        ->click('internal:role=combobox[name="Program"i]')
+        ->click('internal:role=option[name="Opsi 2"i]')
         ->fill('#applicant-birth-date', '2012-05-04')
         ->fill('#applicant-guardian', 'Budi Santoso')
         ->fill('#applicant-phone', '081234567890')
@@ -248,10 +255,19 @@ it('asks an applicant only the fields the admin kept on the form', function () {
         ->assertNoJavaScriptErrors();
 
     $registration = inTenant($tenant, fn () => Applicant::query()->sole());
+    $answer = inTenant($tenant, fn () => ApplicantAnswer::query()->sole());
 
     expect($registration->nisn)->toBeNull()
         ->and($registration->origin_school)->toBeNull()
-        ->and($registration->name)->toBe('Nadia Putri Anggraini');
+        ->and($registration->name)->toBe('Nadia Putri Anggraini')
+        ->and($answer->value)->toBe('Opsi 2');
+
+    // --- The committee sees the answer on the applicant's page
+    $staff->navigate('/ppdb/pendaftar')
+        ->click('Nadia Putri Anggraini')
+        ->assertSee('Program')
+        ->assertSee('Opsi 2')
+        ->assertNoJavaScriptErrors();
 });
 
 it('refuses a code that is not a school with PPDB, in the words every refusal uses', function () {

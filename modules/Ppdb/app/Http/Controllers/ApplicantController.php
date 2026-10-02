@@ -16,13 +16,14 @@ use Modules\Ppdb\App\Domain\Actions\UpdateApplicant;
 use Modules\Ppdb\App\Domain\Enums\ApplicantSource;
 use Modules\Ppdb\App\Domain\Enums\ApplicantStatus;
 use Modules\Ppdb\App\Domain\Enums\Decision;
-use Modules\Ppdb\App\Domain\Enums\FieldRequirement;
 use Modules\Ppdb\App\Domain\Models\AdmissionPath;
 use Modules\Ppdb\App\Domain\Models\AdmissionPeriod;
 use Modules\Ppdb\App\Domain\Models\AdmissionWave;
 use Modules\Ppdb\App\Domain\Models\Applicant;
+use Modules\Ppdb\App\Domain\Models\FormField;
 use Modules\Ppdb\App\Domain\Queries\ChosenPeriod;
-use Modules\Ppdb\App\Domain\Support\FormFields;
+use Modules\Ppdb\App\Domain\Queries\FormFieldList;
+use Modules\Ppdb\App\Domain\Support\FormRules;
 use Modules\Ppdb\App\Domain\Support\SchoolDay;
 use Modules\Ppdb\App\Http\Requests\ApplicantRequest;
 
@@ -33,6 +34,11 @@ use Modules\Ppdb\App\Http\Requests\ApplicantRequest;
 final class ApplicantController
 {
     private const PER_PAGE = 20;
+
+    public function __construct(
+        private readonly FormRules $rules,
+        private readonly FormFieldList $form,
+    ) {}
 
     public function index(Request $request, ChosenPeriod $chosen, SchoolDay $day): Response
     {
@@ -57,7 +63,7 @@ final class ApplicantController
 
         return Inertia::render('Ppdb/Applicants', [
             'period' => $period === null ? null : ['id' => $period->id, 'name' => $period->name],
-            'showOrigin' => $period === null || $period->formFields()['origin_school'] !== FieldRequirement::Off,
+            'showOrigin' => $period === null || $this->rules->builtinStates($period)['origin_school'] !== 'off',
             'applicants' => $paginator === null ? [] : collect($paginator->items())->map(fn (Applicant $applicant): array => [
                 'id' => $applicant->id,
                 'number' => $applicant->number,
@@ -87,7 +93,7 @@ final class ApplicantController
             'period' => $period === null ? null : ['id' => $period->id, 'name' => $period->name],
             'waves' => $period === null ? [] : $this->waveOptions($period, $day),
             'paths' => $period === null ? [] : $this->pathOptions($period),
-            'formFields' => FormFields::values($period === null ? FormFields::defaults() : $period->formFields()),
+            'fields' => $period === null ? [] : $this->form->for($period),
         ]);
     }
 
@@ -101,7 +107,7 @@ final class ApplicantController
 
         $userId = Auth::id();
 
-        $applicant = $register->handle($period, $request->validated(), ApplicantSource::Staff, $userId === null ? null : (int) $userId);
+        $applicant = $register->handle($period, $request->validated(), ApplicantSource::Staff, $userId === null ? null : (int) $userId, null, $request->answersData());
 
         return redirect()
             ->route('ppdb.applicants.show', $applicant)
@@ -145,7 +151,9 @@ final class ApplicantController
             'period' => ['id' => $period->id, 'name' => $period->name],
             'waves' => $this->waveOptions($period, $day),
             'paths' => $this->pathOptions($period),
-            'formFields' => FormFields::values($period->formFields()),
+            'fields' => $this->form->for($period),
+            'answers' => $this->form->answersOf($applicant),
+            'files' => $this->form->filesOf($applicant, fn (FormField $field): string => route('ppdb.applicants.file', ['applicant' => $applicant->id, 'field' => $field->id])),
             'statuses' => array_map(
                 fn (ApplicantStatus $item): array => ['value' => $item->value, 'label' => $item->label()],
                 ApplicantStatus::cases(),
@@ -161,7 +169,7 @@ final class ApplicantController
 
     public function update(ApplicantRequest $request, Applicant $applicant, UpdateApplicant $update): RedirectResponse
     {
-        $update->handle($applicant, $request->validated());
+        $update->handle($applicant, $request->validated(), $request->answersData());
 
         return back()->with('status', 'Data pendaftar disimpan.');
     }

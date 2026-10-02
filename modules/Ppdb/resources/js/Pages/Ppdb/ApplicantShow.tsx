@@ -1,4 +1,5 @@
 import { Link, router, useForm, usePage } from '@inertiajs/react';
+import type { ReactNode } from 'react';
 
 import { destroy, update } from '@/actions/Modules/Ppdb/App/Http/Controllers/ApplicantController';
 import { store as enroll } from '@/actions/Modules/Ppdb/App/Http/Controllers/EnrollmentController';
@@ -12,8 +13,8 @@ import { Field, FieldError, FieldLabel } from '@shared/components/ui/field';
 import { Input } from '@shared/components/ui/input';
 import { Textarea } from '@shared/components/ui/textarea';
 
-import ApplicantFields, { type ApplicantData, type FormFields } from '../../Components/ApplicantFields';
 import ConfirmAction from '../../Components/ConfirmAction';
+import FormRenderer, { formBinding, initialAnswers, type ApplicantData, type FormFieldDef, type StoredFile } from '../../Components/FormRenderer';
 import PpdbPage from '../../Components/PpdbPage';
 import { statusOf } from '../../Components/status';
 
@@ -50,9 +51,20 @@ interface ApplicantProps {
     period: { id: number; name: string };
     waves: Option[];
     paths: Option[];
-    formFields: FormFields;
+    fields: FormFieldDef[];
+    answers: Record<string, string | string[]>;
+    files: Record<string, StoredFile>;
     statuses: Option[];
     can: { manage: boolean; cancel: boolean; enroll: boolean };
+}
+
+/** What an applicant's answer reads as: a list of choices joined, a stored file as a link, text as it is. */
+function answerText(value: string | string[] | undefined): string {
+    if (value === undefined) {
+        return '';
+    }
+
+    return Array.isArray(value) ? value.join(', ') : value;
 }
 
 /** The data of one applicant, to read or correct. */
@@ -60,9 +72,11 @@ function DataPanel({
     applicant,
     waves,
     paths,
-    formFields,
+    fields,
+    answers,
+    files,
     editable,
-}: Pick<ApplicantProps, 'applicant' | 'waves' | 'paths' | 'formFields'> & { editable: boolean }) {
+}: Pick<ApplicantProps, 'applicant' | 'waves' | 'paths' | 'fields' | 'answers' | 'files'> & { editable: boolean }) {
     const form = useForm<ApplicantData>({
         wave_id: String(applicant.waveId),
         path_id: String(applicant.pathId),
@@ -75,29 +89,59 @@ function DataPanel({
         address: applicant.address ?? '',
         guardian_name: applicant.guardianName ?? '',
         guardian_phone: applicant.guardianPhone ?? '',
+        answers: initialAnswers(fields, answers),
     });
     const errors: Partial<Record<string, string>> = form.errors;
+    const binding = formBinding(form.data, errors, (key, value) => form.setData(key as keyof ApplicantData, value as never));
 
     if (!editable) {
-        // A field the period does not ask is left out, unless this applicant
-        // already has an answer (from before it was switched off).
-        const rows: [string, string][] = [
-            ['Nama lengkap', applicant.name],
-            ['Jenis kelamin', applicant.gender === 'L' ? 'Laki-laki' : 'Perempuan'],
-        ];
-        const add = (key: keyof ApplicantData, label: string, value: string | null) => {
-            if ((formFields[key] ?? 'required') !== 'off' || (value !== null && value !== '')) {
-                rows.push([label, value === null || value === '' ? '—' : value]);
-            }
+        const recorded: Record<string, string | null> = {
+            path_id: applicant.pathName,
+            name: applicant.name,
+            gender: applicant.gender === 'L' ? 'Laki-laki' : 'Perempuan',
+            nisn: applicant.nisn,
+            birth_place: applicant.birthPlace,
+            birth_date: applicant.birthDate,
+            origin_school: applicant.originSchool,
+            address: applicant.address,
+            guardian_name: applicant.guardianName,
+            guardian_phone: applicant.guardianPhone,
         };
+        const rows: [string, ReactNode][] = [];
 
-        add('birth_date', 'Tempat, tanggal lahir', [applicant.birthPlace, applicant.birthDate].filter(Boolean).join(', '));
-        add('nisn', 'NISN', applicant.nisn);
-        add('origin_school', 'Asal sekolah', applicant.originSchool);
-        add('address', 'Alamat', applicant.address);
-        add('guardian_name', 'Nama wali', applicant.guardianName);
-        add('guardian_phone', 'Telepon wali', applicant.guardianPhone);
-        rows.push(['Gelombang', applicant.waveName ?? '—'], ['Jalur', applicant.pathName ?? '—']);
+        // A field the period no longer asks is left out, unless this applicant
+        // already answered it (from before it was archived).
+        for (const field of fields) {
+            if (field.type === 'section') {
+                continue;
+            }
+
+            const file = files[String(field.id)];
+            const value = field.key !== null ? (recorded[field.key] ?? '') : answerText(answers[String(field.id)]);
+
+            if (field.type === 'file') {
+                if (!field.archived || file !== undefined) {
+                    rows.push([
+                        field.label,
+                        file === undefined ? (
+                            '—'
+                        ) : (
+                            <a href={file.url} className="underline underline-offset-4">
+                                {file.name}
+                            </a>
+                        ),
+                    ]);
+                }
+
+                continue;
+            }
+
+            if (!field.archived || value !== '') {
+                rows.push([field.label, value === '' ? '—' : value]);
+            }
+        }
+
+        rows.push(['Gelombang', applicant.waveName ?? '—']);
 
         return (
             <Panel title="Data pendaftar">
@@ -112,19 +156,32 @@ function DataPanel({
                 className="flex flex-col gap-6"
                 onSubmit={(event) => {
                     event.preventDefault();
-                    form.put(update.url({ applicant: applicant.id }), {
+                    // A file in the form makes Inertia send multipart, which only POST carries: it says it is a PUT.
+                    form.transform((data) => ({ ...data, _method: 'put' }));
+                    form.post(update.url({ applicant: applicant.id }), {
                         preserveScroll: true,
                         onSuccess: () => form.setDefaults(),
                     });
                 }}
             >
-                <ApplicantFields
-                    data={form.data}
-                    errors={errors}
-                    onChange={(key, value) => form.setData(key, value)}
-                    waves={waves}
+                <FormRenderer
+                    fields={fields}
                     paths={paths}
-                    fields={formFields}
+                    storedFiles={files}
+                    {...binding}
+                    before={
+                        <Field data-invalid={errors.wave_id !== undefined}>
+                            <FieldLabel>Gelombang</FieldLabel>
+                            <OptionSelect
+                                label="Gelombang"
+                                placeholder="Pilih gelombang"
+                                value={form.data.wave_id}
+                                onChange={(value) => form.setData('wave_id', value)}
+                                options={waves}
+                            />
+                            {errors.wave_id !== undefined && <FieldError>{errors.wave_id}</FieldError>}
+                        </Field>
+                    }
                 />
                 <div>
                     <Button type="submit" disabled={form.processing || !form.isDirty}>
@@ -227,7 +284,7 @@ function EnrollPanel({ applicant }: Pick<ApplicantProps, 'applicant'>) {
 }
 
 /** Pendaftar: one applicant's page — data, verification, the selection result and re-registration. */
-export default function ApplicantShow({ applicant, period, waves, paths, formFields, statuses, can }: ApplicantProps) {
+export default function ApplicantShow({ applicant, period, waves, paths, fields, answers, files, statuses, can }: ApplicantProps) {
     const page = usePage<{ errors: Record<string, string> }>();
     const cancelError = page.props.errors.applicant;
     const status = statusOf(applicant.decision === 'pending' ? applicant.status : applicant.decision);
@@ -263,7 +320,7 @@ export default function ApplicantShow({ applicant, period, waves, paths, formFie
                     </Alert>
                 )}
 
-                <DataPanel applicant={applicant} waves={waves} paths={paths} formFields={formFields} editable={editable} />
+                <DataPanel applicant={applicant} waves={waves} paths={paths} fields={fields} answers={answers} files={files} editable={editable} />
 
                 {editable && <VerificationPanel applicant={applicant} statuses={statuses} />}
 

@@ -104,6 +104,7 @@ class PpdbServiceProvider extends ServiceProvider
                     ['label' => 'Ringkasan', 'route' => 'ppdb.overview', 'match' => 'exact'],
                     ['label' => 'Pendaftar', 'route' => 'ppdb.applicants'],
                     ['label' => 'Seleksi & Pengumuman', 'route' => 'ppdb.selection'],
+                    ['label' => 'Formulir', 'route' => 'ppdb.form', 'permission' => 'ppdb.settings.manage'],
                     ['label' => 'Pengaturan', 'route' => 'ppdb.settings', 'permission' => 'ppdb.settings.manage'],
                 ],
             ],

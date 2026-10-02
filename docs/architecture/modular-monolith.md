@@ -650,16 +650,20 @@ The last module that was a mockup, and the first feature module with a
   contract) creates an active student without a class and without an
   account; Ppdb gates who may ask and keeps the returned id. Core never
   imports Ppdb; Ppdb never imports Core's models.
-- **The registration form is configurable per period.** Admins set each
-  optional-by-nature field to Required, Optional or Off
-  (`ppdb_periods.form_fields`; path, name and gender are fixed because
-  selection and `StudentAdmission` need them). Validation is built from the
-  period, switching a field off keeps old answers, and a new period copies the
-  latest one. No custom fields.
+- **The registration form is built by the school, per period**, like a
+  form builder: the ten built-in fields (path, name and gender locked) and
+  custom ones — text, paragraph, number, date, select, checkboxes, file,
+  section heading — added, edited, ordered, archived or deleted (only without
+  answers) on PPDB › Formulir, with a live preview. Fields are rows
+  (`ppdb_form_fields`), answers rows (`ppdb_applicant_answers`); validation is
+  built from the period's rows; archiving keeps old answers; a new period
+  copies the latest. Uploaded files live in the school's `TenantStorage`
+  partition and are served only as attachments through the owner's or the
+  committee's own route. Custom answers are columns of the applicant report.
 - **Stand-ins until later.** Document completeness and telling applicants
   the results are interfaces with always-true implementations
   (`DocumentCheck`, `ResultAnnouncer`), the same pattern as Platform's
-  payment gateway. WhatsApp results, document upload and a public result
+  payment gateway. WhatsApp results and a public result
   page are not built; the applicant sees their result on their own page
   once the school has announced it.
 - **In no plan yet.** `ppdb` is in no billing plan; a provider adds it to
