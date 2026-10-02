@@ -52,6 +52,19 @@ DTOs.
   when there is one), `DTOs/BellSlot` (id, day, start and end as `H:i`,
   type, `isLesson`).
 
+Admitting a new student (Fase 11) — a feature module asks Core to make a
+student; Core makes it the way every other path does (`SaveStudent`).
+
+- `StudentAdmission::admit(NewStudent): int` — the new student's id. The
+  student is active, has no class (placing is Akademik / the student's
+  form) and no login account (fase 8). The caller decides who may ask;
+  the contract checks no permission. PPDB uses it at re-registration.
+- `DTOs/NewStudent` (name, NIS, gender `L`/`P`, optional NISN, birth date
+  as `Y-m-d`, guardian name and phone).
+- `Exceptions/StudentAdmissionRefusedException` — the NIS or NISN is
+  already used in this school; `column` names which (`nis` / `nisn`) and
+  the message is ready to show. Nothing is saved then.
+
 Statistik & Laporan — a module adds its own reports and figures from its
 service provider; Core lists them, checks module flag and permission, and
 renders them. Core registers its own the same way.
@@ -80,7 +93,11 @@ replaces its "Segera hadir" placeholder. Attendance registers
 the panel `attendance-trend`. A registered report key stops being
 announced for every school — a school without that module sees neither
 the report nor a placeholder; an announced figure or panel stays "Segera
-hadir" for a school whose module does not provide it.
+hadir" for a school whose module does not provide it. PPDB registers
+`ppdb-applicants` and `ppdb-result` (fase 11), so only `schedule` is still
+announced for reports; PPDB's figure (`ppdb-applicants-total`) and panel
+(`ppdb-by-path`) were never announced and appear only for a school with
+the module.
 
 WhatsApp notices to guardians (Fase 9) — a module says what happened
 about a student; whether a message goes out, and how it reads, is the
@@ -277,10 +294,13 @@ school's choice on Integrasi › WhatsApp.
     `teaching-load` sums `teaching_assignments` per teacher and needs
     `core.academic.view`.
   - Announced, not built ("Segera hadir", labels in `config/insight.php`):
-    Jadwal Pelajaran (no timetable table yet) and the PPDB reports. The
-    Kehadiran reports and the attendance figure and trend are
-    Attendance's (Fase 10); `config/insight.php` still announces them for
-    the Statistik page of a school without that module.
+    Jadwal Pelajaran (no timetable table yet). The Kehadiran reports and
+    the attendance figure and trend are Attendance's (Fase 10) and the
+    Penerimaan (PPDB) reports are Ppdb's (Fase 11);
+    `config/insight.php` still lists them, but a registered report key is
+    no longer announced for any school, and the announced attendance
+    figure and trend stay "Segera hadir" on the Statistik page of a school
+    without that module.
 - **Integrasi › WhatsApp** (`/integrasi/whatsapp`, Fase 9; the page, its
   actions and the sidebar entry need `core.integration.manage`) —
   `WhatsappController` over Platform's `WhatsappChannel`. Core never sees

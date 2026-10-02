@@ -3,6 +3,7 @@
 use Modules\Identity\App\Domain\Models\User;
 use Modules\Platform\App\Domain\Models\Applicant;
 use Modules\Platform\App\Domain\Models\ProviderUser;
+use Modules\Ppdb\App\Domain\Models\PpdbAccount;
 
 return [
 
@@ -65,6 +66,16 @@ return [
             'driver' => 'session',
             'provider' => 'applicants',
         ],
+
+        /*
+        | People applying to a school's admissions (PPDB), central. Not a
+        | school user and separate from every guard above: an applicant's
+        | session never authenticates a school route, and the other way round.
+        */
+        'ppdb' => [
+            'driver' => 'session',
+            'provider' => 'ppdb_accounts',
+        ],
     ],
 
     /*
@@ -98,6 +109,11 @@ return [
         'applicants' => [
             'driver' => 'eloquent',
             'model' => Applicant::class,
+        ],
+
+        'ppdb_accounts' => [
+            'driver' => 'eloquent',
+            'model' => PpdbAccount::class,
         ],
     ],
 

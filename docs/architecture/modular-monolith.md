@@ -63,9 +63,9 @@ Vendor/Laravel  ←  Shared  ←  Platform (Fase 1)  ←  Identity  ←  Core  �
 | Shared   | `Shared`   | Generic technical utilities           | Everything (by definition)                                       |
 | Platform | `Platform` | Tenancy, module registry, permissions | `Modules\Platform\App\Contracts`                                 |
 | Identity | `Identity` | Tenant-scoped users, auth lifecycle, user management | `Modules\Identity\App\Contracts` (`ResolvesUsers`, `UserRecord`, `AccountProvisioner`, `NewAccount`) |
-| Core     | `Core`     | Master data, academic management, CSV import, statistics and reports, WhatsApp notices | `Modules\Core\App\Contracts` (`StudentDirectory`, `ClassDirectory`, `BellSchedule`, `ReportRegistry`, `Report`, `StatisticsRegistry`, `StatisticsProvider`, `NoticeRegistry`, `GuardianNotifier`, DTOs) |
+| Core     | `Core`     | Master data, academic management, CSV import, statistics and reports, WhatsApp notices | `Modules\Core\App\Contracts` (`StudentDirectory`, `ClassDirectory`, `BellSchedule`, `ReportRegistry`, `Report`, `StatisticsRegistry`, `StatisticsProvider`, `NoticeRegistry`, `GuardianNotifier`, `StudentAdmission`, DTOs) |
 | Attendance | `Attendance` | Student attendance (Absensi): gate, daily, per lesson, QR | `Modules\Attendance\App\Contracts` (none — nothing uses it)   |
-| Ppdb     | `Ppdb`     | Admissions (PPDB) — mockup            | `Modules\Ppdb\App\Contracts` (none yet)                         |
+| Ppdb     | `Ppdb`     | Admissions (PPDB): applicants' accounts, registration, selection, announcement, re-registration | `Modules\Ppdb\App\Contracts` (none — nothing uses it) |
 
 Each module folder follows the module template:
 
@@ -617,3 +617,46 @@ The first feature module with real data. Details:
   (`BillingMasterDataSeeder`), and a one-off Platform migration added it
   to the plans and schools that existed before. Which plan keeps it is
   decided later, by editing the plans in the provider console.
+
+## PPDB (Fase 11)
+
+The last module that was a mockup, and the first feature module with a
+**central** (tenant-less) table. Details: `modules/Ppdb/CONTRACT.md`.
+
+- **Two kinds of public registration now, no more.** Platform's school
+  applicants (`/daftar-sekolah`, guard `applicant`) and PPDB applicants
+  (`/calon-siswa/daftar`, guard `ppdb`). School users (Identity) still have
+  no self-registration. The three kinds of account — school users, school
+  applicants, PPDB applicants (and the provider's staff) — never share a
+  guard or a session key; signing out of one never ends another.
+- **The account lives in Ppdb, not Platform.** `ppdb_accounts` has no
+  `tenant_id` scope: an applicant exists before they join a school.
+  Platform is the lowest layer and does not know the business of
+  admissions; its own `applicants` table is for schools, and Ppdb never
+  imports it (internal). The account stores only who the applicant is and
+  the one school it joined (`tenant_id`, the sole foreign key); every
+  detail of the application lives in the school's tables.
+- **Joining a school is by code, not by search.** The code is the tenant id
+  the school's own people already type at sign-in. A refused join always
+  gives the same message, so nobody can list the schools that use SIMAS or
+  PPDB. One account joins one school; after the form is sent it is locked
+  there and only the school's committee can cancel the registration.
+- **Central pages enter a school explicitly.** `ResolveTenant` adopts the
+  school a session remembers even for a guest, so the account pages never
+  rely on it: they run inside `TenantContext::run($account->tenant_id, …)`
+  and read only the registration with the account's own id. The school and
+  the account id are never taken from a request.
+- **Core makes the student.** `StudentAdmission::admit(NewStudent)` (Core's
+  contract) creates an active student without a class and without an
+  account; Ppdb gates who may ask and keeps the returned id. Core never
+  imports Ppdb; Ppdb never imports Core's models.
+- **Stand-ins until later.** Document completeness and telling applicants
+  the results are interfaces with always-true implementations
+  (`DocumentCheck`, `ResultAnnouncer`), the same pattern as Platform's
+  payment gateway. WhatsApp results, document upload and a public result
+  page are not built; the applicant sees their result on their own page
+  once the school has announced it.
+- **In no plan yet.** `ppdb` is in no billing plan; a provider adds it to
+  a plan's modules or switches it on for a school.
+- **After the release** run `php artisan migrate` and
+  `php artisan roles:sync` (new permissions for admin-sekolah and staf-tu).

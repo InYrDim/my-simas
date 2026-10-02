@@ -21,12 +21,13 @@ it('lists a registered report in its group, ahead of the announced ones', functi
 
     $catalogue = inSchool($tenant, fn () => app(DefaultReportRegistry::class)->catalogue());
 
-    expect(array_column($catalogue, 'title'))->toBe(['Perpustakaan', 'Kesiswaan', 'Akademik', 'Penerimaan (PPDB)'])
+    // The attendance and PPDB reports belong to modules this school has not
+    // enabled, so neither they nor a placeholder for them are listed.
+    expect(array_column($catalogue, 'title'))->toBe(['Perpustakaan', 'Kesiswaan', 'Akademik'])
         ->and($catalogue[0]['reports'])->toBe([
             ['key' => 'library-loans', 'name' => 'Peminjaman Buku', 'description' => 'Buku yang sedang dipinjam.', 'available' => true],
         ])
-        ->and(array_column($catalogue[2]['reports'], 'available', 'key'))->toBe(['teaching-load' => true, 'schedule' => false])
-        ->and(array_column($catalogue[3]['reports'], 'available', 'key'))->toBe(['ppdb-applicants' => false, 'ppdb-result' => false]);
+        ->and(array_column($catalogue[2]['reports'], 'available', 'key'))->toBe(['teaching-load' => true, 'schedule' => false]);
 });
 
 it('hides a report from a user without its permission', function () {
@@ -41,24 +42,25 @@ it('hides a report from a user without its permission', function () {
 
 it('replaces an announced report once a module registers its key', function () {
     $tenant = schoolAs('registry-ganti');
-    app(ReportRegistry::class)->register('core', PpdbApplicantsReport::class);
+    app(ReportRegistry::class)->register('core', ScheduleReport::class);
 
     $registry = app(DefaultReportRegistry::class);
-    $admissions = inSchool($tenant, fn () => collect($registry->catalogue())->firstWhere('title', 'Penerimaan (PPDB)'));
+    $academic = inSchool($tenant, fn () => collect($registry->catalogue())->firstWhere('title', 'Akademik'));
 
-    expect(array_column($admissions['reports'], 'available', 'key'))->toBe(['ppdb-applicants' => true, 'ppdb-result' => false])
-        ->and(inSchool($tenant, fn () => $registry->find('ppdb-applicants')))->toBeInstanceOf(PpdbApplicantsReport::class);
+    expect(array_column($academic['reports'], 'available', 'key'))->toBe(['teaching-load' => true, 'schedule' => true])
+        ->and(inSchool($tenant, fn () => $registry->find('schedule')))->toBeInstanceOf(ScheduleReport::class);
 });
 
 it('offers nothing from a module the school has not enabled', function () {
     $tenant = schoolAs('registry-modul');
-    app(ReportRegistry::class)->register('ppdb', PpdbApplicantsReport::class);
+    app(ReportRegistry::class)->register('ppdb', ScheduleReport::class);
 
     $registry = app(DefaultReportRegistry::class);
-    $admissions = inSchool($tenant, fn () => collect($registry->catalogue())->firstWhere('title', 'Penerimaan (PPDB)'));
+    $academic = inSchool($tenant, fn () => collect($registry->catalogue())->firstWhere('title', 'Akademik'));
 
-    expect(array_column($admissions['reports'], 'key'))->toBe(['ppdb-result'])
-        ->and(inSchool($tenant, fn () => $registry->find('ppdb-applicants')))->toBeNull();
+    // Neither the report nor the placeholder it replaces is offered.
+    expect(array_column($academic['reports'], 'key'))->toBe(['teaching-load'])
+        ->and(inSchool($tenant, fn () => $registry->find('schedule')))->toBeNull();
 });
 
 it('finds no report for an unknown or merely announced key', function (string $key) {
@@ -66,6 +68,17 @@ it('finds no report for an unknown or merely announced key', function (string $k
 
     expect(inSchool($tenant, fn () => app(DefaultReportRegistry::class)->find($key)))->toBeNull();
 })->with(['tidak-ada', 'schedule']);
+
+it('knows the PPDB reports as real ones, not as announced', function () {
+    $tenant = schoolAs('registry-ppdb-nyata');
+
+    // The module is not enabled for this school: nothing is offered, and
+    // no "Segera hadir" placeholder is left in their place either.
+    $titles = inSchool($tenant, fn () => array_column(app(DefaultReportRegistry::class)->catalogue(), 'title'));
+
+    expect($titles)->not->toContain('Penerimaan (PPDB)')
+        ->and(inSchool($tenant, fn () => app(DefaultReportRegistry::class)->find('ppdb-applicants')))->toBeNull();
+});
 
 it('marks the announced figures and panels until a provider supplies them', function () {
     $tenant = schoolAs('registry-statistik');

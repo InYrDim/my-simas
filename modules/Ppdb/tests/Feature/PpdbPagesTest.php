@@ -3,36 +3,15 @@
 namespace Modules\Ppdb\Tests\Feature;
 
 use Inertia\Testing\AssertableInertia as Assert;
-use Modules\Identity\Database\Factories\UserFactory;
-use Modules\Platform\App\Contracts\TenantContext;
-use Modules\Platform\App\Domain\Models\Tenant;
-use Modules\Platform\App\Infrastructure\Modules\ModuleFlagManager;
-use Modules\Platform\Database\Factories\TenantFactory;
 
-use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
+
+require_once __DIR__.'/Support/helpers.php';
 
 /**
  * PPDB mockup pages: every route renders for a signed-in user of a
  * tenant that has the module enabled, and is blocked without the flag.
  */
-function ppdbTenant(bool $enabled = true): Tenant
-{
-    $tenant = TenantFactory::new()->create(['slug' => $enabled ? 'ppdb-on' : 'ppdb-off']);
-
-    if ($enabled) {
-        app(ModuleFlagManager::class)->enable($tenant->id, 'ppdb');
-    }
-
-    $user = UserFactory::new()->forTenant($tenant->id)->create(['email' => "admin@{$tenant->slug}.test"]);
-
-    app(TenantContext::class)->run($tenant->id, fn () => $user->assignTenantRole('admin-sekolah'));
-
-    actingAs($user);
-
-    return $tenant;
-}
-
 dataset('ppdbPages', [
     'overview' => ['/ppdb', 'Ppdb/Overview'],
     'applicants' => ['/ppdb/pendaftar', 'Ppdb/Applicants'],

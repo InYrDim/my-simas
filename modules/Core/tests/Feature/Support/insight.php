@@ -46,11 +46,16 @@ final class ManagersOnlyReport extends FakeReport
     }
 }
 
-final class PpdbApplicantsReport extends FakeReport
+/**
+ * The timetable report Core still announces ("Segera hadir"): a module
+ * registering its key takes the placeholder's place. (The attendance and
+ * PPDB reports are real now, so they can no longer stand in for it.)
+ */
+final class ScheduleReport extends FakeReport
 {
     public function definition(): ReportDefinition
     {
-        return new ReportDefinition('ppdb-applicants', 'Penerimaan (PPDB)', 'Daftar Pendaftar PPDB', 'Pendaftar menurut jalur.', order: 70);
+        return new ReportDefinition('schedule', 'Akademik', 'Jadwal Pelajaran', 'Jadwal mingguan per kelas.', order: 40);
     }
 }
 

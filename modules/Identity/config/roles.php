@@ -33,6 +33,10 @@ return [
             'attendance.daily.record',
             'attendance.lesson.record',
             'attendance.settings.manage',
+            'ppdb.view',
+            'ppdb.applicants.manage',
+            'ppdb.selection.manage',
+            'ppdb.settings.manage',
         ],
     ],
 
@@ -56,6 +60,8 @@ return [
             'core.academic.view',
             'attendance.view',
             'attendance.daily.record',
+            'ppdb.view',
+            'ppdb.applicants.manage',
         ],
     ],
 

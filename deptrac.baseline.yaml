@@ -63,3 +63,11 @@ deptrac:
             - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
         Modules\Attendance\App\Domain\Models\LessonAttendance:
             - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Ppdb\App\Domain\Models\AdmissionPeriod:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Ppdb\App\Domain\Models\AdmissionWave:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Ppdb\App\Domain\Models\AdmissionPath:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Ppdb\App\Domain\Models\Applicant:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'

@@ -392,7 +392,7 @@ here is under `Contracts/` except what is listed at the end of this section.
 | Trial | 14 days, plan `starter`, automatic on approval, no auto-suspend | `config/billing.php` |
 | Invoice due | 7 days after issue | `config/billing.php` |
 | "Due soon" window | 7 days | `config/billing.php` |
-| Plan modules | Every plan includes `attendance` for now (decision of 2026-10-02: every school gets Absensi; which plan keeps it is sorted out later, by editing the plans in the console). Migration `0008_01_01_000000_include_attendance_for_every_school` added it to the plans and schools that existed before. `ppdb` is still mock and in no plan | plans table |
+| Plan modules | Every plan includes `attendance` for now (decision of 2026-10-02: every school gets Absensi; which plan keeps it is sorted out later, by editing the plans in the console). Migration `0008_01_01_000000_include_attendance_for_every_school` added it to the plans and schools that existed before. `ppdb` is built (fase 11) but in no plan yet: a provider adds it to a plan's modules or switches it on per school | plans table |
 
 Public additions: `Contracts/TenantDirectory` (read-only tenant lookup for
 other modules' provider pages) and `TenantRoles::rolePermissions()`.

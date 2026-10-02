@@ -9,11 +9,13 @@ use Modules\Core\App\Contracts\GuardianNotifier;
 use Modules\Core\App\Contracts\NoticeRegistry;
 use Modules\Core\App\Contracts\ReportRegistry;
 use Modules\Core\App\Contracts\StatisticsRegistry;
+use Modules\Core\App\Contracts\StudentAdmission;
 use Modules\Core\App\Contracts\StudentDirectory;
 use Modules\Core\App\Domain\Reports\StudentListReport;
 use Modules\Core\App\Domain\Reports\StudentMutationReport;
 use Modules\Core\App\Domain\Reports\TeachingLoadReport;
 use Modules\Core\App\Domain\Statistics\SchoolStatistics;
+use Modules\Core\App\Infrastructure\Admission\DefaultStudentAdmission;
 use Modules\Core\App\Infrastructure\Directory\EloquentBellSchedule;
 use Modules\Core\App\Infrastructure\Directory\EloquentClassDirectory;
 use Modules\Core\App\Infrastructure\Directory\EloquentStudentDirectory;
@@ -57,6 +59,9 @@ class CoreServiceProvider extends ServiceProvider
         $this->app->bind(StudentDirectory::class, EloquentStudentDirectory::class);
         $this->app->bind(ClassDirectory::class, EloquentClassDirectory::class);
         $this->app->bind(BellSchedule::class, EloquentBellSchedule::class);
+
+        // Admitting a new student on behalf of a feature module (PPDB).
+        $this->app->bind(StudentAdmission::class, DefaultStudentAdmission::class);
     }
 
     /**

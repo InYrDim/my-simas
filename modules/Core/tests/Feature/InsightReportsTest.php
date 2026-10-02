@@ -29,10 +29,9 @@ it('lists the reports by group with the academic years to choose from', function
 
     get(school($tenant->slug, '/statistik-laporan/laporan'))->assertOk()->assertInertia(fn (Assert $page) => $page
         ->component('Core/Insight/Reports')
-        ->where('groups', fn ($groups) => collect($groups)->pluck('title')->all() === ['Kesiswaan', 'Akademik', 'Penerimaan (PPDB)'])
+        ->where('groups', fn ($groups) => collect($groups)->pluck('title')->all() === ['Kesiswaan', 'Akademik'])
         ->where('groups.0.reports', fn ($reports) => collect($reports)->pluck('available', 'key')->all() === ['student-list' => true, 'student-mutation' => true])
         ->where('groups.1.reports', fn ($reports) => collect($reports)->pluck('available', 'key')->all() === ['teaching-load' => true, 'schedule' => false])
-        ->where('groups.2.reports', fn ($reports) => collect($reports)->pluck('available')->all() === [false, false])
         ->where('years', [
             ['value' => (string) $current->id, 'label' => '2026/2027 (aktif)'],
             ['value' => (string) $past->id, 'label' => '2025/2026'],
@@ -181,7 +180,7 @@ it('offers the catalogue but no download to a school without an academic year', 
     get(school($tenant->slug, '/statistik-laporan/laporan'))->assertOk()->assertInertia(fn (Assert $page) => $page
         ->where('years', [])
         ->where('yearId', '')
-        ->has('groups', 3)
+        ->has('groups', 2)
     );
 
     get(school($tenant->slug, '/statistik-laporan/laporan/student-list/unduh'))->assertNotFound();

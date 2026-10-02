@@ -9,6 +9,8 @@ export const statusMeta: Record<string, { label: string; variant: Variant }> = {
     waitlist: { label: 'Cadangan', variant: 'secondary' },
     pending: { label: 'Belum diputuskan', variant: 'outline' },
     rejected: { label: 'Tidak diterima', variant: 'destructive' },
+    draft: { label: 'Konsep', variant: 'outline' },
+    active: { label: 'Berjalan', variant: 'default' },
     open: { label: 'Dibuka', variant: 'default' },
     closed: { label: 'Ditutup', variant: 'secondary' },
     upcoming: { label: 'Akan datang', variant: 'outline' },

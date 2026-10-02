@@ -157,7 +157,9 @@ container.
   under the target's own tenant context).
 - Roles: machine names from `config/roles.php` (`admin-sekolah`,
   `guru`, `staf-tu`, and `siswa` — which holds only `attendance.qr.show`,
-  its own attendance QR); labels live in
+  its own attendance QR); `admin-sekolah` also holds the four `ppdb.*`
+  permissions and `staf-tu` `ppdb.view` + `ppdb.applicants.manage` (fase 11;
+  a PPDB applicant is no school user and has no role); labels live in
   config only. Permissions
   `identity.users.{view,create,update,deactivate,sendReset}` are
   registered via `PermissionRegistry` and attached to admin-sekolah on

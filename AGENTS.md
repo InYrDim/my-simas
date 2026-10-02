@@ -414,3 +414,27 @@ scheduler (nothing marks absence automatically). After a release:
 `php artisan migrate` and `php artisan roles:sync`. Details:
 modules/Attendance/CONTRACT.md, modules/Core/CONTRACT.md,
 docs/architecture/modular-monolith.md.
+
+## PPDB (Fase 11)
+
+Applicants have their own account, separate from every school user: a
+central table `ppdb_accounts` (no tenant scope; guard `ppdb`; pages under
+`/calon-siswa/*`) owned by Ppdb, with only name, email, password and the
+one school joined (`tenant_id`, the sole FK). It is the second public
+registration after Platform's school applicants; school users still have
+none. An applicant joins a school with the school code (the one typed at
+sign-in; link `/calon-siswa/gabung?school=<code>`), every refusal gives
+the same message, and after the form is sent the account is locked there
+(only the committee's `CancelApplication` frees it). Account pages never
+rely on `ResolveTenant`: they run in `TenantContext::run($account->tenant_id)`
+and read only the registration with the account's id. Tables
+`ppdb_periods`, `ppdb_waves`, `ppdb_paths`, `ppdb_applicants` are tenant-scoped.
+Core's `StudentAdmission::admit()` makes the student at re-registration
+(no class, no account); permissions `ppdb.view`, `ppdb.applicants.manage`,
+`ppdb.selection.manage`, `ppdb.settings.manage`. The decision stays hidden
+on the applicant's page until the results are announced; document check
+and result announcing are always-true stand-ins (`DocumentCheck`,
+`ResultAnnouncer`); WhatsApp results and document upload are not built;
+`ppdb` is in no plan yet. After a release: `php artisan migrate` and
+`php artisan roles:sync`. Details: modules/Ppdb/CONTRACT.md,
+modules/Core/CONTRACT.md, docs/architecture/modular-monolith.md.

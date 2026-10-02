@@ -47,6 +47,57 @@ export function schoolCode(slug: string): string {
 }
 
 /**
+ * Opens the admissions of a seeded school: a running PPDB period with one
+ * wave that is open today and a Zonasi path of two seats. The dates are
+ * relative to the day the suite runs, so the form is open whenever it does.
+ * Skips a school that already has a period, so calling it twice is safe.
+ */
+export function openAdmissions(slug: string): void {
+    execFileSync(
+        'php',
+        [
+            '-r',
+            [
+                '$pdo = new PDO("sqlite:".$argv[1]);',
+                '$tenant = $pdo->query("select id from tenants where slug = ".$pdo->quote($argv[2]))->fetchColumn();',
+                'if ($tenant === false) { fwrite(STDERR, "No school ".$argv[2]); exit(1); }',
+                'if ($pdo->query("select count(*) from ppdb_periods where tenant_id = ".$pdo->quote($tenant))->fetchColumn() > 0) { exit(0); }',
+                '$now = date("Y-m-d H:i:s");',
+                '$pdo->prepare("insert into ppdb_periods (tenant_id, name, entry_year, status, created_at, updated_at) values (?, ?, ?, ?, ?, ?)")->execute([$tenant, "PPDB E2E", (int) date("Y") + 1, "active", $now, $now]);',
+                '$period = $pdo->lastInsertId();',
+                '$pdo->prepare("insert into ppdb_waves (tenant_id, period_id, name, opens_on, closes_on, created_at, updated_at) values (?, ?, ?, ?, ?, ?, ?)")->execute([$tenant, $period, "Gelombang E2E", date("Y-m-d", strtotime("-2 days")), date("Y-m-d", strtotime("+30 days")), $now, $now]);',
+                '$pdo->prepare("insert into ppdb_paths (tenant_id, period_id, name, quota, sort_order, created_at, updated_at) values (?, ?, ?, ?, ?, ?, ?)")->execute([$tenant, $period, "Zonasi", 2, 0, $now, $now]);',
+            ].join(' '),
+            databasePath,
+            slug,
+        ],
+        { stdio: 'inherit' },
+    );
+}
+
+/**
+ * Marks an applicant's PPDB account as verified, as opening the mailed
+ * link would. The mail goes to the log on this server, and the link itself
+ * is covered by the feature and browser suites.
+ */
+export function verifyPpdbAccount(email: string): void {
+    const changed = execFileSync(
+        'php',
+        [
+            '-r',
+            '$pdo = new PDO("sqlite:".$argv[1]); $statement = $pdo->prepare("update ppdb_accounts set email_verified_at = ? where email = ?"); $statement->execute([date("Y-m-d H:i:s"), $argv[2]]); echo $statement->rowCount();',
+            databasePath,
+            email,
+        ],
+        { encoding: 'utf8' },
+    ).trim();
+
+    if (changed !== '1') {
+        throw new Error(`No PPDB account [${email}] to verify in ${databasePath}.`);
+    }
+}
+
+/**
  * A seeded student of a school: the class to open, the name to look for
  * and the first password of the account (the birth date as ddmmyyyy).
  */

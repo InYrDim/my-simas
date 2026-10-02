@@ -50,7 +50,7 @@ it('shows the school admin the roles of the tenant with permissions and user cou
             ->where('roles', fn ($roles) => collect($roles)->firstWhere('name', 'guru')['userCount'] === 2
                 && collect($roles)->firstWhere('name', 'admin-sekolah')['label'] === 'Admin Sekolah'
                 && in_array('Melihat daftar pengguna', collect($roles)->firstWhere('name', 'admin-sekolah')['permissions'], true)
-                && collect(collect($roles)->firstWhere('name', 'staf-tu')['permissions'])->sort()->values()->all() === ['Melihat data induk sekolah', 'Melihat pengelolaan akademik sekolah', 'Melihat rekap dan laporan absensi', 'Mencatat absensi harian dan absensi gerbang (masuk dan pulang)'])
+                && collect(collect($roles)->firstWhere('name', 'staf-tu')['permissions'])->sort()->values()->all() === ['Melihat data induk sekolah', 'Melihat pengelolaan akademik sekolah', 'Melihat rekap dan laporan absensi', 'Melihat ringkasan PPDB, daftar pendaftar, seleksi, dan laporannya', 'Mencatat absensi harian dan absensi gerbang (masuk dan pulang)', 'Menginput, mengubah, memverifikasi, dan membatalkan pendaftar PPDB, serta mencatat daftar ulang'])
         );
 });
 

@@ -52,7 +52,7 @@ it('seeds the default roles for a new tenant via TenantCreated', function () {
         ->and($roles)->toContain('siswa');
 });
 
-it('gives admin-sekolah the identity.users, core and attendance permission sets and the others the view and recording permissions', function () {
+it('gives admin-sekolah the identity.users, core, attendance and ppdb permission sets and the others the view and recording permissions', function () {
     /** @var Tenant $tenant */
     $tenant = TenantFactory::new()->create();
 
@@ -79,8 +79,12 @@ it('gives admin-sekolah the identity.users, core and attendance permission sets 
         'identity.users.sendReset',
         'identity.users.update',
         'identity.users.view',
+        'ppdb.applicants.manage',
+        'ppdb.selection.manage',
+        'ppdb.settings.manage',
+        'ppdb.view',
     ])->and($guru)->toBe(['attendance.daily.record', 'attendance.lesson.record', 'attendance.view', 'core.academic.view', 'core.master.view'])
-        ->and($staf)->toBe(['attendance.daily.record', 'attendance.view', 'core.academic.view', 'core.master.view']);
+        ->and($staf)->toBe(['attendance.daily.record', 'attendance.view', 'core.academic.view', 'core.master.view', 'ppdb.applicants.manage', 'ppdb.view']);
 });
 
 it('creates the global permission rows as a side effect of seeding', function () {
