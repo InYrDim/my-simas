@@ -45,3 +45,31 @@ export function schoolCode(slug: string): string {
 
     return code;
 }
+
+/**
+ * A seeded student of a school: the class to open, the name to look for
+ * and the first password of the account (the birth date as ddmmyyyy).
+ */
+export function studentRecord(slug: string, nis: string): { name: string; classId: number; birthPassword: string } {
+    const row = execFileSync(
+        'php',
+        [
+            '-r',
+            '$query = (new PDO("sqlite:".$argv[1]))->prepare("select s.name, s.class_id, s.birth_date from students s join tenants t on t.id = s.tenant_id where t.slug = ? and s.nis = ?"); $query->execute([$argv[2], $argv[3]]); echo json_encode($query->fetch(PDO::FETCH_ASSOC));',
+            databasePath,
+            slug,
+            nis,
+        ],
+        { encoding: 'utf8' },
+    ).trim();
+
+    const student = JSON.parse(row) as { name: string; class_id: number | null; birth_date: string | null } | false;
+
+    if (student === false || student.class_id === null || student.birth_date === null) {
+        throw new Error(`No seeded student [${nis}] with a class and a birth date in school [${slug}].`);
+    }
+
+    const [year, month, day] = student.birth_date.slice(0, 10).split('-');
+
+    return { name: student.name, classId: Number(student.class_id), birthPassword: `${day}${month}${year}` };
+}
