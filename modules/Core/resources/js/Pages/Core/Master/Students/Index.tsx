@@ -1,7 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { PlusIcon, UploadIcon } from 'lucide-react';
 
-import { importData } from '@/actions/Modules/Core/App/Http/Controllers/MasterDataController';
+import { index as importPage } from '@/actions/Modules/Core/App/Http/Controllers/ImportController';
 import {
     index,
     show,
@@ -59,7 +59,7 @@ export default function StudentsIndex({
             actions={
                 <>
                     <Button asChild variant="outline">
-                        <Link href={importData.url()}>
+                        <Link href={importPage.url()}>
                             <UploadIcon />
                             Impor CSV
                         </Link>

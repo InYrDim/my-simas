@@ -11,9 +11,9 @@ use Modules\Core\App\Infrastructure\Mock\IntegrationMockData;
 use Modules\Core\App\Infrastructure\Mock\MasterMockData;
 
 /**
- * The pages that are still mockups: data import, statistics, reports and
- * the WhatsApp integration. Master data and academic management have a
- * controller per page backed by the database.
+ * The pages that are still mockups: statistics, reports and the WhatsApp
+ * integration. Master data, academic management and the data import have
+ * their own controllers.
  *
  * Mock phase: each page here reads static sample data (MasterMockData,
  * InsightMockData, IntegrationMockData) and nothing is persisted; the page
@@ -22,13 +22,6 @@ use Modules\Core\App\Infrastructure\Mock\MasterMockData;
 final class MasterDataController
 {
     use RendersMasterPage;
-
-    public function importData(Request $request): Response
-    {
-        return $this->render($request, 'Core/Manage/Import/Index', fn (MasterMockData $data): array => [
-            'preview' => array_slice($data->students(), 0, 6),
-        ]);
-    }
 
     public function statistics(Request $request): Response
     {

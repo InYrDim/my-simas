@@ -12,7 +12,8 @@
   and semesters, grades and majors, classes, subjects, rooms, teachers,
   students, extracurriculars), academic management on top of it
   (homeroom teachers, teaching assignments, student placement, bell
-  schedule, academic calendar), and the school landing record
+  schedule, academic calendar), the CSV import of students and teachers,
+  and the school landing record
   (`Beranda Sekolah`, route `home`).
 - Permissions: `core.master.view` (read) and `core.master.manage`
   (create/update/delete) for master data; `core.academic.view` and
@@ -89,10 +90,26 @@
     year, move stays in the same year); bell slots end after they start and
     never overlap within a weekday; a teacher or subject still assigned
     cannot be deleted, and deleting a class removes its assignments.
-  - **Impor Data** (`/kelola/impor`, still mockup) — bulk CSV import of
-    base records.
-  `MasterDataController` serves the remaining mockup pages (import,
-  statistics, reports, WhatsApp) from `Infrastructure/Mock/*`, shaped by
+  - **Impor Data** (`/kelola/impor`, database-backed; the page and its
+    endpoints need `core.master.manage`) — students and teachers from CSV
+    in three steps: upload, preview, confirm. Nothing is kept between the
+    steps (no table, no stored file): the browser sends the file to
+    `POST /kelola/impor/pratinjau` and again to `POST /kelola/impor`, both
+    JSON endpoints called with `useHttp`, and the import checks every row
+    anew. `Infrastructure/Csv/CsvReader` reads the file (`;` or `,`, BOM,
+    `sep=` line, Windows-1252, at most 1,000 rows); `ImportTarget` holds
+    the columns of each target and feeds the downloadable template.
+    `CheckStudentImport` / `CheckTeacherImport` turn each row into
+    `create`, `update` or `error`; `ImportStudents` / `ImportTeachers`
+    write the good rows through `SaveStudent` / `SaveTeacher` in one
+    transaction and skip the rest. Rules: a student is recognised by NIS
+    and a teacher by NIP (a teacher without NIP is always new); in mode
+    `add` a registered number is an error, in mode `upsert` it updates,
+    and an empty cell never overwrites a stored value; the `kelas` column
+    names a class of the active academic year; a student's status is never
+    changed by an import.
+  `MasterDataController` serves the remaining mockup pages (statistics,
+  reports, WhatsApp) from `Infrastructure/Mock/*`, shaped by
   the school's real jenjang. Master data and academic management are one
   thin controller per page or entity over Domain Actions (`Save*`/`Delete*`),
   FormRequests gated by `core.master.manage` (master) or

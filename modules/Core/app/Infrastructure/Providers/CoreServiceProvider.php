@@ -108,6 +108,7 @@ class CoreServiceProvider extends ServiceProvider
                 'label' => 'Impor Data',
                 'icon' => 'upload',
                 'route' => 'core.manage.import',
+                'permission' => 'core.master.manage',
                 'group' => 'Data Induk',
                 'order' => 40,
             ],

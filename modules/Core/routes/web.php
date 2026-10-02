@@ -9,6 +9,7 @@ use Modules\Core\App\Http\Controllers\ExtracurricularController;
 use Modules\Core\App\Http\Controllers\ExtracurricularMemberController;
 use Modules\Core\App\Http\Controllers\GradeController;
 use Modules\Core\App\Http\Controllers\HomeroomController;
+use Modules\Core\App\Http\Controllers\ImportController;
 use Modules\Core\App\Http\Controllers\MajorController;
 use Modules\Core\App\Http\Controllers\MasterDataController;
 use Modules\Core\App\Http\Controllers\PeriodSlotController;
@@ -119,8 +120,14 @@ Route::middleware('web')->group(function (): void {
             });
         });
 
-        // Bulk import of base records (mockup phase).
-        Route::get('kelola/impor', [MasterDataController::class, 'importData'])->name('core.manage.import');
+        // Bulk import of students and teachers from CSV. It writes master
+        // data, so the page and its endpoints need core.master.manage.
+        Route::prefix('kelola')->name('core.manage.')->middleware('can:core.master.manage')->group(function (): void {
+            Route::get('impor', [ImportController::class, 'index'])->name('import');
+            Route::get('impor/templat/{target}', [ImportController::class, 'template'])->name('import.template');
+            Route::post('impor/pratinjau', [ImportController::class, 'preview'])->name('import.preview');
+            Route::post('impor', [ImportController::class, 'store'])->name('import.store');
+        });
 
         // Integrasi with outside services (mockup phase).
         Route::get('integrasi/whatsapp', [MasterDataController::class, 'whatsapp'])->name('core.integration.whatsapp');
