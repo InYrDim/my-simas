@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Core\Database\Factories\SubjectFactory;
 use Modules\Platform\App\Contracts\Concerns\BelongsToTenant;
 
@@ -23,4 +24,12 @@ class Subject extends Model
 {
     /** @use HasFactory<SubjectFactory> */
     use BelongsToTenant, HasFactory;
+
+    /**
+     * @return HasMany<TeachingAssignment, $this>
+     */
+    public function teachingAssignments(): HasMany
+    {
+        return $this->hasMany(TeachingAssignment::class);
+    }
 }

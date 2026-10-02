@@ -1,12 +1,12 @@
 import { Link } from '@inertiajs/react';
 import { PlusIcon } from 'lucide-react';
 
-import { assignments as assignmentsPage } from '@/actions/Modules/Core/App/Http/Controllers/MasterDataController';
 import {
     destroy,
     store,
     update,
 } from '@/actions/Modules/Core/App/Http/Controllers/SubjectController';
+import { index as assignmentsPage } from '@/actions/Modules/Core/App/Http/Controllers/TeachingAssignmentController';
 import { DataTable, EmptyState } from '@shared/components/page-parts';
 import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';

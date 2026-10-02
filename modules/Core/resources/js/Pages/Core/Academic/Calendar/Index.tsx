@@ -1,11 +1,17 @@
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from 'lucide-react';
 import { useState } from 'react';
 
-import { Panel } from '@shared/components/page-parts';
+import {
+    destroy,
+    store,
+    update,
+} from '@/actions/Modules/Core/App/Http/Controllers/CalendarEventController';
+import { EmptyState, Panel } from '@shared/components/page-parts';
 import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
 import { cn } from '@shared/lib/utils';
 
+import ConfirmAction from '../../../../Components/ConfirmAction';
 import FormDialog from '../../../../Components/FormDialog';
 import { InputField, SelectField } from '../../../../Components/FormField';
 import { formatRange } from '../../../../Components/format';
@@ -31,15 +37,53 @@ function eventsOn(events: CalendarEvent[], date: string): CalendarEvent[] {
     );
 }
 
+function EventForm({ event }: { event?: CalendarEvent }) {
+    return (
+        <>
+            <InputField label="Judul" id="title" defaultValue={event?.title} />
+            <SelectField
+                label="Kategori"
+                id="category"
+                options={Object.entries(categories).map(([value, item]) => ({
+                    value,
+                    label: item.label,
+                }))}
+                defaultValue={event?.category}
+            />
+            <div className="grid gap-4 sm:grid-cols-2">
+                <InputField
+                    label="Mulai"
+                    id="start_date"
+                    type="date"
+                    defaultValue={event?.date}
+                />
+                <InputField
+                    label="Selesai"
+                    id="end_date"
+                    type="date"
+                    hint="Kosongkan untuk satu hari."
+                    defaultValue={event?.endDate ?? ''}
+                />
+            </div>
+        </>
+    );
+}
+
 /** Kalender Akademik: month grid (colour per category) plus the full list. */
 export default function CalendarIndex({
     school,
     events,
+    today,
 }: {
     school: SchoolSummary;
     events: CalendarEvent[];
+    today: string;
 }) {
-    const [cursor, setCursor] = useState({ year: 2025, month: 11 });
+    const [cursor, setCursor] = useState(() => {
+        const [year, month] = today.split('-').map(Number);
+
+        return { year, month: month - 1 };
+    });
     const first = new Date(cursor.year, cursor.month, 1);
     const offset = (first.getDay() + 6) % 7;
     const daysInMonth = new Date(cursor.year, cursor.month + 1, 0).getDate();
@@ -58,8 +102,10 @@ export default function CalendarIndex({
             school={school}
             title="Kalender Akademik"
             description="Hari libur, ujian, dan kegiatan sepanjang tahun ajaran."
+            mock={false}
             actions={
                 <FormDialog
+                    route={store()}
                     title="Tambah peristiwa"
                     trigger={
                         <Button>
@@ -68,19 +114,7 @@ export default function CalendarIndex({
                         </Button>
                     }
                 >
-                    <InputField label="Judul" id="title" />
-                    <SelectField
-                        label="Kategori"
-                        id="category"
-                        options={Object.entries(categories).map(([value, item]) => ({
-                            value,
-                            label: item.label,
-                        }))}
-                    />
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        <InputField label="Mulai" id="date" type="date" />
-                        <InputField label="Selesai" id="endDate" type="date" />
-                    </div>
+                    <EventForm />
                 </FormDialog>
             }
         >
@@ -111,7 +145,8 @@ export default function CalendarIndex({
                                 return <div key={`blank-${index}`} />;
                             }
 
-                            const matches = eventsOn(events, iso(cursor.year, cursor.month, day));
+                            const date = iso(cursor.year, cursor.month, day);
+                            const matches = eventsOn(events, date);
 
                             return (
                                 <div
@@ -119,6 +154,7 @@ export default function CalendarIndex({
                                     className={cn(
                                         'flex min-h-14 flex-col items-center gap-1 border border-border/50 p-1 text-sm text-foreground',
                                         matches.length > 0 && 'bg-muted/50',
+                                        date === today && 'ring-1 ring-primary',
                                     )}
                                 >
                                     <span>{day}</span>
@@ -147,19 +183,47 @@ export default function CalendarIndex({
                 </Panel>
 
                 <Panel title="Semua peristiwa" className="lg:col-span-2">
-                    <ul className="flex flex-col gap-4">
-                        {events.map((event) => (
-                            <li key={event.id} className="flex items-start justify-between gap-3">
-                                <div>
-                                    <p className="text-sm font-medium">{event.title}</p>
-                                    <p className="text-xs text-muted-foreground">
-                                        {formatRange(event.date, event.endDate)}
-                                    </p>
-                                </div>
-                                <Badge variant="outline">{categories[event.category].label}</Badge>
-                            </li>
-                        ))}
-                    </ul>
+                    {events.length === 0 ? (
+                        <EmptyState>Belum ada peristiwa di kalender.</EmptyState>
+                    ) : (
+                        <ul className="flex flex-col gap-4">
+                            {events.map((event) => (
+                                <li key={event.id} className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p className="text-sm font-medium">{event.title}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {formatRange(event.date, event.endDate)}
+                                        </p>
+                                        <div className="mt-1 flex gap-1">
+                                            <FormDialog
+                                                route={update(event.id)}
+                                                title={`Ubah ${event.title}`}
+                                                trigger={
+                                                    <Button variant="ghost" size="sm">
+                                                        Ubah
+                                                    </Button>
+                                                }
+                                            >
+                                                <EventForm event={event} />
+                                            </FormDialog>
+                                            <ConfirmAction
+                                                route={destroy(event.id)}
+                                                title={`Hapus ${event.title}?`}
+                                                description="Peristiwa akan dihapus dari kalender akademik."
+                                                confirmLabel="Hapus"
+                                                trigger={
+                                                    <Button variant="ghost" size="sm">
+                                                        Hapus
+                                                    </Button>
+                                                }
+                                            />
+                                        </div>
+                                    </div>
+                                    <Badge variant="outline">{categories[event.category].label}</Badge>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </Panel>
             </div>
         </MasterPage>

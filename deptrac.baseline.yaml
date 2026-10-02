@@ -37,6 +37,12 @@ deptrac:
             - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
         Modules\Core\App\Domain\Models\Teacher:
             - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Core\App\Domain\Models\TeachingAssignment:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Core\App\Domain\Models\CalendarEvent:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Core\App\Domain\Models\PeriodSlot:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
         Modules\Core\App\Domain\Models\Student:
             - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
         Modules\Core\App\Domain\Models\StudentClassHistory:

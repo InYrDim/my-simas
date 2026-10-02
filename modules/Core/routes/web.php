@@ -3,18 +3,23 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Core\App\Http\Controllers\AcademicYearController;
 use Modules\Core\App\Http\Controllers\BerandaController;
+use Modules\Core\App\Http\Controllers\CalendarEventController;
 use Modules\Core\App\Http\Controllers\ClassGroupController;
 use Modules\Core\App\Http\Controllers\ExtracurricularController;
 use Modules\Core\App\Http\Controllers\ExtracurricularMemberController;
 use Modules\Core\App\Http\Controllers\GradeController;
+use Modules\Core\App\Http\Controllers\HomeroomController;
 use Modules\Core\App\Http\Controllers\MajorController;
 use Modules\Core\App\Http\Controllers\MasterDataController;
+use Modules\Core\App\Http\Controllers\PeriodSlotController;
+use Modules\Core\App\Http\Controllers\PlacementController;
 use Modules\Core\App\Http\Controllers\RoomController;
 use Modules\Core\App\Http\Controllers\SchoolProfileController;
 use Modules\Core\App\Http\Controllers\SemesterController;
 use Modules\Core\App\Http\Controllers\StudentController;
 use Modules\Core\App\Http\Controllers\SubjectController;
 use Modules\Core\App\Http\Controllers\TeacherController;
+use Modules\Core\App\Http\Controllers\TeachingAssignmentController;
 
 // Module routes are registered via loadRoutesFrom() and do NOT inherit
 // the root web group automatically — always declare the group here.
@@ -88,13 +93,30 @@ Route::middleware('web')->group(function (): void {
         });
 
         // Academic management: actions and schedules that work on the base
-        // records (mockup phase).
-        Route::prefix('akademik')->name('core.academic.')->controller(MasterDataController::class)->group(function (): void {
-            Route::get('penempatan', 'placement')->name('placement');
-            Route::get('pengampu', 'assignments')->name('assignments');
-            Route::get('wali-kelas', 'homerooms')->name('homerooms');
-            Route::get('jam-pelajaran', 'periods')->name('periods');
-            Route::get('kalender', 'calendar')->name('calendar');
+        // records. Reads need core.academic.view, writes
+        // core.academic.manage.
+        Route::prefix('akademik')->name('core.academic.')->middleware('can:core.academic.view')->group(function (): void {
+            Route::get('penempatan', [PlacementController::class, 'index'])->name('placement');
+            Route::get('pengampu', [TeachingAssignmentController::class, 'index'])->name('assignments');
+            Route::get('wali-kelas', [HomeroomController::class, 'index'])->name('homerooms');
+            Route::get('jam-pelajaran', [PeriodSlotController::class, 'index'])->name('periods');
+            Route::get('kalender', [CalendarEventController::class, 'index'])->name('calendar');
+
+            Route::middleware('can:core.academic.manage')->group(function (): void {
+                Route::post('penempatan', [PlacementController::class, 'store'])->name('placement.store');
+
+                Route::post('kalender', [CalendarEventController::class, 'store'])->name('calendar.store');
+                Route::put('kalender/{calendarEvent}', [CalendarEventController::class, 'update'])->whereNumber('calendarEvent')->name('calendar.update');
+                Route::delete('kalender/{calendarEvent}', [CalendarEventController::class, 'destroy'])->whereNumber('calendarEvent')->name('calendar.destroy');
+
+                Route::post('jam-pelajaran', [PeriodSlotController::class, 'store'])->name('periods.store');
+                Route::post('jam-pelajaran/salin', [PeriodSlotController::class, 'copy'])->name('periods.copy');
+                Route::put('jam-pelajaran/{periodSlot}', [PeriodSlotController::class, 'update'])->whereNumber('periodSlot')->name('periods.update');
+                Route::delete('jam-pelajaran/{periodSlot}', [PeriodSlotController::class, 'destroy'])->whereNumber('periodSlot')->name('periods.destroy');
+
+                Route::put('wali-kelas', [HomeroomController::class, 'update'])->name('homerooms.update');
+                Route::put('pengampu/{classGroup}', [TeachingAssignmentController::class, 'update'])->whereNumber('classGroup')->name('assignments.update');
+            });
         });
 
         // Bulk import of base records (mockup phase).

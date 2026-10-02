@@ -73,6 +73,14 @@ class ClassGroup extends Model
     }
 
     /**
+     * @return HasMany<TeachingAssignment, $this>
+     */
+    public function teachingAssignments(): HasMany
+    {
+        return $this->hasMany(TeachingAssignment::class, 'class_id');
+    }
+
+    /**
      * @return HasMany<Student, $this>
      */
     public function students(): HasMany

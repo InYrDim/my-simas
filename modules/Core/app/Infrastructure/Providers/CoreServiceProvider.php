@@ -52,6 +52,8 @@ class CoreServiceProvider extends ServiceProvider
         $this->app->make(PermissionRegistry::class)->register('core', [
             'core.master.view',
             'core.master.manage',
+            'core.academic.view',
+            'core.academic.manage',
         ]);
     }
 
@@ -91,6 +93,7 @@ class CoreServiceProvider extends ServiceProvider
                 'label' => 'Akademik',
                 'icon' => 'graduation-cap',
                 'route' => 'core.academic.placement',
+                'permission' => 'core.academic.view',
                 'group' => 'Data Induk',
                 'order' => 30,
                 'children' => [

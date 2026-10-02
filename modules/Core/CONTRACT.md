@@ -6,14 +6,19 @@
   `tenant_id`; relations are plain indexed columns): `school_profiles`,
   `academic_years`, `semesters`, `grades`, `majors`, `rooms`, `subjects`,
   `classes`, `teachers`, `students`, `student_class_history`,
-  `extracurriculars`, `extracurricular_members`.
+  `extracurriculars`, `extracurricular_members`, `teaching_assignments`,
+  `period_slots`, `calendar_events`.
 - Core domain concepts: SIMAS master data (school profile, academic years
   and semesters, grades and majors, classes, subjects, rooms, teachers,
-  students, extracurriculars), and the school landing record
+  students, extracurriculars), academic management on top of it
+  (homeroom teachers, teaching assignments, student placement, bell
+  schedule, academic calendar), and the school landing record
   (`Beranda Sekolah`, route `home`).
 - Permissions: `core.master.view` (read) and `core.master.manage`
-  (create/update/delete), attached to the default roles through
-  Identity's `config/roles.php` (names only).
+  (create/update/delete) for master data; `core.academic.view` and
+  `core.academic.manage` for academic management. Attached to the default
+  roles through Identity's `config/roles.php` (names only): admin-sekolah
+  holds all four, guru and staf-tu only the two `view` permissions.
 
 ## Public interface (Contracts/)
 
@@ -69,18 +74,30 @@
     must exist: profil
     sekolah, tahun ajaran, tingkat & jurusan, kelas, mata pelajaran, guru
     & tendik, siswa, ruangan, ekstrakurikuler.
-  - **Akademik** (`/akademik/*`, still mockup) — academic management on
-    top of those records: penempatan siswa (naik/pindah/lulus), pengampu
-    mapel, wali kelas, jam pelajaran, kalender akademik. Until built,
-    `classes.homeroom_teacher_id` stays empty and nothing writes
-    `student_class_history` except the student form.
+  - **Akademik** (`/akademik/*`, database-backed; reads need
+    `core.academic.view`, writes `core.academic.manage`) — academic
+    management on top of those records: wali kelas
+    (`classes.homeroom_teacher_id`), pengampu mapel (`teaching_assignments`,
+    per class and therefore per academic year), penempatan siswa
+    (naik/pindah/lulus, through `SaveStudent` so `student_class_history`
+    stays right), jam pelajaran (`period_slots`, one template per school)
+    and kalender akademik (`calendar_events`). Rules in Actions: homeroom
+    and teaching assignments only for classes of the active academic year;
+    saving a class's assignments replaces them (a subject left out loses
+    its teacher); a placement is validated in full before the first
+    student changes and runs in one transaction (promote needs a later
+    year, move stays in the same year); bell slots end after they start and
+    never overlap within a weekday; a teacher or subject still assigned
+    cannot be deleted, and deleting a class removes its assignments.
   - **Impor Data** (`/kelola/impor`, still mockup) — bulk CSV import of
     base records.
-  `MasterDataController` serves the remaining mockup pages from
-  `Infrastructure/Mock/MasterMockData`, shaped by the school's real jenjang.
-  Master data is one thin controller per entity over Domain Actions
-  (`Save*`/`Delete*`), FormRequests gated by `core.master.manage`, and
-  JsonResources that keep the page props the React pages were built on.
+  `MasterDataController` serves the remaining mockup pages (import,
+  statistics, reports, WhatsApp) from `Infrastructure/Mock/*`, shaped by
+  the school's real jenjang. Master data and academic management are one
+  thin controller per page or entity over Domain Actions (`Save*`/`Delete*`),
+  FormRequests gated by `core.master.manage` (master) or
+  `core.academic.manage` (via `AcademicFormRequest`), and JsonResources
+  that keep the page props the React pages were built on.
   The "Tambah tahun ajaran" form is pre-filled by `SuggestAcademicYear`
   (latest year + 1, or the running year for a school with none).
   Rules enforced in Actions: one active academic year per school (the

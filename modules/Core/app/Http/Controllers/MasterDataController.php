@@ -11,48 +11,17 @@ use Modules\Core\App\Infrastructure\Mock\IntegrationMockData;
 use Modules\Core\App\Infrastructure\Mock\MasterMockData;
 
 /**
- * Master-data mockup pages, in three groups: base data that must exist
- * (school profile, academic years, classes, subjects, people, rooms,
- * extracurriculars), academic management that works on it (student
- * placement, teaching assignments, homerooms, bell schedule, academic
- * calendar), and data import.
+ * The pages that are still mockups: data import, statistics, reports and
+ * the WhatsApp integration. Master data and academic management have a
+ * controller per page backed by the database.
  *
- * Mock phase: every page reads static sample data from MasterMockData and
- * nothing is persisted. The DB phase splits this into one thin controller
- * per entity backed by real repositories; the page props stay the same.
+ * Mock phase: each page here reads static sample data (MasterMockData,
+ * InsightMockData, IntegrationMockData) and nothing is persisted; the page
+ * props stay the same when a page moves to the database.
  */
 final class MasterDataController
 {
     use RendersMasterPage;
-
-    public function placement(Request $request): Response
-    {
-        return $this->render($request, 'Core/Academic/Placement/Index', fn (MasterMockData $data): array => [
-            'years' => $data->academicYears()['years'],
-            'classes' => $data->classes(),
-            'students' => array_values(array_filter(
-                $data->students(),
-                fn (array $student): bool => $student['status'] === 'active',
-            )),
-        ]);
-    }
-
-    public function assignments(Request $request): Response
-    {
-        return $this->render($request, 'Core/Academic/Assignments/Index', fn (MasterMockData $data): array => [
-            'assignments' => $data->assignments(),
-            'classes' => $data->classes(),
-            'teachers' => $data->teachers(),
-        ]);
-    }
-
-    public function homerooms(Request $request): Response
-    {
-        return $this->render($request, 'Core/Academic/Homerooms/Index', fn (MasterMockData $data): array => [
-            'classes' => $data->classes(),
-            'teachers' => $data->teachers(),
-        ]);
-    }
 
     public function importData(Request $request): Response
     {
@@ -81,20 +50,6 @@ final class MasterDataController
         ]);
     }
 
-    public function periods(Request $request): Response
-    {
-        return $this->render($request, 'Core/Academic/Periods/Index', fn (MasterMockData $data): array => [
-            'days' => $data->periods(),
-        ]);
-    }
-
-    public function calendar(Request $request): Response
-    {
-        return $this->render($request, 'Core/Academic/Calendar/Index', fn (MasterMockData $data): array => [
-            'events' => $data->calendarEvents(),
-        ]);
-    }
-
     /**
      * Render a still-mock page: sample data shaped by the school's real
      * level, with the real school summary in the props.
@@ -106,20 +61,5 @@ final class MasterDataController
         $data = new MasterMockData(SchoolProfile::current()->level->value);
 
         return $this->renderMaster($component, $props === null ? [] : $props($data));
-    }
-
-    /**
-     * @param  list<array<string, mixed>>  $rows
-     * @return array<string, mixed>
-     */
-    private function find(array $rows, int $id): array
-    {
-        foreach ($rows as $row) {
-            if ($row['id'] === $id) {
-                return $row;
-            }
-        }
-
-        abort(404);
     }
 }

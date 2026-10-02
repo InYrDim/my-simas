@@ -43,7 +43,11 @@ Vendor/Laravel  ←  Shared  ←  Platform (Fase 1)  ←  Identity  ←  Core  �
   `ResolvesUsers` contract, `UserRecord` DTO, login rate limiting.
   (See “Folder shape” below: module code lives under the module's own
   `app/` tree, e.g. `Modules\Identity\App\Domain\Models\User`.)
-- **Core** (`Modules\Core`) — master data (skeleton in Fase 0).
+- **Core** (`Modules\Core`) — master data (school profile, academic years,
+  classes, subjects, rooms, people, extracurriculars) and academic
+  management (homerooms, teaching assignments, student placement, bell
+  schedule, academic calendar); permissions `core.master.*` and
+  `core.academic.*`. Surface: see `modules/Core/CONTRACT.md`.
 - **App / Database** — Laravel glue only: providers, config, root
   seeders. No business logic. (`DatabaseSeeder` creating the example
   user via `UserFactory` is the single documented exception.)
@@ -55,7 +59,7 @@ Vendor/Laravel  ←  Shared  ←  Platform (Fase 1)  ←  Identity  ←  Core  �
 | Shared   | `Shared`   | Generic technical utilities           | Everything (by definition)                                       |
 | Platform | `Platform` | Tenancy, module registry, permissions | `Modules\Platform\App\Contracts`                                 |
 | Identity | `Identity` | Tenant-scoped users, auth lifecycle, user management | `Modules\Identity\App\Contracts` (`ResolvesUsers`, `UserRecord`) |
-| Core     | `Core`     | Master data (skeleton)                | `Modules\Core\App\Contracts` (empty)                             |
+| Core     | `Core`     | Master data and academic management  | `Modules\Core\App\Contracts` (empty)                             |
 | Attendance | `Attendance` | Daily attendance (Absensi) — mockup | `Modules\Attendance\App\Contracts` (none yet)                  |
 | Ppdb     | `Ppdb`     | Admissions (PPDB) — mockup            | `Modules\Ppdb\App\Contracts` (none yet)                         |
 

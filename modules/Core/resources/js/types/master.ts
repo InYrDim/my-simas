@@ -99,9 +99,13 @@ export interface Subject {
 }
 
 export interface Assignment {
-    teacher: string;
-    subject: string;
+    id: number;
+    classId: number;
     class: string;
+    subjectId: number;
+    subject: string;
+    teacherId: number;
+    teacher: string;
     hours: number;
 }
 
@@ -156,6 +160,7 @@ export interface Room {
 }
 
 export interface PeriodSlot {
+    id: number;
     order: number | null;
     start: string;
     end: string;
@@ -164,6 +169,7 @@ export interface PeriodSlot {
 
 export interface PeriodDay {
     day: string;
+    dayNumber: number;
     slots: PeriodSlot[];
 }
 

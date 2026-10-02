@@ -24,9 +24,9 @@ function masterUserWithRole(string $slug, ?string $role): string
     return $tenant->slug;
 }
 
-it('registers the core master permissions', function () {
+it('registers the core master and academic permissions', function () {
     expect(app(PermissionRegistry::class)->forModule('core'))
-        ->toBe(['core.master.view', 'core.master.manage']);
+        ->toBe(['core.master.view', 'core.master.manage', 'core.academic.view', 'core.academic.manage']);
 });
 
 it('lets every default school role view master data', function (string $role) {

@@ -4,10 +4,14 @@ namespace Modules\Core\Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Modules\Core\App\Domain\Actions\ActivateAcademicYear;
+use Modules\Core\App\Domain\Actions\AssignHomerooms;
 use Modules\Core\App\Domain\Actions\CreateAcademicYear;
+use Modules\Core\App\Domain\Actions\SaveCalendarEvent;
+use Modules\Core\App\Domain\Actions\SaveClassAssignments;
 use Modules\Core\App\Domain\Actions\SaveClassGroup;
 use Modules\Core\App\Domain\Actions\SaveExtracurricular;
 use Modules\Core\App\Domain\Actions\SaveMajor;
+use Modules\Core\App\Domain\Actions\SavePeriodSlot;
 use Modules\Core\App\Domain\Actions\SaveRoom;
 use Modules\Core\App\Domain\Actions\SaveSchoolProfile;
 use Modules\Core\App\Domain\Actions\SaveStudent;
@@ -20,6 +24,7 @@ use Modules\Core\App\Domain\Models\Grade;
 use Modules\Core\App\Domain\Models\Major;
 use Modules\Core\App\Domain\Models\Room;
 use Modules\Core\App\Domain\Models\SchoolProfile;
+use Modules\Core\App\Domain\Models\Subject;
 use Modules\Core\App\Domain\Models\Teacher;
 use Modules\Core\App\Infrastructure\Mock\MasterMockData;
 use Modules\Platform\App\Contracts\TenantContext;
@@ -87,6 +92,10 @@ class CoreDemoSeeder extends Seeder
         }
 
         $this->seedClasses();
+        $this->seedHomerooms();
+        $this->seedAssignments();
+        $this->seedPeriods($mock);
+        $this->seedCalendar($mock);
         $this->seedStudents($mock);
         $this->seedActivities($mock);
     }
@@ -105,6 +114,59 @@ class CoreDemoSeeder extends Seeder
                     ]);
                 }
             }
+        }
+    }
+
+    private function seedHomerooms(): void
+    {
+        $teachers = Teacher::query()->where('duty', 'Guru Mapel')->orderBy('id')->pluck('id')->all();
+        $homerooms = [];
+
+        foreach (ClassGroup::query()->orderBy('id')->pluck('id') as $index => $classId) {
+            $homerooms[$classId] = $teachers[$index % count($teachers)];
+        }
+
+        app(AssignHomerooms::class)->handle($homerooms);
+    }
+
+    private function seedAssignments(): void
+    {
+        $teachers = Teacher::query()->where('duty', 'Guru Mapel')->orderBy('id')->pluck('id')->all();
+        $subjects = Subject::query()->orderBy('id')->limit(5)->pluck('id')->all();
+
+        foreach (ClassGroup::query()->orderBy('id')->limit(4)->get() as $classIndex => $class) {
+            $rows = [];
+
+            foreach ($subjects as $subjectIndex => $subjectId) {
+                $rows[] = [
+                    'subject_id' => $subjectId,
+                    'teacher_id' => $teachers[($classIndex + $subjectIndex) % count($teachers)],
+                    'hours' => 2 + ($subjectIndex % 3),
+                ];
+            }
+
+            app(SaveClassAssignments::class)->handle($class, $rows);
+        }
+    }
+
+    private function seedPeriods(MasterMockData $mock): void
+    {
+        foreach ($mock->periods() as $index => $day) {
+            foreach ($day['slots'] as $slot) {
+                app(SavePeriodSlot::class)->handle(null, [
+                    'day' => $index + 1, 'start_time' => $slot['start'], 'end_time' => $slot['end'], 'type' => $slot['type'],
+                ]);
+            }
+        }
+    }
+
+    private function seedCalendar(MasterMockData $mock): void
+    {
+        foreach ($mock->calendarEvents() as $event) {
+            app(SaveCalendarEvent::class)->handle(null, [
+                'title' => $event['title'], 'category' => $event['category'],
+                'start_date' => $event['date'], 'end_date' => $event['endDate'],
+            ]);
         }
     }
 

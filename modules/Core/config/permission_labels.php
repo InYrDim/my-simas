@@ -7,4 +7,6 @@
 return [
     'core.master.view' => 'Melihat data induk sekolah',
     'core.master.manage' => 'Menambah, mengubah, dan menghapus data induk sekolah',
+    'core.academic.view' => 'Melihat pengelolaan akademik sekolah',
+    'core.academic.manage' => 'Mengatur wali kelas, pengampu, penempatan siswa, jam pelajaran, dan kalender akademik',
 ];

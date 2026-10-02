@@ -40,6 +40,14 @@ class Teacher extends Model
     }
 
     /**
+     * @return HasMany<TeachingAssignment, $this>
+     */
+    public function teachingAssignments(): HasMany
+    {
+        return $this->hasMany(TeachingAssignment::class);
+    }
+
+    /**
      * @return HasMany<Extracurricular, $this>
      */
     public function coachedActivities(): HasMany

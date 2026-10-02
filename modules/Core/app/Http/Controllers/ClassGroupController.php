@@ -21,6 +21,7 @@ use Modules\Core\App\Http\Resources\GradeResource;
 use Modules\Core\App\Http\Resources\MajorResource;
 use Modules\Core\App\Http\Resources\RoomResource;
 use Modules\Core\App\Http\Resources\StudentResource;
+use Modules\Core\App\Http\Resources\TeachingAssignmentResource;
 
 final class ClassGroupController
 {
@@ -56,7 +57,9 @@ final class ClassGroupController
         return $this->renderMaster('Core/Master/Classes/Show', [
             'class' => ClassGroupResource::make($classGroup)->resolve(),
             'students' => StudentResource::collection($students)->resolve(),
-            'assignments' => [],
+            'assignments' => TeachingAssignmentResource::collection(
+                $classGroup->teachingAssignments()->with(['subject', 'teacher', 'classGroup'])->get()->sortBy('subject.name')->values(),
+            )->resolve(),
         ]);
     }
 

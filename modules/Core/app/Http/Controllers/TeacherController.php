@@ -12,6 +12,7 @@ use Modules\Core\App\Http\Concerns\RendersMasterPage;
 use Modules\Core\App\Http\Requests\TeacherRequest;
 use Modules\Core\App\Http\Resources\ClassGroupResource;
 use Modules\Core\App\Http\Resources\TeacherResource;
+use Modules\Core\App\Http\Resources\TeachingAssignmentResource;
 
 final class TeacherController
 {
@@ -53,7 +54,9 @@ final class TeacherController
 
         return $this->renderMaster('Core/Master/Teachers/Show', [
             'teacher' => TeacherResource::make($teacher)->resolve(),
-            'assignments' => [],
+            'assignments' => TeachingAssignmentResource::collection(
+                $teacher->teachingAssignments()->with(['subject', 'teacher', 'classGroup'])->get()->sortBy('subject.name')->values(),
+            )->resolve(),
             'homeroomOf' => ClassGroupResource::collection($homeroomOf)->resolve(),
         ]);
     }

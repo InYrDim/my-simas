@@ -4,6 +4,7 @@ namespace Modules\Core\App\Http\Controllers;
 
 use Illuminate\Http\RedirectResponse;
 use Inertia\Response;
+use Modules\Core\App\Domain\Actions\DeleteSubject;
 use Modules\Core\App\Domain\Actions\SaveSubject;
 use Modules\Core\App\Domain\Models\Grade;
 use Modules\Core\App\Domain\Models\Subject;
@@ -44,9 +45,9 @@ final class SubjectController
         return back()->with('status', "Mata pelajaran {$subject->name} diperbarui.");
     }
 
-    public function destroy(Subject $subject): RedirectResponse
+    public function destroy(Subject $subject, DeleteSubject $delete): RedirectResponse
     {
-        $subject->delete();
+        $delete->handle($subject);
 
         return back()->with('status', "Mata pelajaran {$subject->name} dihapus.");
     }

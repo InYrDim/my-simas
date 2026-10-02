@@ -8,13 +8,13 @@ use Modules\Core\App\Domain\Models\Teacher;
 final class DeleteTeacher
 {
     /**
-     * @throws ValidationException when the teacher is a homeroom teacher or a coach
+     * @throws ValidationException when the teacher is a homeroom teacher, a coach or teaches a subject
      */
     public function handle(Teacher $teacher): void
     {
-        if ($teacher->homeroomClasses()->exists() || $teacher->coachedActivities()->exists()) {
+        if ($teacher->homeroomClasses()->exists() || $teacher->coachedActivities()->exists() || $teacher->teachingAssignments()->exists()) {
             throw ValidationException::withMessages([
-                'status' => "{$teacher->name} masih menjadi wali kelas atau pembina ekstrakurikuler dan tidak bisa dihapus.",
+                'status' => "{$teacher->name} masih menjadi wali kelas, pembina ekstrakurikuler, atau pengampu mata pelajaran dan tidak bisa dihapus.",
             ]);
         }
 

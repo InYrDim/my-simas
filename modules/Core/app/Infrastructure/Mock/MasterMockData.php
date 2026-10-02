@@ -3,123 +3,18 @@
 namespace Modules\Core\App\Infrastructure\Mock;
 
 /**
- * Static, mutually-consistent sample data for the master-data mockup
- * pages (school profile, academic years, classes, subjects, teachers,
- * students, ...). Nothing here is persisted; the DB phase replaces this
- * class behind the controller with real repositories.
+ * Static, mutually-consistent sample data (grades, majors, classes,
+ * subjects, teachers, students, rooms, bell schedule, calendar events,
+ * extracurriculars). The master-data and academic pages now read the
+ * database; what still uses this is the data they are not backed by yet
+ * (import preview, statistics) and CoreDemoSeeder, which turns it into
+ * real records for a demo school.
  *
- * The school level (sd|smp|sma|smk) drives labels, grades and majors so
- * every jenjang can be previewed.
+ * The school level (sd|smp|sma|smk) drives grades and majors.
  */
 final class MasterMockData
 {
-    public const LEVELS = [
-        'sd' => 'SD/MI',
-        'smp' => 'SMP/MTs',
-        'sma' => 'SMA/MA',
-        'smk' => 'SMK',
-    ];
-
     public function __construct(private readonly string $level = 'sma') {}
-
-    public static function normaliseLevel(?string $level): string
-    {
-        return array_key_exists((string) $level, self::LEVELS) ? (string) $level : 'sma';
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function school(string $name, string $code, string $timezone): array
-    {
-        return [
-            'name' => $name,
-            'code' => $code,
-            'timezone' => $timezone,
-            'npsn' => '20512345',
-            'level' => $this->level,
-            'levelLabel' => self::LEVELS[$this->level],
-            'levelOptions' => self::options(self::LEVELS),
-            'ownership' => 'Swasta',
-            'accreditation' => 'A',
-            'address' => 'Jl. Pendidikan No. 12, Kec. Cibeunying, Kota Bandung 40121',
-            'phone' => '(022) 555-0123',
-            'email' => 'info@sekolah-contoh.sch.id',
-            'headmaster' => 'Dra. Siti Rahmawati, M.Pd.',
-            'headmasterNip' => '196804121994032005',
-            'hasMajors' => in_array($this->level, ['sma', 'smk'], true),
-            'homeroomLabel' => $this->level === 'sd' ? 'Guru Kelas' : 'Wali Kelas',
-        ];
-    }
-
-    /**
-     * @return array{years: list<array<string, mixed>>}
-     */
-    public function academicYears(): array
-    {
-        return ['years' => [
-            [
-                'id' => 3, 'name' => '2026/2027', 'curriculum' => 'Kurikulum Merdeka',
-                'start' => '2026-07-13', 'end' => '2027-06-26', 'status' => 'draft',
-                'semesters' => [
-                    ['name' => 'Ganjil', 'start' => '2026-07-13', 'end' => '2026-12-19'],
-                    ['name' => 'Genap', 'start' => '2027-01-04', 'end' => '2027-06-26'],
-                ],
-            ],
-            [
-                'id' => 2, 'name' => '2025/2026', 'curriculum' => 'Kurikulum Merdeka',
-                'start' => '2025-07-14', 'end' => '2026-06-27', 'status' => 'active',
-                'semesters' => [
-                    ['name' => 'Ganjil', 'start' => '2025-07-14', 'end' => '2025-12-20'],
-                    ['name' => 'Genap', 'start' => '2026-01-05', 'end' => '2026-06-27'],
-                ],
-            ],
-            [
-                'id' => 1, 'name' => '2024/2025', 'curriculum' => 'Kurikulum Merdeka',
-                'start' => '2024-07-15', 'end' => '2025-06-28', 'status' => 'archived',
-                'semesters' => [
-                    ['name' => 'Ganjil', 'start' => '2024-07-15', 'end' => '2024-12-21'],
-                    ['name' => 'Genap', 'start' => '2025-01-06', 'end' => '2025-06-28'],
-                ],
-            ],
-        ]];
-    }
-
-    /**
-     * Every semester across the academic years, newest first, with its
-     * status: the active year's Genap is the running one, earlier ones are
-     * finished and the draft year's are upcoming. Only the running
-     * semester carries its week number.
-     *
-     * @return list<array{id: string, year: string, name: string, start: string, end: string, weeks: int, status: string, week: int|null}>
-     */
-    public function semesters(): array
-    {
-        $rows = [];
-
-        foreach ($this->academicYears()['years'] as $year) {
-            foreach ($year['semesters'] as $semester) {
-                $running = $year['status'] === 'active' && $semester['name'] === 'Genap';
-
-                $rows[] = [
-                    'id' => $year['id'].'-'.strtolower($semester['name']),
-                    'year' => $year['name'],
-                    'name' => $semester['name'],
-                    'start' => $semester['start'],
-                    'end' => $semester['end'],
-                    'weeks' => (int) ceil((strtotime($semester['end']) - strtotime($semester['start'])) / (7 * 86400)),
-                    'status' => match (true) {
-                        $running => 'current',
-                        $year['status'] === 'draft' => 'upcoming',
-                        default => 'finished',
-                    },
-                    'week' => $running ? 12 : null,
-                ];
-            }
-        }
-
-        return $rows;
-    }
 
     /**
      * Grades (tingkat) for the current level.
@@ -248,32 +143,6 @@ final class MasterMockData
             'grades' => $this->level === 'sd' ? 'Kelas 1–6' : ($this->level === 'smp' ? 'Kelas 7–9' : 'Kelas X–XII'),
             'teacher' => $teachers[$index % count($teachers)]['name'],
         ], $rows, array_keys($rows));
-    }
-
-    /**
-     * Teaching assignments: teacher × subject × class.
-     *
-     * @return list<array{teacher: string, subject: string, class: string, hours: int}>
-     */
-    public function assignments(): array
-    {
-        $subjects = $this->subjects();
-        $classes = $this->classes();
-        $teachers = $this->teachers();
-        $rows = [];
-
-        foreach (array_slice($classes, 0, 4) as $classIndex => $class) {
-            foreach (array_slice($subjects, 0, 5) as $subjectIndex => $subject) {
-                $rows[] = [
-                    'teacher' => $teachers[($classIndex + $subjectIndex) % count($teachers)]['name'],
-                    'subject' => $subject['name'],
-                    'class' => $class['name'],
-                    'hours' => 2 + ($subjectIndex % 3),
-                ];
-            }
-        }
-
-        return $rows;
     }
 
     /**
@@ -455,21 +324,6 @@ final class MasterMockData
             'members' => 18 + $index * 7,
             'memberList' => array_slice($students, $index * 3, 6),
         ], $rows, array_keys($rows));
-    }
-
-    /**
-     * @param  array<string, string>  $map
-     * @return list<array{value: string, label: string}>
-     */
-    private static function options(array $map): array
-    {
-        $options = [];
-
-        foreach ($map as $value => $label) {
-            $options[] = ['value' => $value, 'label' => $label];
-        }
-
-        return $options;
     }
 
     private function roman(int $number): string

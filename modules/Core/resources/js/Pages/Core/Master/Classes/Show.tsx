@@ -1,10 +1,8 @@
 import { Link } from '@inertiajs/react';
 
-import {
-    assignments as assignmentsPage,
-    placement,
-} from '@/actions/Modules/Core/App/Http/Controllers/MasterDataController';
+import { index as placement } from '@/actions/Modules/Core/App/Http/Controllers/PlacementController';
 import { show as studentShow } from '@/actions/Modules/Core/App/Http/Controllers/StudentController';
+import { index as assignmentsPage } from '@/actions/Modules/Core/App/Http/Controllers/TeachingAssignmentController';
 import { index as classesIndex } from '@/actions/Modules/Core/App/Http/Controllers/ClassGroupController';
 import {
     DataTable,
@@ -46,10 +44,10 @@ export default function ClassesShow({
             actions={
                 <>
                     <Button asChild variant="outline">
-                        <Link href={assignmentsPage.url()}>Atur pengampu</Link>
+                        <Link href={assignmentsPage.url({ query: { kelas: group.id } })}>Atur pengampu</Link>
                     </Button>
                     <Button asChild variant="outline">
-                        <Link href={placement.url()}>Pindahkan siswa</Link>
+                        <Link href={placement.url({ query: { kelas: group.id } })}>Pindahkan siswa</Link>
                     </Button>
                 </>
             }
