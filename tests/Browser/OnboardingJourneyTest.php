@@ -29,7 +29,7 @@ it('takes an applicant from registration to their approved school', function () 
         ->fill('email', 'budi@nusantara.test')
         ->fill('password', 'rahasia-sekali')
         ->fill('password_confirmation', 'rahasia-sekali')
-        ->press('Buat akun')
+        ->click('internal:role=button[name="Buat akun"i]')
         ->assertPathIs('/pemohon/verifikasi')
         ->assertSee('Verifikasi email Anda');
 

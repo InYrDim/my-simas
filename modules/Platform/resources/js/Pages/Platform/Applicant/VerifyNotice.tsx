@@ -1,11 +1,11 @@
-import { router } from '@inertiajs/react';
-import { useState } from 'react';
+import { router } from "@inertiajs/react";
+import { useState } from "react";
 
-import { destroy as logout } from '@/actions/Modules/Platform/App/Http/Controllers/Applicant/SessionController';
-import { resend } from '@/actions/Modules/Platform/App/Http/Controllers/Applicant/VerificationController';
-import { Button } from '@shared/components/ui/button';
+import { destroy as logout } from "@/actions/Modules/Platform/App/Http/Controllers/Applicant/SessionController";
+import { resend } from "@/actions/Modules/Platform/App/Http/Controllers/Applicant/VerificationController";
+import { Button } from "@shared/components/ui/button";
 
-import ApplicantShell from '../../../Components/ApplicantShell';
+import ApplicantShell from "../../../Components/ApplicantShell";
 
 /**
  * Shown until the applicant opens the link in their verification mail.
@@ -17,9 +17,10 @@ export default function VerifyNotice({ email }: { email: string }) {
     return (
         <ApplicantShell
             title="Verifikasi email Anda"
+            step={2}
             description={`Kami mengirim tautan verifikasi ke ${email}. Buka tautan itu untuk melanjutkan pendaftaran sekolah.`}
         >
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
                 <Button
                     disabled={sending}
                     onClick={() =>
@@ -34,9 +35,12 @@ export default function VerifyNotice({ email }: { email: string }) {
                         )
                     }
                 >
-                    {sending ? 'Mengirim...' : 'Kirim ulang tautan'}
+                    {sending ? "Mengirim..." : "Kirim ulang tautan"}
                 </Button>
-                <Button variant="outline" onClick={() => router.post(logout.url())}>
+                <Button
+                    variant="outline"
+                    onClick={() => router.post(logout.url())}
+                >
                     Keluar
                 </Button>
             </div>

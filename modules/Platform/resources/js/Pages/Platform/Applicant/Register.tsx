@@ -40,6 +40,7 @@ export default function Register() {
     return (
         <ApplicantShell
             title="Daftarkan sekolah Anda"
+            step={1}
             description="Buat akun dulu. Setelah itu Anda mengisi data sekolah dan mengajukannya."
             footer={
                 <span>
