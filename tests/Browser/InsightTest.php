@@ -67,7 +67,7 @@ it('points the report links at the chosen academic year and opens the print view
         ->assertDontSee('Tampilan contoh')
         ->assertDontSee('Terakhir dibuat')
         ->assertSee('Beban Mengajar Guru')
-        ->assertSee('Rekap Kehadiran Bulanan')
+        ->assertSee('Daftar Pendaftar PPDB')
         ->assertSee('Segera hadir')
         ->assertAttribute($csvLink, 'href', "/statistik-laporan/laporan/student-list/unduh?tahun={$current->id}")
         ->click('internal:role=combobox[name="Tahun ajaran"i]')

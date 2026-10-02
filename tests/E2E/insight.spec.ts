@@ -34,7 +34,8 @@ test('a school admin reads the statistics, downloads a report and opens its prin
     await expect(page.getByText('Gambaran singkat sekolah pada tahun ajaran 2025/2026.')).toBeVisible();
     await expect(page.getByText('Siswa aktif', { exact: true })).toBeVisible();
     await expect(page.getByText('Siswa per tingkat')).toBeVisible();
-    await expect(page.getByText('Segera hadir').first()).toBeVisible();
+    // The school uses Absensi, so its figure is real, not announced.
+    await expect(page.getByText('Rata-rata kehadiran')).toBeVisible();
 
     await page.goto('/statistik-laporan/laporan');
     await expect(page.getByRole('combobox', { name: 'Tahun ajaran' })).toContainText('2025/2026 (aktif)');

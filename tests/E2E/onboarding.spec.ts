@@ -13,6 +13,10 @@ import { accounts, centralUrl, consoleUrl } from './support/env';
  * only once) — global-setup reseeds before every run.
  */
 test('an approved applicant logs straight into their school', async ({ browser }) => {
+    // Three logins across two hosts on a single-threaded server take about
+    // 30 seconds — right at the default limit.
+    test.setTimeout(90_000);
+
     // --- Provider, on the console host
     const providerContext = await browser.newContext();
     const provider = await providerContext.newPage();
