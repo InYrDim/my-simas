@@ -76,14 +76,14 @@ it('shapes the pages still on mock data by the schools saved jenjang', function 
 
     put(school($slug, '/master/sekolah'), ['level' => 'smk'])->assertRedirect();
 
-    get(school($slug, '/statistik-laporan/statistik'))->assertInertia(fn (Assert $page) => $page
+    get(school($slug, '/integrasi/whatsapp'))->assertInertia(fn (Assert $page) => $page
         ->where('school.level', 'smk')
         ->where('school.hasMajors', true)
     );
 
     put(school($slug, '/master/sekolah'), ['level' => 'sd'])->assertRedirect();
 
-    get(school($slug, '/statistik-laporan/statistik'))->assertInertia(fn (Assert $page) => $page
+    get(school($slug, '/integrasi/whatsapp'))->assertInertia(fn (Assert $page) => $page
         ->where('school.hasMajors', false)
         ->where('school.homeroomLabel', 'Guru Kelas')
     );

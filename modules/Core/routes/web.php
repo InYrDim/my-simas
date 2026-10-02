@@ -14,9 +14,11 @@ use Modules\Core\App\Http\Controllers\MajorController;
 use Modules\Core\App\Http\Controllers\MasterDataController;
 use Modules\Core\App\Http\Controllers\PeriodSlotController;
 use Modules\Core\App\Http\Controllers\PlacementController;
+use Modules\Core\App\Http\Controllers\ReportController;
 use Modules\Core\App\Http\Controllers\RoomController;
 use Modules\Core\App\Http\Controllers\SchoolProfileController;
 use Modules\Core\App\Http\Controllers\SemesterController;
+use Modules\Core\App\Http\Controllers\StatisticsController;
 use Modules\Core\App\Http\Controllers\StudentController;
 use Modules\Core\App\Http\Controllers\SubjectController;
 use Modules\Core\App\Http\Controllers\TeacherController;
@@ -133,10 +135,13 @@ Route::middleware('web')->group(function (): void {
         Route::get('integrasi/whatsapp', [MasterDataController::class, 'whatsapp'])->name('core.integration.whatsapp');
 
         // Statistik and Laporan: school-wide figures and downloadable
-        // reports (mockup phase).
-        Route::prefix('statistik-laporan')->name('core.insight.')->controller(MasterDataController::class)->group(function (): void {
-            Route::get('statistik', 'statistics')->name('statistics');
-            Route::get('laporan', 'reports')->name('reports');
+        // reports. The reports hold student records, so the pages need
+        // core.master.view; a report may ask for a permission of its own.
+        Route::prefix('statistik-laporan')->name('core.insight.')->middleware('can:core.master.view')->group(function (): void {
+            Route::get('statistik', StatisticsController::class)->name('statistics');
+            Route::get('laporan', [ReportController::class, 'index'])->name('reports');
+            Route::get('laporan/{report}/unduh', [ReportController::class, 'download'])->name('reports.download');
+            Route::get('laporan/{report}/cetak', [ReportController::class, 'printView'])->name('reports.print');
         });
     });
 });

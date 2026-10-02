@@ -1,10 +1,13 @@
-import { DownloadIcon } from 'lucide-react';
+import { DownloadIcon, PrinterIcon } from 'lucide-react';
 import { useState } from 'react';
 
-import { DataTable, OptionSelect, Panel } from '@shared/components/page-parts';
+import {
+    download,
+    printView,
+} from '@/actions/Modules/Core/App/Http/Controllers/ReportController';
+import { EmptyState, OptionSelect, Panel } from '@shared/components/page-parts';
 import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
-import { TableCell, TableRow } from '@shared/components/ui/table';
 
 import MasterPage from '../../../Components/MasterPage';
 import type { SchoolSummary } from '../../../types/master';
@@ -13,27 +16,22 @@ interface ReportsProps {
     school: SchoolSummary;
     groups: {
         title: string;
-        reports: { key: string; name: string; description: string; formats: string[] }[];
+        reports: {
+            key: string;
+            name: string;
+            description: string;
+            /** False for a report that is announced but not built yet. */
+            available: boolean;
+        }[];
     }[];
-    recent: {
-        name: string;
-        period: string;
-        createdBy: string;
-        createdOn: string;
-        status: 'ready' | 'failed';
-    }[];
+    years: { value: string; label: string }[];
+    /** The academic year selected at first: the active one. Empty when the school has none. */
+    yearId: string;
 }
 
-const periods = [
-    { value: 'sep-2026', label: 'September 2026' },
-    { value: 'ganjil-2026', label: 'Semester Ganjil 2026/2027' },
-    { value: 'genap-2025', label: 'Semester Genap 2025/2026' },
-];
-
-/** Laporan: pick a period, download a report as PDF or Excel, see what was made recently. */
-export default function Reports({ school, groups, recent }: ReportsProps) {
-    const [period, setPeriod] = useState(periods[0].value);
-    const [notice, setNotice] = useState<string | null>(null);
+/** Laporan: pick an academic year, then download a report as CSV or open it for printing. */
+export default function Reports({ school, groups, years, yearId }: ReportsProps) {
+    const [year, setYear] = useState(yearId);
 
     return (
         <MasterPage
@@ -41,21 +39,24 @@ export default function Reports({ school, groups, recent }: ReportsProps) {
             title="Laporan"
             description="Unduh laporan sekolah untuk dicetak atau diolah lebih lanjut."
             width="max-w-5xl"
+            mock={false}
         >
-            <div className="mb-6 max-w-xs">
-                <OptionSelect label="Periode" value={period} onChange={setPeriod} options={periods} />
-            </div>
-
-            {notice !== null && (
-                <p role="status" className="mb-6 border border-border bg-card p-3 text-sm text-muted-foreground shadow-sm">
-                    {notice}
-                </p>
+            {years.length === 0 ? (
+                <div className="mb-6">
+                    <EmptyState>
+                        Belum ada tahun ajaran. Tambahkan tahun ajaran di Master Data agar laporan bisa dibuat.
+                    </EmptyState>
+                </div>
+            ) : (
+                <div className="mb-6 max-w-xs">
+                    <OptionSelect label="Tahun ajaran" value={year} onChange={setYear} options={years} />
+                </div>
             )}
 
             <div className="flex flex-col gap-8">
-                {groups.map((group) => (
-                    <section key={group.title} aria-labelledby={`laporan-${group.title}`}>
-                        <h2 id={`laporan-${group.title}`} className="mb-3 text-sm font-semibold">
+                {groups.map((group, index) => (
+                    <section key={group.title} aria-labelledby={`laporan-grup-${index}`}>
+                        <h2 id={`laporan-grup-${index}`} className="mb-3 text-sm font-semibold">
                             {group.title}
                         </h2>
                         <div className="grid gap-4 md:grid-cols-2">
@@ -64,48 +65,40 @@ export default function Reports({ school, groups, recent }: ReportsProps) {
                                     <p className="font-medium">{report.name}</p>
                                     <p className="mt-1 text-sm text-muted-foreground">{report.description}</p>
                                     <div className="mt-4 flex flex-wrap gap-2">
-                                        {report.formats.map((format) => (
-                                            <Button
-                                                key={format}
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() =>
-                                                    setNotice(`Contoh saja — ${report.name} (${format}) belum dibuat.`)
-                                                }
-                                            >
-                                                <DownloadIcon />
-                                                {format}
-                                            </Button>
-                                        ))}
+                                        {!report.available ? (
+                                            <Badge variant="secondary">Segera hadir</Badge>
+                                        ) : (
+                                            year !== '' && (
+                                                <>
+                                                    <Button asChild size="sm" variant="outline">
+                                                        <a
+                                                            href={download.url(report.key, { query: { tahun: year } })}
+                                                            aria-label={`Unduh CSV ${report.name}`}
+                                                        >
+                                                            <DownloadIcon />
+                                                            CSV
+                                                        </a>
+                                                    </Button>
+                                                    <Button asChild size="sm" variant="outline">
+                                                        <a
+                                                            href={printView.url(report.key, { query: { tahun: year } })}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            aria-label={`Cetak ${report.name}`}
+                                                        >
+                                                            <PrinterIcon />
+                                                            Cetak
+                                                        </a>
+                                                    </Button>
+                                                </>
+                                            )
+                                        )}
                                     </div>
                                 </Panel>
                             ))}
                         </div>
                     </section>
                 ))}
-
-                <section aria-labelledby="laporan-terakhir">
-                    <h2 id="laporan-terakhir" className="mb-3 text-sm font-semibold">
-                        Terakhir dibuat
-                    </h2>
-                    <DataTable head={['Laporan', 'Periode', 'Dibuat oleh', 'Tanggal', 'Status']}>
-                        {recent.map((row) => (
-                            <TableRow key={`${row.name}-${row.createdOn}`}>
-                                <TableCell className="font-medium">{row.name}</TableCell>
-                                <TableCell>{row.period}</TableCell>
-                                <TableCell className="text-muted-foreground">{row.createdBy}</TableCell>
-                                <TableCell>{row.createdOn}</TableCell>
-                                <TableCell>
-                                    {row.status === 'ready' ? (
-                                        <Badge>Siap diunduh</Badge>
-                                    ) : (
-                                        <Badge variant="destructive">Gagal dibuat</Badge>
-                                    )}
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </DataTable>
-                </section>
             </div>
         </MasterPage>
     );

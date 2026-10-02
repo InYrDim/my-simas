@@ -13,8 +13,9 @@
   students, extracurriculars), academic management on top of it
   (homeroom teachers, teaching assignments, student placement, bell
   schedule, academic calendar), the CSV import of students and teachers,
-  and the school landing record
-  (`Beranda Sekolah`, route `home`).
+  the school's statistics and report catalogue (`Statistik & Laporan`,
+  the shell and the registries every module reports through), and the
+  school landing record (`Beranda Sekolah`, route `home`).
 - Permissions: `core.master.view` (read) and `core.master.manage`
   (create/update/delete) for master data; `core.academic.view` and
   `core.academic.manage` for academic management. Attached to the default
@@ -23,8 +24,31 @@
 
 ## Public interface (Contracts/)
 
-- None yet. `modules/Core/app/Contracts` exists but is empty; the
-  Deptrac `CorePublic` layer is already wired for it.
+Statistik & Laporan — a module adds its own reports and figures from its
+service provider; Core lists them, checks module flag and permission, and
+renders them. Core registers its own the same way.
+
+- `ReportRegistry::register(string $module, class-string<Report> $report)`
+  — a report for the catalogue.
+- `Report` — implemented by the owning module: `definition()` (key, group,
+  name, description, optional permission, order) and
+  `table(ReportPeriod $period)`. Core turns the table into the CSV download
+  and the print view; a report never deals with file formats.
+- `StatisticsRegistry::register(string $module, class-string<StatisticsProvider> $provider)`
+  — figures and panels for the Statistik page.
+- `StatisticsProvider` — `figures(?ReportPeriod $period)` and
+  `panels(?ReportPeriod $period)`; the period is null for a school without
+  an academic year.
+- `DTOs/ReportDefinition`, `DTOs/ReportPeriod` (academic year id, name,
+  start and end date as `Y-m-d` — the academic year model never leaves
+  Core), `DTOs/ReportTable` (title, columns, rows of scalars),
+  `DTOs/StatFigure`, `DTOs/StatPanel` (`bars` or `share`).
+
+Reports and providers are resolved from the container and run inside the
+tenant context of the request. Registering a report or figure under the
+key of an announced entry (`config/insight.php`, e.g. `attendance-monthly`,
+`ppdb-applicants`, figure `attendance-rate`, panel `attendance-trend`)
+replaces its "Segera hadir" placeholder.
 
 ## Allowed dependencies
 
@@ -43,9 +67,10 @@
 
 ## Explicitly NOT exposed
 
-- Everything — until a real contract exists, nothing in Core may be
-  imported by another module (Deptrac: nothing may depend on the
-  internal `Core` layer anyway).
+- Everything outside `app/Contracts`: models, actions, controllers, the
+  registries' read side (`Infrastructure/Insight/Default*Registry` —
+  catalogue, find, figures, panels) and the CSV reader/writer. Other
+  modules register through the contracts and never read the catalogue.
 
 ## Notes for maintainers
 
@@ -108,9 +133,8 @@
     and an empty cell never overwrites a stored value; the `kelas` column
     names a class of the active academic year; a student's status is never
     changed by an import.
-  `MasterDataController` serves the remaining mockup pages (statistics,
-  reports, WhatsApp) from `Infrastructure/Mock/*`, shaped by
-  the school's real jenjang. Master data and academic management are one
+  `MasterDataController` serves the remaining mockup page (WhatsApp)
+  from `Infrastructure/Mock/IntegrationMockData`. Master data and academic management are one
   thin controller per page or entity over Domain Actions (`Save*`/`Delete*`),
   FormRequests gated by `core.master.manage` (master) or
   `core.academic.manage` (via `AcademicFormRequest`), and JsonResources
@@ -127,11 +151,33 @@
 - `modules/Core/resources/js/Pages/Core/Beranda.tsx` — the school's
   landing record, phone-first, dated on the tenant's own clock. Surface
   brief: `.impeccable/surfaces/modules-core-resources-js-pages-core-beranda-tsx.md`.
-- **Statistik & Laporan** (`/statistik-laporan/*`, mockup) — school-wide
-  figures and a downloadable report catalogue, from
-  `Infrastructure/Mock/InsightMockData`. Decided direction for the DB
-  phase: Core owns the shell and the registry, and feature modules
-  (Attendance, Ppdb) register their own reports and figures through a
-  Core contract, the same way modules register sidebar entries with
-  Platform. Core never imports a feature module. Not built yet: the
-  registry contract arrives after the mockup phase.
+- **Statistik & Laporan** (`/statistik-laporan/*`, database-backed; the
+  pages and the sidebar entry need `core.master.view`, and each report
+  may ask for a permission of its own) — Core owns the shell and the
+  registries; every module, Core included, registers its reports and
+  figures through the contracts above, the same way modules register
+  sidebar entries with Platform. Core never imports a feature module.
+  - **Statistik** (`StatisticsController`): figures and panels of the
+    active academic year from `Domain/Statistics/SchoolStatistics` —
+    active students, teachers, classes of the year, active students per
+    grade and by gender.
+  - **Laporan** (`ReportController`): the catalogue by group, one academic
+    year chosen on the page (`?tahun=<id>`; default the active year, then
+    the latest). `GET laporan/{report}/unduh` streams a CSV
+    (`Infrastructure/Csv/CsvWriter`: `sep=;` line, CRLF, text cells that
+    start with `=`, `+`, `-` or `@` are defused) and
+    `GET laporan/{report}/cetak` renders the print view
+    (`Core/Insight/ReportPrint`, no shell; the browser's print dialog
+    saves it as PDF). Nothing is stored — no history table, no file.
+    Unknown, merely announced or disabled-module keys answer 404, a
+    missing permission 403, a school without an academic year 404.
+  - Core's reports (`Domain/Reports`): `student-list` and
+    `student-mutation` read `student_class_history` of the chosen year (so
+    a past year reports the classes as they were; a mutation is a row
+    whose note is not `Kelas aktif`, dated by its `updated_at` on the
+    school's clock — admissions are not recorded and not reported);
+    `teaching-load` sums `teaching_assignments` per teacher and needs
+    `core.academic.view`.
+  - Announced, not built ("Segera hadir", labels in `config/insight.php`):
+    Jadwal Pelajaran (no timetable table yet), the Kehadiran and PPDB
+    reports, and the attendance figure and trend.

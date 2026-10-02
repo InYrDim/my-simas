@@ -2,57 +2,32 @@
 
 namespace Modules\Core\App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use Inertia\Response;
-use Modules\Core\App\Domain\Models\SchoolProfile;
 use Modules\Core\App\Http\Concerns\RendersMasterPage;
-use Modules\Core\App\Infrastructure\Mock\InsightMockData;
 use Modules\Core\App\Infrastructure\Mock\IntegrationMockData;
-use Modules\Core\App\Infrastructure\Mock\MasterMockData;
 
 /**
- * The pages that are still mockups: statistics, reports and the WhatsApp
- * integration. Master data, academic management and the data import have
- * their own controllers.
+ * The page that is still a mockup: the WhatsApp integration. Master data,
+ * academic management, the data import and Statistik & Laporan have their
+ * own controllers.
  *
- * Mock phase: each page here reads static sample data (MasterMockData,
- * InsightMockData, IntegrationMockData) and nothing is persisted; the page
- * props stay the same when a page moves to the database.
+ * Mock phase: the page reads static sample data (IntegrationMockData) and
+ * nothing is persisted; the page props stay the same when it moves to the
+ * database.
  */
 final class MasterDataController
 {
     use RendersMasterPage;
 
-    public function statistics(Request $request): Response
+    public function whatsapp(): Response
     {
-        return $this->render($request, 'Core/Insight/Statistics', fn (MasterMockData $data): array => (new InsightMockData($data))->statistics());
-    }
+        $data = new IntegrationMockData;
 
-    public function reports(Request $request): Response
-    {
-        return $this->render($request, 'Core/Insight/Reports', fn (MasterMockData $data): array => (new InsightMockData($data))->reports());
-    }
-
-    public function whatsapp(Request $request): Response
-    {
-        return $this->render($request, 'Core/Integration/Whatsapp/Index', fn (): array => [
-            'connection' => ($data = new IntegrationMockData)->whatsappConnection(),
+        return $this->renderMaster('Core/Integration/Whatsapp/Index', [
+            'connection' => $data->whatsappConnection(),
             'notifications' => $data->whatsappNotifications(),
             'template' => $data->whatsappTemplate(),
             'history' => $data->whatsappHistory(),
         ]);
-    }
-
-    /**
-     * Render a still-mock page: sample data shaped by the school's real
-     * level, with the real school summary in the props.
-     *
-     * @param  (callable(MasterMockData): array<string, mixed>)|null  $props
-     */
-    private function render(Request $request, string $component, ?callable $props = null): Response
-    {
-        $data = new MasterMockData(SchoolProfile::current()->level->value);
-
-        return $this->renderMaster($component, $props === null ? [] : $props($data));
     }
 }

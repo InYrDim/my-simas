@@ -47,7 +47,11 @@ Vendor/Laravel  ←  Shared  ←  Platform (Fase 1)  ←  Identity  ←  Core  �
   classes, subjects, rooms, people, extracurriculars) and academic
   management (homerooms, teaching assignments, student placement, bell
   schedule, academic calendar), plus the CSV import of students and
-  teachers; permissions `core.master.*` and `core.academic.*`. Surface: see `modules/Core/CONTRACT.md`.
+  teachers, and Statistik & Laporan: Core owns the pages and two
+  registries (`ReportRegistry`, `StatisticsRegistry` in Core's Contracts)
+  that every module — Core included — registers its reports and figures
+  with; Core never imports a feature module. Permissions `core.master.*`
+  and `core.academic.*`. Surface: see `modules/Core/CONTRACT.md`.
 - **App / Database** — Laravel glue only: providers, config, root
   seeders. No business logic. (`DatabaseSeeder` creating the example
   user via `UserFactory` is the single documented exception.)
@@ -59,7 +63,7 @@ Vendor/Laravel  ←  Shared  ←  Platform (Fase 1)  ←  Identity  ←  Core  �
 | Shared   | `Shared`   | Generic technical utilities           | Everything (by definition)                                       |
 | Platform | `Platform` | Tenancy, module registry, permissions | `Modules\Platform\App\Contracts`                                 |
 | Identity | `Identity` | Tenant-scoped users, auth lifecycle, user management | `Modules\Identity\App\Contracts` (`ResolvesUsers`, `UserRecord`) |
-| Core     | `Core`     | Master data, academic management, CSV import | `Modules\Core\App\Contracts` (empty)                             |
+| Core     | `Core`     | Master data, academic management, CSV import, statistics and reports | `Modules\Core\App\Contracts` (`ReportRegistry`, `Report`, `StatisticsRegistry`, `StatisticsProvider`, DTOs) |
 | Attendance | `Attendance` | Daily attendance (Absensi) — mockup | `Modules\Attendance\App\Contracts` (none yet)                  |
 | Ppdb     | `Ppdb`     | Admissions (PPDB) — mockup            | `Modules\Ppdb\App\Contracts` (none yet)                         |
 

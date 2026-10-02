@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use Modules\Core\Database\Factories\StudentClassHistoryFactory;
 use Modules\Platform\App\Contracts\Concerns\BelongsToTenant;
 
@@ -21,6 +22,7 @@ use Modules\Platform\App\Contracts\Concerns\BelongsToTenant;
  * @property int|null $class_id
  * @property string $class_name
  * @property string $note
+ * @property Carbon|null $updated_at
  */
 #[UseFactory(StudentClassHistoryFactory::class)]
 #[Fillable(['student_id', 'academic_year_id', 'class_id', 'class_name', 'note'])]
@@ -30,6 +32,14 @@ class StudentClassHistory extends Model
     use BelongsToTenant, HasFactory;
 
     protected $table = 'student_class_history';
+
+    /**
+     * @return BelongsTo<Student, $this>
+     */
+    public function student(): BelongsTo
+    {
+        return $this->belongsTo(Student::class);
+    }
 
     /**
      * @return BelongsTo<AcademicYear, $this>

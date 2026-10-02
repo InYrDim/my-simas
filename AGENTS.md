@@ -350,3 +350,14 @@ admins across tenants are managed by Identity's `Console/SchoolAdminController`
 on the console host. New Platform contracts: `TenantDirectory`,
 `TenantRoles::rolePermissions()`. Details: modules/Platform/CONTRACT.md and
 docs/architecture/modular-monolith.md.
+
+## Statistik & Laporan (Fase 7)
+
+Core owns the pages (`/statistik-laporan/*`, behind `core.master.view`) and
+Core's first contracts: `ReportRegistry` + `Report` and `StatisticsRegistry`
++ `StatisticsProvider` (DTOs in `Contracts/DTOs`). Every module, Core
+included, registers its reports and figures from its own provider; a
+feature module never gets imported by Core. Reports return a `ReportTable`
+— Core renders CSV and the print view, nothing is stored. "Segera hadir"
+placeholders are labels in `modules/Core/config/insight.php`; registering
+the same key replaces one. Details: modules/Core/CONTRACT.md.

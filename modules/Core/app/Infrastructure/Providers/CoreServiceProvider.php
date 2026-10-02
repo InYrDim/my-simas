@@ -3,6 +3,14 @@
 namespace Modules\Core\App\Infrastructure\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Modules\Core\App\Contracts\ReportRegistry;
+use Modules\Core\App\Contracts\StatisticsRegistry;
+use Modules\Core\App\Domain\Reports\StudentListReport;
+use Modules\Core\App\Domain\Reports\StudentMutationReport;
+use Modules\Core\App\Domain\Reports\TeachingLoadReport;
+use Modules\Core\App\Domain\Statistics\SchoolStatistics;
+use Modules\Core\App\Infrastructure\Insight\DefaultReportRegistry;
+use Modules\Core\App\Infrastructure\Insight\DefaultStatisticsRegistry;
 use Modules\Platform\App\Contracts\ModuleRegistry;
 use Modules\Platform\App\Contracts\PermissionRegistry;
 use Modules\Platform\App\Contracts\TenantNavigation;
@@ -15,6 +23,16 @@ class CoreServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../../../config/permission_labels.php', 'permission_labels');
+        $this->mergeConfigFrom(__DIR__.'/../../../config/insight.php', 'insight');
+
+        // Statistik & Laporan registries: interface-aliased singletons, so
+        // the modules registering through the contract and Core's own
+        // controllers reading the concrete share one instance.
+        $this->app->singleton(DefaultReportRegistry::class);
+        $this->app->alias(DefaultReportRegistry::class, ReportRegistry::class);
+
+        $this->app->singleton(DefaultStatisticsRegistry::class);
+        $this->app->alias(DefaultStatisticsRegistry::class, StatisticsRegistry::class);
     }
 
     /**
@@ -26,6 +44,7 @@ class CoreServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../../../database/migrations');
         $this->registerPermissions();
         $this->registerNavigation();
+        $this->registerInsight();
         $this->loadRoutesFrom(__DIR__.'/../../../routes/web.php');
         // API routes bring their own middleware grouping inside the file.
         $this->loadRoutesFrom(__DIR__.'/../../../routes/api.php');
@@ -55,6 +74,21 @@ class CoreServiceProvider extends ServiceProvider
             'core.academic.view',
             'core.academic.manage',
         ]);
+    }
+
+    /**
+     * Register Core's own reports and figures for Statistik & Laporan,
+     * through the same contracts the feature modules use.
+     */
+    protected function registerInsight(): void
+    {
+        $reports = $this->app->make(ReportRegistry::class);
+
+        $reports->register('core', StudentListReport::class);
+        $reports->register('core', StudentMutationReport::class);
+        $reports->register('core', TeachingLoadReport::class);
+
+        $this->app->make(StatisticsRegistry::class)->register('core', SchoolStatistics::class);
     }
 
     /**
@@ -116,6 +150,7 @@ class CoreServiceProvider extends ServiceProvider
                 'label' => 'Statistik & Laporan',
                 'icon' => 'chart-column',
                 'route' => 'core.insight.statistics',
+                'permission' => 'core.master.view',
                 'group' => 'Operasional',
                 'order' => 55,
                 'children' => [
