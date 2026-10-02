@@ -49,12 +49,21 @@ final class SchoolAdminController
             'status' => ['nullable', Rule::in(['active', 'invited', 'deactivated'])],
         ]);
 
-        $rows = $this->admins->handle($filters['tenant'] ?? null)
-            ->when($filters['q'] ?? null, fn ($rows, string $term) => $rows->filter(
+        $rows = $this->admins->handle($filters['tenant'] ?? null);
+        $term = $filters['q'] ?? null;
+        $status = $filters['status'] ?? null;
+
+        if ($term) {
+            $rows = $rows->filter(
                 fn (array $row): bool => str_contains(mb_strtolower($row['name'].' '.$row['email']), mb_strtolower($term)),
-            ))
-            ->when($filters['status'] ?? null, fn ($rows, string $status) => $rows->where('status', $status))
-            ->values();
+            );
+        }
+
+        if ($status) {
+            $rows = $rows->where('status', $status);
+        }
+
+        $rows = $rows->values();
 
         $page = LengthAwarePaginator::resolveCurrentPage();
 
@@ -100,6 +109,10 @@ final class SchoolAdminController
         $tenantData = $this->tenant($tenant);
         $user = $this->admin($tenantData->id, $userId);
 
+        if ($user->email === null) {
+            return back()->withErrors(['billing' => 'Akun ini tidak punya email; undangan tidak bisa dikirim.']);
+        }
+
         return $this->invitation($tenantData, $user->name, $user->email);
     }
 
@@ -108,7 +121,7 @@ final class SchoolAdminController
         $user = $this->admin($this->tenant($tenant)->id, $userId);
 
         if (! $this->reset->handle($user)) {
-            return back()->withErrors(['billing' => 'Akun ini belum aktif atau sudah dinonaktifkan; tautan atur ulang tidak dikirim.']);
+            return back()->withErrors(['billing' => 'Akun ini belum aktif, sudah dinonaktifkan, atau tidak punya email; tautan atur ulang tidak dikirim.']);
         }
 
         return back()->with('status', "Tautan atur ulang kata sandi dikirim ke {$user->email}.");

@@ -1,7 +1,8 @@
 export interface ManagedUser {
     id: number;
     name: string;
-    email: string;
+    username: string | null;
+    email: string | null;
     roles: string[];
     roleLabels: string[];
     isActive: boolean;

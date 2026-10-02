@@ -33,7 +33,8 @@ interface EditProps {
     user: {
         id: number;
         name: string;
-        email: string;
+        username: string | null;
+        email: string | null;
         roleNames: string[];
         isActive: boolean;
         hasPassword: boolean;
@@ -96,7 +97,9 @@ export default function UsersEdit({
 
             <h1 className="text-xl font-semibold">{user.name}</h1>
 
-            <p className="mt-1 text-sm text-muted-foreground">{user.email}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+                {[user.username, user.email].filter(Boolean).join(' · ')}
+            </p>
 
             {!user.isActive && (
                 <Alert variant="destructive" className="mt-6">
@@ -206,7 +209,13 @@ export default function UsersEdit({
                         </Button>
                     )}
 
-                    {user.hasPassword ? (
+                    {user.email === null ? (
+                        <p className="text-xs text-muted-foreground">
+                            Akun ini tidak punya email, jadi tautan reset tidak
+                            bisa dikirim. Atur ulang kata sandinya dari data
+                            siswa atau guru di Master Data.
+                        </p>
+                    ) : user.hasPassword ? (
                         <Button
                             type="button"
                             variant="outline"

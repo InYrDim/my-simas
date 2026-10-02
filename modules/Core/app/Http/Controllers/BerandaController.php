@@ -2,9 +2,12 @@
 
 namespace Modules\Core\App\Http\Controllers;
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Core\App\Domain\Models\Student;
+use Modules\Core\App\Domain\Models\Teacher;
 use Modules\Identity\App\Contracts\ResolvesUsers;
 use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Contracts\TenantRoles;
@@ -15,6 +18,10 @@ use Modules\Platform\App\Contracts\TenantRoles;
  *
  * Reads only public surfaces — Platform's tenant context and role names,
  * Identity's account counts. No Eloquent model crosses the boundary.
+ *
+ * `me` is the student or the teacher whose record carries the signed-in
+ * account. The account figures and the role list are the business of
+ * whoever manages users; everyone else gets `accounts: null`.
  */
 final class BerandaController
 {
@@ -27,7 +34,8 @@ final class BerandaController
 
         // The school's own clock, not the server's and not the phone's.
         $today = now($tenant->timezone);
-        $summary = $users->currentTenantSummary();
+        $canViewUsers = Gate::allows('identity.users.view');
+        $summary = $canViewUsers ? $users->currentTenantSummary() : null;
 
         return Inertia::render('Core/Beranda', [
             'school' => [
@@ -39,19 +47,53 @@ final class BerandaController
                 'label' => $today->locale('id')->isoFormat('dddd, D MMMM Y'),
                 'iso' => $today->toDateString(),
             ],
-            'accounts' => [
+            'me' => $this->me(),
+            'accounts' => $summary === null ? null : [
                 'total' => $summary->total,
                 'active' => $summary->active,
                 'awaitingActivation' => $summary->awaitingActivation,
                 'deactivated' => $summary->deactivated,
                 'withoutRole' => $summary->withoutRole,
             ],
-            'roles' => $this->roleLabels($roles->names($tenant->id)),
+            'roles' => $canViewUsers ? $this->roleLabels($roles->names($tenant->id)) : [],
             'can' => [
-                'viewUsers' => Gate::allows('identity.users.view'),
+                'viewUsers' => $canViewUsers,
                 'invite' => Gate::allows('identity.users.create'),
             ],
         ]);
+    }
+
+    /**
+     * The student or teacher record linked to the signed-in account.
+     *
+     * @return array{kind: 'student', name: string, nis: string, class: string|null}|array{kind: 'teacher', name: string, duty: string}|null
+     */
+    private function me(): ?array
+    {
+        $userId = Auth::id();
+
+        if ($userId === null) {
+            return null;
+        }
+
+        $student = Student::query()->with('classGroup')->where('user_id', $userId)->first();
+
+        if ($student !== null) {
+            return [
+                'kind' => 'student',
+                'name' => $student->name,
+                'nis' => $student->nis,
+                'class' => $student->classGroup?->name,
+            ];
+        }
+
+        $teacher = Teacher::query()->where('user_id', $userId)->first();
+
+        return $teacher === null ? null : [
+            'kind' => 'teacher',
+            'name' => $teacher->name,
+            'duty' => $teacher->duty,
+        ];
     }
 
     /**

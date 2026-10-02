@@ -248,10 +248,10 @@ it('deactivating from the UI closes access on the next login (Stage 3 traversal)
     from(school('um-h', '/login'))
         ->post(school('um-h', '/login'), [
             'school' => schoolId('um-h'),
-            'email' => 'guru@um-h.test',
+            'login' => 'guru@um-h.test',
             'password' => 'SandiRahasia1!',
         ])
-        ->assertSessionHasErrors('email');
+        ->assertSessionHasErrors('login');
 });
 
 it('shows the anti-lockout flags and refuses the invariants through the UI', function () {
@@ -314,4 +314,56 @@ it('routes are 403 when the identity module is inactive', function () {
     actingAs($admin)
         ->get(school('um-j-off', '/users'))
         ->assertForbidden();
+});
+
+it('pages the user list and filters it by role and by search', function () {
+    $tenant = umTenant('um-k');
+    $admin = umUser($tenant, 'admin@um-k.test', 'admin-sekolah');
+    umUser($tenant, 'guru@um-k.test', 'guru');
+
+    app(TenantContext::class)->run($tenant->id, function () use ($tenant): void {
+        foreach (range(1, 30) as $number) {
+            User::factory()->forTenant($tenant->id)->withUsername('7'.str_pad((string) $number, 4, '0', STR_PAD_LEFT))
+                ->create(['name' => sprintf('Siswa %02d', $number)])
+                ->assignTenantRole('siswa');
+        }
+    });
+
+    actingAs($admin)
+        ->get(school('um-k', '/users'))
+        ->assertInertia(fn ($page) => $page
+            ->has('users', 25)
+            ->where('pagination.total', 32)
+            ->where('pagination.lastPage', 2));
+
+    actingAs($admin)
+        ->get(school('um-k', '/users?role=siswa&page=2'))
+        ->assertInertia(fn ($page) => $page
+            ->has('users', 5)
+            ->where('pagination.total', 30)
+            ->where('filters.role', 'siswa')
+            ->where('users.0.email', null)
+            ->where('users.4.username', '70030'));
+
+    actingAs($admin)
+        ->get(school('um-k', '/users?q=70007'))
+        ->assertInertia(fn ($page) => $page
+            ->has('users', 1)
+            ->where('users.0.name', 'Siswa 07'));
+});
+
+it('queues no reset mail for an account without an email', function () {
+    Mail::fake();
+
+    $tenant = umTenant('um-l');
+    $admin = umUser($tenant, 'admin@um-l.test', 'admin-sekolah');
+    $student = User::factory()->forTenant($tenant->id)->withUsername('70001')->create();
+
+    actingAs($admin)
+        ->post(school('um-l', '/users/').$student->id.'/send-reset')
+        ->assertRedirect();
+
+    Mail::assertNothingQueued();
+
+    expect(DB::table('password_reset_tokens')->where('tenant_id', $tenant->id)->exists())->toBeFalse();
 });

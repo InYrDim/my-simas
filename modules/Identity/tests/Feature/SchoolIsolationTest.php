@@ -42,7 +42,7 @@ function isoLogin(Tenant $tenant, string $email): void
 {
     post('/login', [
         'school' => $tenant->id,
-        'email' => $email,
+        'login' => $email,
         'password' => 'SandiRahasia1!',
     ])->assertRedirect();
 }

@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\Core\App\Http\Controllers\AcademicYearController;
+use Modules\Core\App\Http\Controllers\AccountController;
 use Modules\Core\App\Http\Controllers\BerandaController;
 use Modules\Core\App\Http\Controllers\CalendarEventController;
 use Modules\Core\App\Http\Controllers\ClassGroupController;
@@ -88,6 +89,15 @@ Route::middleware('web')->group(function (): void {
                 Route::delete('ekstrakurikuler/{extracurricular}', [ExtracurricularController::class, 'destroy'])->whereNumber('extracurricular')->name('extracurriculars.destroy');
                 Route::post('ekstrakurikuler/{extracurricular}/anggota', [ExtracurricularMemberController::class, 'store'])->whereNumber('extracurricular')->name('extracurriculars.members.store');
                 Route::delete('ekstrakurikuler/{extracurricular}/anggota/{student}', [ExtracurricularMemberController::class, 'destroy'])->whereNumber(['extracurricular', 'student'])->name('extracurriculars.members.destroy');
+
+                // Login accounts of students (NIS) and teachers (NIP). The
+                // controller also asks for Identity's user permissions.
+                Route::post('kelas/{classGroup}/akun-siswa', [AccountController::class, 'storeForClass'])->whereNumber('classGroup')->name('classes.accounts');
+                Route::post('siswa/{student}/akun', [AccountController::class, 'storeForStudent'])->whereNumber('student')->name('students.account');
+                Route::post('siswa/{student}/akun/reset', [AccountController::class, 'resetStudent'])->whereNumber('student')->name('students.account.reset');
+                Route::post('guru/{teacher}/akun', [AccountController::class, 'storeForTeacher'])->whereNumber('teacher')->name('teachers.account');
+                Route::post('guru/{teacher}/akun/tautkan', [AccountController::class, 'linkTeacher'])->whereNumber('teacher')->name('teachers.account.link');
+                Route::post('guru/{teacher}/akun/reset', [AccountController::class, 'resetTeacher'])->whereNumber('teacher')->name('teachers.account.reset');
 
                 Route::post('ruangan', [RoomController::class, 'store'])->name('rooms.store');
                 Route::put('ruangan/{room}', [RoomController::class, 'update'])->whereNumber('room')->name('rooms.update');

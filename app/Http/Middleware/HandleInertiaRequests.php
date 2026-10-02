@@ -40,6 +40,8 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'flash' => [
                 'status' => fn () => $request->session()->get('status'),
+                // A password an admin has to read once and pass on.
+                'password' => fn () => $request->session()->get('password'),
             ],
             'auth' => [
                 'user' => $request->user(),

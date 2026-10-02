@@ -23,7 +23,7 @@ final class ListSchoolAdmins
     ) {}
 
     /**
-     * @return Collection<int, array{id: int, tenantId: string, tenantName: string, tenantSlug: string, tenantStatus: string, name: string, email: string, status: string}>
+     * @return Collection<int, array{id: int, tenantId: string, tenantName: string, tenantSlug: string, tenantStatus: string, name: string, email: string|null, status: string}>
      */
     public function handle(?string $tenantId = null): Collection
     {
@@ -36,7 +36,7 @@ final class ListSchoolAdmins
     }
 
     /**
-     * @return Collection<int, array{id: int, tenantId: string, tenantName: string, tenantSlug: string, tenantStatus: string, name: string, email: string, status: string}>
+     * @return Collection<int, array{id: int, tenantId: string, tenantName: string, tenantSlug: string, tenantStatus: string, name: string, email: string|null, status: string}>
      */
     private function adminsOf(TenantData $tenant): Collection
     {

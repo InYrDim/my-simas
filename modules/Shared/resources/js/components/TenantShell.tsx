@@ -49,7 +49,9 @@ interface NavItem extends NavLinkItem {
 }
 
 type SharedProps = {
-    auth: { user: { name: string; email: string } | null };
+    auth: {
+        user: { name: string; email: string | null; username?: string | null } | null;
+    };
     flash: { status?: string | null };
     tenantNav: NavItem[];
 };
@@ -107,10 +109,12 @@ export default function TenantShell({
     children,
     width = "max-w-5xl",
     logoutHref = "/logout",
+    changePasswordHref = "/ganti-kata-sandi",
 }: {
     children: ReactNode;
     width?: string;
     logoutHref?: string;
+    changePasswordHref?: string;
 }) {
     const { url, props } = usePage<SharedProps>();
     const tenant = useTenant();
@@ -266,6 +270,7 @@ export default function TenantShell({
                                     schoolName={schoolName}
                                     schoolCode={tenant?.slug ?? ""}
                                     logoutHref={logoutHref}
+                                    changePasswordHref={changePasswordHref}
                                 />
                             </SidebarMenuItem>
                         )}

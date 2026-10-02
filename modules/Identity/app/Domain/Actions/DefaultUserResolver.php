@@ -22,6 +22,19 @@ class DefaultUserResolver implements ResolvesUsers
         return $user === null ? null : $this->toRecord($user);
     }
 
+    public function findMany(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        return User::query()
+            ->whereIn('id', $ids)
+            ->get()
+            ->mapWithKeys(fn (User $user): array => [(int) $user->id => $this->toRecord($user)])
+            ->all();
+    }
+
     /**
      * Count the CURRENT tenant's accounts. One aggregate query for the
      * three states (an invited account with a null password cannot sign
@@ -59,6 +72,9 @@ class DefaultUserResolver implements ResolvesUsers
             email: $user->email,
             emailVerifiedAt: $user->email_verified_at?->toIso8601String(),
             roles: $user->tenantRoleNames(),
+            username: $user->username,
+            active: $user->isActive(),
+            mustChangePassword: (bool) $user->must_change_password,
         );
     }
 }

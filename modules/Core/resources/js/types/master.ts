@@ -118,6 +118,20 @@ export interface Pagination {
     to: number;
 }
 
+/** The login account linked to a student or a teacher. */
+export interface LinkedAccount {
+    username: string | null;
+    email: string | null;
+    active: boolean;
+    mustChangePassword: boolean;
+}
+
+/** What the signed-in user may do with linked accounts. */
+export interface AccountAbilities {
+    create: boolean;
+    reset: boolean;
+}
+
 /** A class as offered in a select. */
 export interface ClassOption {
     id: number;

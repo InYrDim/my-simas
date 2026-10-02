@@ -12,14 +12,15 @@ import { create as registerSchool } from '@/actions/Modules/Platform/App/Http/Co
 /**
  * Tenant login (school portal). The school is identified by the school
  * code typed here (tenant id today, NPSN later) and remembered in the
- * session server-side; there is no per-school host.
+ * session server-side; there is no per-school host. An account signs in
+ * with its email, or with its username when it has none (NIS, NIP).
  */
 export default function Login() {
     const tenant = useTenant();
 
     const form = useForm({
         school: '',
-        email: '',
+        login: '',
         password: '',
         remember: false,
     });
@@ -37,7 +38,7 @@ export default function Login() {
             tone="light"
             eyebrow={tenant ? tenant.name : 'Portal Sekolah'}
             title="Masuk ke akun Anda"
-            subtitle="Gunakan email dan kata sandi akun sekolah Anda."
+            subtitle="Gunakan email atau nomor induk dan kata sandi akun sekolah Anda."
             footer="SIMAS untuk sekolah"
         >
             <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
@@ -57,16 +58,16 @@ export default function Login() {
                 />
 
                 <AuthInput
-                    label="Email"
-                    id="email"
-                    name="email"
-                    type="email"
+                    label="Email atau NIS/NIP"
+                    id="login"
+                    name="login"
+                    type="text"
                     autoComplete="username"
                     required
-                    value={form.data.email}
-                    error={form.errors.email}
+                    value={form.data.login}
+                    error={form.errors.login}
                     onChange={(event) =>
-                        form.setData('email', event.target.value)
+                        form.setData('login', event.target.value)
                     }
                 />
 

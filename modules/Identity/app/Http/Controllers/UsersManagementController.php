@@ -41,26 +41,46 @@ final class UsersManagementController
 
     private const INVITE_DECAY_SECONDS = 300;
 
+    private const PER_PAGE = 25;
+
     public function __construct(
         private readonly TenantContext $context,
     ) {}
 
     /**
-     * User list: name, email, roles (labels), status.
+     * User list: name, username or email, roles (labels), status. One
+     * page at a time, searched and filtered by role on the server — a
+     * school's students are accounts too.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $this->authorize('viewAny');
 
         $roleLabels = $this->roleLabels();
+        $search = trim((string) $request->query('q', ''));
+        $role = (string) $request->query('role', '');
 
-        $users = User::query()
+        $paginator = User::query()
+            ->when($search !== '', fn ($query) => $query->where(
+                fn ($inner) => $inner
+                    ->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('username', 'like', "%{$search}%"),
+            ))
+            ->when(isset($roleLabels[$role]), fn ($query) => $query->whereHas(
+                'roles',
+                fn ($roles) => $roles->where('name', $role),
+            ))
             ->orderBy('name')
             ->orderBy('id')
-            ->get()
+            ->paginate(self::PER_PAGE)
+            ->withQueryString();
+
+        $users = collect($paginator->items())
             ->map(fn (User $user): array => [
                 'id' => (int) $user->id,
                 'name' => $user->name,
+                'username' => $user->username,
                 'email' => $user->email,
                 'roles' => $user->tenantRoleNames(),
                 'roleLabels' => collect($user->tenantRoleNames())
@@ -76,6 +96,14 @@ final class UsersManagementController
         return Inertia::render('Identity/Users/Index', [
             'users' => $users,
             'roleLabels' => $roleLabels,
+            'filters' => ['q' => $search, 'role' => isset($roleLabels[$role]) ? $role : ''],
+            'pagination' => [
+                'page' => $paginator->currentPage(),
+                'lastPage' => $paginator->lastPage(),
+                'total' => $paginator->total(),
+                'from' => (int) $paginator->firstItem(),
+                'to' => (int) $paginator->lastItem(),
+            ],
         ]);
     }
 
@@ -206,6 +234,7 @@ final class UsersManagementController
             'user' => [
                 'id' => (int) $target->id,
                 'name' => $target->name,
+                'username' => $target->username,
                 'email' => $target->email,
                 'roleNames' => $target->tenantRoleNames(),
                 'isActive' => $target->isActive(),
@@ -292,7 +321,9 @@ final class UsersManagementController
 
     /**
      * Send a reset link through the Stage 4 tenant-scoped machinery.
-     * Generic success either way — no account-state disclosure.
+     * Generic success either way — no account-state disclosure. An
+     * account without an email has nowhere to receive it: its password
+     * is reset from the student or teacher record instead.
      */
     public function sendReset(string $userId): RedirectResponse
     {

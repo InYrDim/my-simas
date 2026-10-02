@@ -97,12 +97,12 @@ it('refuses login for a deactivated user with the generic error', function () {
     from(school('sekolah-a', '/login'))
         ->post(school('sekolah-a', '/login'), [
             'school' => schoolId('sekolah-a'),
-            'email' => 'budi@example.com',
+            'login' => 'budi@example.com',
             'password' => 'password123',
-        ])->assertSessionHasErrors('email');
+        ])->assertSessionHasErrors('login');
 
     // Generic message — indistinguishable from a wrong password.
-    expect(session('errors')->get('email')[0])->toBe(__('auth.failed'))
+    expect(session('errors')->get('login')[0])->toBe(__('auth.failed'))
         ->and(auth()->user())->toBeNull();
 });
 
@@ -135,7 +135,7 @@ it('does not deactivate the tenant identity across tenants', function () {
     // Tenant B's budi still logs in on its own host.
     post(school('sekolah-b', '/login'), [
         'school' => schoolId('sekolah-b'),
-        'email' => 'budi@example.com',
+        'login' => 'budi@example.com',
         'password' => 'password123',
     ])->assertRedirect();
 
@@ -209,7 +209,7 @@ it('restores access on reactivation', function () {
 
     post(school('sekolah-a', '/login'), [
         'school' => schoolId('sekolah-a'),
-        'email' => 'budi@example.com',
+        'login' => 'budi@example.com',
         'password' => 'password123',
     ])->assertRedirect();
 

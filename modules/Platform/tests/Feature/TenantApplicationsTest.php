@@ -173,7 +173,7 @@ it('approves transactionally: tenant + default roles + onboarding flags + decisi
     $roleNames = app(TenantRoles::class)->names($tenant->id);
     sort($roleNames);
 
-    expect($roleNames)->toBe(['admin-sekolah', 'guru', 'staf-tu']);
+    expect($roleNames)->toBe(['admin-sekolah', 'guru', 'siswa', 'staf-tu']);
 
     // Onboarding flags from config (flagged modules only).
     expect(TenantModules::class)

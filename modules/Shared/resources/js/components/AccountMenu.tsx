@@ -4,6 +4,7 @@ import {
     CircleHelpIcon,
     CreditCardIcon,
     InfoIcon,
+    KeyRoundIcon,
     LogOutIcon,
     ReceiptTextIcon,
 } from 'lucide-react';
@@ -206,14 +207,18 @@ export default function AccountMenu({
     schoolName,
     schoolCode,
     logoutHref,
+    changePasswordHref,
 }: {
-    user: { name: string; email: string };
+    user: { name: string; email: string | null; username?: string | null };
     schoolName: string;
     schoolCode: string;
     logoutHref: string;
+    changePasswordHref: string;
 }) {
     const [open, setOpen] = useState<PanelKey | null>(null);
     const panel = open === null ? null : panels[open];
+    // An account without an email signs in by username (NIS, NIP).
+    const identity = user.email ?? user.username ?? '';
 
     return (
         <>
@@ -226,7 +231,7 @@ export default function AccountMenu({
                         <span className="grid flex-1 text-left leading-tight">
                             <span className="truncate text-sm font-medium">{user.name}</span>
                             <span className="truncate text-xs text-muted-foreground">
-                                {user.email}
+                                {identity}
                             </span>
                         </span>
                         <ChevronsUpDownIcon className="ml-auto group-data-[collapsible=icon]:hidden" />
@@ -242,7 +247,7 @@ export default function AccountMenu({
                             {user.name}
                         </span>
                         <span className="block truncate text-xs text-muted-foreground">
-                            {user.email}
+                            {identity}
                         </span>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
@@ -268,6 +273,12 @@ export default function AccountMenu({
                         </DropdownMenuItem>
                     </DropdownMenuGroup>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                        <Link href={changePasswordHref}>
+                            <KeyRoundIcon />
+                            Ganti kata sandi
+                        </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                         <Link href={logoutHref} method="post" as="button" className="w-full">
                             <LogOutIcon />

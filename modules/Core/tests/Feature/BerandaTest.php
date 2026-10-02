@@ -3,6 +3,11 @@
 namespace Modules\Core\Tests\Feature;
 
 use Illuminate\Support\Carbon;
+use Modules\Core\App\Domain\Models\AcademicYear;
+use Modules\Core\App\Domain\Models\ClassGroup;
+use Modules\Core\App\Domain\Models\Grade;
+use Modules\Core\App\Domain\Models\Student;
+use Modules\Core\App\Domain\Models\Teacher;
 use Modules\Identity\Database\Factories\UserFactory;
 use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Domain\Models\Tenant;
@@ -81,7 +86,7 @@ it('shows the school record on the school\'s own clock', function () {
             ->where('accounts.awaitingActivation', 0)
             ->where('accounts.deactivated', 0)
             ->where('accounts.withoutRole', 0)
-            ->where('roles', ['Admin Sekolah', 'Guru', 'Staf/TU'])
+            ->where('roles', ['Admin Sekolah', 'Guru', 'Siswa', 'Staf/TU'])
             ->where('can.viewUsers', true)
             ->where('can.invite', true)
             ->etc());
@@ -163,4 +168,65 @@ it('sends a tenant guest at the root to the login', function () {
     berandaTenant('sdn-root2');
 
     get(school('sdn-root2', '/'))->assertRedirect(route('login'));
+});
+
+it('greets a student by name and class and keeps the account figures away', function () {
+    $tenant = berandaTenant('sdn-siswa');
+    $account = UserFactory::new()->forTenant($tenant->id)->withUsername('71001')->create();
+
+    app(TenantContext::class)->run($tenant->id, function () use ($account): void {
+        $account->assignTenantRole('siswa');
+
+        $year = AcademicYear::factory()->active()->create();
+        $grade = Grade::factory()->create(['name' => 'X', 'sort_order' => 1]);
+        $class = ClassGroup::factory()->create(['academic_year_id' => $year->id, 'grade_id' => $grade->id, 'name' => 'X 1']);
+
+        Student::factory()->create(['name' => 'Aditya Nugraha', 'nis' => '71001', 'class_id' => $class->id])
+            ->forceFill(['user_id' => $account->id])->save();
+    });
+
+    actingAs($account->fresh());
+
+    berandaVisit($tenant)->assertOk()->assertInertia(fn ($page) => $page
+        ->where('me', ['kind' => 'student', 'name' => 'Aditya Nugraha', 'nis' => '71001', 'class' => 'X 1'])
+        ->where('accounts', null)
+        ->where('roles', [])
+        ->where('can.viewUsers', false));
+});
+
+it('greets a teacher by name and leaves an unlinked admin without a person', function () {
+    $tenant = berandaTenant('sdn-guru-saya');
+    berandaSignIn($tenant);
+
+    berandaVisit($tenant)->assertInertia(fn ($page) => $page
+        ->where('me', null)
+        ->has('accounts.total'));
+
+    $account = UserFactory::new()->forTenant($tenant->id)->create(['email' => 'rina@sdn-guru-saya.test']);
+
+    app(TenantContext::class)->run($tenant->id, function () use ($account): void {
+        $account->assignTenantRole('guru');
+
+        Teacher::factory()->create(['name' => 'Bu Rina', 'duty' => 'Guru Mapel'])
+            ->forceFill(['user_id' => $account->id])->save();
+    });
+
+    actingAs($account->fresh());
+
+    berandaVisit($tenant)->assertInertia(fn ($page) => $page
+        ->where('me', ['kind' => 'teacher', 'name' => 'Bu Rina', 'duty' => 'Guru Mapel'])
+        ->where('accounts', null));
+});
+
+it('never shows the person of another school', function () {
+    $other = berandaTenant('sdn-lain');
+    $tenant = berandaTenant('sdn-sini');
+    berandaSignIn($tenant);
+
+    // A teacher of another school whose user_id happens to equal this admin's id.
+    app(TenantContext::class)->run($other->id, function (): void {
+        Teacher::factory()->create(['name' => 'Orang Lain'])->forceFill(['user_id' => auth()->id()])->save();
+    });
+
+    berandaVisit($tenant)->assertInertia(fn ($page) => $page->where('me', null));
 });

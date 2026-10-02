@@ -10,13 +10,14 @@ use Modules\Core\App\Domain\Actions\SaveStudent;
 use Modules\Core\App\Domain\Enums\AcademicYearStatus;
 use Modules\Core\App\Domain\Models\ClassGroup;
 use Modules\Core\App\Domain\Models\Student;
+use Modules\Core\App\Http\Concerns\DescribesLinkedAccount;
 use Modules\Core\App\Http\Concerns\RendersMasterPage;
 use Modules\Core\App\Http\Requests\StudentRequest;
 use Modules\Core\App\Http\Resources\StudentResource;
 
 final class StudentController
 {
-    use RendersMasterPage;
+    use DescribesLinkedAccount, RendersMasterPage;
 
     private const PER_PAGE = 25;
 
@@ -55,6 +56,7 @@ final class StudentController
 
         return $this->renderMaster('Core/Master/Students/Show', [
             'student' => StudentResource::make($student)->resolve(),
+            'login' => $this->linkedAccount($student->user_id),
             'history' => $student->classHistory->map(fn ($row): array => [
                 'year' => $row->academicYear->name,
                 'class' => $row->class_name,

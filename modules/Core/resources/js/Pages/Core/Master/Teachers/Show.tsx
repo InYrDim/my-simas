@@ -1,5 +1,10 @@
 import { Link } from '@inertiajs/react';
 
+import {
+    linkTeacher,
+    resetTeacher,
+    storeForTeacher,
+} from '@/actions/Modules/Core/App/Http/Controllers/AccountController';
 import { show as classShow } from '@/actions/Modules/Core/App/Http/Controllers/ClassGroupController';
 import {
     destroy,
@@ -11,14 +16,17 @@ import { DataTable, DefinitionList, EmptyState, Panel } from '@shared/components
 import { Button } from '@shared/components/ui/button';
 import { TableCell, TableRow } from '@shared/components/ui/table';
 
+import AccountPanel from '../../../../Components/AccountPanel';
 import ConfirmAction from '../../../../Components/ConfirmAction';
 import FormDialog from '../../../../Components/FormDialog';
+import { SelectField } from '../../../../Components/FormField';
 import MasterPage from '../../../../Components/MasterPage';
-import StatusBadge from '../../../../Components/StatusBadge';
 import TeacherForm from '../../../../Components/TeacherForm';
 import type {
+    AccountAbilities,
     Assignment,
     ClassGroup,
+    LinkedAccount,
     SchoolSummary,
     Teacher,
 } from '../../../../types/master';
@@ -30,11 +38,13 @@ import type {
 export default function TeachersShow({
     school,
     teacher,
+    login,
     assignments,
     homeroomOf,
 }: {
     school: SchoolSummary;
     teacher: Teacher;
+    login: { account: LinkedAccount | null; can: AccountAbilities };
     assignments: Assignment[];
     homeroomOf: ClassGroup[];
 }) {
@@ -78,25 +88,62 @@ export default function TeachersShow({
                         />
                     </Panel>
 
-                    <Panel title="Akun login">
-                        <div className="flex flex-col gap-4">
-                            <StatusBadge
-                                status={teacher.hasAccount ? 'linked' : 'unlinked'}
-                            />
-                            {teacher.hasAccount ? (
-                                <Button asChild variant="outline">
-                                    <Link href={usersIndex.url()}>
-                                        Kelola di Pengguna
-                                    </Link>
-                                </Button>
-                            ) : (
-                                <p className="text-sm text-muted-foreground">
-                                    Guru ini belum bisa masuk ke sistem. Akun dibuat
-                                    dari halaman Pengguna.
-                                </p>
+                    <AccountPanel
+                        account={login.account}
+                        hint="Guru ber-NIP masuk dengan NIP dan kata sandi sementara yang wajib diganti. Guru tanpa NIP diundang lewat email di halaman Pengguna, lalu ditautkan di sini."
+                    >
+                        {login.account === null && login.can.create && (
+                            <>
+                                {teacher.nip !== null && (
+                                    <FormDialog
+                                        route={storeForTeacher(teacher.id)}
+                                        title={`Buat akun untuk ${teacher.name}`}
+                                        description={`Nama pengguna ${teacher.nip}. Kata sandi sementara tampil sekali setelah akun dibuat.`}
+                                        submitLabel="Buat akun"
+                                        trigger={<Button variant="outline">Buat akun</Button>}
+                                    >
+                                        <SelectField
+                                            label="Peran"
+                                            id="role"
+                                            options={[
+                                                { value: 'guru', label: 'Guru' },
+                                                { value: 'staf-tu', label: 'Staf/TU' },
+                                            ]}
+                                        />
+                                    </FormDialog>
+                                )}
+                                {teacher.email !== null && (
+                                    <ConfirmAction
+                                        route={linkTeacher(teacher.id)}
+                                        title={`Tautkan ${teacher.name} ke akun yang ada?`}
+                                        description={`Akun dengan email ${teacher.email} akan menjadi akun guru ini. Akunnya sendiri tidak berubah.`}
+                                        confirmLabel="Tautkan"
+                                        trigger={
+                                            <Button variant="outline">
+                                                Tautkan akun yang ada
+                                            </Button>
+                                        }
+                                    />
+                                )}
+                            </>
+                        )}
+                        {login.account !== null &&
+                            login.account.username !== null &&
+                            login.can.reset && (
+                                <ConfirmAction
+                                    route={resetTeacher(teacher.id)}
+                                    title={`Reset kata sandi ${teacher.name}?`}
+                                    description="Kata sandi baru dibuat acak, tampil sekali, dan wajib diganti saat login berikutnya."
+                                    confirmLabel="Reset kata sandi"
+                                    trigger={<Button variant="outline">Reset kata sandi</Button>}
+                                />
                             )}
-                        </div>
-                    </Panel>
+                        {login.account !== null && (
+                            <Button asChild variant="outline">
+                                <Link href={usersIndex.url()}>Kelola di Pengguna</Link>
+                            </Button>
+                        )}
+                    </AccountPanel>
                 </div>
 
                 <div className="flex flex-col gap-6 lg:col-span-2">

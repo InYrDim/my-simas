@@ -140,7 +140,7 @@ it('opens the school session when an approved applicant logs in', function () {
 it('also lets the new admin in through the ordinary school login', function () {
     [, $tenantId] = approvedApplicant();
 
-    post('http://localhost/login', ['school' => $tenantId, 'email' => 'budi@nusantara.test', 'password' => 'rahasia-sekali'])
+    post('http://localhost/login', ['school' => $tenantId, 'login' => 'budi@nusantara.test', 'password' => 'rahasia-sekali'])
         ->assertRedirect(route('home'));
 
     assertAuthenticatedAs(schoolAdmin($tenantId, 'budi@nusantara.test'), 'web');

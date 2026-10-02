@@ -8,6 +8,7 @@ use Inertia\Response;
 use Modules\Core\App\Domain\Actions\DeleteTeacher;
 use Modules\Core\App\Domain\Actions\SaveTeacher;
 use Modules\Core\App\Domain\Models\Teacher;
+use Modules\Core\App\Http\Concerns\DescribesLinkedAccount;
 use Modules\Core\App\Http\Concerns\RendersMasterPage;
 use Modules\Core\App\Http\Requests\TeacherRequest;
 use Modules\Core\App\Http\Resources\ClassGroupResource;
@@ -16,7 +17,7 @@ use Modules\Core\App\Http\Resources\TeachingAssignmentResource;
 
 final class TeacherController
 {
-    use RendersMasterPage;
+    use DescribesLinkedAccount, RendersMasterPage;
 
     private const PER_PAGE = 25;
 
@@ -54,6 +55,7 @@ final class TeacherController
 
         return $this->renderMaster('Core/Master/Teachers/Show', [
             'teacher' => TeacherResource::make($teacher)->resolve(),
+            'login' => $this->linkedAccount($teacher->user_id),
             'assignments' => TeachingAssignmentResource::collection(
                 $teacher->teachingAssignments()->with(['subject', 'teacher', 'classGroup'])->get()->sortBy('subject.name')->values(),
             )->resolve(),

@@ -81,7 +81,8 @@ replaces its "Segera hadir" placeholder.
   never imports a model from another module:
   `TenantContext::currentOrFail()` for the school and its clock,
   `TenantRoles::names()` for the roles that exist, and
-  `ResolvesUsers::currentTenantSummary()` for the account counts.
+  `ResolvesUsers::currentTenantSummary()` for the account counts
+  (which now include student accounts).
   Permission checks go through `Gate` (`identity.users.view` /
   `identity.users.create`) so the page never touches `UserPolicy`.
   Role **labels** come from `config('roles')` — machine names never
@@ -148,8 +149,39 @@ replaces its "Segera hadir" placeholder.
   `SaveSchoolProfile`), a major/room/class/teacher still in use cannot be
   deleted. Teachers and students keep an optional plain `user_id` (no FK,
   no relation to Identity's User).
+- **Login accounts of students and teachers** (Fase 8;
+  `AccountController`, routes under `/master/...` behind
+  `core.master.manage`, each action also gated by Identity's
+  `identity.users.create` or, for a reset, `identity.users.sendReset`).
+  Core never touches the User model: it calls Identity's
+  `AccountProvisioner` and `ResolvesUsers` and stores the returned id in
+  `user_id`.
+  - Students (`CreateStudentAccounts`, per class or per student):
+    username = NIS, first password = birth date as `ddmmyyyy`, role
+    `siswa`, to be changed at the first login. A student who already has
+    an account, is not active, has no birth date, or whose NIS is another
+    account's username is skipped and named in the flash message.
+  - Teachers (`CreateTeacherAccount`): username = NIP, role `guru` or
+    `staf-tu`, a random 10-character first password that reaches the admin
+    once through the session flash (`flash.password`). A teacher without a
+    NIP is invited by email in `/users` and then linked
+    (`LinkTeacherAccount`: the account with the teacher's email, unless
+    another teacher already holds it).
+  - `ResetLinkedPassword`: a student goes back to the birth date, a
+    teacher gets a new random password.
+  - The account follows the record: `SaveStudent` deactivates it when the
+    student leaves `active` and reactivates it on return, and passes on a
+    new name or NIS; `SaveTeacher` passes on a new name or NIP for an
+    account that signs in by NIP (a linked email account is left alone);
+    `DeleteStudent` / `DeleteTeacher` deactivate the account, never delete
+    it (the school's last active admin keeps access).
+  - The detail pages get `login: {account, can}` from
+    `Http/Concerns/DescribesLinkedAccount`.
 - `modules/Core/resources/js/Pages/Core/Beranda.tsx` — the school's
-  landing record, phone-first, dated on the tenant's own clock. Surface
+  landing record, phone-first, dated on the tenant's own clock. `me` is
+  the student or teacher whose record carries the signed-in account; the
+  account figures and role list are sent only to holders of
+  `identity.users.view` (`accounts: null` for everyone else). Surface
   brief: `.impeccable/surfaces/modules-core-resources-js-pages-core-beranda-tsx.md`.
 - **Statistik & Laporan** (`/statistik-laporan/*`, database-backed; the
   pages and the sidebar entry need `core.master.view`, and each report

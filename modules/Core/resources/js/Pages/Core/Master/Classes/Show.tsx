@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 
+import { storeForClass } from '@/actions/Modules/Core/App/Http/Controllers/AccountController';
 import { index as placement } from '@/actions/Modules/Core/App/Http/Controllers/PlacementController';
 import { show as studentShow } from '@/actions/Modules/Core/App/Http/Controllers/StudentController';
 import { index as assignmentsPage } from '@/actions/Modules/Core/App/Http/Controllers/TeachingAssignmentController';
@@ -13,6 +14,7 @@ import {
 import { Button } from '@shared/components/ui/button';
 import { TableCell, TableRow } from '@shared/components/ui/table';
 
+import ConfirmAction from '../../../../Components/ConfirmAction';
 import MasterPage from '../../../../Components/MasterPage';
 import StatusBadge from '../../../../Components/StatusBadge';
 import type {
@@ -27,13 +29,17 @@ export default function ClassesShow({
     school,
     class: group,
     students,
+    canCreateAccounts,
     assignments,
 }: {
     school: SchoolSummary;
     class: ClassGroup;
     students: Student[];
+    canCreateAccounts: boolean;
     assignments: Assignment[];
 }) {
+    const withoutAccount = students.filter((student) => !student.hasAccount).length;
+
     return (
         <MasterPage
             school={school}
@@ -82,11 +88,29 @@ export default function ClassesShow({
                         )}
                     </Panel>
 
-                    <Panel title="Daftar siswa">
+                    <Panel
+                        title="Daftar siswa"
+                        actions={
+                            canCreateAccounts &&
+                            withoutAccount > 0 && (
+                                <ConfirmAction
+                                    route={storeForClass(group.id)}
+                                    title={`Buatkan akun untuk siswa ${group.name}?`}
+                                    description={`${withoutAccount} siswa belum punya akun. Nama pengguna = NIS, kata sandi awal = tanggal lahir (ddmmyyyy). Siswa tanpa tanggal lahir dilewati.`}
+                                    confirmLabel="Buatkan akun"
+                                    trigger={
+                                        <Button variant="outline" size="sm">
+                                            Buatkan akun siswa
+                                        </Button>
+                                    }
+                                />
+                            )
+                        }
+                    >
                         {students.length === 0 ? (
                             <EmptyState>Belum ada siswa di kelas ini.</EmptyState>
                         ) : (
-                            <DataTable head={['Nama', 'NIS', 'Status']}>
+                            <DataTable head={['Nama', 'NIS', 'Status', 'Akun']}>
                                 {students.map((student) => (
                                     <TableRow key={student.id}>
                                         <TableCell className="font-medium">
@@ -100,6 +124,11 @@ export default function ClassesShow({
                                         <TableCell>{student.nis}</TableCell>
                                         <TableCell>
                                             <StatusBadge status={student.status} />
+                                        </TableCell>
+                                        <TableCell>
+                                            <StatusBadge
+                                                status={student.hasAccount ? 'linked' : 'unlinked'}
+                                            />
                                         </TableCell>
                                     </TableRow>
                                 ))}

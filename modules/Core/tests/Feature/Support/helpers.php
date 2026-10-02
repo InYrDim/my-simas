@@ -78,3 +78,13 @@ function classIn(Tenant $tenant, array $attributes = []): ClassGroup
         ]);
     });
 }
+
+/**
+ * End the signed-in session inside a test, so the next request can sign in
+ * through the login form (a guest route).
+ */
+function signOutOfSchool(): void
+{
+    auth()->guard('web')->logout();
+    app('auth')->forgetGuards();
+}

@@ -42,4 +42,10 @@ return [
         'description' => 'Tata usaha: mengurus data administrasi sekolah sehari-hari.',
         'permissions' => ['core.master.view', 'core.academic.view'],
     ],
+
+    'siswa' => [
+        'label' => 'Siswa',
+        'description' => 'Peserta didik: masuk dengan NIS untuk layanan siswa.',
+        'permissions' => [],
+    ],
 ];

@@ -1,13 +1,20 @@
 import { Head, Link } from '@inertiajs/react';
-import { useState } from 'react';
 
 import {
     create as usersCreate,
     edit as editUser,
+    index as usersIndex,
     invite as usersInvite,
 } from '@/actions/Modules/Identity/App/Http/Controllers/UsersManagementController';
 
-import { DataTable, EmptyState, PageHeader } from '@shared/components/page-parts';
+import ListPager, { useListFilters } from '@shared/components/ListPager';
+import type { Pagination } from '@shared/components/ListPager';
+import {
+    DataTable,
+    EmptyState,
+    OptionSelect,
+    PageHeader,
+} from '@shared/components/page-parts';
 import TenantShell from '@shared/components/TenantShell';
 import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
@@ -18,6 +25,9 @@ import type { ManagedUser } from '../../../types/ManagedUser';
 
 interface IndexProps {
     users: ManagedUser[];
+    roleLabels: Record<string, string>;
+    filters: { q: string; role: string };
+    pagination: Pagination;
 }
 
 /** Status word: deactivated wins, then not-yet-activated, then active. */
@@ -34,19 +44,19 @@ function UserStatus({ user }: { user: ManagedUser }) {
 }
 
 /**
- * User list (school admin) as a table: name, email, roles, status. Entry
- * point to create / invite / edit (deactivate, reactivate, send-reset).
+ * User list (school admin) as a table: name, how the account signs in
+ * (username, email), roles, status. Searched, filtered by role and paged
+ * on the server. Entry point to create / invite / edit.
  */
-export default function UsersIndex({ users }: IndexProps) {
-    const [query, setQuery] = useState('');
-
-    const needle = query.trim().toLowerCase();
-    const rows = users.filter(
-        (user) =>
-            needle === '' ||
-            user.name.toLowerCase().includes(needle) ||
-            user.email.toLowerCase().includes(needle),
-    );
+export default function UsersIndex({
+    users,
+    roleLabels,
+    filters: initial,
+    pagination,
+}: IndexProps) {
+    const url = usersIndex.url();
+    const { filters, set } = useListFilters(url, initial);
+    const filtered = initial.q !== '' || initial.role !== '';
 
     return (
         <TenantShell width="max-w-6xl">
@@ -54,7 +64,7 @@ export default function UsersIndex({ users }: IndexProps) {
 
             <PageHeader
                 title="Daftar Pengguna"
-                description="Kelola akun staf sekolah: profil, peran, dan status aktif."
+                description="Kelola akun sekolah: profil, peran, dan status aktif."
                 actions={
                     <>
                         <Button asChild variant="outline">
@@ -68,70 +78,80 @@ export default function UsersIndex({ users }: IndexProps) {
             />
 
             <div className="mt-8">
-                {users.length === 0 ? (
-                    <EmptyState>Belum ada pengguna selain Anda.</EmptyState>
-                ) : (
-                    <>
-                        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                            <Input
-                                type="search"
-                                aria-label="Cari nama atau email"
-                                placeholder="Cari nama atau email"
-                                value={query}
-                                onChange={(event) => setQuery(event.target.value)}
-                                className="sm:max-w-xs"
-                            />
-                            <p className="text-sm text-muted-foreground">
-                                {rows.length} dari {users.length} pengguna
-                            </p>
-                        </div>
-
-                        {rows.length === 0 ? (
-                            <EmptyState>Tidak ada pengguna yang cocok.</EmptyState>
-                        ) : (
-                            <DataTable head={['Nama', 'Email', 'Peran', 'Status', '']}>
-                                {rows.map((user) => (
-                                    <TableRow key={user.id}>
-                                        <TableCell className="font-medium">
-                                            <Link
-                                                href={editUser.url({ userId: user.id })}
-                                                className="hover:underline"
-                                            >
-                                                {user.name}
-                                            </Link>
-                                        </TableCell>
-                                        <TableCell className="text-muted-foreground">
-                                            {user.email}
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-wrap gap-1">
-                                                {user.roleLabels.length === 0 ? (
-                                                    <Badge variant="outline">Tanpa peran</Badge>
-                                                ) : (
-                                                    user.roleLabels.map((label) => (
-                                                        <Badge key={label} variant="secondary">
-                                                            {label}
-                                                        </Badge>
-                                                    ))
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <UserStatus user={user} />
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Button asChild size="sm" variant="outline">
-                                                <Link href={editUser.url({ userId: user.id })}>
-                                                    Ubah
-                                                </Link>
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </DataTable>
+                <div className="mb-4 grid gap-3 sm:grid-cols-3">
+                    <Input
+                        type="search"
+                        aria-label="Cari pengguna"
+                        placeholder="Cari nama, email, atau NIS/NIP"
+                        value={filters.q}
+                        onChange={(event) => set('q', event.target.value)}
+                    />
+                    <OptionSelect
+                        label="Peran"
+                        allLabel="Semua peran"
+                        value={filters.role}
+                        onChange={(value) => set('role', value)}
+                        options={Object.entries(roleLabels).map(
+                            ([value, label]) => ({ value, label }),
                         )}
-                    </>
+                    />
+                </div>
+
+                {users.length === 0 ? (
+                    <EmptyState>
+                        {filtered
+                            ? 'Tidak ada pengguna yang cocok.'
+                            : 'Belum ada pengguna.'}
+                    </EmptyState>
+                ) : (
+                    <DataTable
+                        head={['Nama', 'Nama pengguna', 'Email', 'Peran', 'Status', '']}
+                    >
+                        {users.map((user) => (
+                            <TableRow key={user.id}>
+                                <TableCell className="font-medium">
+                                    <Link
+                                        href={editUser.url({ userId: user.id })}
+                                        className="hover:underline"
+                                    >
+                                        {user.name}
+                                    </Link>
+                                </TableCell>
+                                <TableCell className="font-mono text-xs">
+                                    {user.username ?? '—'}
+                                </TableCell>
+                                <TableCell className="text-muted-foreground">
+                                    {user.email ?? '—'}
+                                </TableCell>
+                                <TableCell>
+                                    <div className="flex flex-wrap gap-1">
+                                        {user.roleLabels.length === 0 ? (
+                                            <Badge variant="outline">Tanpa peran</Badge>
+                                        ) : (
+                                            user.roleLabels.map((label) => (
+                                                <Badge key={label} variant="secondary">
+                                                    {label}
+                                                </Badge>
+                                            ))
+                                        )}
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <UserStatus user={user} />
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    <Button asChild size="sm" variant="outline">
+                                        <Link href={editUser.url({ userId: user.id })}>
+                                            Ubah
+                                        </Link>
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </DataTable>
                 )}
+
+                <ListPager url={url} filters={initial} pagination={pagination} />
             </div>
         </TenantShell>
     );

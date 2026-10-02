@@ -7,6 +7,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 use Illuminate\Session\Middleware\StartSession;
+use Modules\Identity\App\Http\Middleware\RequirePasswordChange;
 use Modules\Platform\App\Http\Middleware\EnsureSessionTenant;
 use Modules\Platform\App\Http\Middleware\ResolveTenant;
 use Modules\Platform\App\Http\Middleware\ShareTenantContext;
@@ -29,6 +30,9 @@ return Application::configure(basePath: dirname(__DIR__))
             // Last line of defence: a session whose user belongs to a
             // different tenant than the resolved context is logged out.
             EnsureSessionTenant::class,
+            // An account whose password someone else chose reaches only
+            // the change-password page until it has set its own.
+            RequirePasswordChange::class,
         ]);
 
         // Tenant resolution must happen right after the session starts and

@@ -38,7 +38,7 @@ function tenantRolePermissionNames(string $tenantId, string $name): array
         ->all();
 }
 
-it('seeds the three default roles for a new tenant via TenantCreated', function () {
+it('seeds the default roles for a new tenant via TenantCreated', function () {
     /** @var Tenant $tenant */
     $tenant = TenantFactory::new()->create();
 
@@ -48,7 +48,8 @@ it('seeds the three default roles for a new tenant via TenantCreated', function 
 
     expect($roles)->toContain('admin-sekolah')
         ->and($roles)->toContain('guru')
-        ->and($roles)->toContain('staf-tu');
+        ->and($roles)->toContain('staf-tu')
+        ->and($roles)->toContain('siswa');
 });
 
 it('gives admin-sekolah the identity.users and core permission sets and the others only the core view permissions', function () {
@@ -114,7 +115,7 @@ it('is idempotent when TenantCreated fires again', function () {
     Event::dispatch(new TenantCreated($tenant->id));
 
     expect(DB::table('roles')->where('tenant_id', $tenant->id)->where('name', 'admin-sekolah')->count())->toBe(1)
-        ->and(DB::table('roles')->where('tenant_id', $tenant->id)->count())->toBe(3);
+        ->and(DB::table('roles')->where('tenant_id', $tenant->id)->count())->toBe(4);
 });
 
 it('rejects ensure() for an unknown tenant id (fail closed)', function () {

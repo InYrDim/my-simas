@@ -46,7 +46,7 @@ it('shows the school admin the roles of the tenant with permissions and user cou
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('Identity/System/Roles')
-            ->has('roles', 3)
+            ->has('roles', 4)
             ->where('roles', fn ($roles) => collect($roles)->firstWhere('name', 'guru')['userCount'] === 2
                 && collect($roles)->firstWhere('name', 'admin-sekolah')['label'] === 'Admin Sekolah'
                 && in_array('Melihat daftar pengguna', collect($roles)->firstWhere('name', 'admin-sekolah')['permissions'], true)
@@ -83,7 +83,7 @@ it('lists the permissions of enabled modules with the roles that hold them', fun
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('Identity/System/Permissions')
-            ->has('roles', 3)
+            ->has('roles', 4)
             ->where('groups', fn ($groups) => collect($groups)->pluck('module')->sort()->values()->all() === ['core', 'identity']
                 && collect(collect($groups)->firstWhere('module', 'identity')['permissions'])->firstWhere('name', 'identity.users.view')['roles'] === ['admin-sekolah']
                 && collect(collect($groups)->firstWhere('module', 'identity')['permissions'])->firstWhere('name', 'identity.users.view')['label'] === 'Melihat daftar pengguna')

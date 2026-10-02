@@ -23,11 +23,25 @@
   deactivated/withoutRole) of the CURRENT tenant, so a module outside
   Identity can report on a school without importing the `User` model.
   Fails closed without tenant context.
-- `UserRecord` — read-only DTO (id, name, email, emailVerifiedAt, roles).
+  `findMany(ids)` returns the accounts of the current tenant keyed by id
+  (an id of another school is simply absent).
+- `UserRecord` — read-only DTO (id, name, email — nullable —,
+  emailVerifiedAt, roles, username, active, mustChangePassword).
+- `AccountProvisioner` — lets the module that owns a person's record
+  (Core: students, teachers) give that person an account and keep it in
+  step: `create(NewAccount)` (returns the id; the account signs in by
+  username and must change its password), `resetPassword`,
+  `updateIdentity` (name + username), `deactivate` (the last active
+  admin is protected), `reactivate`. Works on the current tenant only.
+- `DTOs/NewAccount` (name, username, password, role, optional email).
+- `Exceptions/UsernameTakenException`,
+  `Exceptions/AccountActionRefusedException`.
 - `UserSummary` — read-only DTO (total, active, awaitingActivation, deactivated, withoutRole).
 
-Binding: `ResolvesUsers` → `DefaultUserResolver` (singleton), registered
-in `IdentityServiceProvider`; override in tests via the container.
+Binding: `ResolvesUsers` → `DefaultUserResolver`, `AccountProvisioner` →
+`Infrastructure/Accounts/DefaultAccountProvisioner` (singletons),
+registered in `IdentityServiceProvider`; override in tests via the
+container.
 
 ## Allowed dependencies
 
@@ -82,12 +96,34 @@ in `IdentityServiceProvider`; override in tests via the container.
 
 - `users` is tenant-scoped since Fase 1: `tenant_id` via the
   `Blueprint::tenantId()` macro, `unique(tenant_id, email)` — the same
-  email may exist in two tenants. The `User` model uses Platform's
+  email may exist in two tenants. Since Fase 8 the email is OPTIONAL and
+  an account may sign in by `username` instead (`unique(tenant_id,
+  username)`; a student's NIS, a teacher's NIP). `must_change_password`
+  marks a password someone else chose. The `User` model uses Platform's
   `BelongsToTenant` + `HasTenantRoles` (PlatformPublic traits); Spatie
   is never imported here.
+- Login takes ONE field, `login`: a value with `@` is looked up as the
+  email, anything else as the username. Only that column and the
+  password reach `Auth::validate()`. The throttle bucket is
+  `login:{tenant}:{login}:{ip}` and every failure answers the same
+  generic error on `login`.
+- `GET/PUT /ganti-kata-sandi` (`password.change`): any signed-in user
+  changes their own password. `Http/Middleware/RequirePasswordChange`
+  (web group, registered in `bootstrap/app.php` after
+  `EnsureSessionTenant`) sends an account flagged
+  `must_change_password` there from every route except that page and
+  `logout` (JSON requests get 403).
+- An account without an email gets no reset or invitation mail
+  (`User::sendPasswordResetNotification`, `SendResetLink`, the console
+  admin actions): its password is reset from the student or teacher
+  record in Core.
+- `php artisan roles:sync {--tenant=slug}` brings the default roles of
+  schools that already exist in line with `config/roles.php` (same call
+  as `SeedDefaultRoles`; idempotent).
 - Auth surface (Fase 2): login, logout, forgot-password, reset-
   password, set-password (activation for password-null accounts),
-  user management `/users` + invite. NO public registration — school
+  user management `/users` + invite. `/users` is paged (25), searched
+  (`?q=` on name, email, username) and filtered by role (`?role=`). NO public registration — school
   accounts are created by their admin or via provisioning. Login
   requires tenant context (central rejected) and re-checks the
   resolved tenant after `Auth::validate()`; rate limiting lives IN
@@ -120,14 +156,16 @@ in `IdentityServiceProvider`; override in tests via the container.
   self-deactivation; last ACTIVE admin-sekolah protected, checked
   under the target's own tenant context).
 - Roles: machine names from `config/roles.php` (`admin-sekolah`,
-  `guru`, `staf-tu`); labels live in config only. Permissions
+  `guru`, `staf-tu`, and `siswa` — no permissions yet); labels live in
+  config only. Permissions
   `identity.users.{view,create,update,deactivate,sendReset}` are
   registered via `PermissionRegistry` and attached to admin-sekolah on
   seed. `UserPolicy` = permission gate + same-tenant target re-assert
   + deactivated-actor before-deny; invitations deliberately reuse
   `identity.users.create` (no separate invite permission).
 - Factory: `UserFactory::forTenant($id)` pins the tenant (states:
-  `unverified`, `deactivated`, `invited`); without it the `creating`
+  `unverified`, `deactivated`, `invited`, `withUsername($name)`,
+  `mustChangePassword`); without it the `creating`
   hook fills `tenant_id` from ambient context (and throws without one
   — fail closed).
 - Pages live at `resources/js/Pages/Identity/…` (module pages resolve

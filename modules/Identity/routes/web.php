@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\Identity\App\Http\Controllers\Auth\AuthenticatedSessionController;
+use Modules\Identity\App\Http\Controllers\Auth\ChangePasswordController;
 use Modules\Identity\App\Http\Controllers\Auth\NewPasswordController;
 use Modules\Identity\App\Http\Controllers\Auth\PasswordResetLinkController;
 use Modules\Identity\App\Http\Controllers\Auth\SetPasswordController;
@@ -71,6 +72,15 @@ Route::middleware('web')->group(function (): void {
     Route::middleware('auth')->group(function (): void {
         Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
             ->name('logout');
+
+        // Any signed-in user may change their own password; an account
+        // flagged must_change_password is held here by the
+        // RequirePasswordChange middleware until it does.
+        Route::get('ganti-kata-sandi', [ChangePasswordController::class, 'edit'])
+            ->name('password.change');
+
+        Route::put('ganti-kata-sandi', [ChangePasswordController::class, 'update'])
+            ->name('password.change.update');
 
         // School-admin user management (Fase 2 Stage 9): every action
         // is policy-gated (identity.users.* permissions, same-tenant

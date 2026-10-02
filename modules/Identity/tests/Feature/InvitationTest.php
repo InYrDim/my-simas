@@ -150,7 +150,7 @@ it('completes the full loop: invite, set password, login', function () {
 
     post(school('inv-b', '/login'), [
         'school' => schoolId('inv-b'),
-        'email' => 'budi@inv-b.test',
+        'login' => 'budi@inv-b.test',
         'password' => 'SandiBaruKuat123!',
     ])->assertRedirect();
 
@@ -364,9 +364,9 @@ it('an invited user without a password cannot log in', function () {
     // the generic error (explicit pin from the plan).
     post(school('inv-h', '/login'), [
         'school' => schoolId('inv-h'),
-        'email' => 'belum@inv-h.test',
+        'login' => 'belum@inv-h.test',
         'password' => 'SandiRahasia1!',
-    ])->assertSessionHasErrors('email');
+    ])->assertSessionHasErrors('login');
 
     expect(auth()->user())->toBeNull();
 });

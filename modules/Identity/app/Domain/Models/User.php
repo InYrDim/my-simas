@@ -27,19 +27,25 @@ use Modules\Platform\App\Contracts\TenantUrl;
  * users keep their row and roles but are refused at login and their
  * live sessions are ended by middleware attribute enforcement.
  *
+ * An account may have no email at all and sign in by `username` instead
+ * (unique(tenant_id, username)): students by NIS, teachers by NIP.
+ * `must_change_password` marks a password somebody else chose.
+ *
  * @property int $id
  * @property string $tenant_id
  * @property string $name
- * @property string $email
+ * @property string|null $username
+ * @property string|null $email
  * @property Carbon|null $email_verified_at
  * @property string|null $password
+ * @property bool $must_change_password
  * @property Carbon|null $deactivated_at
  * @property string|null $remember_token
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
 #[UseFactory(UserFactory::class)]
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'username', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -64,6 +70,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'deactivated_at' => 'datetime',
             'password' => 'hashed',
+            'must_change_password' => 'boolean',
         ];
     }
 
@@ -80,15 +87,16 @@ class User extends Authenticatable
      * Tenant-aware reset link delivery. Called by the password broker
      * (Fase 2: queued Mailable directly — no Notification machinery).
      *
-     * Eligibility gate: deactivated users and users without a password
-     * mechanism mismatch (never set) get NO email — but the controller
-     * responds generically either way, so the skip is invisible.
+     * Eligibility gate: deactivated users, users without a password
+     * mechanism mismatch (never set) and accounts without an email get
+     * NO email — but the controller responds generically either way, so
+     * the skip is invisible.
      * Also overrides the broker's URL with the tenant host from
      * Platform's TenantUrl contract (queue-safe: no request root).
      */
     public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void
     {
-        if (! $this->isActive() || $this->password === null) {
+        if (! $this->isActive() || $this->password === null || $this->email === null) {
             return;
         }
 

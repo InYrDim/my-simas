@@ -62,7 +62,7 @@ Vendor/Laravel  ←  Shared  ←  Platform (Fase 1)  ←  Identity  ←  Core  �
 | -------- | ---------- | ------------------------------------- | ---------------------------------------------------------------- |
 | Shared   | `Shared`   | Generic technical utilities           | Everything (by definition)                                       |
 | Platform | `Platform` | Tenancy, module registry, permissions | `Modules\Platform\App\Contracts`                                 |
-| Identity | `Identity` | Tenant-scoped users, auth lifecycle, user management | `Modules\Identity\App\Contracts` (`ResolvesUsers`, `UserRecord`) |
+| Identity | `Identity` | Tenant-scoped users, auth lifecycle, user management | `Modules\Identity\App\Contracts` (`ResolvesUsers`, `UserRecord`, `AccountProvisioner`, `NewAccount`) |
 | Core     | `Core`     | Master data, academic management, CSV import, statistics and reports | `Modules\Core\App\Contracts` (`ReportRegistry`, `Report`, `StatisticsRegistry`, `StatisticsProvider`, DTOs) |
 | Attendance | `Attendance` | Daily attendance (Absensi) — mockup | `Modules\Attendance\App\Contracts` (none yet)                  |
 | Ppdb     | `Ppdb`     | Admissions (PPDB) — mockup            | `Modules\Ppdb\App\Contracts` (none yet)                         |
@@ -479,3 +479,34 @@ surface minimal) — fixed in Fase 2 Stage 4.
   their own sidebar entries; shared prop `tenantNav` is filtered by active
   module + Gate) feeds Shared's generic `TenantShell`, used by Core's Beranda
   and Identity's `/users` pages. Icon names are kebab-case lucide names, loaded lazily by the shell.
+
+## Accounts for students and teachers (Fase 8)
+
+- **An account signs in by email or by username.** `users.username` is
+  unique per tenant and the email is optional; the login form has one
+  field (`login`): a value with `@` is an email, anything else a username.
+  Students use their NIS, teachers their NIP.
+- **Core creates the accounts, Identity owns them.** Core calls Identity's
+  `AccountProvisioner` (create, reset password, follow a new name or
+  number, deactivate, reactivate) and stores the returned id in
+  `students.user_id` / `teachers.user_id`. A student's first password is
+  the birth date (`ddmmyyyy`); a teacher's is random and shown to the
+  admin once. Both must be changed at the first login: the
+  `RequirePasswordChange` middleware holds a flagged account on
+  `/ganti-kata-sandi`.
+- **The account follows the record.** A student who graduates, transfers
+  or leaves has the account deactivated (reactivated on return); deleting
+  a student or teacher deactivates, never deletes.
+- **`php artisan roles:sync`** gives schools that already exist the roles
+  and permissions added to `modules/Identity/config/roles.php` later
+  (role `siswa` came with this phase). Run it after a release that adds a
+  role or a permission.
+- **Trap: `TenantCache` keys follow the AMBIENT tenant.** Enabling a
+  module flag outside the school's context (console, CLI) clears the
+  `central:` partition, not the school's, so the school keeps the cached
+  answer for up to five minutes. Wrap the call in
+  `TenantContext::run($tenantId, ...)` when the change must show at once.
+- **Trap: `npx tsc --noEmit` only checks `resources/js`.** Module pages
+  are loaded through `import.meta.glob` and are not in `tsconfig.json`'s
+  `include`; check them with a config that adds
+  `modules/**/resources/js/**/*`.

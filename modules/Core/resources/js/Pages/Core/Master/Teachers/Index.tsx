@@ -10,9 +10,9 @@ import { DataTable, EmptyState, OptionSelect } from '@shared/components/page-par
 import { Button } from '@shared/components/ui/button';
 import { Input } from '@shared/components/ui/input';
 import { TableCell, TableRow } from '@shared/components/ui/table';
+import ListPager, { useListFilters } from '@shared/components/ListPager';
 
 import FormDialog from '../../../../Components/FormDialog';
-import ListPager, { useListFilters } from '../../../../Components/ListPager';
 import MasterPage from '../../../../Components/MasterPage';
 import StatusBadge from '../../../../Components/StatusBadge';
 import TeacherForm from '../../../../Components/TeacherForm';

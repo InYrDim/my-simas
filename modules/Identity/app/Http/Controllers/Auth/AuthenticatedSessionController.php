@@ -61,9 +61,14 @@ final class AuthenticatedSessionController
     {
         $credentials = $request->validate([
             'school' => ['required', 'string'],
-            'email' => ['required', 'string', 'email'],
+            'login' => ['required', 'string', 'max:255'],
             'password' => ['required', 'string'],
         ]);
+
+        // One field, two identities: an email address, or the username
+        // of an account without one (a student's NIS, a teacher's NIP).
+        $login = trim($credentials['login']);
+        $column = str_contains($login, '@') ? 'email' : 'username';
 
         $tenantId = $this->context->id();
 
@@ -72,26 +77,28 @@ final class AuthenticatedSessionController
             // password, so the form cannot be used to probe which
             // school codes exist.
             throw ValidationException::withMessages([
-                'email' => __('auth.failed'),
+                'login' => __('auth.failed'),
             ]);
         }
 
-        $throttleKey = $this->throttleKey($tenantId, $credentials['email']);
+        $throttleKey = $this->throttleKey($tenantId, $login);
 
         if (RateLimiter::tooManyAttempts($throttleKey, self::MAX_ATTEMPTS)) {
             throw ValidationException::withMessages([
-                'email' => trans('auth.throttle', [
+                'login' => trans('auth.throttle', [
                     'seconds' => RateLimiter::availableIn($throttleKey),
                     'minutes' => (int) ceil(RateLimiter::availableIn($throttleKey) / 60),
                 ]),
             ]);
         }
 
-        if (! Auth::validate($request->only('email', 'password'))) {
+        // Only the identity column and the password reach the provider:
+        // it turns every other key into a WHERE column.
+        if (! Auth::validate([$column => $login, 'password' => $credentials['password']])) {
             RateLimiter::hit($throttleKey, self::DECAY_SECONDS);
 
             throw ValidationException::withMessages([
-                'email' => __('auth.failed'),
+                'login' => __('auth.failed'),
             ]);
         }
 
@@ -100,16 +107,16 @@ final class AuthenticatedSessionController
         // VALID credential for tenant B's account must never
         // authenticate against tenant A. Deactivated accounts are
         // refused with the SAME generic error: the response must not
-        // disclose whether an email exists or what state it is in.
+        // disclose whether an account exists or what state it is in.
         $user = User::query()
-            ->where('email', $credentials['email'])
+            ->where($column, $login)
             ->first();
 
         if ($user === null || $user->tenant_id !== $tenantId || ! $user->isActive()) {
             RateLimiter::hit($throttleKey, self::DECAY_SECONDS);
 
             throw ValidationException::withMessages([
-                'email' => __('auth.failed'),
+                'login' => __('auth.failed'),
             ]);
         }
 
@@ -138,15 +145,15 @@ final class AuthenticatedSessionController
 
     /**
      * The tenant-scoped throttle key: buckets never pool across
-     * tenants, and one address being brute-forced on tenant A never
-     * locks out the same email on tenant B.
+     * tenants, and one identity being brute-forced on tenant A never
+     * locks out the same email or username on tenant B.
      */
-    private function throttleKey(string $tenantId, string $email): string
+    private function throttleKey(string $tenantId, string $login): string
     {
         return sprintf(
             'login:%s:%s:%s',
             $tenantId,
-            strtolower($email),
+            strtolower($login),
             request()->ip(),
         );
     }

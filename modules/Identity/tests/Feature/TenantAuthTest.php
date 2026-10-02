@@ -60,7 +60,7 @@ it('logs a user in on their own tenant host', function () {
 
     post(school('sekolah-a', '/login'), [
         'school' => schoolId('sekolah-a'),
-        'email' => 'budi@example.com',
+        'login' => 'budi@example.com',
         'password' => 'password123',
     ])->assertRedirect();
 
@@ -75,9 +75,9 @@ it('rejects tenant B credentials on tenant A host', function () {
     from(school('sekolah-a', '/login'))
         ->post(school('sekolah-a', '/login'), [
             'school' => schoolId('sekolah-a'),
-            'email' => 'budi@example.com',
+            'login' => 'budi@example.com',
             'password' => 'password123',
-        ])->assertSessionHasErrors('email');
+        ])->assertSessionHasErrors('login');
 
     expect(auth()->user())->toBeNull();
 });
@@ -89,7 +89,7 @@ it('does not authenticate a tenant A session cookie on tenant B host', function 
     // Login on tenant A to obtain its session cookie.
     $response = post(school('sekolah-a', '/login'), [
         'school' => schoolId('sekolah-a'),
-        'email' => 'budi@example.com',
+        'login' => 'budi@example.com',
         'password' => 'password123',
     ]);
 
@@ -120,7 +120,7 @@ it('requires a school code to log in', function () {
 
     from('http://localhost/login')
         ->post('http://localhost/login', [
-            'email' => 'budi@example.com',
+            'login' => 'budi@example.com',
             'password' => 'password123',
         ])->assertSessionHasErrors('school');
 
@@ -134,9 +134,9 @@ it('refuses an unknown school code with the same generic error as a wrong passwo
         from('http://localhost/login')
             ->post('http://localhost/login', [
                 'school' => $code,
-                'email' => 'budi@example.com',
+                'login' => 'budi@example.com',
                 'password' => 'password123',
-            ])->assertSessionHasErrors(['email' => __('auth.failed')]);
+            ])->assertSessionHasErrors(['login' => __('auth.failed')]);
     }
 
     expect(auth()->user())->toBeNull();
@@ -147,7 +147,7 @@ it('remembers the school after login so later pages need no school code', functi
 
     post('http://localhost/login', [
         'school' => $tenantId,
-        'email' => 'budi@example.com',
+        'login' => 'budi@example.com',
         'password' => 'password123',
     ])->assertRedirect()
         ->assertSessionHas('tenant_id', $tenantId);
@@ -187,25 +187,25 @@ it('throttles logins per tenant and email', function () {
     for ($i = 0; $i < 5; $i++) {
         post(school('sekolah-a', '/login'), [
             'school' => schoolId('sekolah-a'),
-            'email' => 'budi@example.com',
+            'login' => 'budi@example.com',
             'password' => 'wrong-password',
-        ])->assertSessionHasErrors('email');
+        ])->assertSessionHasErrors('login');
     }
 
     // ...6th attempt on tenant A is throttled (rendered as a redirect
     // with the throttle error for plain form posts; 429 for JSON).
     post(school('sekolah-a', '/login'), [
         'school' => schoolId('sekolah-a'),
-        'email' => 'budi@example.com',
+        'login' => 'budi@example.com',
         'password' => 'wrong-password',
-    ])->assertSessionHasErrors('email');
+    ])->assertSessionHasErrors('login');
 
     // The SAME email on tenant B still gets a normal attempt (per-tenant buckets).
     post(school('sekolah-b', '/login'), [
         'school' => schoolId('sekolah-b'),
-        'email' => 'budi@example.com',
+        'login' => 'budi@example.com',
         'password' => 'wrong-password',
-    ])->assertSessionHasErrors('email');
+    ])->assertSessionHasErrors('login');
 });
 
 it('logs the user out', function () {

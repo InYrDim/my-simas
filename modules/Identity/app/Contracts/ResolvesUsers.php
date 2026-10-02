@@ -13,6 +13,15 @@ interface ResolvesUsers
     public function findByEmail(string $email): ?UserRecord;
 
     /**
+     * The accounts with these ids in the CURRENT tenant, keyed by id; an
+     * id of another school or of no account is simply absent.
+     *
+     * @param  array<int, int>  $ids
+     * @return array<int, UserRecord>
+     */
+    public function findMany(array $ids): array;
+
+    /**
      * Count the accounts of the CURRENT tenant so other modules can
      * report on a school without importing the User model. Fails
      * closed without tenant context, like every user read.

@@ -54,7 +54,7 @@ interface SchoolAdmin {
     tenantSlug: string;
     tenantStatus: 'active' | 'suspended';
     name: string;
-    email: string;
+    email: string | null;
     status: 'active' | 'invited' | 'deactivated';
 }
 

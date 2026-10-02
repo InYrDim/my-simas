@@ -11,8 +11,11 @@ readonly class UserRecord
         public int $id,
         public string $tenantId,
         public string $name,
-        public string $email,
+        public ?string $email,
         public ?string $emailVerifiedAt,
         public array $roles = [],
+        public ?string $username = null,
+        public bool $active = true,
+        public bool $mustChangePassword = false,
     ) {}
 }

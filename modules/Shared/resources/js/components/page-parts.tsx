@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 
 import {
     Card,
+    CardAction,
     CardContent,
     CardDescription,
     CardHeader,
@@ -63,13 +64,15 @@ export function PageHeader({
     );
 }
 
-/** A titled card section. */
+/** A titled card section; `actions` sit at the right of the title. */
 export function Panel({
     title,
+    actions,
     children,
     className,
 }: {
     title?: string;
+    actions?: ReactNode;
     children: ReactNode;
     className?: string;
 }) {
@@ -78,6 +81,7 @@ export function Panel({
             {title !== undefined && (
                 <CardHeader>
                     <CardTitle>{title}</CardTitle>
+                    {actions ? <CardAction>{actions}</CardAction> : null}
                 </CardHeader>
             )}
             <CardContent>{children}</CardContent>

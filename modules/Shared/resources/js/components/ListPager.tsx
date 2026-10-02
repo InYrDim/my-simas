@@ -3,7 +3,14 @@ import { useEffect, useRef, useState } from 'react';
 
 import { Button } from '@shared/components/ui/button';
 
-import type { Pagination } from '../types/master';
+/** What the server sends about the page of a list it returned. */
+export interface Pagination {
+    page: number;
+    lastPage: number;
+    total: number;
+    from: number;
+    to: number;
+}
 
 type Filters = Record<string, string>;
 

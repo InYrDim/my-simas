@@ -361,3 +361,17 @@ feature module never gets imported by Core. Reports return a `ReportTable`
 — Core renders CSV and the print view, nothing is stored. "Segera hadir"
 placeholders are labels in `modules/Core/config/insight.php`; registering
 the same key replaces one. Details: modules/Core/CONTRACT.md.
+
+## Accounts for students and teachers (Fase 8)
+
+`users` has an optional email and a `username` (unique per tenant); login
+takes one field `login` (`@` = email, else username: NIS, NIP). Core makes
+the accounts through Identity's `AccountProvisioner` and keeps only
+`user_id`: students get NIS + birth date (`ddmmyyyy`), teachers NIP + a
+random password shown once; both must change it at first login
+(`RequirePasswordChange` middleware, `/ganti-kata-sandi`). A student who
+leaves has the account deactivated; nothing is deleted. Role `siswa` has
+no permissions yet. `php artisan roles:sync` brings existing schools in
+line with `modules/Identity/config/roles.php`. Details:
+modules/Identity/CONTRACT.md, modules/Core/CONTRACT.md,
+docs/architecture/modular-monolith.md.

@@ -15,7 +15,7 @@ it('reproduces: log in through the form, then land on beranda', function () {
 
     $this->post(school('sdn-repro', '/login'), [
         'school' => schoolId('sdn-repro'),
-        'email' => 'admin@sdn-repro.test',
+        'login' => 'admin@sdn-repro.test',
         'password' => 'password',
     ])->assertRedirect();
 

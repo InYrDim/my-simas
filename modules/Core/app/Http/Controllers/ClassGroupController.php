@@ -3,6 +3,7 @@
 namespace Modules\Core\App\Http\Controllers;
 
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Response;
 use Modules\Core\App\Domain\Actions\DeleteClassGroup;
 use Modules\Core\App\Domain\Actions\SaveClassGroup;
@@ -57,6 +58,7 @@ final class ClassGroupController
         return $this->renderMaster('Core/Master/Classes/Show', [
             'class' => ClassGroupResource::make($classGroup)->resolve(),
             'students' => StudentResource::collection($students)->resolve(),
+            'canCreateAccounts' => Gate::allows('core.master.manage') && Gate::allows('identity.users.create'),
             'assignments' => TeachingAssignmentResource::collection(
                 $classGroup->teachingAssignments()->with(['subject', 'teacher', 'classGroup'])->get()->sortBy('subject.name')->values(),
             )->resolve(),

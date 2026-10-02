@@ -24,14 +24,14 @@ final class SendResetLink
     ) {}
 
     /**
-     * Returns true when the user is a reset candidate (active with a
-     * password) — i.e. an email was actually queued. The controller
+     * Returns true when the user is a reset candidate (active, with a
+     * password and an email) — i.e. an email was actually queued. The controller
      * re-checks the policy before calling, so false only surfaces for
      * invited-but-not-yet-activated accounts.
      */
     public function handle(User $target): bool
     {
-        if (! $target->isActive() || $target->password === null) {
+        if (! $target->isActive() || $target->password === null || $target->email === null) {
             return false;
         }
 

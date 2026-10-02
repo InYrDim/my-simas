@@ -5,12 +5,15 @@ namespace Modules\Identity\App\Infrastructure\Providers;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Modules\Identity\App\Contracts\AccountProvisioner;
 use Modules\Identity\App\Contracts\ResolvesUsers;
 use Modules\Identity\App\Domain\Actions\DefaultUserResolver;
 use Modules\Identity\App\Domain\Models\User;
 use Modules\Identity\App\Domain\Policies\UserPolicy;
+use Modules\Identity\App\Infrastructure\Accounts\DefaultAccountProvisioner;
 use Modules\Identity\App\Infrastructure\Auth\DefaultSchoolSessionOpener;
 use Modules\Identity\App\Infrastructure\Auth\TenantPasswordResetServiceProvider;
+use Modules\Identity\App\Infrastructure\Commands\RolesSyncCommand;
 use Modules\Identity\App\Infrastructure\Onboarding\ProvisionFirstAdmin;
 use Modules\Identity\App\Infrastructure\Permissions\SeedDefaultRoles;
 use Modules\Platform\App\Contracts\Events\TenantApproved;
@@ -28,6 +31,7 @@ class IdentityServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(ResolvesUsers::class, DefaultUserResolver::class);
+        $this->app->singleton(AccountProvisioner::class, DefaultAccountProvisioner::class);
 
         // Platform defines SchoolSessionOpener (its applicant login needs
         // it) but only Identity knows school users: replace Platform's
@@ -61,6 +65,7 @@ class IdentityServiceProvider extends ServiceProvider
         $this->registerNavigation();
         $this->listenForTenantCreated();
         $this->listenForTenantApproved();
+        $this->commands([RolesSyncCommand::class]);
     }
 
     /**

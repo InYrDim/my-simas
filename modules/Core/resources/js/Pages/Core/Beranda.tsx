@@ -13,10 +13,17 @@ type Accounts = {
     withoutRole: number;
 };
 
+/** The student or teacher record behind the signed-in account. */
+type Me =
+    | { kind: 'student'; name: string; nis: string; class: string | null }
+    | { kind: 'teacher'; name: string; duty: string };
+
 interface BerandaProps {
     school: { name: string; slug: string; timezone: string };
     today: { label: string; iso: string };
-    accounts: Accounts;
+    me: Me | null;
+    /** Only for those who manage users; null for everyone else. */
+    accounts: Accounts | null;
     roles: string[];
     can: { viewUsers: boolean; invite: boolean };
 }
@@ -72,25 +79,59 @@ function dayLine(accounts: Accounts): DayLine {
 }
 
 /**
+ * The line for someone who does not manage accounts: who they are here.
+ */
+function personLine(me: Me | null): DayLine {
+    if (me?.kind === 'student') {
+        return {
+            lead: 'Anda masuk sebagai',
+            word: me.name,
+            tail: me.class !== null ? `, siswa kelas ${me.class}.` : ', siswa.',
+            confirmed: true,
+        };
+    }
+
+    if (me?.kind === 'teacher') {
+        return {
+            lead: 'Anda masuk sebagai',
+            word: me.name,
+            tail: `, ${me.duty}.`,
+            confirmed: true,
+        };
+    }
+
+    return {
+        lead: 'Anda sudah',
+        word: 'masuk',
+        tail: ' ke portal sekolah.',
+        confirmed: true,
+    };
+}
+
+/**
  * Beranda Sekolah — today's page of the school's own record, dated on
  * the school's own clock, inside the tenant shell.
  */
 export default function Beranda({
     school,
     today,
+    me,
     accounts,
     roles,
     can,
 }: BerandaProps) {
-    const line = dayLine(accounts);
+    const line = accounts === null ? personLine(me) : dayLine(accounts);
 
-    const accountSummary = [
-        `${accounts.total} total`,
-        `${accounts.active} aktif`,
-        ...(accounts.awaitingActivation > 0
-            ? [`${accounts.awaitingActivation} menunggu`]
-            : []),
-    ].join(' · ');
+    const accountSummary =
+        accounts === null
+            ? null
+            : [
+                  `${accounts.total} total`,
+                  `${accounts.active} aktif`,
+                  ...(accounts.awaitingActivation > 0
+                      ? [`${accounts.awaitingActivation} menunggu`]
+                      : []),
+              ].join(' · ');
 
     return (
         <TenantShell width="max-w-xl">
@@ -147,21 +188,34 @@ export default function Beranda({
                         </dd>
                     </div>
 
-                    <div className="flex items-baseline justify-between gap-6 border-b border-border py-3">
-                        <dt className="text-xs text-muted-foreground">Peran</dt>
-                        <dd className="text-right text-xs text-foreground">
-                            {roles.join(' · ')}
-                        </dd>
-                    </div>
+                    {me?.kind === 'student' && (
+                        <div className="flex items-baseline justify-between gap-6 border-b border-border py-3">
+                            <dt className="text-xs text-muted-foreground">NIS</dt>
+                            <dd className="font-mono text-xs text-foreground">
+                                {me.nis}
+                            </dd>
+                        </div>
+                    )}
 
-                    <div className="flex items-baseline justify-between gap-6 border-b border-border py-3">
-                        <dt className="text-xs text-muted-foreground">Akun</dt>
-                        <dd className="text-right text-xs text-foreground">
-                            {accountSummary}
-                        </dd>
-                    </div>
+                    {accountSummary !== null && (
+                        <>
+                            <div className="flex items-baseline justify-between gap-6 border-b border-border py-3">
+                                <dt className="text-xs text-muted-foreground">Peran</dt>
+                                <dd className="text-right text-xs text-foreground">
+                                    {roles.join(' · ')}
+                                </dd>
+                            </div>
 
-                    {accounts.deactivated > 0 && (
+                            <div className="flex items-baseline justify-between gap-6 border-b border-border py-3">
+                                <dt className="text-xs text-muted-foreground">Akun</dt>
+                                <dd className="text-right text-xs text-foreground">
+                                    {accountSummary}
+                                </dd>
+                            </div>
+                        </>
+                    )}
+
+                    {accounts !== null && accounts.deactivated > 0 && (
                         <div className="flex items-baseline justify-between gap-6 border-b border-border py-3">
                             <dt className="text-xs text-muted-foreground">
                                 Dinonaktifkan

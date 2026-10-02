@@ -1,5 +1,9 @@
 import { Link } from '@inertiajs/react';
 
+import {
+    resetStudent,
+    storeForStudent,
+} from '@/actions/Modules/Core/App/Http/Controllers/AccountController';
 import { show as classShow } from '@/actions/Modules/Core/App/Http/Controllers/ClassGroupController';
 import {
     destroy,
@@ -15,13 +19,20 @@ import {
 import { Button } from '@shared/components/ui/button';
 import { TableCell, TableRow } from '@shared/components/ui/table';
 
+import AccountPanel from '../../../../Components/AccountPanel';
 import ConfirmAction from '../../../../Components/ConfirmAction';
 import FormDialog from '../../../../Components/FormDialog';
 import { formatDate } from '../../../../Components/format';
 import MasterPage from '../../../../Components/MasterPage';
 import StatusBadge from '../../../../Components/StatusBadge';
 import StudentForm from '../../../../Components/StudentForm';
-import type { ClassOption, SchoolSummary, Student } from '../../../../types/master';
+import type {
+    AccountAbilities,
+    ClassOption,
+    LinkedAccount,
+    SchoolSummary,
+    Student,
+} from '../../../../types/master';
 
 interface HistoryRow {
     year: string;
@@ -33,11 +44,13 @@ interface HistoryRow {
 export default function StudentsShow({
     school,
     student,
+    login,
     history,
     classes,
 }: {
     school: SchoolSummary;
     student: Student;
+    login: { account: LinkedAccount | null; can: AccountAbilities };
     history: HistoryRow[];
     classes: ClassOption[];
 }) {
@@ -105,9 +118,29 @@ export default function StudentsShow({
                         />
                     </Panel>
 
-                    <Panel title="Akun login">
-                        <StatusBadge status={student.hasAccount ? 'linked' : 'unlinked'} />
-                    </Panel>
+                    <AccountPanel
+                        account={login.account}
+                        hint="Siswa masuk dengan NIS; kata sandi awalnya tanggal lahir (ddmmyyyy) dan wajib diganti saat login pertama."
+                    >
+                        {login.account === null && login.can.create && (
+                            <ConfirmAction
+                                route={storeForStudent(student.id)}
+                                title={`Buat akun untuk ${student.name}?`}
+                                description={`Nama pengguna ${student.nis}, kata sandi awal tanggal lahir (ddmmyyyy).`}
+                                confirmLabel="Buat akun"
+                                trigger={<Button variant="outline">Buat akun</Button>}
+                            />
+                        )}
+                        {login.account !== null && login.can.reset && (
+                            <ConfirmAction
+                                route={resetStudent(student.id)}
+                                title={`Reset kata sandi ${student.name}?`}
+                                description="Kata sandi kembali ke tanggal lahir (ddmmyyyy) dan wajib diganti saat login berikutnya."
+                                confirmLabel="Reset kata sandi"
+                                trigger={<Button variant="outline">Reset kata sandi</Button>}
+                            />
+                        )}
+                    </AccountPanel>
                 </div>
 
                 <Panel title="Riwayat kelas" className="lg:col-span-2">

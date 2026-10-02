@@ -69,6 +69,29 @@ class UserFactory extends Factory
     }
 
     /**
+     * Account that signs in by username and has no email (a student's
+     * NIS, a teacher's NIP).
+     */
+    public function withUsername(string $username): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'username' => $username,
+            'email' => null,
+            'email_verified_at' => null,
+        ]);
+    }
+
+    /**
+     * Password set by someone else: it has to be changed at first login.
+     */
+    public function mustChangePassword(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'must_change_password' => true,
+        ]);
+    }
+
+    /**
      * Invited user: no password yet — they activate via a set-password
      * link (Fase 2 token machinery).
      */

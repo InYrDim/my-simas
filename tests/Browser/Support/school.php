@@ -45,7 +45,7 @@ function schoolMemberSignsIn(string $role = 'admin-sekolah'): array
     $page = visit('/login');
 
     $page->fill('school', $tenant->id)
-        ->fill('email', "{$role}@sekolah-uji.test")
+        ->fill('login', "{$role}@sekolah-uji.test")
         ->fill('password', 'password')
         ->press('Masuk')
         ->assertPathIs('/beranda');
