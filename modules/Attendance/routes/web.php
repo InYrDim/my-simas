@@ -26,14 +26,14 @@ Route::middleware('web')->group(function (): void {
                 Route::put('input', [DailyInputController::class, 'update'])->name('input.update');
             });
 
-            Route::middleware('can:attendance.lesson.record')->group(function (): void {
+            Route::middleware('can:attendance.lesson.use')->group(function (): void {
                 Route::get('jam-pelajaran', [LessonAttendanceController::class, 'index'])->name('lessons');
                 Route::put('jam-pelajaran', [LessonAttendanceController::class, 'update'])->name('lessons.update');
             });
 
-            // The scanner serves the gate and the lessons: either recording
-            // permission opens the page, the mode of a scan decides which
-            // one it needs (ScanController, ScanRequest).
+            // The scanner serves the gate and the lessons: either one, while
+            // the school has it on, opens the page; the mode of a scan decides
+            // which one it needs (ScanController, ScanRequest).
             Route::get('pindai', [ScanController::class, 'index'])->name('scan');
             Route::post('pindai', [ScanController::class, 'store'])->name('scan.store');
             Route::get('pindai/siswa', [ScanController::class, 'students'])->name('scan.students');
@@ -45,7 +45,7 @@ Route::middleware('web')->group(function (): void {
 
             // A student's own QR; the controller also asks for an account
             // linked to an active student.
-            Route::middleware('can:attendance.qr.show')->group(function (): void {
+            Route::middleware('can:attendance.qr.use')->group(function (): void {
                 Route::get('qr-saya', [StudentQrController::class, 'show'])->name('my-qr');
                 Route::post('qr-saya/token', [StudentQrController::class, 'token'])->name('my-qr.token');
             });

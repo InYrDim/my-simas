@@ -8,7 +8,7 @@ use Illuminate\Validation\Rule;
 /**
  * One scan or one manual pick at the scanner page. The mode decides the
  * permission: the gate modes are daily attendance, the lesson mode is
- * lesson attendance.
+ * lesson attendance — each only while the school has it switched on.
  */
 final class ScanRequest extends AttendanceFormRequest
 {
@@ -21,10 +21,10 @@ final class ScanRequest extends AttendanceFormRequest
     public function authorize(): bool
     {
         return match ($this->input('mode')) {
-            self::GATE_IN, self::GATE_OUT => Gate::allows('attendance.daily.record'),
-            self::LESSON => Gate::allows('attendance.lesson.record'),
+            self::GATE_IN, self::GATE_OUT => Gate::allows('attendance.gate.use'),
+            self::LESSON => Gate::allows('attendance.lesson.use'),
             // An unknown mode is answered by the rules, for anyone who may record at all.
-            default => Gate::any(['attendance.daily.record', 'attendance.lesson.record']),
+            default => Gate::allows('attendance.scan.use'),
         };
     }
 

@@ -38,7 +38,7 @@ return [
 
     'guru' => [
         'label' => 'Guru',
-        'description' => 'Pengajar: mencatat kegiatan belajar mengajar dan absensi kelasnya.',
+        'description' => 'Pengajar: mencatat kegiatan belajar mengajar dan absensi jam pelajaran di kelasnya.',
         'permissions' => [
             'core.master.view',
             'core.academic.view',

@@ -10,7 +10,7 @@ final class LessonAttendanceRequest extends AttendanceFormRequest
 {
     public function authorize(): bool
     {
-        return Gate::allows('attendance.lesson.record');
+        return Gate::allows('attendance.lesson.use');
     }
 
     /**

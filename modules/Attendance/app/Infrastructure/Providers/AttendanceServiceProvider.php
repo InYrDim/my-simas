@@ -2,7 +2,10 @@
 
 namespace Modules\Attendance\App\Infrastructure\Providers;
 
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Modules\Attendance\App\Domain\Models\AttendanceSetting;
 use Modules\Attendance\App\Domain\Notifications\AttendanceNotices;
 use Modules\Attendance\App\Domain\Reports\ClassAttendanceReport;
 use Modules\Attendance\App\Domain\Reports\MonthlyAttendanceReport;
@@ -32,6 +35,7 @@ class AttendanceServiceProvider extends ServiceProvider
         $this->registerModuleKey();
         $this->loadMigrationsFrom(__DIR__.'/../../../database/migrations');
         $this->registerPermissions();
+        $this->registerFeatureAbilities();
         $this->registerNavigation();
         $this->registerNotices();
         $this->registerInsight();
@@ -62,6 +66,19 @@ class AttendanceServiceProvider extends ServiceProvider
             'attendance.settings.manage',
             'attendance.qr.show',
         ]);
+    }
+
+    /**
+     * Abilities that join a permission with the school's switch for the
+     * gate or the lesson attendance; routes and sidebar entries ask these
+     * instead of the bare permission.
+     */
+    protected function registerFeatureAbilities(): void
+    {
+        Gate::define('attendance.gate.use', fn (Authenticatable $user): bool => Gate::forUser($user)->allows('attendance.daily.record') && AttendanceSetting::gateEnabled());
+        Gate::define('attendance.lesson.use', fn (Authenticatable $user): bool => Gate::forUser($user)->allows('attendance.lesson.record') && AttendanceSetting::lessonEnabled());
+        Gate::define('attendance.scan.use', fn (Authenticatable $user): bool => Gate::forUser($user)->any(['attendance.gate.use', 'attendance.lesson.use']));
+        Gate::define('attendance.qr.use', fn (Authenticatable $user): bool => Gate::forUser($user)->allows('attendance.qr.show') && (AttendanceSetting::gateEnabled() || AttendanceSetting::lessonEnabled()));
     }
 
     /**
@@ -106,8 +123,8 @@ class AttendanceServiceProvider extends ServiceProvider
                 'children' => [
                     ['label' => 'Rekap Hari Ini', 'route' => 'attendance.overview', 'permission' => 'attendance.view', 'match' => 'exact'],
                     ['label' => 'Input Absensi', 'route' => 'attendance.input', 'permission' => 'attendance.daily.record'],
-                    ['label' => 'Jam Pelajaran', 'route' => 'attendance.lessons', 'permission' => 'attendance.lesson.record'],
-                    ['label' => 'Pindai QR', 'route' => 'attendance.scan', 'permission' => 'attendance.daily.record'],
+                    ['label' => 'Jam Pelajaran', 'route' => 'attendance.lessons', 'permission' => 'attendance.lesson.use'],
+                    ['label' => 'Pindai QR', 'route' => 'attendance.scan', 'permission' => 'attendance.scan.use'],
                     ['label' => 'Rekap Bulanan', 'route' => 'attendance.monthly', 'permission' => 'attendance.view'],
                     ['label' => 'Pengaturan', 'route' => 'attendance.settings', 'permission' => 'attendance.settings.manage'],
                 ],
@@ -116,7 +133,7 @@ class AttendanceServiceProvider extends ServiceProvider
                 'label' => 'QR Absensi',
                 'icon' => 'qr-code',
                 'route' => 'attendance.my-qr',
-                'permission' => 'attendance.qr.show',
+                'permission' => 'attendance.qr.use',
                 'group' => 'Operasional',
                 'order' => 51,
             ],

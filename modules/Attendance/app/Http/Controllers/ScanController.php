@@ -55,8 +55,8 @@ final class ScanController
         return Inertia::render('Attendance/Scan', [
             'date' => ['iso' => $today, 'label' => $clock->dateLabel($today)],
             'can' => [
-                'gate' => Gate::allows('attendance.daily.record'),
-                'lesson' => Gate::allows('attendance.lesson.record'),
+                'gate' => Gate::allows('attendance.gate.use'),
+                'lesson' => Gate::allows('attendance.lesson.use'),
             ],
             'classes' => $classes,
             'classId' => $classes[0]['value'] ?? '',
@@ -162,6 +162,6 @@ final class ScanController
 
     private function authorizeAny(): void
     {
-        abort_unless(Gate::any(['attendance.daily.record', 'attendance.lesson.record']), 403);
+        abort_unless(Gate::allows('attendance.scan.use'), 403);
     }
 }

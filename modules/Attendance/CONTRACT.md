@@ -103,6 +103,13 @@ Never another feature module (Ppdb), not even via its Public surface.
   timetable: a teacher may record any class, and the classes the teacher
   teaches or leads (`ClassDirectory::idsTaughtBy`) are offered first, with
   the teacher's own subject chosen. A lesson has no "terlambat".
+- **Switches** (`/absensi/pengaturan`): `attendance_settings.gate_enabled`
+  and `lesson_enabled` (both on by default) let a school turn the gate and
+  the lesson attendance off. Routes, sidebar entries and the scanner ask
+  the Gate abilities `attendance.gate.use`, `attendance.lesson.use`,
+  `attendance.scan.use` (either one) and `attendance.qr.use` (a student's
+  QR, while either is on): the permission **and** the switch. Recorded data
+  stays; daily input, the recap and the reports are not affected.
 - **Notices** (`Domain/Notifications/AttendanceNotices`):
   `attendance.gate-in`, `attendance.gate-out`, `attendance.absent`,
   `attendance.lesson-absent`. Attendance always calls
