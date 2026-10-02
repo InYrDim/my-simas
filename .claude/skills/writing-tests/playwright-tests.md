@@ -66,6 +66,8 @@ From `PlatformDevSeeder` and the root `DatabaseSeeder` (they run because the sui
 | School admin | `admin@sekolah-a.test` / `password` (school code = tenant id, generated per seed) |
 | Plans | `starter`, `standard`, `pro` |
 
+The seeded schools have no Core records (no academic year, classes or students). A spec that needs them calls `seedDemoSchoolData()` from `tests/E2E/support/database.ts` in `test.beforeAll` — it runs `CoreDemoSeeder` against the e2e database and skips a school that already has an academic year (`tests/E2E/insight.spec.ts`).
+
 Need other data? Prefer extending the dev seeder (it also helps manual testing) over creating records through the UI inside a spec.
 
 ## Traps

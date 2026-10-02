@@ -1,6 +1,26 @@
 import { execFileSync } from 'node:child_process';
 
-import { databasePath } from './env';
+import { appEnv, databasePath } from './env';
+
+/**
+ * Fills the seeded schools with Core's demo records (academic years,
+ * classes, teachers, students, teaching assignments) — the same seeder a
+ * developer runs by hand. It skips a school that already has an academic
+ * year, so calling it from several specs is safe.
+ */
+export function seedDemoSchoolData(): void {
+    execFileSync(
+        'php',
+        [
+            'artisan',
+            'db:seed',
+            '--class=Modules\\Core\\Database\\Seeders\\CoreDemoSeeder',
+            '--force',
+            '--no-interaction',
+        ],
+        { env: { ...process.env, ...appEnv }, stdio: 'ignore' },
+    );
+}
 
 /**
  * The school code (= tenant id) of a seeded school. It is generated anew
