@@ -8,6 +8,7 @@ use Modules\Core\App\Domain\Models\ClassGroup;
 use Modules\Core\App\Domain\Models\Grade;
 use Modules\Core\App\Domain\Models\Major;
 use Modules\Core\App\Domain\Models\Room;
+use Modules\Core\App\Domain\Models\SchoolProfile;
 use Modules\Core\App\Domain\Models\Subject;
 use Modules\Platform\Database\Factories\TenantFactory;
 
@@ -44,14 +45,16 @@ it('re-seeds the grades when the jenjang changes and no class exists yet', funct
     expect(inSchool($tenant, fn () => Grade::query()->count()))->toBe(6);
 });
 
-it('keeps the grades once a class hangs on them', function () {
+it('refuses a jenjang change once a class hangs on the grades', function () {
     $tenant = schoolAs('grade-c');
     get(school($tenant->slug, '/master/tingkat-jurusan'));
     classIn($tenant);
 
-    put(school($tenant->slug, '/master/sekolah'), ['level' => 'sd'])->assertRedirect();
+    put(school($tenant->slug, '/master/sekolah'), ['level' => 'sd'])->assertSessionHasErrors('level');
+    put(school($tenant->slug, '/master/sekolah'), ['level' => 'smk'])->assertSessionHasErrors('level');
 
-    expect(inSchool($tenant, fn () => Grade::query()->orderBy('sort_order')->pluck('name')->all()))->toBe(['X', 'XI', 'XII']);
+    expect(inSchool($tenant, fn () => SchoolProfile::query()->sole()->level->value))->toBe('sma')
+        ->and(inSchool($tenant, fn () => Grade::query()->orderBy('sort_order')->pluck('name')->all()))->toBe(['X', 'XI', 'XII']);
 });
 
 it('counts the classes of the active academic year per grade', function () {

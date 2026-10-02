@@ -53,12 +53,17 @@ export function SelectField({
     options,
     defaultValue,
     optionalLabel,
+    disabled,
+    hint,
 }: {
     label: string;
     id: string;
     name?: string;
     options: string[] | { value: string; label: string }[];
     defaultValue?: string | null;
+    /** A disabled select is not submitted: send its value another way. */
+    disabled?: boolean;
+    hint?: string;
     /** Adds a "no choice" item (sent as `none`, which the server reads as null). */
     optionalLabel?: string;
 }) {
@@ -76,6 +81,7 @@ export function SelectField({
             <FieldLabel htmlFor={id}>{label}</FieldLabel>
             <Select
                 name={name ?? id}
+                disabled={disabled}
                 defaultValue={
                     defaultValue !== undefined &&
                     defaultValue !== null &&
@@ -95,6 +101,7 @@ export function SelectField({
                     ))}
                 </SelectContent>
             </Select>
+            {hint !== undefined && <FieldDescription>{hint}</FieldDescription>}
             {error !== undefined && <FieldError>{error}</FieldError>}
         </Field>
     );

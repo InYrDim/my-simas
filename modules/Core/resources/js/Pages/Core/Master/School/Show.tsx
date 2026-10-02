@@ -1,5 +1,18 @@
+import { useState } from 'react';
+import type { MouseEvent } from 'react';
+
 import { update } from '@/actions/Modules/Core/App/Http/Controllers/SchoolProfileController';
 
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@shared/components/ui/alert-dialog';
 import { Button } from '@shared/components/ui/button';
 import { FieldGroup } from '@shared/components/ui/field';
 import { DefinitionList, Panel } from '@shared/components/page-parts';
@@ -12,8 +25,42 @@ import type { SchoolSummary } from '../../../../types/master';
 /**
  * Profil Sekolah: identity, address/contact and headmaster in one editable
  * page. School code and timezone are Platform's — shown read-only.
+ * The jenjang asks for confirmation when changed, and is locked once the
+ * school has a class.
  */
-export default function SchoolShow({ school }: { school: SchoolSummary }) {
+export default function SchoolShow({
+    school,
+    levelLocked,
+}: {
+    school: SchoolSummary;
+    levelLocked: boolean;
+}) {
+    const [levelChange, setLevelChange] = useState<{
+        form: HTMLFormElement;
+        label: string;
+    } | null>(null);
+
+    function confirmLevelChange(event: MouseEvent<HTMLButtonElement>) {
+        const form = event.currentTarget.form;
+        const level = form === null ? null : new FormData(form).get('level');
+
+        if (
+            form === null ||
+            typeof level !== 'string' ||
+            level === school.level
+        ) {
+            return;
+        }
+
+        event.preventDefault();
+        setLevelChange({
+            form,
+            label:
+                school.levelOptions.find((option) => option.value === level)
+                    ?.label ?? level,
+        });
+    }
+
     return (
         <MasterPage
             school={school}
@@ -36,7 +83,20 @@ export default function SchoolShow({ school }: { school: SchoolSummary }) {
                                 id="level"
                                 options={school.levelOptions}
                                 defaultValue={school.level}
+                                disabled={levelLocked}
+                                hint={
+                                    levelLocked
+                                        ? 'Jenjang terkunci karena sekolah sudah memiliki kelas.'
+                                        : undefined
+                                }
                             />
+                            {levelLocked && (
+                                <input
+                                    type="hidden"
+                                    name="level"
+                                    value={school.level}
+                                />
+                            )}
                             <SelectField
                                 label="Status"
                                 id="ownership"
@@ -95,16 +155,52 @@ export default function SchoolShow({ school }: { school: SchoolSummary }) {
                     <DefinitionList
                         rows={[
                             ['Nama sekolah', school.name],
-                            ['Kode sekolah', <code key="c">{school.code}</code>],
+                            [
+                                'Kode sekolah',
+                                <code key="c">{school.code}</code>,
+                            ],
                             ['Zona waktu', school.timezone],
                         ]}
                     />
                 </Panel>
 
                 <div className="flex justify-end">
-                    <Button type="submit">Simpan perubahan</Button>
+                    <Button type="submit" onClick={confirmLevelChange}>
+                        Simpan perubahan
+                    </Button>
                 </div>
             </MasterForm>
+
+            <AlertDialog
+                open={levelChange !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setLevelChange(null);
+                    }
+                }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            Ubah jenjang sekolah?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Jenjang akan diubah dari {school.levelLabel} menjadi{' '}
+                            {levelChange?.label}. Daftar tingkat disusun ulang
+                            mengikuti jenjang baru, dan jenjang tidak bisa
+                            diubah lagi setelah kelas pertama dibuat.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => levelChange?.form.requestSubmit()}
+                        >
+                            Ya, ubah jenjang
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </MasterPage>
     );
 }

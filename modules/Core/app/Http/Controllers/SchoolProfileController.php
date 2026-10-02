@@ -12,9 +12,11 @@ final class SchoolProfileController
 {
     use RendersMasterPage;
 
-    public function show(): Response
+    public function show(SaveSchoolProfile $save): Response
     {
-        return $this->renderMaster('Core/Master/School/Show');
+        return $this->renderMaster('Core/Master/School/Show', [
+            'levelLocked' => $save->isLevelLocked(),
+        ]);
     }
 
     public function update(SchoolProfileRequest $request, SaveSchoolProfile $save): RedirectResponse

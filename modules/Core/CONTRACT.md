@@ -103,7 +103,8 @@
   Rules enforced in Actions: one active academic year per school (the
   previous one is archived), semesters stay inside their year and never
   overlap, grades follow the jenjang (`SyncDefaultGrades`, frozen once
-  classes exist), a major/room/class/teacher still in use cannot be
+  classes exist — and the jenjang itself is locked from then on by
+  `SaveSchoolProfile`), a major/room/class/teacher still in use cannot be
   deleted. Teachers and students keep an optional plain `user_id` (no FK,
   no relation to Identity's User).
 - `modules/Core/resources/js/Pages/Core/Beranda.tsx` — the school's

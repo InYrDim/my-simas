@@ -12,7 +12,8 @@ use Modules\Core\App\Domain\Models\SchoolProfile;
  * Keeps the grade levels (tingkat) in line with the school's jenjang:
  * SD 1–6, SMP 7–9, SMA/SMK X–XII. Grades are seeded when missing and
  * re-seeded when the jenjang changes — but never once classes exist,
- * since they hang on those grades.
+ * since they hang on those grades (SaveSchoolProfile locks the jenjang
+ * from then on).
  */
 final class SyncDefaultGrades
 {

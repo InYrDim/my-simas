@@ -64,6 +64,33 @@ it('validates the school profile', function () {
         ->assertSessionHasErrors(['level', 'email']);
 });
 
+it('locks the jenjang once the school has a class but still saves the other fields', function () {
+    $tenant = schoolAs('prof-g');
+
+    get(school($tenant->slug, '/master/sekolah'))
+        ->assertInertia(fn (Assert $page) => $page->where('levelLocked', false));
+
+    classIn($tenant);
+
+    get(school($tenant->slug, '/master/sekolah'))
+        ->assertInertia(fn (Assert $page) => $page->where('levelLocked', true));
+
+    put(school($tenant->slug, '/master/sekolah'), ['level' => 'sma', 'headmaster' => 'Kepala Baru'])
+        ->assertSessionHasNoErrors();
+
+    $profile = inSchool($tenant, fn () => SchoolProfile::query()->sole());
+    expect($profile->headmaster)->toBe('Kepala Baru')->and($profile->level->value)->toBe('sma');
+});
+
+it('does not lock the jenjang because another school has classes', function () {
+    classIn(schoolAs('prof-h'));
+    $tenant = schoolAs('prof-i');
+
+    put(school($tenant->slug, '/master/sekolah'), ['level' => 'sd'])->assertSessionHasNoErrors();
+
+    expect(inSchool($tenant, fn () => SchoolProfile::query()->sole()->level->value))->toBe('sd');
+});
+
 it('keeps each school profile separate', function () {
     $a = schoolAs('prof-d');
     put(school($a->slug, '/master/sekolah'), ['level' => 'sd', 'headmaster' => 'Kepala A'])->assertRedirect();
