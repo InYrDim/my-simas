@@ -375,3 +375,22 @@ no permissions yet. `php artisan roles:sync` brings existing schools in
 line with `modules/Identity/config/roles.php`. Details:
 modules/Identity/CONTRACT.md, modules/Core/CONTRACT.md,
 docs/architecture/modular-monolith.md.
+
+## WhatsApp per school (Fase 9)
+
+Schools send WhatsApp through the provider's OpenWA gateway. Platform owns
+the gateway side (`whatsapp_instances`, console page `/whatsapp`, contract
+`WhatsappChannel`: `state`, `request`, `connect`, `disconnect`,
+`sendText`); Core owns the school page Integrasi › WhatsApp (behind
+`core.integration.manage`), the log `whatsapp_messages`, and the contracts
+`NoticeRegistry` + `GuardianNotifier` a feature module uses to notify
+guardians (kinds are off until the school switches them on). Flow: school
+asks → provider approves (or provider setting `whatsapp.auto_approve`) →
+school links by QR → messages go out through the queue. The per-school
+session key is encrypted with `OPENWA_CREDENTIALS_KEY` and never reaches
+a DTO, a page, a log or an error message; every gateway call is made by
+the server. Env: `OPENWA_API_BASE_URL`, `OPENWA_ADMIN_API_KEY`,
+`OPENWA_CREDENTIALS_KEY` (values in `.env` only). Tests fake the gateway
+(`Http::fake` + `Http::preventStrayRequests`) and never call the real
+one. Details: modules/Platform/CONTRACT.md, modules/Core/CONTRACT.md,
+docs/architecture/modular-monolith.md.

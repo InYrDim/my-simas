@@ -121,6 +121,28 @@ export interface PermissionGroup {
     permissions: string[];
 }
 
+export type WhatsappInstanceStatus =
+    | 'pending'
+    | 'active'
+    | 'rejected'
+    | 'disabled';
+
+export interface ConsoleWhatsappInstance {
+    id: number;
+    tenantId: string;
+    tenantName: string | null;
+    tenantSlug: string | null;
+    status: WhatsappInstanceStatus;
+    requestedAt: string | null;
+    decidedAt: string | null;
+    note: string | null;
+    sessionName: string | null;
+    /** The gateway's session status as last seen (`created`, `ready`, ...). */
+    connection: string | null;
+    phone: string | null;
+    lastError: string | null;
+}
+
 export interface TrendPoint {
     month: string;
     newTenants: number;

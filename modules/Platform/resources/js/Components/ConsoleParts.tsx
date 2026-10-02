@@ -49,6 +49,7 @@ const statusBadge: Record<string, [BadgeVariant, string]> = {
     approved: ['default', 'disetujui'],
     rejected: ['destructive', 'ditolak'],
     deactivated: ['destructive', 'nonaktif'],
+    disabled: ['destructive', 'dinonaktifkan'],
 };
 
 /** Status word on a shared Badge; the word always carries the meaning. */

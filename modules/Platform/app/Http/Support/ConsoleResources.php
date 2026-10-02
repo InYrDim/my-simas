@@ -5,6 +5,7 @@ namespace Modules\Platform\App\Http\Support;
 use Modules\Platform\App\Domain\Models\Invoice;
 use Modules\Platform\App\Domain\Models\Plan;
 use Modules\Platform\App\Domain\Models\Subscription;
+use Modules\Platform\App\Domain\Models\WhatsappInstance;
 
 /**
  * Array shapes the provider console pages receive (camelCase, ISO dates,
@@ -77,6 +78,30 @@ final class ConsoleResources
             'paidAt' => $invoice->paid_at?->toDateString(),
             'periodStart' => $invoice->period_start->toDateString(),
             'periodEnd' => $invoice->period_end->toDateString(),
+        ];
+    }
+
+    /**
+     * A school's WhatsApp request. The session key and its id are left
+     * out on purpose: the console never shows them.
+     *
+     * @return array<string, mixed>
+     */
+    public static function whatsappInstance(WhatsappInstance $instance): array
+    {
+        return [
+            'id' => $instance->id,
+            'tenantId' => $instance->tenant_id,
+            'tenantName' => $instance->tenant?->name,
+            'tenantSlug' => $instance->tenant?->slug,
+            'status' => $instance->status->value,
+            'requestedAt' => $instance->requested_at?->toDateString(),
+            'decidedAt' => $instance->decided_at?->toDateString(),
+            'note' => $instance->note,
+            'sessionName' => $instance->session_name,
+            'connection' => $instance->connection_status,
+            'phone' => $instance->phone,
+            'lastError' => $instance->last_error,
         ];
     }
 }

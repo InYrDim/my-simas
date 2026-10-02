@@ -9,4 +9,5 @@ return [
     'core.master.manage' => 'Menambah, mengubah, dan menghapus data induk sekolah',
     'core.academic.view' => 'Melihat pengelolaan akademik sekolah',
     'core.academic.manage' => 'Mengatur wali kelas, pengampu, penempatan siswa, jam pelajaran, dan kalender akademik',
+    'core.integration.manage' => 'Mengatur integrasi sekolah dengan layanan luar, seperti WhatsApp',
 ];

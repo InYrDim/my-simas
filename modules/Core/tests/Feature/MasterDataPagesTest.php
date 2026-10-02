@@ -71,7 +71,7 @@ it('returns 404 for an unknown record', function () {
     get(school($slug, '/master/guru/999'))->assertNotFound();
 });
 
-it('shapes the pages still on mock data by the schools saved jenjang', function () {
+it('shapes the WhatsApp page by the schools saved jenjang', function () {
     $slug = masterTenant();
 
     put(school($slug, '/master/sekolah'), ['level' => 'smk'])->assertRedirect();

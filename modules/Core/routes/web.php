@@ -12,7 +12,6 @@ use Modules\Core\App\Http\Controllers\GradeController;
 use Modules\Core\App\Http\Controllers\HomeroomController;
 use Modules\Core\App\Http\Controllers\ImportController;
 use Modules\Core\App\Http\Controllers\MajorController;
-use Modules\Core\App\Http\Controllers\MasterDataController;
 use Modules\Core\App\Http\Controllers\PeriodSlotController;
 use Modules\Core\App\Http\Controllers\PlacementController;
 use Modules\Core\App\Http\Controllers\ReportController;
@@ -24,6 +23,7 @@ use Modules\Core\App\Http\Controllers\StudentController;
 use Modules\Core\App\Http\Controllers\SubjectController;
 use Modules\Core\App\Http\Controllers\TeacherController;
 use Modules\Core\App\Http\Controllers\TeachingAssignmentController;
+use Modules\Core\App\Http\Controllers\WhatsappController;
 
 // Module routes are registered via loadRoutesFrom() and do NOT inherit
 // the root web group automatically — always declare the group here.
@@ -141,8 +141,17 @@ Route::middleware('web')->group(function (): void {
             Route::post('impor', [ImportController::class, 'store'])->name('import.store');
         });
 
-        // Integrasi with outside services (mockup phase).
-        Route::get('integrasi/whatsapp', [MasterDataController::class, 'whatsapp'])->name('core.integration.whatsapp');
+        // Integrasi with outside services. WhatsApp runs on the provider's
+        // gateway: the school asks for it here, links its number, and
+        // chooses which notices go out and how they read.
+        Route::prefix('integrasi/whatsapp')->middleware('can:core.integration.manage')->group(function (): void {
+            Route::get('/', [WhatsappController::class, 'index'])->name('core.integration.whatsapp');
+            Route::post('ajukan', [WhatsappController::class, 'request'])->name('core.integration.whatsapp.request');
+            Route::post('hubungkan', [WhatsappController::class, 'connect'])->name('core.integration.whatsapp.connect');
+            Route::post('putuskan', [WhatsappController::class, 'disconnect'])->name('core.integration.whatsapp.disconnect');
+            Route::post('uji', [WhatsappController::class, 'test'])->name('core.integration.whatsapp.test');
+            Route::put('pemberitahuan/{kind}', [WhatsappController::class, 'updateNotice'])->name('core.integration.whatsapp.notices.update');
+        });
 
         // Statistik and Laporan: school-wide figures and downloadable
         // reports. The reports hold student records, so the pages need

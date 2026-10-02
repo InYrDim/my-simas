@@ -16,6 +16,7 @@ use Modules\Platform\App\Http\Controllers\PlanController;
 use Modules\Platform\App\Http\Controllers\ProviderHomeController;
 use Modules\Platform\App\Http\Controllers\TenantConsoleController;
 use Modules\Platform\App\Http\Controllers\TenantSubscriptionController;
+use Modules\Platform\App\Http\Controllers\WhatsappInstanceController;
 use Modules\Platform\App\Http\Middleware\AuthenticateApplicant;
 
 // Applicant accounts (Fase 4): people applying to bring a school onto the
@@ -193,5 +194,17 @@ Route::domain((string) config('tenancy.console_domain'))->middleware('web')->nam
         Route::post('applications/{application}/reject', [ApplicationReviewController::class, 'reject'])
             ->whereNumber('application')
             ->name('applications.reject');
+
+        // WhatsApp per school (Fase 9): the schools' requests, the
+        // decision, switching a school off and on again, and the
+        // "approve automatically" setting.
+        Route::prefix('whatsapp')->name('whatsapp.')->group(function (): void {
+            Route::get('/', [WhatsappInstanceController::class, 'index'])->name('index');
+            Route::put('settings', [WhatsappInstanceController::class, 'updateSettings'])->name('settings');
+            Route::post('{instance}/approve', [WhatsappInstanceController::class, 'approve'])->whereNumber('instance')->name('approve');
+            Route::post('{instance}/reject', [WhatsappInstanceController::class, 'reject'])->whereNumber('instance')->name('reject');
+            Route::post('{instance}/disable', [WhatsappInstanceController::class, 'disable'])->whereNumber('instance')->name('disable');
+            Route::post('{instance}/enable', [WhatsappInstanceController::class, 'enable'])->whereNumber('instance')->name('enable');
+        });
     });
 });

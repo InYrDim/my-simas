@@ -3,6 +3,8 @@
 namespace Modules\Core\App\Infrastructure\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Modules\Core\App\Contracts\GuardianNotifier;
+use Modules\Core\App\Contracts\NoticeRegistry;
 use Modules\Core\App\Contracts\ReportRegistry;
 use Modules\Core\App\Contracts\StatisticsRegistry;
 use Modules\Core\App\Domain\Reports\StudentListReport;
@@ -11,6 +13,8 @@ use Modules\Core\App\Domain\Reports\TeachingLoadReport;
 use Modules\Core\App\Domain\Statistics\SchoolStatistics;
 use Modules\Core\App\Infrastructure\Insight\DefaultReportRegistry;
 use Modules\Core\App\Infrastructure\Insight\DefaultStatisticsRegistry;
+use Modules\Core\App\Infrastructure\Whatsapp\DefaultGuardianNotifier;
+use Modules\Core\App\Infrastructure\Whatsapp\DefaultNoticeRegistry;
 use Modules\Platform\App\Contracts\ModuleRegistry;
 use Modules\Platform\App\Contracts\PermissionRegistry;
 use Modules\Platform\App\Contracts\TenantNavigation;
@@ -24,6 +28,7 @@ class CoreServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__.'/../../../config/permission_labels.php', 'permission_labels');
         $this->mergeConfigFrom(__DIR__.'/../../../config/insight.php', 'insight');
+        $this->mergeConfigFrom(__DIR__.'/../../../config/notices.php', 'notices');
 
         // Statistik & Laporan registries: interface-aliased singletons, so
         // the modules registering through the contract and Core's own
@@ -33,6 +38,13 @@ class CoreServiceProvider extends ServiceProvider
 
         $this->app->singleton(DefaultStatisticsRegistry::class);
         $this->app->alias(DefaultStatisticsRegistry::class, StatisticsRegistry::class);
+
+        // WhatsApp notices to guardians: modules register their kinds and
+        // send through the notifier; same aliasing as the registries above.
+        $this->app->singleton(DefaultNoticeRegistry::class);
+        $this->app->alias(DefaultNoticeRegistry::class, NoticeRegistry::class);
+
+        $this->app->singleton(GuardianNotifier::class, DefaultGuardianNotifier::class);
     }
 
     /**
@@ -73,6 +85,7 @@ class CoreServiceProvider extends ServiceProvider
             'core.master.manage',
             'core.academic.view',
             'core.academic.manage',
+            'core.integration.manage',
         ]);
     }
 
@@ -172,6 +185,7 @@ class CoreServiceProvider extends ServiceProvider
                 'label' => 'Integrasi',
                 'icon' => 'plug',
                 'route' => 'core.integration.whatsapp',
+                'permission' => 'core.integration.manage',
                 'group' => 'Administrasi',
                 'order' => 80,
                 'children' => [

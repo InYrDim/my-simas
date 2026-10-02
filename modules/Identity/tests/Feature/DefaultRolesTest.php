@@ -67,6 +67,7 @@ it('gives admin-sekolah the identity.users and core permission sets and the othe
     expect($admin)->toBe([
         'core.academic.manage',
         'core.academic.view',
+        'core.integration.manage',
         'core.master.manage',
         'core.master.view',
         'identity.users.create',

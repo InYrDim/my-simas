@@ -28,6 +28,7 @@ return [
             'core.master.manage',
             'core.academic.view',
             'core.academic.manage',
+            'core.integration.manage',
         ],
     ],
 

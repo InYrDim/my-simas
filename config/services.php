@@ -35,4 +35,14 @@ return [
         ],
     ],
 
+    // OpenWA WhatsApp gateway (https://docs.open-wa.org). The admin key
+    // creates sessions and per-school keys; the credentials key (64 hex
+    // characters) encrypts those per-school keys at rest.
+    'openwa' => [
+        'base_url' => env('OPENWA_API_BASE_URL'),
+        'admin_api_key' => env('OPENWA_ADMIN_API_KEY'),
+        'credentials_key' => env('OPENWA_CREDENTIALS_KEY'),
+        'timeout' => (int) env('OPENWA_TIMEOUT', 15),
+    ],
+
 ];

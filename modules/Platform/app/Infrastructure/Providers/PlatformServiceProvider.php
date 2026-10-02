@@ -17,6 +17,7 @@ use Modules\Platform\App\Contracts\TenantRoles;
 use Modules\Platform\App\Contracts\TenantSession;
 use Modules\Platform\App\Contracts\TenantStorage;
 use Modules\Platform\App\Contracts\TenantUrl;
+use Modules\Platform\App\Contracts\WhatsappChannel;
 use Modules\Platform\App\Http\Middleware\EnsureModuleActive;
 use Modules\Platform\App\Http\Middleware\ResolveTenant;
 use Modules\Platform\App\Infrastructure\Billing\AlwaysSucceedsPaymentGateway;
@@ -54,6 +55,7 @@ use Modules\Platform\App\Infrastructure\Tenancy\SchoolCodeTenantResolver;
 use Modules\Platform\App\Infrastructure\Tenancy\SessionTenantSession;
 use Modules\Platform\App\Infrastructure\Tenancy\TenantLifecycle;
 use Modules\Platform\App\Infrastructure\Tenancy\TenantQueueContext;
+use Modules\Platform\App\Infrastructure\Whatsapp\DefaultWhatsappChannel;
 
 class PlatformServiceProvider extends ServiceProvider
 {
@@ -139,6 +141,10 @@ class PlatformServiceProvider extends ServiceProvider
         $this->app->singleton(InvoiceIssuer::class);
         $this->app->singleton(SubscriptionManager::class);
         $this->app->singleton(BillingSummary::class);
+
+        // WhatsApp through the provider's OpenWA gateway: the school-side
+        // contract. Requests, approval and the gateway client stay internal.
+        $this->app->singleton(WhatsappChannel::class, DefaultWhatsappChannel::class);
 
         $this->registerCommands();
     }

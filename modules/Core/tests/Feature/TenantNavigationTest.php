@@ -54,7 +54,7 @@ it('hides entries the user lacks the permission for', function () {
     $tenant = navTenantAs('nav-guru', 'guru');
 
     get(school($tenant->slug, '/beranda'))->assertInertia(fn (Assert $page) => $page
-        ->where('tenantNav', fn ($nav) => collect($nav)->pluck('label')->all() === ['Beranda', 'Master Data', 'Warga Sekolah', 'Akademik', 'Statistik & Laporan', 'Integrasi'])
+        ->where('tenantNav', fn ($nav) => collect($nav)->pluck('label')->all() === ['Beranda', 'Master Data', 'Warga Sekolah', 'Akademik', 'Statistik & Laporan'])
     );
 });
 
@@ -89,6 +89,6 @@ it('nests visible children and drops a group with none visible', function () {
     $guru = navTenantAs('nav-group-guru', 'guru');
 
     get(school($guru->slug, '/beranda'))->assertInertia(fn (Assert $page) => $page
-        ->where('tenantNav', fn ($nav) => collect($nav)->pluck('label')->all() === ['Beranda', 'Master Data', 'Warga Sekolah', 'Akademik', 'Statistik & Laporan', 'Integrasi'])
+        ->where('tenantNav', fn ($nav) => collect($nav)->pluck('label')->all() === ['Beranda', 'Master Data', 'Warga Sekolah', 'Akademik', 'Statistik & Laporan'])
     );
 });

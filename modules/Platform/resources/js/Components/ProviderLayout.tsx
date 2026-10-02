@@ -5,6 +5,7 @@ import {
     InboxIcon,
     LayoutDashboardIcon,
     LogOutIcon,
+    MessageCircleIcon,
     SchoolIcon,
     UserPlusIcon,
     UsersIcon,
@@ -22,6 +23,7 @@ import { index as billingInvoices } from '@/actions/Modules/Platform/App/Http/Co
 import { index as billingPlans } from '@/actions/Modules/Platform/App/Http/Controllers/PlanController';
 import ProviderHomeController from '@/actions/Modules/Platform/App/Http/Controllers/ProviderHomeController';
 import { index as tenantsIndex } from '@/actions/Modules/Platform/App/Http/Controllers/TenantConsoleController';
+import { index as whatsappIndex } from '@/actions/Modules/Platform/App/Http/Controllers/WhatsappInstanceController';
 import { Alert, AlertDescription } from '@shared/components/ui/alert';
 import {
     Avatar,
@@ -101,6 +103,11 @@ const nav: NavEntry[] = [
             { label: 'Paket', href: consolePath(billingPlans.url()) },
             { label: 'Tagihan', href: consolePath(billingInvoices.url()) },
         ],
+    },
+    {
+        label: 'WhatsApp',
+        href: consolePath(whatsappIndex.url()),
+        icon: MessageCircleIcon,
     },
     // Served by the Identity module on the console host.
     { label: 'Pengguna', href: '/users', icon: UsersIcon },

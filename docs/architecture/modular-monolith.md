@@ -510,3 +510,65 @@ surface minimal) — fixed in Fase 2 Stage 4.
   are loaded through `import.meta.glob` and are not in `tsconfig.json`'s
   `include`; check them with a config that adds
   `modules/**/resources/js/**/*`.
+
+## WhatsApp per school (Fase 9)
+
+- **Two owners.** Platform owns the gateway side: the provider's OpenWA
+  gateway, each school's instance (`whatsapp_instances`), the approval on
+  the console page `/whatsapp`, and the contract `WhatsappChannel`
+  (`state`, `request`, `connect`, `disconnect`, `sendText`). Core owns
+  the school side: the page Integrasi › WhatsApp, the message log
+  (`whatsapp_messages`), the notices to guardians and the contracts
+  `NoticeRegistry` + `GuardianNotifier` that feature modules use. Core
+  never imports the gateway; a feature module never imports Core's log.
+- **The flow.** School asks → provider approves (or the provider setting
+  `whatsapp.auto_approve` does) → school links its number by QR → school
+  sends. On approval SIMAS registers the session `simas-{tenant id}` and
+  mints one `operator` key that works for that session only.
+- **The session key never reaches a school.** It is encrypted at rest
+  with `OPENWA_CREDENTIALS_KEY` (AES-256-GCM; not `APP_KEY`), hidden on
+  the model, and absent from every DTO, page prop, console page and
+  error message. Every call to the gateway is made by the server; the
+  browser only receives the state and the QR image. Tests search the
+  whole response for the key.
+- **Env.** `OPENWA_API_BASE_URL`, `OPENWA_ADMIN_API_KEY`,
+  `OPENWA_CREDENTIALS_KEY` (64 hex). Values live in `.env` only.
+- **A module notifies guardians in one call.** It registers a
+  `NoticeKind` from its provider and calls
+  `GuardianNotifier::notify(new GuardianNotice($studentId, $kind,
+  $variables))`. The school's switch (off by default) decides whether a
+  message goes out; the wording is the school's own when it has one; the
+  guardian's name and number come from the student record; the message
+  is logged, queued, and delivered by `DeliverWhatsappMessage`.
+- **After a release that adds a permission** (`core.integration.manage`
+  came with this phase) run `php artisan roles:sync`, or admins of
+  existing schools get 403.
+- **A queue worker must run** for messages to leave "Dalam antrean"
+  (`QUEUE_CONNECTION=database`). In development `composer run dev` starts
+  `queue:listen`. On a server, `queue:work` under Supervisor/systemd plus
+  `queue:restart` after each deploy. **On shared hosting (Hostinger)** no
+  long-running process is possible, so one cron job runs a short-lived
+  worker every minute:
+  `* * * * * cd /path/to/simas && php artisan queue:work --stop-when-empty --max-time=50 >> /dev/null 2>&1`
+  — it never overlaps the next run, needs no `queue:restart`, and does
+  not go through `schedule:run` (which needs `proc_open`, often disabled
+  there). Messages then leave up to about a minute late. Design queued
+  and scheduled work so it survives that: no sub-minute delivery, no
+  daemon, no Horizon/Redis. `QUEUE_CONNECTION=sync` is for trying things
+  out only (no retries; many notices at once can hit the execution time
+  limit).
+- **No webhooks.** The link status is read by polling and a sent message
+  is only known to be accepted by WhatsApp, not delivered or read.
+- **Trap: `Http::fake([...])` with a URL map calls every stub for every
+  request** and takes the first non-empty answer, so a `Http::sequence()`
+  under one pattern is used up by requests that match another. Tests
+  that need an order use one closure.
+- **Trap: with a Vite dev server running (`public/hot`), a full page load
+  in a feature test asks it to render (SSR) over HTTP**, which
+  `Http::preventStrayRequests()` refuses. Tests that guard stray
+  requests set `inertia.ssr.enabled` to false.
+- **Trap (browser suite): `auth:provider` leaves `provider` as the default
+  guard for the rest of the process.** A test that goes from the console
+  back to a school page calls `app('auth')->shouldUse('web')` and
+  `refreshSignedInUsers()` first, or the Gate asks the provider's user
+  for a school permission (403).

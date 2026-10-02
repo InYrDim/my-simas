@@ -4,6 +4,12 @@
 > - Setelah fase 8: "akun siswa di luar cakupan" dihapus; halaman QR memakai peran `siswa`, mendapat izin dan entri sidebar.
 >   Fase 8 selesai 2026-10-02 (`docs/ai/plan/fase-8/school-accounts-plan.md`): akun siswa (NIS) dan guru (NIP) ada, `students.user_id` / `teachers.user_id` terisi, peran `siswa` belum punya izin. Menu Absensi masih tampil untuk siswa karena belum bergate izin.
 > - Setelah fase 9: Tahap 4 (kontrak + log WA di Core) pindah ke fase 9; sakelar pemicu dan templat pesan tinggal di Integrasi, bukan di pengaturan/config Absensi.
+>   Fase 9 selesai 2026-10-02 (`docs/ai/plan/fase-9/whatsapp-integration-plan.md`). Yang berubah untuk draf ini:
+>   - Pesan **dikirim sungguhan** lewat gateway OpenWA milik provider; tidak ada pengirim stub dan status "Belum dikirim" diganti `pending` / `sent` / `failed` / `unsent` / `no_recipient`.
+>   - `GuardianNotifier`, `GuardianNotice`, `NoticeRegistry`, `NoticeKind`, tabel `whatsapp_messages`, job `DeliverWhatsappMessage`, dan riwayat di Integrasi › WhatsApp **sudah ada** di Core (`modules/Core/CONTRACT.md`). Tahap 4 di bawah tinggal: daftarkan empat `NoticeKind` dari `AttendanceServiceProvider` (kunci yang sudah diumumkan: `attendance.absent`, `attendance.gate`; dua lainnya ditambahkan) dan panggil `GuardianNotifier::notify()` di tiap pemicu.
+>   - Kolom `notify_*` di `attendance_settings` dan sakelar di `Settings.tsx` **dihapus dari rancangan**: sakelar dan isi pesan per jenis diatur sekolah di Integrasi › WhatsApp (bawaan mati). Absensi tidak memeriksa sakelar; ia selalu memanggil notifier.
+>   - Bagian `MasterDataController::whatsapp()` / `IntegrationMockData` tidak berlaku lagi: keduanya sudah dihapus, halamannya dilayani `WhatsappController`.
+>   - Menu Integrasi sekarang di balik `core.integration.manage`; menu Absensi masih belum bergate.
 
 ## Absensi sekolah dari data nyata: gerbang, jam pelajaran, QR sekali pakai, dan log WA wali murid
 

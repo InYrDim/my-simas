@@ -51,3 +51,7 @@ deptrac:
             - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
         Modules\Core\App\Domain\Models\ExtracurricularMember:
             - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Core\App\Domain\Models\WhatsappMessage:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Core\App\Domain\Models\WhatsappNoticeSetting:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'

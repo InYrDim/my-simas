@@ -7,13 +7,18 @@
   `applicants` (central accounts of people registering a school), `plans`,
   `subscriptions`, `invoices` (provider-side subscription billing), Spatie
   permission tables (`permissions`, `roles`, `model_has_permissions`,
-  `model_has_roles`, `role_has_permissions`), `provider_users`
+  `model_has_roles`, `role_has_permissions`), `provider_users`,
+  `whatsapp_instances` (one per tenant: the school's WhatsApp request, the
+  provider's decision and its gateway session), `provider_settings`
+  (settings of the provider itself, one row per key)
 - Core domain concepts: tenancy (tenant resolution, tenant context,
   tenant-scoped models, tenant-aware cache/storage/queue propagation),
   the module registry, per-tenant feature flags, permission registry,
   Spatie-permission integration for tenant-scoped roles (Stage 6),
   school onboarding (application → provider ACC → tenant
-  provisioning, Fase 2).
+  provisioning, Fase 2), and each school's WhatsApp number on the
+  provider's OpenWA gateway (request → approval → linking → sending,
+  Fase 9).
 
 ## Public interface (Contracts/)
 
@@ -107,9 +112,23 @@
 - `TenantSession` (Fase 4): `remember($tenantId)` — the one sanctioned
   way for another module to set the session's school; the session key
   stays internal.
+- `WhatsappChannel` (Fase 9) — the WhatsApp number of the school in the
+  current tenant context; fails closed without one. `state(bool $refresh
+  = false)`, `request(int $requestedBy)`, `connect()`, `disconnect()`,
+  `sendText(string $phone, string $text)`. With `DTOs/WhatsappState`
+  (`stage`: none, pending, rejected, disabled, active; `connection` = the
+  gateway's session status; `phone`, `pushName`, `note`, `qrCode` as a
+  PNG data URL, `lastError`, `requestedAt`; `connected()`) and
+  `DTOs/WhatsappSendResult` (`sent`, `messageId`, `unavailable`, `error`,
+  `retryable`). Nothing in these carries an API key, a key id or a
+  gateway session id. A gateway that refuses or cannot be reached never
+  throws: it comes back as `lastError` / a failed result, in words a
+  school may read. See "WhatsApp per school" below.
 - Exceptions (Contracts/Exceptions): `TenantNotSetException`,
   `UnknownModuleException`, `ApplicationNotPendingException`,
-  `InvalidApplicationException` (slug conflicts at submit/approve).
+  `InvalidApplicationException` (slug conflicts at submit/approve),
+  `WhatsappUnavailableException` (`connect`/`disconnect` for a school
+  whose WhatsApp is not approved, or is disabled).
 
 Internal (private): Tenant model + `TenantStatus` enum, TenantScope,
 `SchoolCodeTenantResolver` (interface `TenantResolver`), `TenantHydrator`,
@@ -384,8 +403,60 @@ name, named route, optional permission, order) from its service provider;
 `ShareTenantContext` shares the `tenantNav` prop (lazy), filtered by active
 module and Gate. The generic `TenantShell` in Shared renders it.
 
+## WhatsApp per school (Fase 9)
+
+Schools send WhatsApp through the provider's own **OpenWA** gateway
+(`https://docs.open-wa.org`, an unofficial WhatsApp API). Platform owns
+the gateway side; Core owns the school page and the message log.
+
+- **Config** (`config/services.php` → `openwa`): `OPENWA_API_BASE_URL`,
+  `OPENWA_ADMIN_API_KEY` (creates sessions and keys; never leaves the
+  server), `OPENWA_CREDENTIALS_KEY` (64 hex characters; SIMAS's own
+  AES-256 key for the stored session keys — not an OpenWA setting),
+  `OPENWA_TIMEOUT`.
+- **Flow.** The school asks (`WhatsappChannel::request`) → the provider
+  approves or rejects on the console page `/whatsapp`, or the provider
+  setting `whatsapp.auto_approve` approves a new request on the spot →
+  the school links its number by QR (`connect`, then `state(refresh:
+  true)` polled by the page) → messages go out with `sendText`. The
+  provider may disable a school (the session stops, the linked device is
+  kept) and enable it again.
+- **On approval** `ApproveWhatsappInstance` registers the session
+  `simas-{tenant id, lowercase}` (a taken name → the existing session is
+  reused) and mints one `operator` key scoped to that session
+  (`allowedSessions`). Every later call uses that key; the admin key is
+  only for sessions and keys.
+- **The session key is never shown.** It is stored through
+  `CredentialCast` (`CredentialVault`: AES-256-GCM with
+  `OPENWA_CREDENTIALS_KEY`, not `APP_KEY`), hidden from every array/JSON
+  form of the model, and absent from the contract DTOs, the console page
+  and every error message. Without a usable credentials key no key is
+  minted or stored. Changing `OPENWA_CREDENTIALS_KEY` makes the stored
+  keys unreadable: every school then needs a new key.
+- **School-readable errors.** `OpenWaException` messages name the call
+  and the status and are for the provider; `forSchool()` is what reaches
+  `lastError`, without URL or session id.
+- **Decisions baked in.** School "Putuskan" = gateway `logout` then
+  `stop` (the next link needs a new QR); provider "Nonaktifkan" = `stop`
+  and holds in SIMAS even when the gateway does not answer. `connect`
+  reads the session first and starts it only when it is not running.
+  `sendText` decides "not linked" from the stored status, without a
+  gateway call. Status comes from polling; there are no webhooks, so
+  delivered/read receipts are unknown.
+- **Models are plain** (`WhatsappInstance`, `ProviderSetting`; pattern of
+  `Subscription`): read across schools from the console and always
+  filtered by an explicit `tenant_id`.
+- **Tests fake the gateway** (`Http::fake()` + `Http::preventStrayRequests()`);
+  the real gateway is never called from a test. With a URL map,
+  `Http::fake` invokes every stub for every request, so a
+  `Http::sequence()` must live in a single closure.
+
 ## Explicitly NOT exposed
 
+- `WhatsappInstance`, `ProviderSetting`, `OpenWaClient`,
+  `CredentialVault`, the request/approve/reject/disable/enable actions,
+  `SyncWhatsappSession` and the console controller. Other modules reach
+  WhatsApp only through `WhatsappChannel`.
 - `Plan`, `Subscription`, `Invoice`, `SubscriptionManager`, `InvoiceIssuer`,
   `PaymentGateway`, `BillingSummary`, `TenantLifecycle`.
 - `Tenant` Eloquent model, `TenantStatus`, anything under

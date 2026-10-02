@@ -7,20 +7,26 @@
   `academic_years`, `semesters`, `grades`, `majors`, `rooms`, `subjects`,
   `classes`, `teachers`, `students`, `student_class_history`,
   `extracurriculars`, `extracurricular_members`, `teaching_assignments`,
-  `period_slots`, `calendar_events`.
+  `period_slots`, `calendar_events`, `whatsapp_messages` (the log of every
+  WhatsApp message a school tried to send), `whatsapp_notice_settings`
+  (a school's switch and wording per kind of notice).
 - Core domain concepts: SIMAS master data (school profile, academic years
   and semesters, grades and majors, classes, subjects, rooms, teachers,
   students, extracurriculars), academic management on top of it
   (homeroom teachers, teaching assignments, student placement, bell
   schedule, academic calendar), the CSV import of students and teachers,
   the school's statistics and report catalogue (`Statistik & Laporan`,
-  the shell and the registries every module reports through), and the
-  school landing record (`Beranda Sekolah`, route `home`).
+  the shell and the registries every module reports through), the
+  school's WhatsApp page with its notices to guardians and message log
+  (the gateway itself is Platform's), and the school landing record
+  (`Beranda Sekolah`, route `home`).
 - Permissions: `core.master.view` (read) and `core.master.manage`
   (create/update/delete) for master data; `core.academic.view` and
   `core.academic.manage` for academic management. Attached to the default
   roles through Identity's `config/roles.php` (names only): admin-sekolah
   holds all four, guru and staf-tu only the two `view` permissions.
+  `core.integration.manage` (Fase 9) gates Integrasi › WhatsApp and its
+  sidebar entry; only admin-sekolah holds it.
 
 ## Public interface (Contracts/)
 
@@ -50,6 +56,31 @@ key of an announced entry (`config/insight.php`, e.g. `attendance-monthly`,
 `ppdb-applicants`, figure `attendance-rate`, panel `attendance-trend`)
 replaces its "Segera hadir" placeholder.
 
+WhatsApp notices to guardians (Fase 9) — a module says what happened
+about a student; whether a message goes out, and how it reads, is the
+school's choice on Integrasi › WhatsApp.
+
+- `NoticeRegistry::register(string $module, NoticeKind $kind)` — a kind of
+  notice, registered from the owning module's provider. Offered only
+  while its module is active for the school; every kind starts switched
+  off. Registering the key of an announced kind (`config/notices.php`:
+  `attendance.absent`, `attendance.gate`, `ppdb.result`) replaces its
+  "Segera hadir" placeholder.
+- `GuardianNotifier::notify(GuardianNotice $notice): void` — sends the
+  notice to the student's guardian from the school's number. Kind off →
+  nothing happens and nothing is logged. Kind on → the message is logged
+  and queued even when it cannot be delivered (no guardian number,
+  WhatsApp not linked); the log says why. A student of another school is
+  not found, so nothing is sent.
+- `DTOs/NoticeKind` (key, title, description, recipient label, default
+  template, `variables`: the kind's own variable names with a sample
+  value each) and `DTOs/GuardianNotice` (student id, kind key, values for
+  the kind's variables). Templates use `{name}`; Core fills
+  `{nama_siswa}`, `{nama_wali}` and `{nama_sekolah}` itself and a caller
+  cannot replace them; a variable nobody filled stays as written.
+- `Exceptions/UnknownNoticeKindException` — the kind is not registered,
+  or its module is not active for the school.
+
 ## Allowed dependencies
 
 - Modules/Shared
@@ -71,6 +102,10 @@ replaces its "Segera hadir" placeholder.
   registries' read side (`Infrastructure/Insight/Default*Registry` —
   catalogue, find, figures, panels) and the CSV reader/writer. Other
   modules register through the contracts and never read the catalogue.
+- The WhatsApp internals: `WhatsappMessage`, `WhatsappNoticeSetting`,
+  `Infrastructure/Whatsapp/*` (`QueueWhatsappMessage`, the
+  `DeliverWhatsappMessage` job, `PhoneNumber`, `NoticeTemplate`, the
+  registry's read side). A module sends only through `GuardianNotifier`.
 
 ## Notes for maintainers
 
@@ -138,8 +173,7 @@ replaces its "Segera hadir" placeholder.
     and an empty cell never overwrites a stored value; the `kelas` column
     names a class of the active academic year; a student's status is never
     changed by an import.
-  `MasterDataController` serves the remaining mockup page (WhatsApp)
-  from `Infrastructure/Mock/IntegrationMockData`. Master data and academic management are one
+  Master data and academic management are one
   thin controller per page or entity over Domain Actions (`Save*`/`Delete*`),
   FormRequests gated by `core.master.manage` (master) or
   `core.academic.manage` (via `AcademicFormRequest`), and JsonResources
@@ -217,3 +251,39 @@ replaces its "Segera hadir" placeholder.
   - Announced, not built ("Segera hadir", labels in `config/insight.php`):
     Jadwal Pelajaran (no timetable table yet), the Kehadiran and PPDB
     reports, and the attendance figure and trend.
+- **Integrasi › WhatsApp** (`/integrasi/whatsapp`, Fase 9; the page, its
+  actions and the sidebar entry need `core.integration.manage`) —
+  `WhatsappController` over Platform's `WhatsappChannel`. Core never sees
+  a gateway key, and neither does the page.
+  - **Request and link.** `POST ajukan` asks the provider; the panel
+    shows waiting, rejected (with the provider's note, "Ajukan lagi"),
+    disabled (with the note) or approved. `POST hubungkan` starts the
+    link; the page re-reads only the `state` prop every 3 seconds while
+    the gateway is initialising, showing a QR or authenticating, and
+    shows the QR image the server passed on. `POST putuskan` unlinks.
+    The page asks the gateway once per load while WhatsApp is approved.
+  - **Sending.** Every message goes through
+    `Infrastructure/Whatsapp/QueueWhatsappMessage`: the number is
+    normalised (`PhoneNumber`: `0812…`, `+62 …`, `62…`, `812…` → `62…`;
+    a number written with `+` keeps its country code), a row is written
+    to `whatsapp_messages`, and the job `DeliverWhatsappMessage` is
+    queued. Statuses: `pending` → `sent` (accepted by WhatsApp, not a
+    delivery receipt) | `failed` | `unsent` (WhatsApp not linked) |
+    `no_recipient` (no usable number; never queued). A gateway that is
+    down or busy gets the message again (3 attempts, 30 then 120
+    seconds; the `sync` queue driver has no later, so it fails at once);
+    a job that runs twice sends once.
+  - **Test message.** `POST uji` (`SendTestMessage`) sends one short
+    message to a number the admin types; limited to 5 per minute per
+    admin (`whatsapp-test:{tenant}:{user}:{ip}`).
+  - **Notices.** The list shows the kinds registered through
+    `NoticeRegistry` for the school's active modules, then the announced
+    ones. `PUT pemberitahuan/{kind}` (`SaveNoticeSetting`) keeps the
+    switch and the school's wording; wording that is empty or equal to
+    the default is not stored. No module registers a kind yet: Absensi
+    and PPDB do in their own phases.
+  - **History.** The page lists `whatsapp_messages` newest first, 15 per
+    page, with the number masked (`62812••••7890`) and without the
+    message body; it re-reads itself while a message is still queued.
+  - A queue worker must run (`QUEUE_CONNECTION=database`), or messages
+    stay "Dalam antrean".
