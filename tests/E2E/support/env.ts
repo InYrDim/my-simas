@@ -34,9 +34,15 @@ export const appEnv: Record<string, string> = {
     TENANCY_URL_PORT: String(port),
 };
 
-/** Accounts created by PlatformDevSeeder. */
+/** Accounts created by PlatformDevSeeder and the root DatabaseSeeder. */
 export const accounts = {
     provider: { email: 'admin@simas.com', password: 'admin123' },
+    // Its school code changes with every seed: see support/database.ts.
+    schoolAdmin: {
+        email: 'admin@sekolah-a.test',
+        password: 'password',
+        schoolSlug: 'sekolah-a',
+    },
     applicant: {
         email: 'kepsek@sekolah-c.test',
         password: 'password',
