@@ -33,6 +33,7 @@ final class SaveForm
 
     public function __construct(
         private readonly CustomFieldRules $customRules,
+        private readonly SeedFormFields $seed,
     ) {}
 
     /**
@@ -49,6 +50,8 @@ final class SaveForm
         if (count($rows) > self::MAX_FIELDS) {
             throw ValidationException::withMessages(['form' => 'Formulir paling banyak '.self::MAX_FIELDS.' kolom.']);
         }
+
+        $this->seed->ensure($period);
 
         $existing = $period->fields()->get()->keyBy('id');
         $this->checkCompleteness(array_values(array_map('intval', $existing->keys()->all())), $rows);

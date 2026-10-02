@@ -7,6 +7,6 @@
  */
 return [
     'upcoming' => [
-        ['key' => 'ppdb.result', 'title' => 'Hasil seleksi PPDB', 'description' => 'Dikirim saat hasil seleksi diumumkan.', 'recipient' => 'Pendaftar'],
+        // Every announced kind is built now; add one here before its module registers it.
     ],
 ];

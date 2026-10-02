@@ -61,8 +61,8 @@ Never another feature module (Attendance), not even via its Public surface.
   group needs `ppdb.view`, "Pengaturan" needs `ppdb.settings.manage`), two
   reports (`ppdb-applicants` with a column per custom field, `ppdb-result`) and one statistics provider with
   Core's `ReportRegistry` / `StatisticsRegistry`, the `Ppdb::` mail views
-  (`modules/Ppdb/mail`) and the two stand-ins below. It reads Core only
-  through `StudentAdmission`; it never imports Core's models.
+  (`modules/Ppdb/mail`) and the stand-in below. It reads Core only
+  through `StudentAdmission` and `ContactNotifier`; it never imports Core's models.
 - **The applicant's account is central.** Guard `ppdb`
   (`config/auth.php`, model `PpdbAccount`), pages under `/calon-siswa/*`
   with no tenant: register (IP throttle + honeypot), sign in (limiter
@@ -155,12 +155,24 @@ Never another feature module (Attendance), not even via its Public surface.
   `StudentAdmission::admit()` makes the student (active, no class, no
   account) in the same transaction. Placing the student in a class and
   making the account are the school's usual steps (Warga Sekolah, fase 8).
-- **Stand-ins** (decision of 2026-10-02: later, after the core): `DocumentCheck`
-  (verifying says the documents are complete) and `ResultAnnouncer`
-  (announcing tells nobody) are interfaces in `Domain/Support` with
-  always-true implementations in `Infrastructure/Stubs`, bound in the
-  provider. WhatsApp results (`ppdb.result` stays "Segera hadir" in Core)
-  and a public result page are not built.
+- **WhatsApp result notice.** Ppdb registers the kind `ppdb.result`
+  ("Hasil seleksi PPDB", recipient "Wali pendaftar", variables `nomor`,
+  `jalur`, `hasil`, `keterangan`; `Domain/Notifications/ResultNotices`) with
+  Core's `NoticeRegistry`; the school switches it on and words it on
+  Integrasi › WhatsApp (off until then). `ResultAnnouncer` is now
+  `Infrastructure/Notifications/WhatsappResultAnnouncer`: it hands Core's
+  `ContactNotifier` a `ContactNotice` addressed to the guardian's name (or
+  "Orang tua/wali {name}") and number, once per applicant with a decision when
+  `PublishResults` announces, and once when `SaveSelection` moves someone up
+  from the waiting list afterwards. A school whose kind is off or unavailable
+  announces all the same (the notifier refuses or does nothing); a missing
+  number is logged by Core as "tanpa penerima". Nothing is delivered
+  synchronously: Core queues it.
+- **Stand-in** (decision of 2026-10-02: later, after the core): `DocumentCheck`
+  (verifying says the documents are complete) is an interface in
+  `Domain/Support` with an always-true implementation in
+  `Infrastructure/Stubs`, bound in the provider. A public result page is not
+  built.
 - **Days** are the school's own `Y-m-d` strings (`Domain/Support/SchoolDay`
   over `TenantContext::timezone()`); a wave is upcoming, open or closed
   from the school's today and is never stored. Reports count an applicant

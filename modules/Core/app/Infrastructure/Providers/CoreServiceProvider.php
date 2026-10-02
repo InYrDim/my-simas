@@ -5,6 +5,7 @@ namespace Modules\Core\App\Infrastructure\Providers;
 use Illuminate\Support\ServiceProvider;
 use Modules\Core\App\Contracts\BellSchedule;
 use Modules\Core\App\Contracts\ClassDirectory;
+use Modules\Core\App\Contracts\ContactNotifier;
 use Modules\Core\App\Contracts\GuardianNotifier;
 use Modules\Core\App\Contracts\NoticeRegistry;
 use Modules\Core\App\Contracts\ReportRegistry;
@@ -21,6 +22,7 @@ use Modules\Core\App\Infrastructure\Directory\EloquentClassDirectory;
 use Modules\Core\App\Infrastructure\Directory\EloquentStudentDirectory;
 use Modules\Core\App\Infrastructure\Insight\DefaultReportRegistry;
 use Modules\Core\App\Infrastructure\Insight\DefaultStatisticsRegistry;
+use Modules\Core\App\Infrastructure\Whatsapp\DefaultContactNotifier;
 use Modules\Core\App\Infrastructure\Whatsapp\DefaultGuardianNotifier;
 use Modules\Core\App\Infrastructure\Whatsapp\DefaultNoticeRegistry;
 use Modules\Platform\App\Contracts\ModuleRegistry;
@@ -53,6 +55,7 @@ class CoreServiceProvider extends ServiceProvider
         $this->app->alias(DefaultNoticeRegistry::class, NoticeRegistry::class);
 
         $this->app->singleton(GuardianNotifier::class, DefaultGuardianNotifier::class);
+        $this->app->singleton(ContactNotifier::class, DefaultContactNotifier::class);
 
         // Read access to students, classes and the bell schedule for the
         // feature modules, which never see Core's models.

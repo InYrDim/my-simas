@@ -4,6 +4,7 @@ namespace Modules\Ppdb\Tests\Feature;
 
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Platform\App\Domain\Models\Tenant;
+use Modules\Ppdb\App\Domain\Actions\SeedFormFields;
 use Modules\Ppdb\App\Domain\Enums\ApplicantStatus;
 use Modules\Ppdb\App\Domain\Enums\FieldType;
 use Modules\Ppdb\App\Domain\Enums\PeriodStatus;
@@ -248,4 +249,56 @@ it('checks a correction against the form of the applicant\'s own period, not the
 
     expect($fresh->guardian_phone)->toBeNull()
         ->and($fresh->status)->toBe(ApplicantStatus::Submitted);
+});
+
+it('seeds the form of a period that was inserted without one, the first time it is used', function () {
+    $tenant = ppdbTenant(slug: 'kolom-kosong');
+    $period = ppdbPeriod($tenant, ['status' => PeriodStatus::Active]);
+    ppdbSchool($tenant, fn () => FormField::query()->where('period_id', $period->id)->delete());
+    $count = fn (): int => ppdbSchool($tenant, fn () => FormField::query()->where('period_id', $period->id)->count());
+
+    expect($count())->toBe(0);
+
+    get(school($tenant->slug, '/ppdb/pendaftar/tambah'))->assertInertia(fn (Assert $page) => $page->has('fields', 10)->where('fields.0.key', 'path_id'));
+
+    expect($count())->toBe(10);
+
+    // Used again, nothing doubles.
+    get(school($tenant->slug, '/ppdb/pendaftar/tambah'))->assertInertia(fn (Assert $page) => $page->has('fields', 10));
+    get(school($tenant->slug, '/ppdb/formulir'))->assertInertia(fn (Assert $page) => $page->has('fields', 10));
+
+    expect($count())->toBe(10);
+});
+
+it('seeds an empty period when the builder is opened or saved', function () {
+    $tenant = ppdbTenant(slug: 'kolom-kosong-builder');
+    $period = ppdbPeriod($tenant, ['status' => PeriodStatus::Active]);
+    ppdbSchool($tenant, fn () => FormField::query()->where('period_id', $period->id)->delete());
+
+    get(school($tenant->slug, '/ppdb/formulir'))->assertInertia(fn (Assert $page) => $page->has('fields', 10));
+
+    ppdbSchool($tenant, fn () => FormField::query()->where('period_id', $period->id)->delete());
+
+    $rows = ppdbSchool($tenant, function () use ($period): array {
+        app(SeedFormFields::class)->ensure($period);
+
+        return $period->fields()->get()->map(fn (FormField $field): array => [
+            'id' => $field->id, 'type' => $field->type->value, 'label' => $field->label, 'required' => $field->required, 'archived' => false, 'options' => [], 'rules' => [],
+        ])->all();
+    });
+
+    ppdbSchool($tenant, fn () => FormField::query()->where('period_id', $period->id)->delete());
+
+    // The page was opened before the form existed, so its rows are stale: saving is refused, nothing breaks.
+    put(school($tenant->slug, "/ppdb/formulir/{$period->id}"), ['fields' => $rows])->assertSessionHasErrors();
+
+    expect(ppdbSchool($tenant, fn () => FormField::query()->where('period_id', $period->id)->count()))->toBe(10);
+});
+
+it('shows the applicant a seeded form for a period that had none', function () {
+    [$tenant, $period] = ppdbOpenSchool('kolom-kosong-calon');
+    ppdbSchool($tenant, fn () => FormField::query()->where('period_id', $period->id)->delete());
+    ppdbAccount($tenant);
+
+    get('http://localhost/calon-siswa/formulir')->assertInertia(fn (Assert $page) => $page->component('Ppdb/Account/Form')->has('fields', 10));
 });

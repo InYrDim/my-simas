@@ -8,6 +8,7 @@ use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Domain\Models\Tenant;
 use Modules\Platform\App\Infrastructure\Modules\ModuleFlagManager;
 use Modules\Platform\Database\Factories\TenantFactory;
+use Modules\Ppdb\App\Domain\Enums\ApplicantStatus;
 use Modules\Ppdb\App\Domain\Enums\FieldType;
 use Modules\Ppdb\App\Domain\Enums\PeriodStatus;
 use Modules\Ppdb\App\Domain\Models\AdmissionPath;
@@ -249,4 +250,39 @@ function storedAnswer(Tenant $tenant, Applicant $applicant, FormField $field): ?
         ->where('applicant_id', $applicant->id)
         ->where('field_id', $field->id)
         ->value('value'));
+}
+
+/**
+ * A running period with a Zonasi path of the given quota and verified
+ * applicants named Anindya (92.00), Bima (88.40) and Citra (no score).
+ *
+ * @return array{0: Tenant, 1: AdmissionPeriod, 2: AdmissionWave, 3: AdmissionPath, 4: array<string, Applicant>}
+ */
+function selectionSchool(string $slug, int $quota = 2, string $role = 'admin-sekolah'): array
+{
+    $tenant = ppdbTenant(role: $role, slug: $slug);
+    [$period, $wave, $path] = ppdbSetup($tenant);
+    ppdbSchool($tenant, fn () => $path->update(['quota' => $quota]));
+
+    $applicants = [
+        'Anindya' => ppdbApplicant($tenant, $period, $wave, $path, ['name' => 'Anindya', 'number' => 'PPDB-27-0001', 'status' => ApplicantStatus::Verified, 'score' => '92.00']),
+        'Bima' => ppdbApplicant($tenant, $period, $wave, $path, ['name' => 'Bima', 'number' => 'PPDB-27-0002', 'status' => ApplicantStatus::Verified, 'score' => '88.40']),
+        'Citra' => ppdbApplicant($tenant, $period, $wave, $path, ['name' => 'Citra', 'number' => 'PPDB-27-0003', 'status' => ApplicantStatus::Verified]),
+    ];
+
+    return [$tenant, $period, $wave, $path, $applicants];
+}
+
+/**
+ * The body of a selection save for the path.
+ *
+ * @param  array<int, array{0: Applicant, 1: string|null, 2: string}>  $rows  applicant, score, decision
+ * @return array<string, mixed>
+ */
+function selectionBody(int $pathId, array $rows): array
+{
+    return [
+        'path_id' => $pathId,
+        'rows' => array_map(fn (array $row): array => ['applicant_id' => $row[0]->id, 'score' => $row[1], 'decision' => $row[2]], $rows),
+    ];
 }

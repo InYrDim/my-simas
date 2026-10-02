@@ -50,7 +50,8 @@ export function schoolCode(slug: string): string {
  * Opens the admissions of a seeded school: a running PPDB period with one
  * wave that is open today and a Zonasi path of two seats. The dates are
  * relative to the day the suite runs, so the form is open whenever it does.
- * Skips a school that already has a period, so calling it twice is safe.
+ * Skips a school that already has a period, so calling it twice is safe. The
+ * period's registration form is not inserted here: the app seeds it on first use.
  */
 export function openAdmissions(slug: string): void {
     execFileSync(

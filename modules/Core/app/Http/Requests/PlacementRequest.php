@@ -14,7 +14,7 @@ final class PlacementRequest extends AcademicFormRequest
     {
         return [
             'action' => ['required', Rule::enum(PlacementAction::class)],
-            'source_class_id' => ['required', 'integer', $this->existsInSchool('classes')],
+            'source_class_id' => ['nullable', 'required_unless:action,assign', 'integer', $this->existsInSchool('classes')],
             'target_class_id' => ['nullable', 'required_unless:action,graduate', 'integer', $this->existsInSchool('classes')],
             'student_ids' => ['required', 'array', 'min:1'],
             'student_ids.*' => ['integer', 'distinct', $this->existsInSchool('students')],

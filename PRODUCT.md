@@ -11,7 +11,7 @@ web
 Priority order, confirmed:
 
 1. **Teacher / school staff (Guru, Staf/TU) — the primary user.** Does the school's
-   daily record-keeping (attendance, and later PPDB/admissions) on low-end Android
+   daily record-keeping (attendance, and PPDB/admissions) on low-end Android
    phones, often on a shared device, on a slow network, in short bursts between
    other duties. Their job: capture the right record quickly and correctly the
    first time, without training and without a desktop nearby.
@@ -24,8 +24,17 @@ Priority order, confirmed:
    reject them, correct the school data at approval, manage tenants (activate,
    suspend, modules), and run the platform.
 
-An applicant is **not** a user: before approval, a prospective school only submits
-a public application form. No account, no password, no session exists for them.
+4. **PPDB applicant (calon siswa, usually with a parent or guardian) — the lowest
+   priority, and not a school user.** Someone who wants a place at one school. They
+   make their own account on the central host (separate from every school login),
+   join one school with its school code or link, fill in the registration form the
+   school built, and then follow the status and the result on their own page, mostly
+   on a phone and on a slow network. Their job: apply once, correctly, and learn the
+   outcome without calling the school.
+
+A *school* applicant is **not** a user: before approval, a prospective school only
+submits a public application form. No account, no password, no session exists for
+them.
 
 ## Product Purpose
 
@@ -34,10 +43,12 @@ a provider company to schools in Indonesia. One tenant is one school, reached on
 own subdomain or custom domain, with all of its data separated by `tenant_id` in a
 single database.
 
-The product makes three things possible: a school can apply to join and be onboarded
+The product makes four things possible: a school can apply to join and be onboarded
 without a developer; it then gets an isolated, always-available workspace for its own
-administration and daily school operations; and the provider company can operate that
-platform centrally without touching the database.
+administration and daily school operations (master data, academics, attendance,
+admissions, and its own WhatsApp number for notices); families can apply to the school
+and follow their application; and the provider company can operate that platform
+centrally without touching the database.
 
 Success, as confirmed so far: a school can apply, be approved, sign in on its own
 domain, and manage its own people and modules on its own — and the provider can run
@@ -48,8 +59,8 @@ Provider-side subscription management exists (plans, trial vs subscribed tenants
 invoices) with a placeholder payment step that always succeeds; real payment is
 deliberately deferred. Nothing about cost is shown to schools.
 
-Deliberately out of scope so far: real payment processing, attendance (Absensi) and
-PPDB as modules, public self-registration, notification-center machinery.
+Deliberately out of scope so far: real payment processing, notification-center
+machinery, and school users registering themselves (school users never self-register).
 
 ## Positioning
 
@@ -82,21 +93,32 @@ be shown to schools.
   devices, slow/mobile networks. School admin: office desktop or laptop. No native
   app and no app store — mobile web is the delivery, and it must work on a bad
   connection.
-- **Accounts are always created by someone else.** Either the school admin creates
-  them (directly with a password, or by email invitation) or the system provisions
-  the first admin on approval. There is no public registration and no self-signup.
+- **School accounts are always created by someone else.** Either the school admin
+  creates them (directly with a password, or by email invitation), the system
+  provisions the first admin on approval, or the school makes student and teacher
+  accounts from the people records (NIS or NIP plus a first password that must be
+  changed). School users have no public registration and no self-signup. There are
+  exactly two public registrations, each a central account outside any school: a
+  prospective **school** (the application form) and a **PPDB applicant**.
 - **Deactivation is soft and irreversible-looking by design.** Rows and roles are
   kept for audit; a deactivated user is refused at login and their active session is
   closed on the next request. Two anti-lockout invariants hold: nobody can deactivate
   themselves, and the last active school admin of a tenant cannot be deactivated.
-- **Roles are machine names in the database** (`admin-sekolah`, `guru`, `staf-tu`);
-  human labels ("Admin Sekolah", "Guru", "Staf/TU") live in config only. Guru and
-  Staf/TU currently hold no permissions — permission sets arrive with the business
-  modules.
+- **Roles are machine names in the database** (`admin-sekolah`, `guru`, `staf-tu`,
+  `siswa`); human labels ("Admin Sekolah", "Guru", "Staf/TU", "Siswa") live in config
+  only. Each business module attaches its own permissions to them (for example
+  attendance recording for teachers, PPDB review for Staf/TU, everything for the
+  school admin), and the school admin can see them in the roles page.
 - **Email is transactional only**, sent as queued mailables directly; there is no
-  notification center, preference store, or extra channel. Password and set-password
-  links expire after 60 minutes. A dead invite is handled by issuing a new
-  invitation, not by a resend button.
+  notification center or preference store. Password and set-password links expire
+  after 60 minutes. A dead invite is handled by issuing a new invitation, not by a
+  resend button.
+- **WhatsApp is per school, and the school decides.** A school asks for a WhatsApp
+  number, the provider approves, and the school links it by QR; messages then leave
+  from the school's own number through the queue. Modules register the kinds of
+  notice they can send (absences, gate in/out, PPDB results); every kind starts off,
+  and the school switches it on and words it. The product never messages anyone for a
+  kind the school has not switched on.
 - **Onboarding ritual, end to end.** Applicant submits the public form on the central
   host → pending application → provider reviews and approves (correcting
   name/slug/timezone if needed) or rejects with a note → tenant, roles, module flags,
@@ -105,7 +127,18 @@ be shown to schools.
 - **Anti-enumeration is policy, not accident.** Login, forgot-password, and
   set-password answer identically regardless of account state; unknown emails,
   deactivated users, and password-less users get the same response and no email.
-  The public application form is IP-throttled and carries a honeypot.
+  Joining a school with a code answers one message for every refusal (unknown,
+  suspended, no PPDB, no open period), so nobody can list which schools use the
+  product. The public forms are IP-throttled and carry a honeypot.
+- **Admissions ritual, end to end.** The school admin sets a period, waves, paths with
+  a quota, and builds the registration form (fields, order, required or optional,
+  file uploads) → shares the school link or code → the applicant makes an account,
+  verifies the email, joins the school and sends the form (locked there once sent; only
+  the committee can cancel) → the committee verifies, or asks for a correction → one
+  score per applicant, decisions within each path's quota → the results are announced
+  (visible to the applicant only then, and optionally by WhatsApp) → the committee
+  records re-registration, which makes the student in master data without a class →
+  the school places the student in a class and makes the account.
 - **Hosting constraints that are felt as speed.** No Octane, no Supervisor; queued
   work runs from a cron-driven database queue. Perceived latency on a slow connection
   is a product constraint, not just an implementation detail.
@@ -113,9 +146,10 @@ be shown to schools.
   *Guru*, *Staf/TU*, *pengajuan* (application), *provider* (the SaaS-company side),
   *slug* (the school's subdomain label).
 
-Planned next, per the repo's recorded roadmap and not yet built: Absensi, PPDB, Core
-master data, a school-admin dashboard (the post-login landing is still the starter
-page), a permission UI, and a module-expiry job.
+Not built yet, per the repo's recorded plans (`docs/ai/plan`): a module-expiry job,
+real document verification for PPDB (today the committee's decision stands in for it),
+`ppdb` inside the subscription plans (a provider switches it on per school), and
+deciding which plans keep Absensi (today every plan includes it).
 
 ## Capabilities and Constraints
 
@@ -140,8 +174,15 @@ page), a permission UI, and a module-expiry job.
   same-tenant scope.
 - **Per-tenant modules:** feature modules are flagged per tenant with enable/disable
   and optional expiry; `core` is always active. A disabled module returns 403, not 404.
-- **Public surface:** exactly one unauthenticated page — the school application form on
-  the central host — plus a generic "awaiting review" response.
+  Built so far: Core (master data, academics, import, statistics and reports, student
+  and teacher accounts, the school's WhatsApp page, the Beranda landing), Absensi
+  (gate and per-lesson attendance by the student's one-time QR or by hand) and PPDB
+  (admissions, above). Roles and permissions have a page for the school admin.
+- **Public surface:** two groups of unauthenticated pages — the school application form
+  on the central host (plus a generic "awaiting review" response), and the PPDB
+  applicant's account pages under `/calon-siswa` (register, sign in, verify, reset, join
+  a school, the registration form and the applicant's own status). Both are
+  rate-limited and answer generically.
 - **Stack constraints already fixed by the codebase:** Laravel + Inertia SPA (SSR-capable)
   with React 19, Tailwind CSS 4, and Wayfinder-generated routes; each module owns its
   own pages and components; TypeScript is type-checked and formatted in CI.
@@ -173,14 +214,16 @@ page), a permission UI, and a module-expiry job.
   the running app is dev seed data (sekolah-a, sekolah-b, sekolah-c's pending
   application, `admin@sekolah-a.test`, a dev provider user).
 - **No brand assets** beyond the framework starter icons in `public/`.
-- **Product and process truth that does exist and is safe to reuse:**
-  `docs/ai/plan/fase-1/plan.md` and `docs/ai/plan/fase-2/plan.md` (phase plans with
-  explicitly locked decisions — the de facto spec), `docs/architecture/modular-monolith.md`
+- **Product and process truth that does exist and is safe to reuse:** the phase plans
+  under `docs/ai/plan/fase-1` to `fase-11` (explicitly locked decisions — the de facto
+  spec, including the PPDB plans in `fase-11`), `docs/architecture/modular-monolith.md`
   (canonical tenancy and boundary policy), and each module's `CONTRACT.md`
-  (Platform, Identity, Core, Shared).
+  (Platform, Identity, Core, Attendance, Ppdb, Shared).
 - **Behavior is proven only by tests** under `modules/*/tests/Feature/` (tenancy
   isolation, auth, roles, deactivation, password reset, application approval,
-  invitations, provider review).
+  invitations, provider review, master data, attendance, admissions), plus a Pest
+  browser suite (`tests/Browser`) and a Playwright suite (`tests/E2E`) for whole
+  journeys. Nothing has been tried by real users on real devices.
 
 ## Product Principles
 
@@ -192,7 +235,8 @@ page), a permission UI, and a module-expiry job.
    defect, not an edge case.
 3. **A human approves; the system provisions.** No school exists and no account is
    usable until a provider operator approves the application. Approval is a deliberate
-   human step that also corrects the school's own data.
+   human step that also corrects the school's own data. The same holds inside a school:
+   an applicant becomes a student only when the committee records it.
 4. **Calm administration over cleverness.** Authentication, approval, and user
    management are high-stakes and low-frequency. They must be legible and hard to
    get wrong, and they must never be the moment a school locks itself out.

@@ -57,7 +57,9 @@ student; Core makes it the way every other path does (`SaveStudent`).
 
 - `StudentAdmission::admit(NewStudent): int` — the new student's id. The
   student is active, has no class (placing is Akademik / the student's
-  form) and no login account (fase 8). The caller decides who may ask;
+  form, or Akademik › Penempatan Siswa › "Belum ditempatkan", which lists
+  active students without a class and gives them their first one) and no
+  login account (fase 8). The caller decides who may ask;
   the contract checks no permission. PPDB uses it at re-registration.
 - `DTOs/NewStudent` (name, NIS, gender `L`/`P`, optional NISN, birth date
   as `Y-m-d`, guardian name and phone).
@@ -106,16 +108,23 @@ school's choice on Integrasi › WhatsApp.
 - `NoticeRegistry::register(string $module, NoticeKind $kind)` — a kind of
   notice, registered from the owning module's provider. Offered only
   while its module is active for the school; every kind starts switched
-  off. Registering the key of an announced kind (`config/notices.php`:
-  `ppdb.result`) replaces its "Segera hadir" placeholder. Attendance
-  registers `attendance.gate-in`, `attendance.gate-out`,
-  `attendance.absent` and `attendance.lesson-absent`.
+  off. Registering the key of an announced kind (`config/notices.php`,
+  now empty: every announced kind is built) replaces its "Segera hadir"
+  placeholder. Attendance registers `attendance.gate-in`,
+  `attendance.gate-out`, `attendance.absent` and `attendance.lesson-absent`;
+  Ppdb registers `ppdb.result`.
 - `GuardianNotifier::notify(GuardianNotice $notice): void` — sends the
   notice to the student's guardian from the school's number. Kind off →
   nothing happens and nothing is logged. Kind on → the message is logged
   and queued even when it cannot be delivered (no guardian number,
   WhatsApp not linked); the log says why. A student of another school is
   not found, so nothing is sent.
+- `ContactNotifier::notify(ContactNotice $notice): void` — the same for
+  someone with no student record (an admissions applicant's guardian): the
+  caller gives the recipient's name and number and the name of who it is
+  about (`{nama_wali}`, `{nama_siswa}`); the switch, wording, log and queue
+  are the same and the log row has no student. Added for Ppdb's
+  `ppdb.result` (fase 11).
 - `DTOs/NoticeKind` (key, title, description, recipient label, default
   template, `variables`: the kind's own variable names with a sample
   value each) and `DTOs/GuardianNotice` (student id, kind key, values for

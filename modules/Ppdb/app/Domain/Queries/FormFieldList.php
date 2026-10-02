@@ -2,6 +2,7 @@
 
 namespace Modules\Ppdb\App\Domain\Queries;
 
+use Modules\Ppdb\App\Domain\Actions\SeedFormFields;
 use Modules\Ppdb\App\Domain\Enums\FieldType;
 use Modules\Ppdb\App\Domain\Models\AdmissionPeriod;
 use Modules\Ppdb\App\Domain\Models\Applicant;
@@ -18,6 +19,7 @@ final class FormFieldList
 {
     public function __construct(
         private readonly AnswerFiles $files,
+        private readonly SeedFormFields $seed,
     ) {}
 
     /**
@@ -29,6 +31,8 @@ final class FormFieldList
      */
     public function for(AdmissionPeriod $period): array
     {
+        $this->seed->ensure($period);
+
         return array_values($period->fields()->get()->map(fn (FormField $field): array => [
             'id' => $field->id,
             'key' => $field->key,

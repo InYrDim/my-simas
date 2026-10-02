@@ -8,6 +8,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Ppdb\App\Domain\Actions\DeleteFormField;
 use Modules\Ppdb\App\Domain\Actions\SaveForm;
+use Modules\Ppdb\App\Domain\Actions\SeedFormFields;
 use Modules\Ppdb\App\Domain\Enums\FieldType;
 use Modules\Ppdb\App\Domain\Enums\PeriodStatus;
 use Modules\Ppdb\App\Domain\Models\AdmissionPath;
@@ -25,10 +26,14 @@ use Modules\Ppdb\App\Http\Requests\SaveFormRequest;
  */
 final class FormController
 {
-    public function show(Request $request, ChosenPeriod $chosen): Response
+    public function show(Request $request, ChosenPeriod $chosen, SeedFormFields $seed): Response
     {
         $periods = $chosen->all();
         $selected = $chosen->among($periods, $request->integer('periode'));
+
+        if ($selected !== null) {
+            $seed->ensure($selected);
+        }
 
         $fields = $selected === null ? collect() : $selected->fields()->get();
         $answered = $fields->isEmpty() ? collect() : ApplicantAnswer::query()

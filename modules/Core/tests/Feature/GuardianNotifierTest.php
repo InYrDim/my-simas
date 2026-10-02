@@ -192,6 +192,9 @@ it('never reaches a student or a switch of another school', function () {
 });
 
 it('lists registered kinds with the schools choice, then the announced ones', function () {
+    // Every real kind is built, so the announced one is a made-up key.
+    config(['notices.upcoming' => [['key' => 'uji.soon', 'title' => 'Segera', 'description' => 'Belum dibuat.', 'recipient' => 'Wali']]]);
+
     registerAbsenceNotice();
     $tenant = schoolAs('notice-list');
     switchNotice($tenant, 'uji.absent', true, 'Info: {nama_siswa} {status}.');
@@ -205,17 +208,20 @@ it('lists registered kinds with the schools choice, then the announced ones', fu
         ->where('kinds.0.sample.status', 'sakit')
         ->where('kinds.0.sample.nama_siswa', 'Aditya Pratama')
         // Registered kinds first, then what is only announced.
-        ->where('kinds', fn ($kinds) => collect($kinds)->pluck('key')->all() === ['uji.absent', 'ppdb.result'])
+        ->where('kinds', fn ($kinds) => collect($kinds)->pluck('key')->all() === ['uji.absent', 'uji.soon'])
         ->where('kinds.1.available', false)
         ->where('kinds.1.enabled', false)
     );
 });
 
 it('announces the kinds nobody built yet, and offers a kind off with its default wording', function () {
+    // Every real kind is built, so the announced one is a made-up key.
+    config(['notices.upcoming' => [['key' => 'uji.soon', 'title' => 'Segera', 'description' => 'Belum dibuat.', 'recipient' => 'Wali']]]);
+
     $tenant = schoolAs('notice-upcoming');
 
     get(school($tenant->slug, '/integrasi/whatsapp'))->assertInertia(fn (Assert $page) => $page
-        ->where('kinds', fn ($kinds) => collect($kinds)->pluck('key')->all() === ['ppdb.result']
+        ->where('kinds', fn ($kinds) => collect($kinds)->pluck('key')->all() === ['uji.soon']
             && collect($kinds)->every(fn ($kind) => $kind['available'] === false))
     );
 

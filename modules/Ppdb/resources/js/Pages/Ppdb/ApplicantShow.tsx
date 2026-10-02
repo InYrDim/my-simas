@@ -255,8 +255,8 @@ function EnrollPanel({ applicant }: Pick<ApplicantProps, 'applicant'>) {
                 }}
             >
                 <p className="text-sm text-muted-foreground">
-                    Catat daftar ulang setelah {applicant.name} datang melengkapi berkas. Pendaftar menjadi siswa di Warga Sekolah (belum berkelas); NIS diberikan
-                    oleh sekolah.
+                    Catat daftar ulang setelah {applicant.name} datang melengkapi berkas. Pendaftar menjadi siswa di Warga Sekolah (belum berkelas; tempatkan di Akademik › Penempatan Siswa ›
+                    Belum ditempatkan); NIS diberikan oleh sekolah.
                 </p>
                 {refusal !== undefined && (
                     <Alert variant="destructive">

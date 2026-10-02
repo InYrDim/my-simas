@@ -660,12 +660,16 @@ The last module that was a mockup, and the first feature module with a
   copies the latest. Uploaded files live in the school's `TenantStorage`
   partition and are served only as attachments through the owner's or the
   committee's own route. Custom answers are columns of the applicant report.
-- **Stand-ins until later.** Document completeness and telling applicants
-  the results are interfaces with always-true implementations
-  (`DocumentCheck`, `ResultAnnouncer`), the same pattern as Platform's
-  payment gateway. WhatsApp results and a public result
-  page are not built; the applicant sees their result on their own page
-  once the school has announced it.
+- **Results reach the guardian on WhatsApp.** Core's second notifier
+  contract, `ContactNotifier` (`ContactNotice`: kind, recipient name and
+  number, who it is about), exists because an applicant has no student
+  record for `GuardianNotifier` to look up. Ppdb registers `ppdb.result` and
+  sends it when the school announces the results; the school's switch and
+  wording are Core's. The applicant also sees their result on their own page
+  once it is announced.
+- **Stand-in until later.** Document completeness is an interface with an
+  always-true implementation (`DocumentCheck`), the same pattern as
+  Platform's payment gateway. A public result page is not built.
 - **In no plan yet.** `ppdb` is in no billing plan; a provider adds it to
   a plan's modules or switches it on for a school.
 - **After the release** run `php artisan migrate` and

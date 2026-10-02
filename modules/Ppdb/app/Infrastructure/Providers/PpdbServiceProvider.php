@@ -3,18 +3,20 @@
 namespace Modules\Ppdb\App\Infrastructure\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Modules\Core\App\Contracts\NoticeRegistry;
 use Modules\Core\App\Contracts\ReportRegistry;
 use Modules\Core\App\Contracts\StatisticsRegistry;
 use Modules\Platform\App\Contracts\ModuleRegistry;
 use Modules\Platform\App\Contracts\PermissionRegistry;
 use Modules\Platform\App\Contracts\TenantNavigation;
+use Modules\Ppdb\App\Domain\Notifications\ResultNotices;
 use Modules\Ppdb\App\Domain\Reports\ApplicantListReport;
 use Modules\Ppdb\App\Domain\Reports\SelectionResultReport;
 use Modules\Ppdb\App\Domain\Statistics\AdmissionStatistics;
 use Modules\Ppdb\App\Domain\Support\DocumentCheck;
 use Modules\Ppdb\App\Domain\Support\ResultAnnouncer;
+use Modules\Ppdb\App\Infrastructure\Notifications\WhatsappResultAnnouncer;
 use Modules\Ppdb\App\Infrastructure\Stubs\AlwaysCompleteDocumentCheck;
-use Modules\Ppdb\App\Infrastructure\Stubs\SilentResultAnnouncer;
 
 class PpdbServiceProvider extends ServiceProvider
 {
@@ -28,8 +30,7 @@ class PpdbServiceProvider extends ServiceProvider
         // Stand-in until applicants can upload documents: see the class.
         $this->app->bind(DocumentCheck::class, AlwaysCompleteDocumentCheck::class);
 
-        // Stand-in until results are sent to guardians: see the class.
-        $this->app->bind(ResultAnnouncer::class, SilentResultAnnouncer::class);
+        $this->app->bind(ResultAnnouncer::class, WhatsappResultAnnouncer::class);
     }
 
     /**
@@ -44,6 +45,7 @@ class PpdbServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/../../../mail', 'Ppdb');
         $this->registerPermissions();
         $this->registerNavigation();
+        $this->registerNotices();
         $this->registerInsight();
         $this->loadRoutesFrom(__DIR__.'/../../../routes/web.php');
         // API routes bring their own middleware grouping inside the file.
@@ -71,6 +73,19 @@ class PpdbServiceProvider extends ServiceProvider
             'ppdb.selection.manage',
             'ppdb.settings.manage',
         ]);
+    }
+
+    /**
+     * Register the WhatsApp notice PPDB can send to guardians. The school
+     * switches it on and words it on Integrasi › WhatsApp.
+     */
+    protected function registerNotices(): void
+    {
+        $registry = $this->app->make(NoticeRegistry::class);
+
+        foreach (ResultNotices::kinds() as $kind) {
+            $registry->register('ppdb', $kind);
+        }
     }
 
     /**
