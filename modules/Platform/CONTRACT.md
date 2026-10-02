@@ -385,14 +385,14 @@ here is under `Contracts/` except what is listed at the end of this section.
 
 | Item | Current value | Where |
 |---|---|---|
-| Plan Starter | Rp150.000/bln, Rp1.500.000/thn, 25 users, modules core+identity | `BillingMasterDataSeeder` |
-| Plan Standard | Rp350.000/bln, Rp3.500.000/thn, 100 users, core+identity | same |
-| Plan Pro | Rp750.000/bln, Rp7.500.000/thn, unlimited users, core+identity | same |
+| Plan Starter | Rp150.000/bln, Rp1.500.000/thn, 25 users, modules core+identity+attendance | `BillingMasterDataSeeder` |
+| Plan Standard | Rp350.000/bln, Rp3.500.000/thn, 100 users, core+identity+attendance | same |
+| Plan Pro | Rp750.000/bln, Rp7.500.000/thn, unlimited users, core+identity+attendance | same |
 | Yearly price | 10 × monthly (assumption) | same |
 | Trial | 14 days, plan `starter`, automatic on approval, no auto-suspend | `config/billing.php` |
 | Invoice due | 7 days after issue | `config/billing.php` |
 | "Due soon" window | 7 days | `config/billing.php` |
-| Plan modules | `attendance`/`ppdb` are not registered yet, so every plan lists only core+identity until they register | plans table |
+| Plan modules | Every plan includes `attendance` for now (decision of 2026-10-02: every school gets Absensi; which plan keeps it is sorted out later, by editing the plans in the console). Migration `0008_01_01_000000_include_attendance_for_every_school` added it to the plans and schools that existed before. `ppdb` is still mock and in no plan | plans table |
 
 Public additions: `Contracts/TenantDirectory` (read-only tenant lookup for
 other modules' provider pages) and `TenantRoles::rolePermissions()`.

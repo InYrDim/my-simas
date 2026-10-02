@@ -13,8 +13,8 @@ use Modules\Platform\App\Domain\Models\Plan;
  *   php artisan db:seed --class="Modules\Platform\Database\Seeders\BillingMasterDataSeeder"
  *
  * The figures are assumptions (yearly = 10 × monthly) recorded in
- * modules/Platform/CONTRACT.md → "Master data & assumptions". Module lists
- * grow when attendance / ppdb register themselves.
+ * modules/Platform/CONTRACT.md → "Master data & assumptions". Every plan includes
+ * Absensi for now; which plan keeps it is sorted out later.
  */
 class BillingMasterDataSeeder extends Seeder
 {
@@ -29,7 +29,7 @@ class BillingMasterDataSeeder extends Seeder
         foreach ($plans as $plan) {
             Plan::query()->firstOrCreate(
                 ['key' => $plan['key']],
-                [...$plan, 'modules' => ['core', 'identity'], 'is_active' => true],
+                [...$plan, 'modules' => ['core', 'identity', 'attendance'], 'is_active' => true],
             );
         }
 
