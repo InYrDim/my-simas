@@ -1,6 +1,6 @@
 # Tes E2E (browser) untuk alur pendaftaran sekolah: Pest Browser + Playwright
 
-> **Status dokumen:** Berjalan
+> **Status dokumen:** Selesai
 > **Dibuat:** 2026-10-01 · **Diperbarui:** 2026-10-02 · **Branch:** `feat/tenant-onboarding`
 
 ## Context
@@ -87,7 +87,7 @@ Legenda: ⬜ belum · 🟡 berjalan · ✅ selesai. Berhenti di antara tahap dan
 | --- | --- | --- | --- |
 | 1 | Fondasi: pasang Pest Browser + Playwright, konfigurasi suite terpisah, satu tes asap yang membuktikan sesi, host console, dan tanpa error JS | ✅ | Plugin + Playwright terpasang, `phpunit.e2e.xml` dan `composer test:e2e` terpisah dari suite utama, tes asap lulus di Chromium (2 tes, ±5 detik). Setelah `sockets` diaktifkan di php.ini, `php artisan test --compact` kembali 452 lulus tanpa memuat tes browser. Deptrac 0 pelanggaran. |
 | 2 | Playwright: `@playwright/test`, konfigurasi + server + database terpisah, uji asap dan alur utama terhadap host sungguhan | ✅ | `composer test:playwright`: server PHP sendiri di port 8989, database `database/e2e.sqlite` di-reset tiap run, 4 spec lulus di Chromium (±45 detik) terhadap `localhost` dan `console.localhost`. Database dev tidak berubah. `php artisan test --compact` 452 lulus, `composer test:e2e` 2 lulus. `npm run check` sudah gagal format di ±199 file sebelum pekerjaan ini; tidak diperbaiki. |
-| 3 | Skenario onboarding di Pest Browser: alur utama, tolak → ajukan ulang, undangan provider, lupa kata sandi | ⬜ | |
+| 3 | Skenario onboarding di Pest Browser: alur utama, tolak → ajukan ulang, undangan provider, lupa kata sandi | ✅ | 5 skenario baru di `tests/Browser` (total 7 tes, ±16 detik): alur utama daftar → verifikasi → pilih paket → ACC → `/beranda`, tolak → ajukan ulang, validasi pilih paket, undangan provider, lupa kata sandi. Lulus 5 kali berturut-turut tanpa proses lain; `php artisan test --compact` 452 lulus; Deptrac 0 pelanggaran. Satu kali proses Pest menggantung saat keluar (lihat Temuan). |
 
 ## Tasks
 
@@ -119,14 +119,14 @@ Legenda: ⬜ belum · 🟡 berjalan · ✅ selesai. Berhenti di antara tahap dan
 **Selesai bila:** `composer test:playwright` menyalakan server sendiri, me-reset database E2E, dan semua spec lulus di Chromium; database dev tidak berubah; `php artisan test --compact` dan `composer test:e2e` tetap lulus. Bukti: ketiga perintah itu.
 
 ### Tahap 3 — Skenario onboarding (Pest Browser)
-- [ ] Helper bersama — `tests/Browser/Support/onboarding.php` (baru)
-- [ ] **Alur utama:** daftar → pemberitahuan verifikasi → buka tautan verifikasi → isi data sekolah, pilih paket → status "Menunggu persetujuan" → provider ACC di console → keluar → login pemohon → `/beranda` menampilkan nama sekolah — `tests/Browser/OnboardingJourneyTest.php` (baru)
-- [ ] **Tolak → ajukan ulang:** provider menolak dengan catatan → pemohon melihat catatan dengan form terisi → memperbaiki → "Ajukan ulang" → status menunggu lagi — file yang sama
-- [ ] **Undangan provider:** undang dari console → buka tautan undangan → buat kata sandi → mendarat di onboarding — `tests/Browser/ApplicantInvitationTest.php` (baru)
-- [ ] **Lupa kata sandi:** minta reset → buka tautan → kata sandi baru → login berhasil — file yang sama
-- [ ] **Validasi di layar:** mengajukan tanpa memilih paket menampilkan "Pilih salah satu paket." — `OnboardingJourneyTest.php`
-- [ ] Cara menjalankan dan men-debug (`--debug`, `--headed`) — bagian baru di `docs/architecture/modular-monolith.md` (atau README bila ada bagian testing)
-- [ ] Catat hasil di "Hasil akhir" rencana onboarding — `docs/ai/plan/fase-4/tenant-onboarding-plan.md`
+- [x] Helper bersama (paket, login provider, login pemohon, path tautan email, muat ulang user di guard) — `tests/Browser/Support/onboarding.php`
+- [x] **Alur utama:** daftar → pemberitahuan verifikasi → tautan verifikasi → isi data sekolah, pilih paket → "Menunggu persetujuan" → provider ACC di console → keluar → login pemohon → `/beranda` menampilkan nama sekolah — `tests/Browser/OnboardingJourneyTest.php`
+- [x] **Tolak → ajukan ulang:** provider menolak dengan catatan → pemohon melihat catatan dengan form terisi → memperbaiki → "Ajukan ulang" → menunggu lagi, baris yang sama — file yang sama
+- [x] **Validasi di layar:** mengajukan tanpa memilih paket menampilkan "Pilih salah satu paket." — file yang sama
+- [x] **Undangan provider:** undang dari console → tautan undangan → buat kata sandi → mendarat di onboarding — `tests/Browser/ApplicantInvitationTest.php`
+- [x] **Lupa kata sandi:** minta reset → tautan → kata sandi baru → kata sandi lama ditolak, yang baru diterima — file yang sama
+- [x] Cara menjalankan dan men-debug — skill `.claude/skills/writing-tests/` (menggantikan rencana menulisnya di `docs/architecture/modular-monolith.md`)
+- [x] Catat hasil di "Hasil akhir" rencana onboarding — `docs/ai/plan/fase-4/tenant-onboarding-plan.md`
 
 **Selesai bila:** semua skenario lulus di browser dan setiap halaman yang dilewati bebas error JS. Bukti: `composer test:e2e` → lulus; `php artisan test --compact` → tetap lulus.
 
@@ -162,6 +162,8 @@ Legenda: ⬜ belum · 🟡 berjalan · ✅ selesai. Berhenti di antara tahap dan
 Diisi selama eksekusi; dokumen ini hidup.
 
 ### Log keputusan
+- 2026-10-02 — Panduan menjalankan dan men-debug tes ditulis sebagai skill `writing-tests` (permintaan user), bukan sebagai bagian di dokumen arsitektur.
+- 2026-10-02 — Di tes browser, pemohon dan provider login lewat form sungguhan (`applicantSignsIn()`, `providerSignsIn()`), bukan `actingAs()`: `actingAs()` menjadikan guard-nya guard default dan mengaburkan pemisahan guard.
 - 2026-10-02 — Port suite Playwright 8989, bukan 8123: 8123 dipakai server dev yang sedang berjalan di mesin ini.
 - 2026-10-02 — Server dinyalakan langsung (`php -d opcache.enable=0 -S ...` dari `public/`), bukan lewat `php artisan serve`: variabel proses sampai ke aplikasi apa adanya, dan OPcache tidak dipakai bersama server lain (lihat Temuan).
 - 2026-10-02 — Satu worker dan spec berurutan: database E2E dan server PHP (satu thread di Windows) dipakai bersama, dan pengajuan contoh hanya bisa disetujui sekali per seed.
@@ -173,7 +175,12 @@ Diisi selama eksekusi; dokumen ini hidup.
 - 2026-10-02 — `composer require` memicu hook `boost:update` yang menulis ulang file pedoman Boost (`AGENTS.md`, `boost.json`, skill). Perubahan itu dikembalikan karena tidak termasuk pekerjaan ini.
 
 ### Temuan
-- **Server PHP baru gagal booting dengan OPcache menyala** di mesin ini: `Cannot instantiate interface RecursiveIterator` di `symfony/finder`, yang muncul ke browser sebagai `A facade root has not been set`. Kode yang sama jalan di CLI dan di server dengan `opcache.enable=0`. Dugaan (belum dibuktikan): cache OPcache envkit (`C:/ProgramData/envkit/opcache/file-cache/8.4.25`) dibuat sebelum `sockets` diaktifkan dan tidak cocok lagi. Server dev yang sudah berjalan sejak sebelum perubahan php.ini tidak terpengaruh, **tetapi mungkin terkena saat di-restart**; bila itu terjadi, kosongkan cache OPcache envkit.
+- **Guard menyimpan user yang sudah dimuat, lintas request**, karena server tes satu proses. Setelah tautan verifikasi dibuka, request berikutnya masih melihat pemohon yang belum terverifikasi dan mengalihkannya ke halaman pemberitahuan. Tes memanggil `refreshSignedInUsers()` (`app('auth')->forgetGuards()`) setelah langkah itu. Bukan bug aplikasi: di server sungguhan tiap request memuat ulang user.
+- **`press('Ya, tolak')` tidak menemukan tombolnya** (pencarian teks persis), padahal tombol terlihat. Locator peran berhasil: `click('internal:role=button[name="Ya, tolak"i]')`.
+- **Jangan menjalankan `npm run build` saat tes browser berjalan.** Build menulis ulang `public/build`; tes yang sedang jalan lalu gagal dengan 404 pada file aset (terlihat sebagai "Timeout" plus `NotFoundHttpException` dari server). Ini terjadi saat dua perintah verifikasi saya berjalan bersamaan.
+- **Satu kali proses Pest menggantung saat keluar** (setelah melaporkan 7 tes lulus) dan harus dimatikan. Tidak terulang di 8 run berikutnya; penyebabnya belum diketahui.
+- Pola mengambil tautan dari email (`mailedPath()`) kini terbukti di browser untuk tautan verifikasi (tanda tangan absolut), undangan, dan reset (tanda tangan relatif).
+- **Server PHP baru gagal booting dengan OPcache menyala** di mesin ini: `Cannot instantiate interface RecursiveIterator` di `symfony/finder`, yang muncul ke browser sebagai `A facade root has not been set`. Penyebabnya terbukti (2026-10-02): **memori bersama OPcache** masih dipegang server PHP yang dinyalakan sebelum `sockets` diaktifkan; server baru (dengan `sockets`) menempel ke memori itu dan tabel kelas internalnya tidak cocok. Dengan `opcache.cache_id` sendiri (memori baru) atau `opcache.enable=0` server booting normal; mematikan file cache atau JIT tidak menolong. Perbaikan di mesin dev: hentikan **semua** server PHP lama (`php -S` / `artisan serve`), lalu nyalakan lagi.
 - **Alur onboarding terbukti di browser dan host sungguhan** untuk pertama kali: provider menyetujui di `console.localhost`, pemohon login di `localhost` dengan kata sandi lamanya dan mendarat di `/beranda` sekolahnya; sesi sekolah tidak membuka console.
 - `npm run check` (`vp check`) melaporkan masalah format di ±199 file sebelum pekerjaan ini (termasuk komponen Shared). File baru di `tests/E2E` ikut terdaftar. Tidak diperbaiki di sini karena menyentuh hampir semua file frontend.
 - `migrate:fresh` di `globalSetup` hanya aman karena variabel proses menimpa `.env`. Config yang di-cache akan mengabaikannya, jadi `globalSetup` menolak jalan bila `bootstrap/cache/config.php` ada.
@@ -185,4 +192,16 @@ Diisi selama eksekusi; dokumen ini hidup.
 - Dua `visit()` dalam satu tes membuka dua halaman terpisah; untuk berpindah halaman pakai `navigate()` atau klik tautan.
 
 ### Hasil akhir
-Belum diisi.
+Ketiga tahap selesai (2026-10-02) di branch `feat/tenant-onboarding`.
+
+- `composer test:e2e` — suite Pest Browser, 7 tes: 2 uji asap + 5 skenario onboarding, dengan pemeriksaan database di tiap langkah penting.
+- `composer test:playwright` — suite Playwright, 4 spec terhadap server dan host sungguhan: 3 pintu masuk + alur ACC → login pemohon → `/beranda`.
+- `php artisan test --compact` — tetap 452 tes, tidak memuat tes browser.
+- Skill `writing-tests` mencatat cara menulis dan menjalankan ketiga suite beserta jebakannya.
+
+Yang tersisa / tindak lanjut:
+- Job CI untuk kedua suite (butuh `ext-sockets`, Chromium Playwright, dan aset hasil build).
+- E2E untuk fitur lain (Master Data, billing console) belum ada; suite ini baru mencakup onboarding.
+- Alur SSR tidak tercakup E2E (SSR dimatikan di suite Pest Browser).
+- Proses Pest yang sekali menggantung saat keluar belum ditelusuri.
+- `npm run check` gagal format di ±199 file sejak sebelum pekerjaan ini.

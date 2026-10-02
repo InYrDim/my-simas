@@ -49,7 +49,9 @@ it('lets a provider open the applicant list', function () {
 - Move on with `->navigate('/path')` or by clicking a link. End a page's checks with `assertNoJavaScriptErrors()`.
 - Assert the database as well as the screen — it is the reason to use this suite instead of Playwright.
 
-`tests/Browser/SmokeTest.php` is the working reference.
+`tests/Browser/SmokeTest.php` is the smallest working reference; `tests/Browser/OnboardingJourneyTest.php` shows a full flow across both hosts.
+
+Shared helpers live in `tests/Browser/Support/onboarding.php`: `seedOnboardingPlans()`, `providerSignsIn()`, `applicantSignsIn($email, $password)`, `mailedPath(...)`, `refreshSignedInUsers()`. Sign people in through these (the real forms), not `actingAs()` — `actingAs()` also changes the default guard.
 
 ## Hosts: central and console
 
@@ -81,9 +83,7 @@ Mail::assertQueued(ApplicantVerifyMail::class, function (ApplicantVerifyMail $ma
 $page->navigate((string) preg_replace('#^https?://[^/]+#', '', $url));
 ```
 
-This pattern is proven in the feature tests (`modules/Platform/tests/Feature/ApplicantInviteTest.php`); no browser test uses it yet, so treat the first one as the proof.
-
-The invitation and reset links are signed relative, so the path alone stays valid. The verification link is signed absolute against the request host; the feature tests prove it over HTTP — if it is refused in the browser, that is the cause.
+`mailedPath($mailable, $property)` in `tests/Browser/Support/onboarding.php` does exactly this. The invitation and reset links are signed relative, so the path alone stays valid. The verification link is signed absolute against the request host, which here is the test server itself, so its path works too.
 
 ## Traps
 
@@ -92,7 +92,10 @@ The invitation and reset links are signed relative, so the path alone stays vali
 - **Two `visit()` calls open two separate pages**, each with its own cookies. Use `navigate()` to stay signed in.
 - **A failed `assertSee` reports the page's INITIAL URL** ("initially with the url ..."), not where the browser is now. Look at the screenshot instead.
 - **Console redirects are cross-origin** in this suite (console routes are domain-bound, the browser sits on `127.0.0.1`). `onConsoleHost()` exposes the response headers Inertia needs; a raw JSON page with "must receive a valid Inertia response" means the host was switched some other way.
-- **State leaks between requests** that a real server would not share (the auth guards keep their user). Do not write a test whose result depends on a request being unauthenticated right after another one logged in, unless it logged out through the UI.
+- **A guard keeps the user it loaded, across requests.** After a request changes the signed-in user from the outside (opening the email-verification link), the next request still sees the old model — the applicant is sent back to the verification notice. Call `refreshSignedInUsers()` after such a step. A real server reloads the user on every request, so this is not an application bug.
+- **`press('Teks')` can miss a visible button** (it matches exact text). When it times out on a button you can see in the screenshot, use a role locator: `click('internal:role=button[name="Ya, tolak"i]')`.
+- **Never run `npm run build` while browser tests are running.** The build rewrites `public/build`; a running test then fails with a 404 on an asset file, reported as a timeout plus a `NotFoundHttpException` from the server. One suite at a time.
+- **If the Pest process hangs after printing its result**, kill it; this happened once and did not repeat.
 - **Screenshots** of failures land in `tests/Browser/Screenshots/` (git-ignored). Delete them when done.
 
 ## Debugging

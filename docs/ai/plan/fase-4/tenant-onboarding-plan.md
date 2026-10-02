@@ -223,7 +223,7 @@ Diisi selama eksekusi; dokumen ini hidup.
 Keempat tahap selesai (2026-10-01) di branch `feat/tenant-onboarding`. Alur akhir: daftar atau diundang → verifikasi → isi data sekolah dan pilih paket → provider ACC atau tolak (ajukan ulang) → login dengan email dan password yang sama langsung ke `/beranda` sekolah, trial berjalan pada paket terpilih.
 
 Yang tersisa / tindak lanjut:
-- Alur belum dicoba di browser; verifikasi end-to-end manual di atas belum dijalankan.
+- Alur sudah dijalankan di browser lewat dua suite E2E (2026-10-02, `docs/ai/plan/fase-4/onboarding-e2e-plan.md`): 7 tes Pest Browser dan 4 spec Playwright terhadap host sungguhan, semuanya lulus. Verifikasi manual oleh manusia belum dilakukan.
 - Pesan aturan slug/paket dari `DefaultTenantApplications` masih berbahasa Inggris di form pemohon.
 - Console `Pemohon` menampilkan 200 akun terbaru tanpa paginasi atau pencarian.
 - Akun pemohon yang tidak pernah diverifikasi atau tidak pernah mengajukan tidak dibersihkan otomatis.
