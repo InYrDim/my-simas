@@ -650,6 +650,12 @@ The last module that was a mockup, and the first feature module with a
   contract) creates an active student without a class and without an
   account; Ppdb gates who may ask and keeps the returned id. Core never
   imports Ppdb; Ppdb never imports Core's models.
+- **The registration form is configurable per period.** Admins set each
+  optional-by-nature field to Required, Optional or Off
+  (`ppdb_periods.form_fields`; path, name and gender are fixed because
+  selection and `StudentAdmission` need them). Validation is built from the
+  period, switching a field off keeps old answers, and a new period copies the
+  latest one. No custom fields.
 - **Stand-ins until later.** Document completeness and telling applicants
   the results are interfaces with always-true implementations
   (`DocumentCheck`, `ResultAnnouncer`), the same pattern as Platform's

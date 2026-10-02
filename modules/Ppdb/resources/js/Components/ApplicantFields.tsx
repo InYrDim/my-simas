@@ -20,6 +20,23 @@ export type ApplicantData = {
 
 type Option = { value: string; label: string };
 
+/** What the period's form does with a field: asked and required, asked but optional, or not asked. */
+export type FieldState = 'required' | 'optional' | 'off';
+
+/** The state of each adjustable field, by field name; a field not listed is asked as before. */
+export type FormFields = Partial<Record<keyof ApplicantData, FieldState>>;
+
+/** The form a period has when the school never adjusted it. */
+export const usualFormFields: FormFields = {
+    birth_place: 'optional',
+    birth_date: 'required',
+    nisn: 'optional',
+    origin_school: 'required',
+    address: 'optional',
+    guardian_name: 'required',
+    guardian_phone: 'required',
+};
+
 function Text({
     id,
     label,
@@ -59,7 +76,8 @@ function Text({
  * The fields of an applicant: used to enter one and to correct one. The
  * form that holds the values is the page's; this only draws the fields.
  * An applicant filling in their own form has no wave to choose (the open
- * wave is theirs), so the page leaves `waves` out.
+ * wave is theirs), so the page leaves `waves` out. `fields` is the period's
+ * form: a field it switches off is not drawn.
  */
 export default function ApplicantFields({
     data,
@@ -67,6 +85,7 @@ export default function ApplicantFields({
     onChange,
     waves,
     paths,
+    fields,
     disabled = false,
 }: {
     data: ApplicantData;
@@ -74,8 +93,13 @@ export default function ApplicantFields({
     onChange: (key: keyof ApplicantData, value: string) => void;
     waves?: Option[];
     paths: Option[];
+    fields: FormFields;
     disabled?: boolean;
 }) {
+    const state = (key: keyof ApplicantData): FieldState => fields[key] ?? usualFormFields[key] ?? 'required';
+    const asked = (key: keyof ApplicantData) => state(key) !== 'off';
+    const optional = (key: keyof ApplicantData) => state(key) === 'optional';
+
     return (
         <fieldset disabled={disabled} className="flex flex-col gap-4">
             <div className={waves === undefined ? 'grid gap-4' : 'grid gap-4 sm:grid-cols-2'}>
@@ -122,33 +146,52 @@ export default function ApplicantFields({
                     />
                     {errors.gender !== undefined && <FieldError>{errors.gender}</FieldError>}
                 </Field>
-                <Text id="applicant-nisn" label="NISN" optional value={data.nisn} error={errors.nisn} onChange={(value) => onChange('nisn', value)} />
+                {asked('nisn') && (
+                    <Text id="applicant-nisn" label="NISN" optional={optional('nisn')} value={data.nisn} error={errors.nisn} onChange={(value) => onChange('nisn', value)} />
+                )}
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-                <Text id="applicant-birth-place" label="Tempat lahir" optional value={data.birth_place} error={errors.birth_place} onChange={(value) => onChange('birth_place', value)} />
-                <Text id="applicant-birth-date" label="Tanggal lahir" type="date" value={data.birth_date} error={errors.birth_date} onChange={(value) => onChange('birth_date', value)} />
-            </div>
+            {(asked('birth_place') || asked('birth_date')) && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                    {asked('birth_place') && (
+                        <Text id="applicant-birth-place" label="Tempat lahir" optional={optional('birth_place')} value={data.birth_place} error={errors.birth_place} onChange={(value) => onChange('birth_place', value)} />
+                    )}
+                    {asked('birth_date') && (
+                        <Text id="applicant-birth-date" label="Tanggal lahir" type="date" optional={optional('birth_date')} value={data.birth_date} error={errors.birth_date} onChange={(value) => onChange('birth_date', value)} />
+                    )}
+                </div>
+            )}
 
-            <Text id="applicant-origin" label="Asal sekolah" value={data.origin_school} error={errors.origin_school} onChange={(value) => onChange('origin_school', value)} />
+            {asked('origin_school') && (
+                <Text id="applicant-origin" label="Asal sekolah" optional={optional('origin_school')} value={data.origin_school} error={errors.origin_school} onChange={(value) => onChange('origin_school', value)} />
+            )}
 
-            <Field data-invalid={errors.address !== undefined}>
-                <FieldLabel htmlFor="applicant-address">
-                    Alamat<span className="font-normal text-muted-foreground"> (opsional)</span>
-                </FieldLabel>
-                <Textarea
-                    id="applicant-address"
-                    value={data.address}
-                    onChange={(event) => onChange('address', event.target.value)}
-                    aria-invalid={errors.address !== undefined}
-                />
-                {errors.address !== undefined && <FieldError>{errors.address}</FieldError>}
-            </Field>
+            {asked('address') && (
+                <Field data-invalid={errors.address !== undefined}>
+                    <FieldLabel htmlFor="applicant-address">
+                        Alamat
+                        {optional('address') && <span className="font-normal text-muted-foreground"> (opsional)</span>}
+                    </FieldLabel>
+                    <Textarea
+                        id="applicant-address"
+                        value={data.address}
+                        onChange={(event) => onChange('address', event.target.value)}
+                        aria-invalid={errors.address !== undefined}
+                    />
+                    {errors.address !== undefined && <FieldError>{errors.address}</FieldError>}
+                </Field>
+            )}
 
-            <div className="grid gap-4 sm:grid-cols-2">
-                <Text id="applicant-guardian" label="Nama wali" value={data.guardian_name} error={errors.guardian_name} onChange={(value) => onChange('guardian_name', value)} />
-                <Text id="applicant-phone" label="Telepon wali" value={data.guardian_phone} error={errors.guardian_phone} onChange={(value) => onChange('guardian_phone', value)} />
-            </div>
+            {(asked('guardian_name') || asked('guardian_phone')) && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                    {asked('guardian_name') && (
+                        <Text id="applicant-guardian" label="Nama wali" optional={optional('guardian_name')} value={data.guardian_name} error={errors.guardian_name} onChange={(value) => onChange('guardian_name', value)} />
+                    )}
+                    {asked('guardian_phone') && (
+                        <Text id="applicant-phone" label="Telepon wali" optional={optional('guardian_phone')} value={data.guardian_phone} error={errors.guardian_phone} onChange={(value) => onChange('guardian_phone', value)} />
+                    )}
+                </div>
+            )}
         </fieldset>
     );
 }

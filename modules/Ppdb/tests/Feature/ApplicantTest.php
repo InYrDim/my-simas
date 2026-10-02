@@ -26,30 +26,6 @@ require_once __DIR__.'/Support/helpers.php';
  * find them in the list, correct the data, verify, and cancel.
  */
 
-/**
- * The form fields of an applicant, valid unless overridden.
- *
- * @param  array<string, mixed>  $overrides
- * @return array<string, mixed>
- */
-function applicantForm(AdmissionWave $wave, AdmissionPath $path, array $overrides = []): array
-{
-    return [
-        'wave_id' => $wave->id,
-        'path_id' => $path->id,
-        'name' => 'Nadia Putri Anggraini',
-        'gender' => 'P',
-        'birth_place' => 'Bandung',
-        'birth_date' => '2012-05-04',
-        'nisn' => '0071234567',
-        'origin_school' => 'SMPN 3 Bandung',
-        'address' => 'Jl. Merdeka 10',
-        'guardian_name' => 'Budi Santoso',
-        'guardian_phone' => '081234567890',
-        ...$overrides,
-    ];
-}
-
 it('registers an applicant by hand with the first number, on the school day', function () {
     $tenant = ppdbTenant(slug: 'pendaftar-baru');
     [, $wave, $path] = ppdbSetup($tenant);

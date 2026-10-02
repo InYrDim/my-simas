@@ -10,7 +10,8 @@ use Modules\Ppdb\App\Domain\Models\AdmissionPeriod;
 
 /**
  * Creates or updates a period. A new period gets the usual admission paths
- * (without seats: the school sets the quota). Making a period active closes
+ * (without seats: the school sets the quota) and the registration form of
+ * the school's latest period. Making a period active closes
  * the one that was active, so a school never has two.
  */
 final class SavePeriod
@@ -42,7 +43,13 @@ final class SavePeriod
                 'name' => $data['name'],
                 'entry_year' => $data['entry_year'],
                 'status' => $status,
-            ])->save();
+            ]);
+
+            if ($isNew) {
+                $period->form_fields = AdmissionPeriod::query()->latest('id')->first()?->form_fields;
+            }
+
+            $period->save();
 
             if ($isNew) {
                 foreach (self::DEFAULT_PATHS as $index => $name) {

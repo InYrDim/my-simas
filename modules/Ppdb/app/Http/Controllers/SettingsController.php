@@ -10,15 +10,19 @@ use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Contracts\TenantUrl;
 use Modules\Ppdb\App\Domain\Actions\DeletePath;
 use Modules\Ppdb\App\Domain\Actions\DeleteWave;
+use Modules\Ppdb\App\Domain\Actions\SaveFormFields;
 use Modules\Ppdb\App\Domain\Actions\SavePaths;
 use Modules\Ppdb\App\Domain\Actions\SavePeriod;
 use Modules\Ppdb\App\Domain\Actions\SaveWave;
+use Modules\Ppdb\App\Domain\Enums\FieldRequirement;
 use Modules\Ppdb\App\Domain\Enums\PeriodStatus;
 use Modules\Ppdb\App\Domain\Models\AdmissionPath;
 use Modules\Ppdb\App\Domain\Models\AdmissionPeriod;
 use Modules\Ppdb\App\Domain\Models\AdmissionWave;
 use Modules\Ppdb\App\Domain\Queries\ChosenPeriod;
+use Modules\Ppdb\App\Domain\Support\FormFields;
 use Modules\Ppdb\App\Domain\Support\SchoolDay;
+use Modules\Ppdb\App\Http\Requests\FormFieldsRequest;
 use Modules\Ppdb\App\Http\Requests\PathsRequest;
 use Modules\Ppdb\App\Http\Requests\PeriodRequest;
 use Modules\Ppdb\App\Http\Requests\WaveRequest;
@@ -59,6 +63,20 @@ final class SettingsController
                 fn (PeriodStatus $status): array => ['value' => $status->value, 'label' => $status->label()],
                 PeriodStatus::cases(),
             ),
+            'formFields' => $selected === null ? [] : array_map(
+                fn (string $key, FieldRequirement $requirement): array => [
+                    'key' => $key,
+                    'label' => FormFields::label($key),
+                    'value' => $requirement->value,
+                ],
+                array_keys($selected->formFields()),
+                $selected->formFields(),
+            ),
+            'requirements' => array_map(
+                fn (FieldRequirement $requirement): array => ['value' => $requirement->value, 'label' => $requirement->label()],
+                FieldRequirement::cases(),
+            ),
+            'fixedFields' => FormFields::FIXED_LABELS,
             'school' => [
                 'name' => $tenant->name,
                 'code' => $tenant->id,
@@ -114,6 +132,13 @@ final class SettingsController
         $save->handle($period, $paths);
 
         return back()->with('status', 'Jalur dan kuota disimpan.');
+    }
+
+    public function updateForm(FormFieldsRequest $request, AdmissionPeriod $period, SaveFormFields $save): RedirectResponse
+    {
+        $save->handle($period, $request->fieldsData());
+
+        return back()->with('status', 'Formulir pendaftaran disimpan.');
     }
 
     public function destroyPath(AdmissionPath $path, DeletePath $delete): RedirectResponse

@@ -2,10 +2,14 @@
 
 namespace Modules\Ppdb\App\Http\Requests;
 
+use Modules\Ppdb\App\Domain\Models\AdmissionPeriod;
+use Modules\Ppdb\App\Domain\Models\Applicant;
+
 /**
- * The fields of an applicant, as the committee enters or changes them.
- * Whether the wave and the path belong to the period is the Action's
- * business: it knows the period.
+ * The fields of an applicant, as the committee enters or changes them,
+ * under the form of the applicant's period (the running one for a new
+ * applicant). Whether the wave and the path belong to the period is the
+ * Action's business: it knows the period.
  */
 final class ApplicantRequest extends PpdbFormRequest
 {
@@ -14,7 +18,12 @@ final class ApplicantRequest extends PpdbFormRequest
      */
     public function rules(): array
     {
-        return ['wave_id' => ['required', 'integer'], ...ApplicantFieldRules::rules()];
+        $applicant = $this->route('applicant');
+        $period = $applicant instanceof Applicant
+            ? AdmissionPeriod::query()->find($applicant->period_id)
+            : AdmissionPeriod::active();
+
+        return ['wave_id' => ['required', 'integer'], ...ApplicantFieldRules::rules($period?->formFields())];
     }
 
     /**

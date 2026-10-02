@@ -6,7 +6,7 @@ import { EmptyState, Panel } from '@shared/components/page-parts';
 import { Alert, AlertDescription } from '@shared/components/ui/alert';
 import { Button } from '@shared/components/ui/button';
 
-import ApplicantFields, { type ApplicantData } from '../../Components/ApplicantFields';
+import ApplicantFields, { type ApplicantData, type FormFields } from '../../Components/ApplicantFields';
 import PpdbPage from '../../Components/PpdbPage';
 
 type Option = { value: string; label: string };
@@ -16,10 +16,12 @@ export default function ApplicantForm({
     period,
     waves,
     paths,
+    formFields,
 }: {
     period: { id: number; name: string } | null;
     waves: Option[];
     paths: Option[];
+    formFields: FormFields;
 }) {
     const form = useForm<ApplicantData>({
         wave_id: waves.length === 1 ? waves[0].value : '',
@@ -71,6 +73,7 @@ export default function ApplicantForm({
                         onChange={(key, value) => form.setData(key, value)}
                         waves={waves}
                         paths={paths}
+                        fields={formFields}
                     />
                 </Panel>
                 <div className="mt-6 flex gap-3">

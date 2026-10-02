@@ -9,7 +9,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Platform\App\Contracts\Concerns\BelongsToTenant;
+use Modules\Ppdb\App\Domain\Enums\FieldRequirement;
 use Modules\Ppdb\App\Domain\Enums\PeriodStatus;
+use Modules\Ppdb\App\Domain\Support\FormFields;
 use Modules\Ppdb\Database\Factories\AdmissionPeriodFactory;
 
 /**
@@ -21,10 +23,11 @@ use Modules\Ppdb\Database\Factories\AdmissionPeriodFactory;
  * @property string $name
  * @property int $entry_year the year the new students start
  * @property PeriodStatus $status
+ * @property array<string, string>|null $form_fields requirement by field key; null is the usual form
  * @property CarbonInterface|null $results_published_at
  */
 #[UseFactory(AdmissionPeriodFactory::class)]
-#[Fillable(['name', 'entry_year', 'status', 'results_published_at'])]
+#[Fillable(['name', 'entry_year', 'status', 'form_fields', 'results_published_at'])]
 class AdmissionPeriod extends Model
 {
     /** @use HasFactory<AdmissionPeriodFactory> */
@@ -38,6 +41,16 @@ class AdmissionPeriod extends Model
     public static function active(): ?self
     {
         return self::query()->where('status', PeriodStatus::Active->value)->first();
+    }
+
+    /**
+     * What this period's registration form asks for, by field key.
+     *
+     * @return array<string, FieldRequirement>
+     */
+    public function formFields(): array
+    {
+        return FormFields::resolve($this->form_fields);
     }
 
     /**
@@ -64,6 +77,7 @@ class AdmissionPeriod extends Model
         return [
             'entry_year' => 'integer',
             'status' => PeriodStatus::class,
+            'form_fields' => 'array',
             'results_published_at' => 'datetime',
         ];
     }

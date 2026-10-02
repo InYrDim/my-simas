@@ -18,7 +18,7 @@ interface Applicant {
     id: number;
     number: string;
     name: string;
-    origin: string;
+    origin: string | null;
     pathName: string | null;
     status: string;
     registeredOn: string;
@@ -27,6 +27,7 @@ interface Applicant {
 
 interface ApplicantsProps {
     period: { id: number; name: string } | null;
+    showOrigin: boolean;
     applicants: Applicant[];
     pagination: Pagination;
     filters: { cari: string; jalur: string; status: string };
@@ -36,7 +37,7 @@ interface ApplicantsProps {
 }
 
 /** Pendaftar: every applicant of the period, searchable and filterable. */
-export default function Applicants({ period, applicants, pagination, filters: initial, paths, statuses, can }: ApplicantsProps) {
+export default function Applicants({ period, showOrigin, applicants, pagination, filters: initial, paths, statuses, can }: ApplicantsProps) {
     const url = index.url();
     const { filters, set } = useListFilters(url, initial);
     const filtered = initial.cari !== '' || initial.jalur !== '' || initial.status !== '';
@@ -92,7 +93,7 @@ export default function Applicants({ period, applicants, pagination, filters: in
             {applicants.length === 0 ? (
                 <EmptyState>{filtered ? 'Tidak ada pendaftar yang cocok.' : 'Belum ada pendaftar.'}</EmptyState>
             ) : (
-                <DataTable head={['No. daftar', 'Nama', 'Asal sekolah', 'Jalur', 'Tanggal', 'Status']}>
+                <DataTable head={['No. daftar', 'Nama', ...(showOrigin ? ['Asal sekolah'] : []), 'Jalur', 'Tanggal', 'Status']}>
                     {applicants.map((applicant) => {
                         const status = statusOf(applicant.status);
 
@@ -104,7 +105,7 @@ export default function Applicants({ period, applicants, pagination, filters: in
                                         {applicant.name}
                                     </Link>
                                 </TableCell>
-                                <TableCell className="text-muted-foreground">{applicant.origin}</TableCell>
+                                {showOrigin && <TableCell className="text-muted-foreground">{applicant.origin ?? '—'}</TableCell>}
                                 <TableCell>{applicant.pathName ?? '—'}</TableCell>
                                 <TableCell>{applicant.registeredOn}</TableCell>
                                 <TableCell>

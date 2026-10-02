@@ -28,12 +28,12 @@ use Modules\Ppdb\Database\Factories\ApplicantFactory;
  * @property string $name
  * @property string $gender L|P
  * @property string|null $birth_place
- * @property string $birth_date Y-m-d
+ * @property string|null $birth_date Y-m-d; empty when the period does not ask for it
  * @property string|null $nisn
- * @property string $origin_school
+ * @property string|null $origin_school empty when the period does not ask for it
  * @property string|null $address
- * @property string $guardian_name
- * @property string $guardian_phone
+ * @property string|null $guardian_name empty when the period does not ask for it
+ * @property string|null $guardian_phone empty when the period does not ask for it
  * @property ApplicantSource $source
  * @property string $registered_on Y-m-d
  * @property ApplicantStatus $status

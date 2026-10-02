@@ -17,6 +17,7 @@ use Modules\Ppdb\App\Domain\Models\AdmissionPeriod;
 use Modules\Ppdb\App\Domain\Models\AdmissionWave;
 use Modules\Ppdb\App\Domain\Models\Applicant;
 use Modules\Ppdb\App\Domain\Models\PpdbAccount;
+use Modules\Ppdb\App\Domain\Support\FormFields;
 use Modules\Ppdb\App\Domain\Support\SchoolDay;
 use Modules\Ppdb\App\Http\Requests\Account\ApplicationRequest;
 
@@ -60,6 +61,7 @@ final class ApplicationController
             return Inertia::render('Ppdb/Account/Form', [
                 'period' => $period->name,
                 'paths' => $period->paths->map(fn (AdmissionPath $path): array => ['value' => (string) $path->id, 'label' => $path->name])->values()->all(),
+                'formFields' => FormFields::values($period->formFields()),
                 'applicant' => $application === null ? null : [
                     'pathId' => (string) $application->path_id,
                     'name' => $application->name,

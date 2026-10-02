@@ -14,6 +14,7 @@ use Modules\Ppdb\App\Domain\Models\AdmissionWave;
 use Modules\Ppdb\App\Domain\Models\Applicant;
 use Modules\Ppdb\App\Domain\Models\PpdbAccount;
 use Modules\Ppdb\App\Infrastructure\Mail\AccountVerificationMail;
+use Modules\Ppdb\Database\Factories\PpdbAccountFactory;
 
 require_once __DIR__.'/Support/school.php';
 require_once __DIR__.'/Support/onboarding.php';
@@ -195,6 +196,62 @@ it('takes an applicant from a school link to the announced result and a place as
     $applicant->navigate('/calon-siswa')
         ->assertSee('Anda sudah melakukan daftar ulang.')
         ->assertNoJavaScriptErrors();
+});
+
+it('asks an applicant only the fields the admin kept on the form', function () {
+    [$tenant, $adminEmail] = ppdbSchoolWithAdmin();
+    PpdbAccountFactory::new()->joined($tenant->id)->create(['email' => 'siti@contoh.test']);
+    onCentralHost();
+
+    // --- The admin switches NISN off and makes the origin school optional
+    $staff = visit('/login');
+
+    $staff->fill('school', $tenant->id)
+        ->fill('login', $adminEmail)
+        ->fill('password', 'password')
+        ->press('Masuk')
+        ->assertPathIs('/beranda');
+
+    $staff->navigate('/ppdb/pengaturan')
+        ->assertSee('Formulir pendaftaran')
+        ->click('internal:role=combobox[name="NISN"i]')
+        ->click('internal:role=option[name="Tidak dipakai"i]')
+        ->click('internal:role=combobox[name="Asal sekolah"i]')
+        ->click('internal:role=option[name="Opsional"i]')
+        ->press('Simpan formulir')
+        ->assertSee('Formulir pendaftaran disimpan.')
+        ->assertNoJavaScriptErrors();
+
+    // --- The applicant's form follows: no NISN, and the form is sent without the origin school
+    $applicant = visit('/calon-siswa/masuk');
+
+    $applicant->fill('email', 'siti@contoh.test')
+        ->fill('password', 'password')
+        ->press('Masuk')
+        ->assertPathIs('/calon-siswa');
+
+    $applicant->navigate('/calon-siswa/formulir')
+        ->assertDontSee('NISN')
+        ->assertSee('Asal sekolah')
+        ->assertSee('(opsional)')
+        ->fill('#applicant-name', 'Nadia Putri Anggraini')
+        ->click('internal:role=combobox[name="Jalur"i]')
+        ->click('internal:role=option[name="Zonasi"i]')
+        ->click('internal:role=combobox[name="Jenis kelamin"i]')
+        ->click('internal:role=option[name="Perempuan"i]')
+        ->fill('#applicant-birth-date', '2012-05-04')
+        ->fill('#applicant-guardian', 'Budi Santoso')
+        ->fill('#applicant-phone', '081234567890')
+        ->press('Kirim pendaftaran')
+        ->assertPathIs('/calon-siswa')
+        ->assertSee('Pendaftaran terkirim')
+        ->assertNoJavaScriptErrors();
+
+    $registration = inTenant($tenant, fn () => Applicant::query()->sole());
+
+    expect($registration->nisn)->toBeNull()
+        ->and($registration->origin_school)->toBeNull()
+        ->and($registration->name)->toBe('Nadia Putri Anggraini');
 });
 
 it('refuses a code that is not a school with PPDB, in the words every refusal uses', function () {

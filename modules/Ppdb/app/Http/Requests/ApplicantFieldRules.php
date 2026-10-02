@@ -3,30 +3,28 @@
 namespace Modules\Ppdb\App\Http\Requests;
 
 use Illuminate\Validation\Rule;
+use Modules\Ppdb\App\Domain\Enums\FieldRequirement;
+use Modules\Ppdb\App\Domain\Support\FormFields;
 
 /**
  * The rules and names of an applicant's own fields, shared by the
  * committee's form and the applicant's own form (which has no wave: the
- * wave open today is the applicant's).
+ * wave open today is the applicant's). Which of the adjustable fields are
+ * asked, and whether they are required, is the period's choice.
  */
 final class ApplicantFieldRules
 {
     /**
+     * @param  array<string, FieldRequirement>|null  $fields  the period's form; the usual one when there is no period
      * @return array<string, mixed>
      */
-    public static function rules(): array
+    public static function rules(?array $fields = null): array
     {
         return [
             'path_id' => ['required', 'integer'],
             'name' => ['required', 'string', 'max:255'],
             'gender' => ['required', Rule::in(['L', 'P'])],
-            'birth_place' => ['nullable', 'string', 'max:100'],
-            'birth_date' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
-            'nisn' => ['nullable', 'string', 'max:32'],
-            'origin_school' => ['required', 'string', 'max:255'],
-            'address' => ['nullable', 'string', 'max:500'],
-            'guardian_name' => ['required', 'string', 'max:255'],
-            'guardian_phone' => ['required', 'string', 'max:32'],
+            ...FormFields::rules($fields ?? FormFields::defaults()),
         ];
     }
 
@@ -35,19 +33,18 @@ final class ApplicantFieldRules
      */
     public static function attributes(): array
     {
-        return [
+        $names = [
             'wave_id' => 'Gelombang',
             'path_id' => 'Jalur',
             'name' => 'Nama lengkap',
             'gender' => 'Jenis kelamin',
-            'birth_place' => 'Tempat lahir',
-            'birth_date' => 'Tanggal lahir',
-            'nisn' => 'NISN',
-            'origin_school' => 'Asal sekolah',
-            'address' => 'Alamat',
-            'guardian_name' => 'Nama wali',
-            'guardian_phone' => 'Telepon wali',
         ];
+
+        foreach (FormFields::keys() as $key) {
+            $names[$key] = FormFields::label($key);
+        }
+
+        return $names;
     }
 
     /**

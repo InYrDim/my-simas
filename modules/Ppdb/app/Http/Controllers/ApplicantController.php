@@ -16,11 +16,13 @@ use Modules\Ppdb\App\Domain\Actions\UpdateApplicant;
 use Modules\Ppdb\App\Domain\Enums\ApplicantSource;
 use Modules\Ppdb\App\Domain\Enums\ApplicantStatus;
 use Modules\Ppdb\App\Domain\Enums\Decision;
+use Modules\Ppdb\App\Domain\Enums\FieldRequirement;
 use Modules\Ppdb\App\Domain\Models\AdmissionPath;
 use Modules\Ppdb\App\Domain\Models\AdmissionPeriod;
 use Modules\Ppdb\App\Domain\Models\AdmissionWave;
 use Modules\Ppdb\App\Domain\Models\Applicant;
 use Modules\Ppdb\App\Domain\Queries\ChosenPeriod;
+use Modules\Ppdb\App\Domain\Support\FormFields;
 use Modules\Ppdb\App\Domain\Support\SchoolDay;
 use Modules\Ppdb\App\Http\Requests\ApplicantRequest;
 
@@ -55,6 +57,7 @@ final class ApplicantController
 
         return Inertia::render('Ppdb/Applicants', [
             'period' => $period === null ? null : ['id' => $period->id, 'name' => $period->name],
+            'showOrigin' => $period === null || $period->formFields()['origin_school'] !== FieldRequirement::Off,
             'applicants' => $paginator === null ? [] : collect($paginator->items())->map(fn (Applicant $applicant): array => [
                 'id' => $applicant->id,
                 'number' => $applicant->number,
@@ -84,6 +87,7 @@ final class ApplicantController
             'period' => $period === null ? null : ['id' => $period->id, 'name' => $period->name],
             'waves' => $period === null ? [] : $this->waveOptions($period, $day),
             'paths' => $period === null ? [] : $this->pathOptions($period),
+            'formFields' => FormFields::values($period === null ? FormFields::defaults() : $period->formFields()),
         ]);
     }
 
@@ -141,6 +145,7 @@ final class ApplicantController
             'period' => ['id' => $period->id, 'name' => $period->name],
             'waves' => $this->waveOptions($period, $day),
             'paths' => $this->pathOptions($period),
+            'formFields' => FormFields::values($period->formFields()),
             'statuses' => array_map(
                 fn (ApplicantStatus $item): array => ['value' => $item->value, 'label' => $item->label()],
                 ApplicantStatus::cases(),

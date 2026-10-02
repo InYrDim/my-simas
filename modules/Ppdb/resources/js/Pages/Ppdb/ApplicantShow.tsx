@@ -12,7 +12,7 @@ import { Field, FieldError, FieldLabel } from '@shared/components/ui/field';
 import { Input } from '@shared/components/ui/input';
 import { Textarea } from '@shared/components/ui/textarea';
 
-import ApplicantFields, { type ApplicantData } from '../../Components/ApplicantFields';
+import ApplicantFields, { type ApplicantData, type FormFields } from '../../Components/ApplicantFields';
 import ConfirmAction from '../../Components/ConfirmAction';
 import PpdbPage from '../../Components/PpdbPage';
 import { statusOf } from '../../Components/status';
@@ -26,12 +26,12 @@ interface ApplicantProps {
         name: string;
         gender: string;
         birthPlace: string | null;
-        birthDate: string;
+        birthDate: string | null;
         nisn: string | null;
-        originSchool: string;
+        originSchool: string | null;
         address: string | null;
-        guardianName: string;
-        guardianPhone: string;
+        guardianName: string | null;
+        guardianPhone: string | null;
         waveId: number;
         waveName: string | null;
         pathId: number;
@@ -50,44 +50,58 @@ interface ApplicantProps {
     period: { id: number; name: string };
     waves: Option[];
     paths: Option[];
+    formFields: FormFields;
     statuses: Option[];
     can: { manage: boolean; cancel: boolean; enroll: boolean };
 }
 
 /** The data of one applicant, to read or correct. */
-function DataPanel({ applicant, waves, paths, editable }: Pick<ApplicantProps, 'applicant' | 'waves' | 'paths'> & { editable: boolean }) {
+function DataPanel({
+    applicant,
+    waves,
+    paths,
+    formFields,
+    editable,
+}: Pick<ApplicantProps, 'applicant' | 'waves' | 'paths' | 'formFields'> & { editable: boolean }) {
     const form = useForm<ApplicantData>({
         wave_id: String(applicant.waveId),
         path_id: String(applicant.pathId),
         name: applicant.name,
         gender: applicant.gender,
         birth_place: applicant.birthPlace ?? '',
-        birth_date: applicant.birthDate,
+        birth_date: applicant.birthDate ?? '',
         nisn: applicant.nisn ?? '',
-        origin_school: applicant.originSchool,
+        origin_school: applicant.originSchool ?? '',
         address: applicant.address ?? '',
-        guardian_name: applicant.guardianName,
-        guardian_phone: applicant.guardianPhone,
+        guardian_name: applicant.guardianName ?? '',
+        guardian_phone: applicant.guardianPhone ?? '',
     });
     const errors: Partial<Record<string, string>> = form.errors;
 
     if (!editable) {
+        // A field the period does not ask is left out, unless this applicant
+        // already has an answer (from before it was switched off).
+        const rows: [string, string][] = [
+            ['Nama lengkap', applicant.name],
+            ['Jenis kelamin', applicant.gender === 'L' ? 'Laki-laki' : 'Perempuan'],
+        ];
+        const add = (key: keyof ApplicantData, label: string, value: string | null) => {
+            if ((formFields[key] ?? 'required') !== 'off' || (value !== null && value !== '')) {
+                rows.push([label, value === null || value === '' ? '—' : value]);
+            }
+        };
+
+        add('birth_date', 'Tempat, tanggal lahir', [applicant.birthPlace, applicant.birthDate].filter(Boolean).join(', '));
+        add('nisn', 'NISN', applicant.nisn);
+        add('origin_school', 'Asal sekolah', applicant.originSchool);
+        add('address', 'Alamat', applicant.address);
+        add('guardian_name', 'Nama wali', applicant.guardianName);
+        add('guardian_phone', 'Telepon wali', applicant.guardianPhone);
+        rows.push(['Gelombang', applicant.waveName ?? '—'], ['Jalur', applicant.pathName ?? '—']);
+
         return (
             <Panel title="Data pendaftar">
-                <DefinitionList
-                    rows={[
-                        ['Nama lengkap', applicant.name],
-                        ['Jenis kelamin', applicant.gender === 'L' ? 'Laki-laki' : 'Perempuan'],
-                        ['Tempat, tanggal lahir', [applicant.birthPlace, applicant.birthDate].filter(Boolean).join(', ')],
-                        ['NISN', applicant.nisn ?? '—'],
-                        ['Asal sekolah', applicant.originSchool],
-                        ['Alamat', applicant.address ?? '—'],
-                        ['Nama wali', applicant.guardianName],
-                        ['Telepon wali', applicant.guardianPhone],
-                        ['Gelombang', applicant.waveName ?? '—'],
-                        ['Jalur', applicant.pathName ?? '—'],
-                    ]}
-                />
+                <DefinitionList rows={rows} />
             </Panel>
         );
     }
@@ -110,6 +124,7 @@ function DataPanel({ applicant, waves, paths, editable }: Pick<ApplicantProps, '
                     onChange={(key, value) => form.setData(key, value)}
                     waves={waves}
                     paths={paths}
+                    fields={formFields}
                 />
                 <div>
                     <Button type="submit" disabled={form.processing || !form.isDirty}>
@@ -212,7 +227,7 @@ function EnrollPanel({ applicant }: Pick<ApplicantProps, 'applicant'>) {
 }
 
 /** Pendaftar: one applicant's page — data, verification, the selection result and re-registration. */
-export default function ApplicantShow({ applicant, period, waves, paths, statuses, can }: ApplicantProps) {
+export default function ApplicantShow({ applicant, period, waves, paths, formFields, statuses, can }: ApplicantProps) {
     const page = usePage<{ errors: Record<string, string> }>();
     const cancelError = page.props.errors.applicant;
     const status = statusOf(applicant.decision === 'pending' ? applicant.status : applicant.decision);
@@ -248,7 +263,7 @@ export default function ApplicantShow({ applicant, period, waves, paths, statuse
                     </Alert>
                 )}
 
-                <DataPanel applicant={applicant} waves={waves} paths={paths} editable={editable} />
+                <DataPanel applicant={applicant} waves={waves} paths={paths} formFields={formFields} editable={editable} />
 
                 {editable && <VerificationPanel applicant={applicant} statuses={statuses} />}
 

@@ -112,6 +112,7 @@ Route::middleware('web')->group(function (): void {
                 Route::put('pengaturan/gelombang/{wave}', 'updateWave')->name('settings.waves.update');
                 Route::delete('pengaturan/gelombang/{wave}', 'destroyWave')->name('settings.waves.destroy');
                 Route::put('pengaturan/periode/{period}/jalur', 'updatePaths')->name('settings.paths.update');
+                Route::put('pengaturan/periode/{period}/formulir', 'updateForm')->name('settings.form.update');
                 Route::delete('pengaturan/jalur/{path}', 'destroyPath')->name('settings.paths.destroy');
             });
         });

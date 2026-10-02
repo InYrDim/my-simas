@@ -6,7 +6,7 @@ import { Panel } from '@shared/components/page-parts';
 import { Alert, AlertDescription } from '@shared/components/ui/alert';
 import { Button } from '@shared/components/ui/button';
 
-import ApplicantFields, { type ApplicantData } from '../../../Components/ApplicantFields';
+import ApplicantFields, { type ApplicantData, type FormFields } from '../../../Components/ApplicantFields';
 import PortalPage from '../../../Components/PortalPage';
 
 type Option = { value: string; label: string };
@@ -14,17 +14,18 @@ type Option = { value: string; label: string };
 interface FormProps {
     period: string;
     paths: Option[];
+    formFields: FormFields;
     applicant: {
         pathId: string;
         name: string;
         gender: string;
         birthPlace: string | null;
-        birthDate: string;
+        birthDate: string | null;
         nisn: string | null;
-        originSchool: string;
+        originSchool: string | null;
         address: string | null;
-        guardianName: string;
-        guardianPhone: string;
+        guardianName: string | null;
+        guardianPhone: string | null;
         note: string | null;
     } | null;
     defaultName: string;
@@ -34,7 +35,7 @@ interface FormProps {
  * The applicant's registration form: filled once, and again only when the
  * committee asks for a correction (then the committee's note shows on top).
  */
-export default function Form({ period, paths, applicant, defaultName }: FormProps) {
+export default function Form({ period, paths, formFields, applicant, defaultName }: FormProps) {
     const form = useForm<ApplicantData>({
         wave_id: '',
         path_id: applicant?.pathId ?? '',
@@ -84,7 +85,7 @@ export default function Form({ period, paths, applicant, defaultName }: FormProp
                 )}
 
                 <Panel>
-                    <ApplicantFields data={form.data} errors={errors} onChange={(key, value) => form.setData(key, value)} paths={paths} />
+                    <ApplicantFields data={form.data} errors={errors} onChange={(key, value) => form.setData(key, value)} paths={paths} fields={formFields} />
                 </Panel>
 
                 <div className="flex gap-3">

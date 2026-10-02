@@ -20,7 +20,8 @@
   reports — admin, staf-tu), `ppdb.applicants.manage` (enter, change,
   verify, cancel, re-register — admin, staf-tu), `ppdb.selection.manage`
   (scores, decisions, announcing — admin) and `ppdb.settings.manage`
-  (periods, waves, paths and quota, the school's code and link — admin).
+  (periods, waves, paths and quota, the registration form's fields, the
+  school's code and link — admin).
   An applicant's account has no permissions: it is not a school user.
 
 ## Public interface (Contracts/)
@@ -96,6 +97,20 @@ Never another feature module (Attendance), not even via its Public surface.
   Only while the committee asks for a correction ("Perlu perbaikan") the
   applicant may change the data (`UpdateOwnApplication`); saving sends it
   back to "Menunggu verifikasi".
+- **The form is the school's to adjust, per period** (`ppdb_periods.form_fields`,
+  JSON, empty = the usual form). The path, name and gender are always asked
+  (selection and `StudentAdmission` need them); birth place, birth date, NISN,
+  origin school, address and the guardian's name and phone are each Required,
+  Optional or Off (`Domain/Support/FormFields`, `FieldRequirement`;
+  `SaveFormFields`; Settings › Formulir pendaftaran). The rules are built from
+  the period's form: the committee's request uses the applicant's period (the
+  running one for a new applicant); the applicant's request looks the period up
+  inside the school the account joined (a correction follows the period the
+  registration is in, not the running one). A field that is Off has no rule,
+  so a value sent for it is dropped; switching a field off never deletes what
+  applicants already gave (the detail page still shows it). A new period
+  copies the form of the school's latest period. The columns of those fields
+  are nullable for that reason.
 - **The committee** enters walk-ins without an account (`source = staff`,
   any wave, `account_id` empty), verifies (`VerifyApplicant`; "Perlu
   perbaikan" needs a note the applicant reads), changes data (the path is
