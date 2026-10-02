@@ -180,3 +180,30 @@ class ProbeTenantEvent
         $this->at = now()->toDateTimeString();
     }
 }
+
+it('gives a context set by id the tenant itself, not only its id', function () {
+    $a = tenantForQueues('sekolah-a');
+    $context = app(TenantContext::class);
+
+    $context->set($a);
+
+    expect($context->currentOrFail()->id)->toBe($a)
+        ->and($context->currentOrFail()->slug)->toBe('sekolah-a');
+
+    $context->forget();
+
+    expect($context->current())->toBeNull();
+});
+
+it('never answers a nested run with the outer tenant', function () {
+    $a = tenantForQueues('sekolah-a');
+    $b = tenantForQueues('sekolah-b');
+    $context = app(TenantContext::class);
+
+    $seen = $context->run($a, fn () => [
+        $context->run($b, fn () => $context->currentOrFail()->slug),
+        $context->currentOrFail()->slug,
+    ]);
+
+    expect($seen)->toBe(['sekolah-b', 'sekolah-a']);
+});

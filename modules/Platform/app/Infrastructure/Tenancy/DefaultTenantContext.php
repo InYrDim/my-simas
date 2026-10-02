@@ -49,6 +49,14 @@ final class DefaultTenantContext implements TenantContext
     public function set(string $tenantId): void
     {
         $this->tenantId = $tenantId;
+
+        // Keep the DTO in step with the id: a context set by id (queue
+        // worker, CLI, a nested run) must answer current() too, and never
+        // with another tenant's data.
+        if ($this->tenant?->id !== $tenantId) {
+            $this->tenant = $this->bridge->hydrateTenant($tenantId);
+        }
+
         $this->bridge->onTenantSet($tenantId);
     }
 
@@ -66,12 +74,6 @@ final class DefaultTenantContext implements TenantContext
 
         try {
             $this->set($tenantId);
-
-            if ($this->tenant === null) {
-                // set() via bridge does not hydrate the DTO when called
-                // directly (tests, CLI); hydrate now, once.
-                $this->tenant = $this->bridge->hydrateTenant($tenantId);
-            }
 
             return $callback();
         } finally {
