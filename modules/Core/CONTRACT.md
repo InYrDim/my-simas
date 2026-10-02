@@ -95,12 +95,16 @@ replaces its "Segera hadir" placeholder.
 
 ## Surfaces
 
-- Master data, split into three sidebar entries:
+- Master data, split into four sidebar entries:
   - **Master Data** (`/master/*`, database-backed; reads need
     `core.master.view`, writes `core.master.manage`) — base records that
     must exist: profil
-    sekolah, tahun ajaran, tingkat & jurusan, kelas, mata pelajaran, guru
-    & tendik, siswa, ruangan, ekstrakurikuler.
+    sekolah, tahun ajaran, tingkat & jurusan, kelas, mata pelajaran,
+    ruangan, ekstrakurikuler.
+  - **Warga Sekolah** — the people: siswa and guru & tendik, with their
+    login accounts. A sidebar entry of its own; the pages, URLs
+    (`/master/siswa`, `/master/guru`) and permissions are those of Master
+    Data.
   - **Akademik** (`/akademik/*`, database-backed; reads need
     `core.academic.view`, writes `core.academic.manage`) — academic
     management on top of those records: wali kelas

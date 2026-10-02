@@ -117,10 +117,20 @@ class CoreServiceProvider extends ServiceProvider
                     ['label' => 'Tingkat & Jurusan', 'route' => 'core.master.grades'],
                     ['label' => 'Kelas', 'route' => 'core.master.classes'],
                     ['label' => 'Mata Pelajaran', 'route' => 'core.master.subjects'],
-                    ['label' => 'Guru & Tendik', 'route' => 'core.master.teachers'],
-                    ['label' => 'Siswa', 'route' => 'core.master.students'],
                     ['label' => 'Ruangan', 'route' => 'core.master.rooms'],
                     ['label' => 'Ekstrakurikuler', 'route' => 'core.master.extracurriculars'],
+                ],
+            ],
+            [
+                'label' => 'Warga Sekolah',
+                'icon' => 'users-round',
+                'route' => 'core.master.students',
+                'permission' => 'core.master.view',
+                'group' => 'Data Induk',
+                'order' => 25,
+                'children' => [
+                    ['label' => 'Siswa', 'route' => 'core.master.students'],
+                    ['label' => 'Guru & Tendik', 'route' => 'core.master.teachers'],
                 ],
             ],
             [

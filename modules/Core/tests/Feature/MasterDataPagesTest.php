@@ -89,20 +89,24 @@ it('shapes the pages still on mock data by the schools saved jenjang', function 
     );
 });
 
-it('splits the sidebar into base data, academic management and import', function () {
+it('splits the sidebar into base data, school members, academic management and import', function () {
     $slug = masterTenant();
 
     get(school($slug, '/beranda'))->assertInertia(fn (Assert $page) => $page
         ->where('tenantNav.1.label', 'Master Data')
-        ->has('tenantNav.1.children', 10)
+        ->has('tenantNav.1.children', 8)
         ->where('tenantNav.1.children.0.href', '/master/sekolah')
-        ->where('tenantNav.2.label', 'Akademik')
+        ->where('tenantNav.2.label', 'Warga Sekolah')
         ->where('tenantNav.2.children', fn ($children) => collect($children)->pluck('href')->all() === [
+            '/master/siswa', '/master/guru',
+        ])
+        ->where('tenantNav.3.label', 'Akademik')
+        ->where('tenantNav.3.children', fn ($children) => collect($children)->pluck('href')->all() === [
             '/akademik/penempatan', '/akademik/pengampu', '/akademik/wali-kelas',
             '/akademik/jam-pelajaran', '/akademik/kalender',
         ])
-        ->where('tenantNav.3.label', 'Impor Data')
-        ->where('tenantNav.3.href', '/kelola/impor')
-        ->has('tenantNav.3.children', 0)
+        ->where('tenantNav.4.label', 'Impor Data')
+        ->where('tenantNav.4.href', '/kelola/impor')
+        ->has('tenantNav.4.children', 0)
     );
 });
