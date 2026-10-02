@@ -53,6 +53,8 @@ it('lets a provider open the applicant list', function () {
 
 Shared helpers live in `tests/Browser/Support/onboarding.php`: `seedOnboardingPlans()`, `providerSignsIn()`, `applicantSignsIn($email, $password)`, `mailedPath(...)`, `refreshSignedInUsers()`. Sign people in through these (the real forms), not `actingAs()` — `actingAs()` also changes the default guard.
 
+School-side helpers live in `tests/Browser/Support/school.php`: `schoolMemberSignsIn($role)` (creates a school and a member, signs in through the real login form, returns `[$page, $tenant]`) and `inTenant($tenant, fn)` (tenant context for factories and assertions). `tests/Browser/AcademicManagementTest.php` shows school pages: Radix selects are `internal:role=combobox[name="..."i]` then `internal:role=option[name="..."i]`, checkboxes `internal:role=checkbox[...]`, and `[name="Simpan"s]` (exact) tells a dialog's button from similarly named ones.
+
 ## Hosts: central and console
 
 The browser always talks to `127.0.0.1`. Which host the application sees is decided server-side from the plugin's configured host, per request.
