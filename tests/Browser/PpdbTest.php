@@ -295,3 +295,58 @@ it('refuses a code that is not a school with PPDB, in the words every refusal us
 
     expect(PpdbAccount::query()->sole()->tenant_id)->toBeNull();
 });
+
+it('keeps the settings page a summary and changes it through dialogs', function () {
+    [$tenant, $adminEmail] = ppdbSchoolWithAdmin();
+    onCentralHost();
+
+    $staff = visit('/login');
+
+    $staff->fill('school', $tenant->id)
+        ->fill('login', $adminEmail)
+        ->fill('password', 'password')
+        ->press('Masuk')
+        ->assertPathIs('/beranda');
+
+    // The page reads as text: no form is open until one is asked for.
+    $staff->navigate('/ppdb/pengaturan')
+        ->assertSee('PPDB Uji')
+        ->assertSee('Gelombang Uji')
+        ->assertSee('Zonasi')
+        ->assertSee('Total 2 kursi.')
+        ->assertDontSee('Nama periode')
+        ->assertDontSee('Nama gelombang')
+        ->assertNoJavaScriptErrors();
+
+    // A wave is added in a dialog and lands in the table.
+    $opens = now($tenant->timezone)->addDays(60)->toDateString();
+    $closes = now($tenant->timezone)->addDays(90)->toDateString();
+
+    $staff->press('Tambah gelombang')
+        ->assertSee('Gelombang baru')
+        ->fill('#wave-name', 'Gelombang Dua')
+        ->fill('#wave-opens', $opens)
+        ->fill('#wave-closes', $closes)
+        ->press('Simpan gelombang')
+        ->assertSee('Gelombang Dua')
+        ->assertDontSee('Nama gelombang')
+        ->assertNoJavaScriptErrors();
+
+    // The seats are changed in a dialog and the total follows.
+    $staff->press('Atur jalur dan kuota')
+        ->fill('input[aria-label="Kuota jalur 1"]', '5')
+        ->press('Simpan jalur dan kuota')
+        ->assertSee('Total 5 kursi.')
+        ->assertNoJavaScriptErrors();
+
+    // The period is renamed in a dialog.
+    $staff->press('Ubah periode')
+        ->fill('#period-name-put', 'PPDB Revisi')
+        ->press('Simpan periode')
+        ->assertSee('PPDB Revisi')
+        ->assertNoJavaScriptErrors();
+
+    expect(inTenant($tenant, fn () => AdmissionWave::query()->where('name', 'Gelombang Dua')->exists()))->toBeTrue()
+        ->and(inTenant($tenant, fn () => AdmissionPath::query()->sole()->quota))->toBe(5)
+        ->and(inTenant($tenant, fn () => AdmissionPeriod::query()->sole()->name))->toBe('PPDB Revisi');
+});

@@ -1,6 +1,7 @@
 import { router, useForm, usePage } from '@inertiajs/react';
 import { CheckIcon, CopyIcon } from 'lucide-react';
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 
 import {
     destroyPath,
@@ -31,6 +32,7 @@ import { Input } from '@shared/components/ui/input';
 import { TableCell, TableRow } from '@shared/components/ui/table';
 
 import ConfirmAction from '../../Components/ConfirmAction';
+import FormModal from '../../Components/FormModal';
 import PpdbPage from '../../Components/PpdbPage';
 import { statusOf } from '../../Components/status';
 
@@ -70,14 +72,12 @@ interface SettingsProps {
 
 type FormErrors = Partial<Record<string, string>>;
 
-/** A read-only value with a button that copies it. */
-function CopyField({
-    id,
+/** A read-only value as plain text, with a button that copies it. */
+function CopyRow({
     label,
     value,
     hint,
 }: {
-    id: string;
     label: string;
     value: string;
     hint?: string;
@@ -95,28 +95,30 @@ function CopyField({
     }
 
     return (
-        <Field>
-            <FieldLabel htmlFor={id}>{label}</FieldLabel>
-            <div className="flex gap-2">
-                <Input
-                    id={id}
-                    readOnly
-                    value={value}
-                    className="font-mono text-xs"
-                    onFocus={(event) => event.target.select()}
-                />
-                <Button
-                    type="button"
-                    variant="outline"
-                    onClick={copy}
-                    aria-label={`Salin ${label.toLowerCase()}`}
-                >
-                    {copied ? <CheckIcon /> : <CopyIcon />}
-                    {copied ? 'Tersalin' : 'Salin'}
-                </Button>
+        <div className="flex items-center justify-between gap-4 border-b border-border py-3 last:border-b-0">
+            <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">{label}</p>
+                <p className="font-mono text-xs break-all text-foreground">
+                    {value}
+                </p>
+                {hint !== undefined && (
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                        {hint}
+                    </p>
+                )}
             </div>
-            {hint !== undefined && <FieldDescription>{hint}</FieldDescription>}
-        </Field>
+            <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                onClick={copy}
+                aria-label={`Salin ${label.toLowerCase()}`}
+            >
+                {copied ? <CheckIcon /> : <CopyIcon />}
+                {copied ? 'Tersalin' : 'Salin'}
+            </Button>
+        </div>
     );
 }
 
@@ -309,20 +311,29 @@ function WaveForm({
             </div>
             <div className="flex gap-3">
                 <Button type="submit" disabled={form.processing}>
-                    {wave === null ? 'Tambah gelombang' : 'Simpan gelombang'}
+                    Simpan gelombang
                 </Button>
-                {wave !== null && (
-                    <Button type="button" variant="outline" onClick={onDone}>
-                        Batal
-                    </Button>
-                )}
+                <Button type="button" variant="outline" onClick={onDone}>
+                    Batal
+                </Button>
             </div>
         </form>
     );
 }
 
-/** Paths of the period with the number of seats each offers. */
-function PathsForm({ periodId, paths }: { periodId: number; paths: Path[] }) {
+/**
+ * Edit the paths of the period and the seats each offers, and add new ones.
+ * Deleting a saved path is done from the table on the page, not here.
+ */
+function PathsForm({
+    periodId,
+    paths,
+    onDone,
+}: {
+    periodId: number;
+    paths: Path[];
+    onDone: () => void;
+}) {
     const form = useForm({
         paths: paths.map((path) => ({
             id: path.id as number | null,
@@ -348,7 +359,10 @@ function PathsForm({ periodId, paths }: { periodId: number; paths: Path[] }) {
                 event.preventDefault();
                 form.put(updatePaths.url({ period: periodId }), {
                     preserveScroll: true,
-                    onSuccess: () => form.setDefaults(),
+                    onSuccess: () => {
+                        form.setDefaults();
+                        onDone();
+                    },
                 });
             }}
         >
@@ -418,27 +432,10 @@ function PathsForm({ periodId, paths }: { periodId: number; paths: Path[] }) {
                                         )
                                     }
                                 >
-                                    Hapus
+                                    Buang
                                 </Button>
                             ) : (
-                                <ConfirmAction
-                                    trigger={
-                                        <Button type="button" variant="ghost">
-                                            Hapus
-                                        </Button>
-                                    }
-                                    title={`Hapus jalur ${row.name}?`}
-                                    description="Jalur dihapus dari periode ini. Jalur yang sudah punya pendaftar tidak bisa dihapus."
-                                    confirmLabel="Hapus jalur"
-                                    onConfirm={() =>
-                                        router.delete(
-                                            destroyPath.url({
-                                                path: row.id as number,
-                                            }),
-                                            { preserveScroll: true },
-                                        )
-                                    }
-                                />
+                                <span aria-hidden="true" />
                             )}
                         </div>
                     );
@@ -480,13 +477,35 @@ export default function Settings({
     statuses,
     school,
 }: SettingsProps) {
-    const [creating, setCreating] = useState(selected === null);
-    const [editingWave, setEditingWave] = useState<Wave | null>(null);
-    const [addingWave, setAddingWave] = useState(false);
-
     const suggestedYear = new Date().getFullYear() + 1;
     const errors = usePage<{ errors: Record<string, string> }>().props.errors;
     const refusal = errors.wave ?? errors.path;
+    const totalQuota = paths.reduce((sum, path) => sum + path.quota, 0);
+
+    /** A new period is made in a dialog; `trigger` is the button that opens it. */
+    const newPeriod = (trigger: ReactNode) => (
+        <FormModal
+            trigger={trigger}
+            title="Periode baru"
+            description="Satu periode berjalan pada satu waktu; menjalankan yang baru menutup yang lama."
+        >
+            {(close) => (
+                <PeriodForm
+                    key="new-period"
+                    initial={{
+                        name: `PPDB ${suggestedYear}/${suggestedYear + 1}`,
+                        entryYear: suggestedYear,
+                        status: 'draft',
+                    }}
+                    statuses={statuses}
+                    url={storePeriod.url()}
+                    method="post"
+                    submitLabel="Buat periode"
+                    onDone={close}
+                />
+            )}
+        </FormModal>
+    );
 
     return (
         <PpdbPage
@@ -501,72 +520,58 @@ export default function Settings({
                     </Alert>
                 )}
 
-                <Panel title="Kode dan tautan sekolah">
-                    <div className="flex flex-col gap-4">
-                        <p className="text-sm text-muted-foreground">
-                            Bagikan tautan ini kepada calon siswa. Mereka
-                            membuat akun, lalu bergabung ke {school.name} dengan
-                            kode sekolah.
-                        </p>
-                        <CopyField
-                            id="school-link"
-                            label="Tautan pendaftaran"
-                            value={school.joinUrl}
-                        />
-                        <CopyField
-                            id="school-code"
-                            label="Kode sekolah"
-                            value={school.code}
-                            hint="Kode yang sama dipakai saat masuk ke SIMAS."
-                        />
+                {selected === null ? (
+                    <div className="flex flex-col items-center gap-4">
+                        <EmptyState>
+                            Belum ada periode PPDB. Buat periode lebih dulu
+                            untuk mengatur gelombang, jalur, dan kuota.
+                        </EmptyState>
+                        {newPeriod(<Button type="button">Buat periode</Button>)}
                     </div>
-                </Panel>
-
-                <Panel
-                    title="Periode"
-                    actions={
-                        selected !== null && !creating ? (
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setCreating(true)}
-                            >
-                                Periode baru
-                            </Button>
-                        ) : undefined
-                    }
-                >
-                    {creating ? (
-                        <div className="flex flex-col gap-4">
-                            <PeriodForm
-                                key="new-period"
-                                initial={{
-                                    name: `PPDB ${suggestedYear}/${suggestedYear + 1}`,
-                                    entryYear: suggestedYear,
-                                    status: 'draft',
-                                }}
-                                statuses={statuses}
-                                url={storePeriod.url()}
-                                method="post"
-                                submitLabel="Buat periode"
-                                onDone={() => setCreating(false)}
-                            />
-                            {selected !== null && (
-                                <div>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        onClick={() => setCreating(false)}
+                ) : (
+                    <>
+                        <Panel
+                            title="Periode"
+                            actions={
+                                <div className="flex gap-2">
+                                    <FormModal
+                                        trigger={
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                            >
+                                                Ubah periode
+                                            </Button>
+                                        }
+                                        title="Ubah periode"
                                     >
-                                        Batal
-                                    </Button>
+                                        {(close) => (
+                                            <PeriodForm
+                                                initial={selected}
+                                                statuses={statuses}
+                                                url={updatePeriod.url({
+                                                    period: selected.id,
+                                                })}
+                                                method="put"
+                                                submitLabel="Simpan periode"
+                                                onDone={close}
+                                            />
+                                        )}
+                                    </FormModal>
+                                    {newPeriod(
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                        >
+                                            Periode baru
+                                        </Button>,
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                    ) : (
-                        selected !== null && (
-                            <div className="flex flex-col gap-6">
+                            }
+                        >
+                            <div className="flex flex-col gap-4">
                                 {periods.length > 1 && (
                                     <Field>
                                         <FieldLabel>
@@ -593,157 +598,240 @@ export default function Settings({
                                         />
                                     </Field>
                                 )}
-                                <PeriodForm
-                                    key={`period-${selected.id}-${selected.name}-${selected.entryYear}-${selected.status}`}
-                                    initial={selected}
-                                    statuses={statuses}
-                                    url={updatePeriod.url({
-                                        period: selected.id,
-                                    })}
-                                    method="put"
-                                    submitLabel="Simpan periode"
-                                />
-                            </div>
-                        )
-                    )}
-                </Panel>
 
-                {selected === null ? (
-                    <EmptyState>
-                        Buat periode PPDB lebih dulu untuk mengatur gelombang,
-                        jalur, dan kuota.
-                    </EmptyState>
-                ) : (
-                    <>
+                                <div>
+                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                        <p className="text-sm font-semibold text-foreground">
+                                            {selected.name}
+                                        </p>
+                                        <Badge
+                                            variant={
+                                                statusOf(selected.status)
+                                                    .variant
+                                            }
+                                        >
+                                            {selected.statusLabel}
+                                        </Badge>
+                                    </div>
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        Siswa baru masuk tahun{' '}
+                                        {selected.entryYear}
+                                        {selected.resultsPublished
+                                            ? ' · hasil seleksi sudah diumumkan'
+                                            : ''}
+                                    </p>
+                                </div>
+                            </div>
+                        </Panel>
+
                         <Panel
                             title="Gelombang pendaftaran"
                             actions={
-                                !addingWave && editingWave === null ? (
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => setAddingWave(true)}
-                                    >
-                                        Tambah gelombang
-                                    </Button>
-                                ) : undefined
+                                <FormModal
+                                    trigger={
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                        >
+                                            Tambah gelombang
+                                        </Button>
+                                    }
+                                    title="Gelombang baru"
+                                    description="Calon siswa baru bisa mendaftar selama sebuah gelombang dibuka."
+                                >
+                                    {(close) => (
+                                        <WaveForm
+                                            periodId={selected.id}
+                                            wave={null}
+                                            onDone={close}
+                                        />
+                                    )}
+                                </FormModal>
                             }
                         >
-                            <div className="flex flex-col gap-6">
-                                {waves.length === 0 ? (
-                                    <p className="text-sm text-muted-foreground">
-                                        Belum ada gelombang. Calon siswa baru
-                                        bisa mendaftar saat sebuah gelombang
-                                        dibuka.
-                                    </p>
-                                ) : (
-                                    <DataTable
-                                        head={[
-                                            'Gelombang',
-                                            'Dibuka',
-                                            'Ditutup',
-                                            'Status',
-                                            '',
-                                        ]}
-                                    >
-                                        {waves.map((wave) => {
-                                            const status = statusOf(
-                                                wave.status,
-                                            );
+                            {waves.length === 0 ? (
+                                <p className="text-sm text-muted-foreground">
+                                    Belum ada gelombang. Calon siswa baru bisa
+                                    mendaftar saat sebuah gelombang dibuka.
+                                </p>
+                            ) : (
+                                <DataTable
+                                    head={[
+                                        'Gelombang',
+                                        'Dibuka',
+                                        'Ditutup',
+                                        'Status',
+                                        '',
+                                    ]}
+                                >
+                                    {waves.map((wave) => {
+                                        const status = statusOf(wave.status);
 
-                                            return (
-                                                <TableRow key={wave.id}>
-                                                    <TableCell className="font-medium">
-                                                        {wave.name}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {wave.opensLabel}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {wave.closesLabel}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Badge
-                                                            variant={
-                                                                status.variant
-                                                            }
-                                                        >
-                                                            {status.label}
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell className="text-right">
+                                        return (
+                                            <TableRow key={wave.id}>
+                                                <TableCell className="font-medium">
+                                                    {wave.name}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {wave.opensLabel}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {wave.closesLabel}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge
+                                                        variant={status.variant}
+                                                    >
+                                                        {status.label}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <FormModal
+                                                        trigger={
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="sm"
+                                                            >
+                                                                Ubah
+                                                            </Button>
+                                                        }
+                                                        title={`Ubah ${wave.name}`}
+                                                    >
+                                                        {(close) => (
+                                                            <WaveForm
+                                                                periodId={
+                                                                    selected.id
+                                                                }
+                                                                wave={wave}
+                                                                onDone={close}
+                                                            />
+                                                        )}
+                                                    </FormModal>
+                                                    <ConfirmAction
+                                                        trigger={
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="sm"
+                                                            >
+                                                                Hapus
+                                                            </Button>
+                                                        }
+                                                        title={`Hapus ${wave.name}?`}
+                                                        description="Gelombang dihapus dari periode ini. Gelombang yang sudah punya pendaftar tidak bisa dihapus."
+                                                        confirmLabel="Hapus gelombang"
+                                                        onConfirm={() =>
+                                                            router.delete(
+                                                                destroyWave.url(
+                                                                    {
+                                                                        wave: wave.id,
+                                                                    },
+                                                                ),
+                                                                {
+                                                                    preserveScroll: true,
+                                                                },
+                                                            )
+                                                        }
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
+                                </DataTable>
+                            )}
+                        </Panel>
+
+                        <Panel
+                            title="Jalur dan kuota"
+                            actions={
+                                <FormModal
+                                    trigger={
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                        >
+                                            Atur jalur dan kuota
+                                        </Button>
+                                    }
+                                    title="Atur jalur dan kuota"
+                                    description="Ubah nama dan jumlah kursi tiap jalur, atau tambah jalur baru."
+                                >
+                                    {(close) => (
+                                        <PathsForm
+                                            periodId={selected.id}
+                                            paths={paths}
+                                            onDone={close}
+                                        />
+                                    )}
+                                </FormModal>
+                            }
+                        >
+                            <div className="flex flex-col gap-3">
+                                <DataTable head={['Jalur', 'Kuota', '']}>
+                                    {paths.map((path) => (
+                                        <TableRow key={path.id}>
+                                            <TableCell className="font-medium">
+                                                {path.name}
+                                            </TableCell>
+                                            <TableCell>{path.quota}</TableCell>
+                                            <TableCell className="text-right">
+                                                <ConfirmAction
+                                                    trigger={
                                                         <Button
                                                             type="button"
                                                             variant="ghost"
                                                             size="sm"
-                                                            onClick={() => {
-                                                                setAddingWave(
-                                                                    false,
-                                                                );
-                                                                setEditingWave(
-                                                                    wave,
-                                                                );
-                                                            }}
                                                         >
-                                                            Ubah
+                                                            Hapus
                                                         </Button>
-                                                        <ConfirmAction
-                                                            trigger={
-                                                                <Button
-                                                                    type="button"
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                >
-                                                                    Hapus
-                                                                </Button>
-                                                            }
-                                                            title={`Hapus ${wave.name}?`}
-                                                            description="Gelombang dihapus dari periode ini. Gelombang yang sudah punya pendaftar tidak bisa dihapus."
-                                                            confirmLabel="Hapus gelombang"
-                                                            onConfirm={() =>
-                                                                router.delete(
-                                                                    destroyWave.url(
-                                                                        {
-                                                                            wave: wave.id,
-                                                                        },
-                                                                    ),
-                                                                    {
-                                                                        preserveScroll: true,
-                                                                    },
-                                                                )
-                                                            }
-                                                        />
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
-                                    </DataTable>
-                                )}
-
-                                {(addingWave || editingWave !== null) && (
-                                    <WaveForm
-                                        key={editingWave?.id ?? 'new-wave'}
-                                        periodId={selected.id}
-                                        wave={editingWave}
-                                        onDone={() => {
-                                            setAddingWave(false);
-                                            setEditingWave(null);
-                                        }}
-                                    />
-                                )}
+                                                    }
+                                                    title={`Hapus jalur ${path.name}?`}
+                                                    description="Jalur dihapus dari periode ini. Jalur yang sudah punya pendaftar tidak bisa dihapus."
+                                                    confirmLabel="Hapus jalur"
+                                                    onConfirm={() =>
+                                                        router.delete(
+                                                            destroyPath.url({
+                                                                path: path.id,
+                                                            }),
+                                                            {
+                                                                preserveScroll: true,
+                                                            },
+                                                        )
+                                                    }
+                                                />
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </DataTable>
+                                <p className="text-xs text-muted-foreground">
+                                    Total {totalQuota} kursi.
+                                </p>
                             </div>
-                        </Panel>
-
-                        <Panel title="Jalur dan kuota">
-                            <PathsForm
-                                key={`paths-${selected.id}-${paths.map((path) => `${path.id}:${path.name}:${path.quota}`).join('|')}`}
-                                periodId={selected.id}
-                                paths={paths}
-                            />
                         </Panel>
                     </>
                 )}
+
+                <Panel title="Kode dan tautan sekolah">
+                    <p className="text-sm text-muted-foreground">
+                        Bagikan tautan ini kepada calon siswa. Mereka membuat
+                        akun, lalu bergabung ke {school.name} dengan kode
+                        sekolah.
+                    </p>
+                    <div className="mt-2">
+                        <CopyRow
+                            label="Tautan pendaftaran"
+                            value={school.joinUrl}
+                        />
+                        <CopyRow
+                            label="Kode sekolah"
+                            value={school.code}
+                            hint="Kode yang sama dipakai saat masuk ke SIMAS."
+                        />
+                    </div>
+                </Panel>
             </div>
         </PpdbPage>
     );
