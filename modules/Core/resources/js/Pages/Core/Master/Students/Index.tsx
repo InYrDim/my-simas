@@ -7,7 +7,11 @@ import {
     show,
     store,
 } from '@/actions/Modules/Core/App/Http/Controllers/StudentController';
-import { DataTable, EmptyState, OptionSelect } from '@shared/components/page-parts';
+import {
+    DataTable,
+    EmptyState,
+    OptionSelect,
+} from '@shared/components/page-parts';
 import { Button } from '@shared/components/ui/button';
 import { Input } from '@shared/components/ui/input';
 import { TableCell, TableRow } from '@shared/components/ui/table';
@@ -108,7 +112,9 @@ export default function StudentsIndex({
 
             {students.length === 0 ? (
                 <EmptyState>
-                    {filtered ? 'Tidak ada siswa yang cocok.' : 'Belum ada siswa.'}
+                    {filtered
+                        ? 'Tidak ada siswa yang cocok.'
+                        : 'Belum ada siswa.'}
                 </EmptyState>
             ) : (
                 <DataTable head={['Nama', 'NIS / NISN', 'Kelas', 'Status']}>

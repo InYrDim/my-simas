@@ -22,7 +22,11 @@ export default function AttendancePage({
         <TenantShell width={width}>
             <Head title={title} />
 
-            <PageHeader title={title} description={description} actions={actions} />
+            <PageHeader
+                title={title}
+                description={description}
+                actions={actions}
+            />
 
             <div className="mt-8">{children}</div>
         </TenantShell>

@@ -33,12 +33,22 @@ interface MonthlyProps {
 }
 
 /** Rekap Bulanan: each student's month as counts and a presence rate. */
-export default function Monthly({ month, currentMonth, classes, classId, rows }: MonthlyProps) {
+export default function Monthly({
+    month,
+    currentMonth,
+    classes,
+    classId,
+    rows,
+}: MonthlyProps) {
     const open = (kelas: string, bulan: string) =>
         router.get(monthly.url({ query: { kelas, bulan } }));
 
     return (
-        <AttendancePage title="Rekap Bulanan" description={month.label} width="max-w-5xl">
+        <AttendancePage
+            title="Rekap Bulanan"
+            description={month.label}
+            width="max-w-5xl"
+        >
             <div className="mb-6 flex flex-col gap-4 sm:flex-row">
                 <Filter label="Kelas">
                     <ClassSelect
@@ -54,7 +64,8 @@ export default function Monthly({ month, currentMonth, classes, classId, rows }:
                         value={month.iso}
                         max={currentMonth}
                         onChange={(event) =>
-                            event.target.value !== '' && open(classId, event.target.value)
+                            event.target.value !== '' &&
+                            open(classId, event.target.value)
                         }
                     />
                 </Filter>
@@ -62,20 +73,33 @@ export default function Monthly({ month, currentMonth, classes, classId, rows }:
 
             {classId === '' ? (
                 <EmptyState>
-                    Belum ada kelas pada tahun ajaran aktif. Aktifkan tahun ajaran dan
-                    buat kelas di Master Data lebih dulu.
+                    Belum ada kelas pada tahun ajaran aktif. Aktifkan tahun
+                    ajaran dan buat kelas di Master Data lebih dulu.
                 </EmptyState>
             ) : rows.length === 0 ? (
                 <EmptyState>Belum ada siswa aktif di kelas ini.</EmptyState>
             ) : (
                 <>
                     <DataTable
-                        head={['Siswa', 'NIS', 'Hadir', 'Terlambat', 'Sakit', 'Izin', 'Alpa', 'Kehadiran']}
+                        head={[
+                            'Siswa',
+                            'NIS',
+                            'Hadir',
+                            'Terlambat',
+                            'Sakit',
+                            'Izin',
+                            'Alpa',
+                            'Kehadiran',
+                        ]}
                     >
                         {rows.map((row) => (
                             <TableRow key={row.id}>
-                                <TableCell className="font-medium">{row.name}</TableCell>
-                                <TableCell className="font-mono text-xs">{row.nis}</TableCell>
+                                <TableCell className="font-medium">
+                                    {row.name}
+                                </TableCell>
+                                <TableCell className="font-mono text-xs">
+                                    {row.nis}
+                                </TableCell>
                                 <TableCell>{row.present}</TableCell>
                                 <TableCell>{row.late}</TableCell>
                                 <TableCell>{row.sick}</TableCell>
@@ -83,7 +107,9 @@ export default function Monthly({ month, currentMonth, classes, classId, rows }:
                                 <TableCell>{row.absent}</TableCell>
                                 <TableCell>
                                     {row.percent === null ? (
-                                        <span className="text-muted-foreground">—</span>
+                                        <span className="text-muted-foreground">
+                                            —
+                                        </span>
                                     ) : (
                                         <Badge
                                             variant={
@@ -102,9 +128,9 @@ export default function Monthly({ month, currentMonth, classes, classId, rows }:
                         ))}
                     </DataTable>
                     <p className="mt-3 text-sm text-muted-foreground">
-                        Kehadiran dihitung dari hari yang sudah diabsen: hadir dan
-                        terlambat dibagi seluruh catatan siswa pada bulan ini. Unduhan
-                        ada di Statistik &amp; Laporan.
+                        Kehadiran dihitung dari hari yang sudah diabsen: hadir
+                        dan terlambat dibagi seluruh catatan siswa pada bulan
+                        ini. Unduhan ada di Statistik &amp; Laporan.
                     </p>
                 </>
             )}

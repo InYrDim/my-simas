@@ -6,7 +6,12 @@ import { store } from '@/actions/Modules/Ppdb/App/Http/Controllers/Account/Sessi
 import { register } from '@/routes/ppdb/account';
 import { Button } from '@shared/components/ui/button';
 import { Checkbox } from '@shared/components/ui/checkbox';
-import { Field, FieldError, FieldGroup, FieldLabel } from '@shared/components/ui/field';
+import {
+    Field,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+} from '@shared/components/ui/field';
 import { Input } from '@shared/components/ui/input';
 
 import PortalPage from '../../../Components/PortalPage';
@@ -34,7 +39,10 @@ export default function Login() {
             footer={
                 <span>
                     Belum punya akun?{' '}
-                    <Link href={register.url()} className="text-primary hover:underline">
+                    <Link
+                        href={register.url()}
+                        className="text-primary hover:underline"
+                    >
                         Buat akun
                     </Link>
                 </span>
@@ -53,7 +61,9 @@ export default function Login() {
                             required
                             value={form.data.email}
                             aria-invalid={!!form.errors.email}
-                            onChange={(event) => form.setData('email', event.target.value)}
+                            onChange={(event) =>
+                                form.setData('email', event.target.value)
+                            }
                         />
                         <FieldError>{form.errors.email}</FieldError>
                     </Field>
@@ -68,12 +78,17 @@ export default function Login() {
                             required
                             value={form.data.password}
                             aria-invalid={!!form.errors.password}
-                            onChange={(event) => form.setData('password', event.target.value)}
+                            onChange={(event) =>
+                                form.setData('password', event.target.value)
+                            }
                         />
                         <FieldError>{form.errors.password}</FieldError>
                     </Field>
 
-                    <Link href={request.url()} className="text-sm text-primary hover:underline">
+                    <Link
+                        href={request.url()}
+                        className="text-sm text-primary hover:underline"
+                    >
                         Lupa kata sandi?
                     </Link>
 
@@ -81,7 +96,9 @@ export default function Login() {
                         <Checkbox
                             id="remember"
                             checked={form.data.remember}
-                            onCheckedChange={(checked) => form.setData('remember', checked === true)}
+                            onCheckedChange={(checked) =>
+                                form.setData('remember', checked === true)
+                            }
                         />
                         <FieldLabel htmlFor="remember">Ingat saya</FieldLabel>
                     </Field>

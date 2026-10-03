@@ -48,7 +48,9 @@ function ClassAssignments({
     const form = useForm<{ rows: Record<number, Row> }>({
         rows: Object.fromEntries(
             subjects.map((subject) => {
-                const found = assignments.find((row) => row.subjectId === subject.id);
+                const found = assignments.find(
+                    (row) => row.subjectId === subject.id,
+                );
 
                 return [
                     subject.id,
@@ -100,12 +102,16 @@ function ClassAssignments({
 
                     return (
                         <TableRow key={subject.id}>
-                            <TableCell className="font-medium">{subject.name}</TableCell>
+                            <TableCell className="font-medium">
+                                {subject.name}
+                            </TableCell>
                             <TableCell className="w-80">
                                 <OptionSelect
                                     label={`Guru ${subject.name}`}
                                     value={row.teacher}
-                                    onChange={(value) => change(subject.id, { teacher: value })}
+                                    onChange={(value) =>
+                                        change(subject.id, { teacher: value })
+                                    }
                                     options={options}
                                 />
                             </TableCell>
@@ -117,7 +123,11 @@ function ClassAssignments({
                                     aria-label={`JP per minggu ${subject.name}`}
                                     value={row.hours}
                                     disabled={row.teacher === NONE}
-                                    onChange={(event) => change(subject.id, { hours: event.target.value })}
+                                    onChange={(event) =>
+                                        change(subject.id, {
+                                            hours: event.target.value,
+                                        })
+                                    }
                                 />
                             </TableCell>
                         </TableRow>
@@ -173,12 +183,13 @@ export default function AssignmentsIndex({
         >
             {classGroup === undefined ? (
                 <EmptyState>
-                    Belum ada kelas pada tahun ajaran aktif. Aktifkan tahun ajaran
-                    dan buat kelasnya di Master Data.
+                    Belum ada kelas pada tahun ajaran aktif. Aktifkan tahun
+                    ajaran dan buat kelasnya di Master Data.
                 </EmptyState>
             ) : subjects.length === 0 ? (
                 <EmptyState>
-                    Belum ada mata pelajaran. Tambahkan di Master Data › Mata Pelajaran.
+                    Belum ada mata pelajaran. Tambahkan di Master Data › Mata
+                    Pelajaran.
                 </EmptyState>
             ) : (
                 <>

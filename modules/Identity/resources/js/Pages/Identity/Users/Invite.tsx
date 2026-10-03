@@ -52,8 +52,8 @@ export default function UsersInvite({ roleLabels }: InviteProps) {
 
             <p className="mt-1 text-sm text-muted-foreground">
                 Akun dibuat tanpa kata sandi — penerima menyelesaikan aktivasi
-                lewat tautan di email (berlaku 60 menit). Mengundang ulang
-                email yang sama membuat tautan baru.
+                lewat tautan di email (berlaku 60 menit). Mengundang ulang email
+                yang sama membuat tautan baru.
             </p>
 
             <Card className="mt-8">
@@ -95,7 +95,9 @@ export default function UsersInvite({ roleLabels }: InviteProps) {
                             />
 
                             <Button type="submit" disabled={form.processing}>
-                                {form.processing ? 'Mengirim...' : 'Kirim undangan'}
+                                {form.processing
+                                    ? 'Mengirim...'
+                                    : 'Kirim undangan'}
                             </Button>
                         </FieldGroup>
                     </form>

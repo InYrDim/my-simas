@@ -20,7 +20,9 @@ export default function globalSetup(): void {
     }
 
     if (path.basename(databasePath) !== 'e2e.sqlite') {
-        throw new Error(`Refusing to reset ${databasePath}: not the e2e database.`);
+        throw new Error(
+            `Refusing to reset ${databasePath}: not the e2e database.`,
+        );
     }
 
     fs.mkdirSync(path.dirname(databasePath), { recursive: true });

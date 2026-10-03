@@ -4,7 +4,13 @@ import type { FormEvent } from 'react';
 import { store } from '@/actions/Modules/Ppdb/App/Http/Controllers/Account/JoinSchoolController';
 import { home } from '@/routes/ppdb/account';
 import { Button } from '@shared/components/ui/button';
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@shared/components/ui/field';
+import {
+    Field,
+    FieldDescription,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+} from '@shared/components/ui/field';
 import { Input } from '@shared/components/ui/input';
 
 import PortalPage from '../../../Components/PortalPage';
@@ -26,7 +32,10 @@ export default function Join({ code }: { code: string }) {
             title="Gabung ke sekolah"
             description="Masukkan kode sekolah yang Anda terima dari sekolah untuk mendaftar di sana."
             footer={
-                <Link href={home.url()} className="text-primary hover:underline">
+                <Link
+                    href={home.url()}
+                    className="text-primary hover:underline"
+                >
                     Kembali ke halaman akun
                 </Link>
             }
@@ -46,9 +55,13 @@ export default function Join({ code }: { code: string }) {
                             className="font-mono"
                             value={form.data.code}
                             aria-invalid={!!form.errors.code}
-                            onChange={(event) => form.setData('code', event.target.value)}
+                            onChange={(event) =>
+                                form.setData('code', event.target.value)
+                            }
                         />
-                        <FieldDescription>Satu akun hanya bisa mendaftar di satu sekolah.</FieldDescription>
+                        <FieldDescription>
+                            Satu akun hanya bisa mendaftar di satu sekolah.
+                        </FieldDescription>
                         <FieldError>{form.errors.code}</FieldError>
                     </Field>
 

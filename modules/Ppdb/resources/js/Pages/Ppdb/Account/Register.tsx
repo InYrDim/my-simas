@@ -4,7 +4,13 @@ import type { FormEvent } from 'react';
 import { store } from '@/actions/Modules/Ppdb/App/Http/Controllers/Account/RegisterController';
 import { login } from '@/routes/ppdb/account';
 import { Button } from '@shared/components/ui/button';
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@shared/components/ui/field';
+import {
+    Field,
+    FieldDescription,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+} from '@shared/components/ui/field';
 import { Input } from '@shared/components/ui/input';
 
 import PortalPage from '../../../Components/PortalPage';
@@ -38,7 +44,10 @@ export default function Register() {
             footer={
                 <span>
                     Sudah punya akun?{' '}
-                    <Link href={login.url()} className="text-primary hover:underline">
+                    <Link
+                        href={login.url()}
+                        className="text-primary hover:underline"
+                    >
                         Masuk
                     </Link>
                 </span>
@@ -56,9 +65,14 @@ export default function Register() {
                             required
                             value={form.data.name}
                             aria-invalid={!!form.errors.name}
-                            onChange={(event) => form.setData('name', event.target.value)}
+                            onChange={(event) =>
+                                form.setData('name', event.target.value)
+                            }
                         />
-                        <FieldDescription>Nama Anda atau nama orang tua/wali yang mendaftarkan.</FieldDescription>
+                        <FieldDescription>
+                            Nama Anda atau nama orang tua/wali yang
+                            mendaftarkan.
+                        </FieldDescription>
                         <FieldError>{form.errors.name}</FieldError>
                     </Field>
 
@@ -72,9 +86,13 @@ export default function Register() {
                             required
                             value={form.data.email}
                             aria-invalid={!!form.errors.email}
-                            onChange={(event) => form.setData('email', event.target.value)}
+                            onChange={(event) =>
+                                form.setData('email', event.target.value)
+                            }
                         />
-                        <FieldDescription>Kami mengirim tautan verifikasi ke email ini.</FieldDescription>
+                        <FieldDescription>
+                            Kami mengirim tautan verifikasi ke email ini.
+                        </FieldDescription>
                         <FieldError>{form.errors.email}</FieldError>
                     </Field>
 
@@ -88,13 +106,17 @@ export default function Register() {
                             required
                             value={form.data.password}
                             aria-invalid={!!form.errors.password}
-                            onChange={(event) => form.setData('password', event.target.value)}
+                            onChange={(event) =>
+                                form.setData('password', event.target.value)
+                            }
                         />
                         <FieldError>{form.errors.password}</FieldError>
                     </Field>
 
                     <Field>
-                        <FieldLabel htmlFor="password_confirmation">Ulangi kata sandi</FieldLabel>
+                        <FieldLabel htmlFor="password_confirmation">
+                            Ulangi kata sandi
+                        </FieldLabel>
                         <Input
                             id="password_confirmation"
                             name="password_confirmation"
@@ -102,7 +124,12 @@ export default function Register() {
                             autoComplete="new-password"
                             required
                             value={form.data.password_confirmation}
-                            onChange={(event) => form.setData('password_confirmation', event.target.value)}
+                            onChange={(event) =>
+                                form.setData(
+                                    'password_confirmation',
+                                    event.target.value,
+                                )
+                            }
                         />
                     </Field>
 
@@ -116,7 +143,9 @@ export default function Register() {
                                 tabIndex={-1}
                                 autoComplete="off"
                                 value={form.data.website}
-                                onChange={(event) => form.setData('website', event.target.value)}
+                                onChange={(event) =>
+                                    form.setData('website', event.target.value)
+                                }
                             />
                         </label>
                     </div>

@@ -133,8 +133,7 @@ export default function ProviderHome({ stats, attention, trend }: HomeProps) {
                         Tenant baru:{' '}
                         {trend
                             .map(
-                                (point) =>
-                                    `${point.month} ${point.newTenants}`,
+                                (point) => `${point.month} ${point.newTenants}`,
                             )
                             .join(' · ')}
                     </p>

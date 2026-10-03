@@ -27,7 +27,10 @@ interface MyQrProps {
  * it expires, so a screenshot is useless a minute later.
  */
 export default function MyQr({ student, today, refreshEvery }: MyQrProps) {
-    const http = useHttp<Record<string, never>, { token: string; expiresIn: number }>({});
+    const http = useHttp<
+        Record<string, never>,
+        { token: string; expiresIn: number }
+    >({});
     const [code, setCode] = useState<string | null>(null);
     const [left, setLeft] = useState(refreshEvery);
     const [failed, setFailed] = useState<string | null>(null);
@@ -52,11 +55,15 @@ export default function MyQr({ student, today, refreshEvery }: MyQrProps) {
             },
             onHttpException: () => {
                 setCode(null);
-                setFailed('Kode belum bisa dibuat. Tunggu sebentar lalu coba lagi.');
+                setFailed(
+                    'Kode belum bisa dibuat. Tunggu sebentar lalu coba lagi.',
+                );
             },
             onNetworkError: () => {
                 setCode(null);
-                setFailed('Tidak ada sambungan. Periksa internet lalu coba lagi.');
+                setFailed(
+                    'Tidak ada sambungan. Periksa internet lalu coba lagi.',
+                );
             },
         }).catch(() => undefined);
     }, [refreshEvery]);
@@ -98,7 +105,10 @@ export default function MyQr({ student, today, refreshEvery }: MyQrProps) {
                             <Alert variant="destructive">
                                 <AlertDescription>{failed}</AlertDescription>
                             </Alert>
-                            <Button onClick={refresh} disabled={http.processing}>
+                            <Button
+                                onClick={refresh}
+                                disabled={http.processing}
+                            >
                                 Coba lagi
                             </Button>
                         </>
@@ -107,7 +117,11 @@ export default function MyQr({ student, today, refreshEvery }: MyQrProps) {
                     ) : (
                         <>
                             {/* Always dark on white: a scanner needs the contrast in any theme. */}
-                            <div className="bg-white p-4" data-testid="attendance-qr" data-code={code}>
+                            <div
+                                className="bg-white p-4"
+                                data-testid="attendance-qr"
+                                data-code={code}
+                            >
                                 <QRCodeSVG
                                     value={code}
                                     size={224}
@@ -117,14 +131,17 @@ export default function MyQr({ student, today, refreshEvery }: MyQrProps) {
                                     title="QR absensi"
                                 />
                             </div>
-                            <p className="text-sm text-muted-foreground" role="status">
+                            <p
+                                className="text-sm text-muted-foreground"
+                                role="status"
+                            >
                                 Kode berganti dalam {left} detik
                             </p>
                         </>
                     )}
                     <p className="text-center text-sm text-muted-foreground">
-                        Tunjukkan kode ini kepada petugas di gerbang atau guru di kelas.
-                        Kode hanya berlaku sekali.
+                        Tunjukkan kode ini kepada petugas di gerbang atau guru
+                        di kelas. Kode hanya berlaku sekali.
                     </p>
                 </div>
             </Panel>

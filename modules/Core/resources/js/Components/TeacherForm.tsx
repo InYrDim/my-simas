@@ -5,10 +5,22 @@ import { InputField, SelectField } from './FormField';
 export default function TeacherForm({ teacher }: { teacher?: Teacher }) {
     return (
         <>
-            <InputField label="Nama lengkap" id="name" defaultValue={teacher?.name} />
+            <InputField
+                label="Nama lengkap"
+                id="name"
+                defaultValue={teacher?.name}
+            />
             <div className="grid gap-4 sm:grid-cols-2">
-                <InputField label="NIP" id="nip" defaultValue={teacher?.nip ?? ''} />
-                <InputField label="NUPTK" id="nuptk" defaultValue={teacher?.nuptk ?? ''} />
+                <InputField
+                    label="NIP"
+                    id="nip"
+                    defaultValue={teacher?.nip ?? ''}
+                />
+                <InputField
+                    label="NUPTK"
+                    id="nuptk"
+                    defaultValue={teacher?.nuptk ?? ''}
+                />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
                 <SelectField
@@ -20,7 +32,11 @@ export default function TeacherForm({ teacher }: { teacher?: Teacher }) {
                 <SelectField
                     label="Tugas"
                     id="duty"
-                    options={['Guru Mapel', 'Tenaga Kependidikan', 'Kepala Sekolah']}
+                    options={[
+                        'Guru Mapel',
+                        'Tenaga Kependidikan',
+                        'Kepala Sekolah',
+                    ]}
                     defaultValue={teacher?.duty}
                 />
             </div>

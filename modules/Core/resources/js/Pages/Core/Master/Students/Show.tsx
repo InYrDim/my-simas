@@ -85,18 +85,33 @@ export default function StudentsShow({
                     <Panel title="Biodata">
                         <DefinitionList
                             rows={[
-                                ['Jenis kelamin', student.gender === 'L' ? 'Laki-laki' : 'Perempuan'],
+                                [
+                                    'Jenis kelamin',
+                                    student.gender === 'L'
+                                        ? 'Laki-laki'
+                                        : 'Perempuan',
+                                ],
                                 [
                                     'Tanggal lahir',
-                                    student.birth !== null ? formatDate(student.birth) : '—',
+                                    student.birth !== null
+                                        ? formatDate(student.birth)
+                                        : '—',
                                 ],
-                                ['Status', <StatusBadge key="s" status={student.status} />],
+                                [
+                                    'Status',
+                                    <StatusBadge
+                                        key="s"
+                                        status={student.status}
+                                    />,
+                                ],
                                 [
                                     'Kelas',
                                     student.classId !== null ? (
                                         <Link
                                             key="c"
-                                            href={classShow.url(student.classId)}
+                                            href={classShow.url(
+                                                student.classId,
+                                            )}
                                             className="hover:underline"
                                         >
                                             {student.class}
@@ -128,7 +143,9 @@ export default function StudentsShow({
                                 title={`Buat akun untuk ${student.name}?`}
                                 description={`Nama pengguna ${student.nis}, kata sandi awal tanggal lahir (ddmmyyyy).`}
                                 confirmLabel="Buat akun"
-                                trigger={<Button variant="outline">Buat akun</Button>}
+                                trigger={
+                                    <Button variant="outline">Buat akun</Button>
+                                }
                             />
                         )}
                         {login.account !== null && login.can.reset && (
@@ -137,7 +154,11 @@ export default function StudentsShow({
                                 title={`Reset kata sandi ${student.name}?`}
                                 description="Kata sandi kembali ke tanggal lahir (ddmmyyyy) dan wajib diganti saat login berikutnya."
                                 confirmLabel="Reset kata sandi"
-                                trigger={<Button variant="outline">Reset kata sandi</Button>}
+                                trigger={
+                                    <Button variant="outline">
+                                        Reset kata sandi
+                                    </Button>
+                                }
                             />
                         )}
                     </AccountPanel>
@@ -147,7 +168,9 @@ export default function StudentsShow({
                     {history.length === 0 ? (
                         <EmptyState>Belum ada riwayat kelas.</EmptyState>
                     ) : (
-                        <DataTable head={['Tahun ajaran', 'Kelas', 'Keterangan']}>
+                        <DataTable
+                            head={['Tahun ajaran', 'Kelas', 'Keterangan']}
+                        >
                             {history.map((row) => (
                                 <TableRow key={row.year}>
                                     <TableCell>{row.year}</TableCell>

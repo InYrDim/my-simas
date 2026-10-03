@@ -1,9 +1,18 @@
-export type AttendanceStatus = 'present' | 'late' | 'sick' | 'permit' | 'absent';
+export type AttendanceStatus =
+    | 'present'
+    | 'late'
+    | 'sick'
+    | 'permit'
+    | 'absent';
 
 /** Status word and badge variant; the word always carries the meaning. */
 export const statusMeta: Record<
     AttendanceStatus,
-    { label: string; short: string; variant: 'default' | 'outline' | 'secondary' | 'destructive' }
+    {
+        label: string;
+        short: string;
+        variant: 'default' | 'outline' | 'secondary' | 'destructive';
+    }
 > = {
     present: { label: 'Hadir', short: 'H', variant: 'default' },
     late: { label: 'Terlambat', short: 'T', variant: 'secondary' },
@@ -13,10 +22,21 @@ export const statusMeta: Record<
 };
 
 /** Statuses of a day: being late is a matter of the school gate. */
-export const dailyStatuses: AttendanceStatus[] = ['present', 'late', 'sick', 'permit', 'absent'];
+export const dailyStatuses: AttendanceStatus[] = [
+    'present',
+    'late',
+    'sick',
+    'permit',
+    'absent',
+];
 
 /** Statuses of a lesson. */
-export const lessonStatuses: AttendanceStatus[] = ['present', 'sick', 'permit', 'absent'];
+export const lessonStatuses: AttendanceStatus[] = [
+    'present',
+    'sick',
+    'permit',
+    'absent',
+];
 
 /** The colour of a pressed status button, beyond the default for "Hadir". */
 export const pressedClass: Partial<Record<AttendanceStatus, string>> = {

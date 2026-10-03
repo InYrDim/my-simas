@@ -40,7 +40,9 @@ export default function PlanPicker({
                         key={plan.key}
                         className={cn(
                             'flex cursor-pointer items-start gap-3 border bg-card px-4 py-3 transition-colors focus-within:ring-2 focus-within:ring-ring',
-                            selected ? 'border-primary' : 'border-border hover:bg-muted',
+                            selected
+                                ? 'border-primary'
+                                : 'border-border hover:bg-muted',
                             invalid && !selected && 'border-destructive',
                         )}
                     >
@@ -68,7 +70,9 @@ export default function PlanPicker({
                         <span className="flex flex-1 flex-col gap-1">
                             <span className="flex flex-wrap items-center justify-between gap-2">
                                 <span className="font-medium">{plan.name}</span>
-                                <Badge variant="secondary">Trial {trialDays} hari</Badge>
+                                <Badge variant="secondary">
+                                    Trial {trialDays} hari
+                                </Badge>
                             </span>
                             <span className="text-sm text-muted-foreground">
                                 {formatRupiah(plan.priceMonthly)}/bulan ·{' '}

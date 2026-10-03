@@ -115,14 +115,22 @@ export default function TenantsIndex({ tenants, filters, plans }: IndexProps) {
                     </EmptyState>
                 ) : (
                     <DataTable
-                        head={['Sekolah', 'Status', 'Paket', 'Langganan', 'Berakhir']}
+                        head={[
+                            'Sekolah',
+                            'Status',
+                            'Paket',
+                            'Langganan',
+                            'Berakhir',
+                        ]}
                     >
                         {tenants.data.map((tenant) => (
                             <TableRow key={tenant.id}>
                                 <TableCell>
                                     <Link
                                         href={consolePath(
-                                            showTenant.url({ tenant: tenant.id }),
+                                            showTenant.url({
+                                                tenant: tenant.id,
+                                            }),
                                         )}
                                         className="font-medium hover:underline"
                                     >
@@ -139,7 +147,11 @@ export default function TenantsIndex({ tenants, filters, plans }: IndexProps) {
                                     {tenant.subscription?.planName ?? '—'}
                                     {tenant.subscription !== null && (
                                         <p className="mt-0.5 text-xs text-muted-foreground">
-                                            {cycleLabel[tenant.subscription.cycle]}
+                                            {
+                                                cycleLabel[
+                                                    tenant.subscription.cycle
+                                                ]
+                                            }
                                         </p>
                                     )}
                                 </TableCell>

@@ -44,7 +44,11 @@ interface ApplicantRow {
  * Inviting creates the account without a password and mails a link to
  * set one; from there the applicant goes through the usual onboarding.
  */
-export default function ApplicantsIndex({ applicants }: { applicants: ApplicantRow[] }) {
+export default function ApplicantsIndex({
+    applicants,
+}: {
+    applicants: ApplicantRow[];
+}) {
     const form = useForm({ name: '', email: '' });
     const errors = form.errors as typeof form.errors & { applicant?: string };
 
@@ -77,31 +81,46 @@ export default function ApplicantsIndex({ applicants }: { applicants: ApplicantR
                     <FieldGroup>
                         <div className="grid gap-4 sm:grid-cols-2">
                             <Field data-invalid={!!form.errors.name}>
-                                <FieldLabel htmlFor="invite-name">Nama</FieldLabel>
+                                <FieldLabel htmlFor="invite-name">
+                                    Nama
+                                </FieldLabel>
                                 <Input
                                     id="invite-name"
                                     value={form.data.name}
                                     aria-invalid={!!form.errors.name}
-                                    onChange={(event) => form.setData('name', event.target.value)}
+                                    onChange={(event) =>
+                                        form.setData('name', event.target.value)
+                                    }
                                     required
                                 />
                                 <FieldError>{form.errors.name}</FieldError>
                             </Field>
                             <Field data-invalid={!!form.errors.email}>
-                                <FieldLabel htmlFor="invite-email">Email</FieldLabel>
+                                <FieldLabel htmlFor="invite-email">
+                                    Email
+                                </FieldLabel>
                                 <Input
                                     id="invite-email"
                                     type="email"
                                     value={form.data.email}
                                     aria-invalid={!!form.errors.email}
-                                    onChange={(event) => form.setData('email', event.target.value)}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'email',
+                                            event.target.value,
+                                        )
+                                    }
                                     required
                                 />
                                 <FieldError>{form.errors.email}</FieldError>
                             </Field>
                         </div>
                     </FieldGroup>
-                    <Button type="submit" className="mt-5" disabled={form.processing}>
+                    <Button
+                        type="submit"
+                        className="mt-5"
+                        disabled={form.processing}
+                    >
                         {form.processing ? 'Mengirim...' : 'Kirim undangan'}
                     </Button>
                 </Panel>
@@ -111,11 +130,15 @@ export default function ApplicantsIndex({ applicants }: { applicants: ApplicantR
                 {applicants.length === 0 ? (
                     <EmptyState>Belum ada pemohon.</EmptyState>
                 ) : (
-                    <DataTable head={['Pemohon', 'Sekolah', 'Status', 'Terdaftar', '']}>
+                    <DataTable
+                        head={['Pemohon', 'Sekolah', 'Status', 'Terdaftar', '']}
+                    >
                         {applicants.map((applicant) => (
                             <TableRow key={applicant.id}>
                                 <TableCell>
-                                    <p className="font-medium">{applicant.name}</p>
+                                    <p className="font-medium">
+                                        {applicant.name}
+                                    </p>
                                     <p className="text-sm text-muted-foreground">
                                         {applicant.email}
                                     </p>
@@ -125,7 +148,8 @@ export default function ApplicantsIndex({ applicants }: { applicants: ApplicantR
                                         <Link
                                             href={consolePath(
                                                 showApplication.url({
-                                                    application: applicant.applicationId,
+                                                    application:
+                                                        applicant.applicationId,
                                                 }),
                                             )}
                                             className="hover:underline"
@@ -139,7 +163,9 @@ export default function ApplicantsIndex({ applicants }: { applicants: ApplicantR
                                 <TableCell>
                                     <StatusChip status={applicant.state} />
                                 </TableCell>
-                                <TableCell>{applicant.createdAt ?? '—'}</TableCell>
+                                <TableCell>
+                                    {applicant.createdAt ?? '—'}
+                                </TableCell>
                                 <TableCell className="text-right">
                                     {applicant.canResendInvitation && (
                                         <Button

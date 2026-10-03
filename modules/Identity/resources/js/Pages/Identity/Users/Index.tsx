@@ -71,7 +71,9 @@ export default function UsersIndex({
                             <Link href={usersInvite.url()}>Undang</Link>
                         </Button>
                         <Button asChild>
-                            <Link href={usersCreate.url()}>Tambah Pengguna</Link>
+                            <Link href={usersCreate.url()}>
+                                Tambah Pengguna
+                            </Link>
                         </Button>
                     </>
                 }
@@ -105,7 +107,14 @@ export default function UsersIndex({
                     </EmptyState>
                 ) : (
                     <DataTable
-                        head={['Nama', 'Nama pengguna', 'Email', 'Peran', 'Status', '']}
+                        head={[
+                            'Nama',
+                            'Nama pengguna',
+                            'Email',
+                            'Peran',
+                            'Status',
+                            '',
+                        ]}
                     >
                         {users.map((user) => (
                             <TableRow key={user.id}>
@@ -126,10 +135,15 @@ export default function UsersIndex({
                                 <TableCell>
                                     <div className="flex flex-wrap gap-1">
                                         {user.roleLabels.length === 0 ? (
-                                            <Badge variant="outline">Tanpa peran</Badge>
+                                            <Badge variant="outline">
+                                                Tanpa peran
+                                            </Badge>
                                         ) : (
                                             user.roleLabels.map((label) => (
-                                                <Badge key={label} variant="secondary">
+                                                <Badge
+                                                    key={label}
+                                                    variant="secondary"
+                                                >
                                                     {label}
                                                 </Badge>
                                             ))
@@ -141,7 +155,11 @@ export default function UsersIndex({
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <Button asChild size="sm" variant="outline">
-                                        <Link href={editUser.url({ userId: user.id })}>
+                                        <Link
+                                            href={editUser.url({
+                                                userId: user.id,
+                                            })}
+                                        >
                                             Ubah
                                         </Link>
                                     </Button>
@@ -151,7 +169,11 @@ export default function UsersIndex({
                     </DataTable>
                 )}
 
-                <ListPager url={url} filters={initial} pagination={pagination} />
+                <ListPager
+                    url={url}
+                    filters={initial}
+                    pagination={pagination}
+                />
             </div>
         </TenantShell>
     );

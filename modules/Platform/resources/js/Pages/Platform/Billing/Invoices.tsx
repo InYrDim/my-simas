@@ -91,7 +91,14 @@ export default function BillingInvoices({ invoices, filters }: InvoicesProps) {
                     <EmptyState>Tidak ada tagihan yang cocok.</EmptyState>
                 ) : (
                     <DataTable
-                        head={['Nomor', 'Sekolah', 'Terbit', 'Jumlah', 'Status', '']}
+                        head={[
+                            'Nomor',
+                            'Sekolah',
+                            'Terbit',
+                            'Jumlah',
+                            'Status',
+                            '',
+                        ]}
                     >
                         {invoices.data.map((invoice) => (
                             <TableRow key={invoice.id}>
@@ -134,7 +141,9 @@ export default function BillingInvoices({ invoices, filters }: InvoicesProps) {
                                                 onClick={() =>
                                                     send(
                                                         'post',
-                                                        payInvoice.url({ invoice: invoice.id }),
+                                                        payInvoice.url({
+                                                            invoice: invoice.id,
+                                                        }),
                                                     )
                                                 }
                                             >
@@ -146,7 +155,9 @@ export default function BillingInvoices({ invoices, filters }: InvoicesProps) {
                                                 onClick={() =>
                                                     send(
                                                         'post',
-                                                        voidInvoice.url({ invoice: invoice.id }),
+                                                        voidInvoice.url({
+                                                            invoice: invoice.id,
+                                                        }),
                                                     )
                                                 }
                                             >

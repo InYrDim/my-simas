@@ -43,7 +43,6 @@ import {
     FieldLabel,
 } from '@shared/components/ui/field';
 import { Input } from '@shared/components/ui/input';
-import { Label } from '@shared/components/ui/label';
 import {
     Tabs,
     TabsContent,
@@ -189,7 +188,10 @@ function Confirm({
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Batal</AlertDialogCancel>
-                    <AlertDialogAction variant="destructive" onClick={onConfirm}>
+                    <AlertDialogAction
+                        variant="destructive"
+                        onClick={onConfirm}
+                    >
                         {action}
                     </AlertDialogAction>
                 </AlertDialogFooter>
@@ -227,7 +229,9 @@ function Overview({
                 <form onSubmit={submit} noValidate>
                     <FieldGroup className="sm:grid sm:grid-cols-3">
                         <Field data-invalid={!!form.errors.name}>
-                            <FieldLabel htmlFor="tenant-name">Nama sekolah</FieldLabel>
+                            <FieldLabel htmlFor="tenant-name">
+                                Nama sekolah
+                            </FieldLabel>
                             <Input
                                 id="tenant-name"
                                 value={form.data.name}
@@ -240,7 +244,9 @@ function Overview({
                             <FieldError>{form.errors.name}</FieldError>
                         </Field>
                         <Field data-invalid={!!form.errors.timezone}>
-                            <FieldLabel htmlFor="tenant-tz">Zona waktu</FieldLabel>
+                            <FieldLabel htmlFor="tenant-tz">
+                                Zona waktu
+                            </FieldLabel>
                             <Input
                                 id="tenant-tz"
                                 value={form.data.timezone}
@@ -283,17 +289,24 @@ function Overview({
             <Panel title="Status tenant">
                 <DefinitionList
                     rows={[
-                        ['Status', <StatusChip key="s" status={tenant.status} />],
+                        [
+                            'Status',
+                            <StatusChip key="s" status={tenant.status} />,
+                        ],
                         [
                             'Terdaftar',
-                            tenant.createdAt ? formatDate(tenant.createdAt) : '—',
+                            tenant.createdAt
+                                ? formatDate(tenant.createdAt)
+                                : '—',
                         ],
                     ]}
                 />
                 <div className="mt-5">
                     {suspended ? (
                         <Button
-                            onClick={() => send('post', activateTenant.url(route))}
+                            onClick={() =>
+                                send('post', activateTenant.url(route))
+                            }
                         >
                             Aktifkan kembali
                         </Button>
@@ -323,7 +336,10 @@ function Overview({
                             ['Siklus', cycleLabel[subscription.cycle]],
                             [
                                 'Status',
-                                <StatusChip key="sub" status={subscription.state} />,
+                                <StatusChip
+                                    key="sub"
+                                    status={subscription.state}
+                                />,
                             ],
                             [
                                 subscription.status === 'trial'
@@ -370,13 +386,17 @@ function ModulesTab({
                     <Field key={module.key} orientation="horizontal">
                         <Checkbox
                             id={`module-${module.key}`}
-                            checked={module.locked || enabled.includes(module.key)}
+                            checked={
+                                module.locked || enabled.includes(module.key)
+                            }
                             disabled={module.locked}
                             onCheckedChange={(checked) =>
                                 setEnabled((current) =>
                                     checked === true
                                         ? [...current, module.key]
-                                        : current.filter((key) => key !== module.key),
+                                        : current.filter(
+                                              (key) => key !== module.key,
+                                          ),
                                 )
                             }
                         />
@@ -429,8 +449,12 @@ function PermissionsTab({
 
             {catalog.map((group) => (
                 <div key={group.key}>
-                    <h2 className="mb-3 text-sm font-semibold">{group.label}</h2>
-                    <DataTable head={['Izin', ...roles.map((role) => role.label)]}>
+                    <h2 className="mb-3 text-sm font-semibold">
+                        {group.label}
+                    </h2>
+                    <DataTable
+                        head={['Izin', ...roles.map((role) => role.label)]}
+                    >
                         {group.permissions.map((permission) => (
                             <TableRow key={permission}>
                                 <TableCell className="font-mono text-xs text-muted-foreground">
@@ -438,7 +462,9 @@ function PermissionsTab({
                                 </TableCell>
                                 {roles.map((role) => (
                                     <TableCell key={role.key}>
-                                        {role.permissions.includes(permission) ? (
+                                        {role.permissions.includes(
+                                            permission,
+                                        ) ? (
                                             <Badge>ya</Badge>
                                         ) : (
                                             <span className="text-muted-foreground">
@@ -472,7 +498,9 @@ function SubscriptionTab({
     const [planKey, setPlanKey] = useState(
         subscription?.planKey ?? plans[0]?.key ?? '',
     );
-    const [cycle, setCycle] = useState<BillingCycle>(subscription?.cycle ?? 'monthly');
+    const [cycle, setCycle] = useState<BillingCycle>(
+        subscription?.cycle ?? 'monthly',
+    );
     const [days, setDays] = useState(trialDays);
 
     const plan = plans.find((candidate) => candidate.key === planKey);
@@ -523,7 +551,9 @@ function SubscriptionTab({
                                 min={1}
                                 max={90}
                                 value={days}
-                                onChange={(event) => setDays(Number(event.target.value))}
+                                onChange={(event) =>
+                                    setDays(Number(event.target.value))
+                                }
                                 aria-label="Lama uji coba (hari)"
                             />
                             <Button
@@ -550,7 +580,11 @@ function SubscriptionTab({
                     rows={[
                         [
                             'Mode',
-                            isTrial ? 'Uji coba' : isCancelled ? 'Berhenti' : 'Berlangganan',
+                            isTrial
+                                ? 'Uji coba'
+                                : isCancelled
+                                  ? 'Berhenti'
+                                  : 'Berlangganan',
                         ],
                         ['Paket', subscription.planName ?? '—'],
                         ['Siklus', cycleLabel[subscription.cycle]],
@@ -560,7 +594,10 @@ function SubscriptionTab({
                                 ? `${formatRupiah(subscription.amount)} / ${subscription.cycle === 'yearly' ? 'tahun' : 'bulan'}`
                                 : '—',
                         ],
-                        ['Status', <StatusChip key="st" status={subscription.state} />],
+                        [
+                            'Status',
+                            <StatusChip key="st" status={subscription.state} />,
+                        ],
                         isTrial
                             ? [
                                   'Uji coba sampai',
@@ -570,7 +607,8 @@ function SubscriptionTab({
                               ]
                             : [
                                   'Periode',
-                                  subscription.periodStart && subscription.periodEnd
+                                  subscription.periodStart &&
+                                  subscription.periodEnd
                                       ? `${formatDate(subscription.periodStart)} – ${formatDate(subscription.periodEnd)}`
                                       : '—',
                               ],
@@ -586,12 +624,16 @@ function SubscriptionTab({
                             min={1}
                             max={90}
                             value={days}
-                            onChange={(event) => setDays(Number(event.target.value))}
+                            onChange={(event) =>
+                                setDays(Number(event.target.value))
+                            }
                             aria-label="Tambah hari uji coba"
                         />
                         <Button
                             variant="outline"
-                            onClick={() => send('post', extendTrial.url(route), { days })}
+                            onClick={() =>
+                                send('post', extendTrial.url(route), { days })
+                            }
                         >
                             Perpanjang uji coba
                         </Button>
@@ -599,7 +641,13 @@ function SubscriptionTab({
                 </Panel>
             )}
 
-            <Panel title={isTrial || isCancelled ? 'Aktifkan langganan' : 'Ubah langganan'}>
+            <Panel
+                title={
+                    isTrial || isCancelled
+                        ? 'Aktifkan langganan'
+                        : 'Ubah langganan'
+                }
+            >
                 <div className="grid gap-3 sm:grid-cols-2">
                     {planSelect}
                     {cycleSelect}
@@ -607,7 +655,11 @@ function SubscriptionTab({
                 {plan !== undefined && (
                     <p className="mt-3 text-xs text-muted-foreground">
                         Tarif {cycle === 'yearly' ? 'tahunan' : 'bulanan'}:{' '}
-                        {formatRupiah(cycle === 'yearly' ? plan.priceYearly : plan.priceMonthly)}
+                        {formatRupiah(
+                            cycle === 'yearly'
+                                ? plan.priceYearly
+                                : plan.priceMonthly,
+                        )}
                     </p>
                 )}
                 <div className="mt-4 flex flex-wrap gap-3">
@@ -625,19 +677,29 @@ function SubscriptionTab({
                         <>
                             <Button
                                 variant="outline"
-                                onClick={() => send('put', changePlan.url(route), { plan: planKey })}
+                                onClick={() =>
+                                    send('put', changePlan.url(route), {
+                                        plan: planKey,
+                                    })
+                                }
                             >
                                 Ganti paket saja
                             </Button>
                             <Button
                                 variant="outline"
-                                onClick={() => send('put', changeCycle.url(route), { cycle })}
+                                onClick={() =>
+                                    send('put', changeCycle.url(route), {
+                                        cycle,
+                                    })
+                                }
                             >
                                 Ubah siklus saja
                             </Button>
                             <Button
                                 variant="outline"
-                                onClick={() => send('post', renewSubscription.url(route))}
+                                onClick={() =>
+                                    send('post', renewSubscription.url(route))
+                                }
                             >
                                 Terbitkan tagihan perpanjangan
                             </Button>
@@ -658,7 +720,9 @@ function SubscriptionTab({
                         title="Hentikan langganan ini?"
                         description="Tenant tidak otomatis ditangguhkan."
                         action="Ya, hentikan"
-                        onConfirm={() => send('post', cancelSubscription.url(route))}
+                        onConfirm={() =>
+                            send('post', cancelSubscription.url(route))
+                        }
                     />
                 </Panel>
             )}
@@ -668,15 +732,30 @@ function SubscriptionTab({
                 {invoices.length === 0 ? (
                     <EmptyState>Belum ada tagihan untuk tenant ini.</EmptyState>
                 ) : (
-                    <DataTable head={['Nomor', 'Terbit', 'Jatuh tempo', 'Jumlah', 'Status', '']}>
+                    <DataTable
+                        head={[
+                            'Nomor',
+                            'Terbit',
+                            'Jatuh tempo',
+                            'Jumlah',
+                            'Status',
+                            '',
+                        ]}
+                    >
                         {invoices.map((invoice) => (
                             <TableRow key={invoice.id}>
                                 <TableCell className="font-mono text-xs">
                                     {invoice.number}
                                 </TableCell>
-                                <TableCell>{formatDate(invoice.issuedAt)}</TableCell>
-                                <TableCell>{formatDate(invoice.dueAt)}</TableCell>
-                                <TableCell>{formatRupiah(invoice.amount)}</TableCell>
+                                <TableCell>
+                                    {formatDate(invoice.issuedAt)}
+                                </TableCell>
+                                <TableCell>
+                                    {formatDate(invoice.dueAt)}
+                                </TableCell>
+                                <TableCell>
+                                    {formatRupiah(invoice.amount)}
+                                </TableCell>
                                 <TableCell>
                                     <StatusChip status={invoice.state} />
                                 </TableCell>
@@ -686,7 +765,12 @@ function SubscriptionTab({
                                             <Button
                                                 size="sm"
                                                 onClick={() =>
-                                                    send('post', payInvoice.url({ invoice: invoice.id }))
+                                                    send(
+                                                        'post',
+                                                        payInvoice.url({
+                                                            invoice: invoice.id,
+                                                        }),
+                                                    )
                                                 }
                                             >
                                                 Tandai lunas
@@ -695,7 +779,12 @@ function SubscriptionTab({
                                                 size="sm"
                                                 variant="outline"
                                                 onClick={() =>
-                                                    send('post', voidInvoice.url({ invoice: invoice.id }))
+                                                    send(
+                                                        'post',
+                                                        voidInvoice.url({
+                                                            invoice: invoice.id,
+                                                        }),
+                                                    )
                                                 }
                                             >
                                                 Batalkan

@@ -34,7 +34,12 @@ type Portal =
           state: 'joined';
           school: string;
           period: string;
-          registration: { open: boolean; waveName: string | null; closesOn: string | null; nextOpensOn: string | null };
+          registration: {
+              open: boolean;
+              waveName: string | null;
+              closesOn: string | null;
+              nextOpensOn: string | null;
+          };
       }
     | { state: 'applied'; school: string; application: Application };
 
@@ -51,16 +56,35 @@ function LeaveSchool({ school }: { school: string }) {
     );
 }
 
-function Registration({ school, application }: { school: string; application: Application }) {
+function Registration({
+    school,
+    application,
+}: {
+    school: string;
+    application: Application;
+}) {
     const status = statusOf(application.status);
-    const decision = application.decision === null ? null : statusOf(application.decision);
+    const decision =
+        application.decision === null ? null : statusOf(application.decision);
 
     return (
         <div className="flex flex-col gap-6">
-            <Panel title={`Pendaftaran di ${school}`} actions={<Badge variant={status.variant}>{application.statusLabel}</Badge>}>
+            <Panel
+                title={`Pendaftaran di ${school}`}
+                actions={
+                    <Badge variant={status.variant}>
+                        {application.statusLabel}
+                    </Badge>
+                }
+            >
                 <DefinitionList
                     rows={[
-                        ['Nomor pendaftaran', <span key="n" className="font-mono">{application.number}</span>],
+                        [
+                            'Nomor pendaftaran',
+                            <span key="n" className="font-mono">
+                                {application.number}
+                            </span>,
+                        ],
                         ['Nama', application.name],
                         ['Jalur', application.pathName ?? '—'],
                         ['Gelombang', application.waveName ?? '—'],
@@ -72,7 +96,8 @@ function Registration({ school, application }: { school: string; application: Ap
             {application.status === 'revision' && (
                 <Alert>
                     <AlertDescription>
-                        <strong>Panitia meminta perbaikan.</strong> {application.note}
+                        <strong>Panitia meminta perbaikan.</strong>{' '}
+                        {application.note}
                     </AlertDescription>
                 </Alert>
             )}
@@ -87,13 +112,23 @@ function Registration({ school, application }: { school: string; application: Ap
             <Panel title="Hasil seleksi">
                 {application.resultsPublished && decision !== null ? (
                     <div className="flex flex-col gap-2">
-                        <Badge variant={decision.variant} className="self-start">
+                        <Badge
+                            variant={decision.variant}
+                            className="self-start"
+                        >
                             {application.decisionLabel}
                         </Badge>
-                        {application.enrolled && <p className="text-sm text-muted-foreground">Anda sudah melakukan daftar ulang.</p>}
+                        {application.enrolled && (
+                            <p className="text-sm text-muted-foreground">
+                                Anda sudah melakukan daftar ulang.
+                            </p>
+                        )}
                     </div>
                 ) : (
-                    <p className="text-sm text-muted-foreground">Hasil seleksi belum diumumkan. Halaman ini menampilkannya setelah sekolah mengumumkan.</p>
+                    <p className="text-sm text-muted-foreground">
+                        Hasil seleksi belum diumumkan. Halaman ini
+                        menampilkannya setelah sekolah mengumumkan.
+                    </p>
                 )}
             </Panel>
         </div>
@@ -101,11 +136,22 @@ function Registration({ school, application }: { school: string; application: Ap
 }
 
 /** The applicant's own page: where they stand and what to do next. */
-export default function Home({ account, portal }: { account: { name: string; email: string }; portal: Portal }) {
+export default function Home({
+    account,
+    portal,
+}: {
+    account: { name: string; email: string };
+    portal: Portal;
+}) {
     const errors = usePage<{ errors: Record<string, string> }>().props.errors;
 
     return (
-        <PortalPage title={`Halo, ${account.name}`} description={account.email} account={account} width="max-w-2xl">
+        <PortalPage
+            title={`Halo, ${account.name}`}
+            description={account.email}
+            account={account}
+            width="max-w-2xl"
+        >
             {errors.school !== undefined && (
                 <Alert variant="destructive">
                     <AlertDescription>{errors.school}</AlertDescription>
@@ -115,8 +161,9 @@ export default function Home({ account, portal }: { account: { name: string; ema
             {portal.state === 'no_school' && (
                 <Panel title="Gabung ke sekolah">
                     <p className="mb-4 text-sm text-muted-foreground">
-                        Untuk mendaftar, gabung ke sekolah tujuan dengan kode sekolah yang Anda terima dari sekolah. Satu akun hanya bisa mendaftar di satu
-                        sekolah.
+                        Untuk mendaftar, gabung ke sekolah tujuan dengan kode
+                        sekolah yang Anda terima dari sekolah. Satu akun hanya
+                        bisa mendaftar di satu sekolah.
                     </p>
                     <Button asChild>
                         <Link href={join.url()}>Masukkan kode sekolah</Link>
@@ -127,29 +174,38 @@ export default function Home({ account, portal }: { account: { name: string; ema
             {portal.state === 'unavailable' && (
                 <Panel title={portal.school}>
                     <p className="mb-4 text-sm text-muted-foreground">
-                        PPDB {portal.school} sedang tidak dibuka. Anda bisa menunggu sekolah membukanya, atau keluar dan bergabung ke sekolah lain.
+                        PPDB {portal.school} sedang tidak dibuka. Anda bisa
+                        menunggu sekolah membukanya, atau keluar dan bergabung
+                        ke sekolah lain.
                     </p>
                     <LeaveSchool school={portal.school} />
                 </Panel>
             )}
 
             {portal.state === 'joined' && (
-                <Panel title={portal.school} actions={<Badge variant="secondary">{portal.period}</Badge>}>
+                <Panel
+                    title={portal.school}
+                    actions={<Badge variant="secondary">{portal.period}</Badge>}
+                >
                     {portal.registration.open ? (
                         <p className="mb-4 text-sm text-muted-foreground">
-                            Pendaftaran {portal.registration.waveName} dibuka sampai {portal.registration.closesOn}. Isi formulir pendaftaran untuk
-                            mendaftar.
+                            Pendaftaran {portal.registration.waveName} dibuka
+                            sampai {portal.registration.closesOn}. Isi formulir
+                            pendaftaran untuk mendaftar.
                         </p>
                     ) : (
                         <p className="mb-4 text-sm text-muted-foreground">
                             Pendaftaran belum dibuka.
-                            {portal.registration.nextOpensOn !== null && ` Gelombang berikutnya dibuka ${portal.registration.nextOpensOn}.`}
+                            {portal.registration.nextOpensOn !== null &&
+                                ` Gelombang berikutnya dibuka ${portal.registration.nextOpensOn}.`}
                         </p>
                     )}
                     <div className="flex flex-wrap gap-3">
                         {portal.registration.open && (
                             <Button asChild>
-                                <Link href={applicationForm.url()}>Isi formulir pendaftaran</Link>
+                                <Link href={applicationForm.url()}>
+                                    Isi formulir pendaftaran
+                                </Link>
                             </Button>
                         )}
                         <LeaveSchool school={portal.school} />
@@ -157,7 +213,12 @@ export default function Home({ account, portal }: { account: { name: string; ema
                 </Panel>
             )}
 
-            {portal.state === 'applied' && <Registration school={portal.school} application={portal.application} />}
+            {portal.state === 'applied' && (
+                <Registration
+                    school={portal.school}
+                    application={portal.application}
+                />
+            )}
         </PortalPage>
     );
 }

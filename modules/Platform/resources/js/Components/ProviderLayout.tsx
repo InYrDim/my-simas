@@ -25,10 +25,7 @@ import ProviderHomeController from '@/actions/Modules/Platform/App/Http/Controll
 import { index as tenantsIndex } from '@/actions/Modules/Platform/App/Http/Controllers/TenantConsoleController';
 import { index as whatsappIndex } from '@/actions/Modules/Platform/App/Http/Controllers/WhatsappInstanceController';
 import { Alert, AlertDescription } from '@shared/components/ui/alert';
-import {
-    Avatar,
-    AvatarFallback,
-} from '@shared/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@shared/components/ui/avatar';
 import {
     Collapsible,
     CollapsibleContent,
@@ -75,7 +72,11 @@ const nav: NavEntry[] = [
         href: consolePath(ProviderHomeController.url()),
         icon: LayoutDashboardIcon,
     },
-    { label: 'Tenant', href: consolePath(tenantsIndex.url()), icon: SchoolIcon },
+    {
+        label: 'Tenant',
+        href: consolePath(tenantsIndex.url()),
+        icon: SchoolIcon,
+    },
     {
         label: 'Pengajuan',
         href: consolePath(applicationsIndex.url()),
@@ -187,7 +188,10 @@ export default function ProviderLayout({
                                             <SidebarMenuButton
                                                 asChild
                                                 tooltip={entry.label}
-                                                isActive={isCurrent(path, entry)}
+                                                isActive={isCurrent(
+                                                    path,
+                                                    entry,
+                                                )}
                                             >
                                                 <Link href={entry.href}>
                                                     <entry.icon />
@@ -199,8 +203,9 @@ export default function ProviderLayout({
                                         <Collapsible
                                             key={entry.label}
                                             asChild
-                                            defaultOpen={entry.children.some((child) =>
-                                                isCurrent(path, child),
+                                            defaultOpen={entry.children.some(
+                                                (child) =>
+                                                    isCurrent(path, child),
                                             )}
                                             className="group/collapsible"
                                         >
@@ -209,28 +214,51 @@ export default function ProviderLayout({
                                                     <SidebarMenuButton
                                                         tooltip={entry.label}
                                                         isActive={entry.children.some(
-                                                            (child) => isCurrent(path, child),
+                                                            (child) =>
+                                                                isCurrent(
+                                                                    path,
+                                                                    child,
+                                                                ),
                                                         )}
                                                     >
                                                         <entry.icon />
-                                                        <span>{entry.label}</span>
-                                                        <ChevronRightIcon className="ml-auto group-data-[collapsible=icon]:hidden transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                                                        <span>
+                                                            {entry.label}
+                                                        </span>
+                                                        <ChevronRightIcon className="ml-auto transition-transform group-data-[collapsible=icon]:hidden group-data-[state=open]/collapsible:rotate-90" />
                                                     </SidebarMenuButton>
                                                 </CollapsibleTrigger>
                                                 <CollapsibleContent>
                                                     <SidebarMenuSub>
-                                                        {entry.children.map((child) => (
-                                                            <SidebarMenuSubItem key={child.href}>
-                                                                <SidebarMenuSubButton
-                                                                    asChild
-                                                                    isActive={isCurrent(path, child)}
+                                                        {entry.children.map(
+                                                            (child) => (
+                                                                <SidebarMenuSubItem
+                                                                    key={
+                                                                        child.href
+                                                                    }
                                                                 >
-                                                                    <Link href={child.href}>
-                                                                        <span>{child.label}</span>
-                                                                    </Link>
-                                                                </SidebarMenuSubButton>
-                                                            </SidebarMenuSubItem>
-                                                        ))}
+                                                                    <SidebarMenuSubButton
+                                                                        asChild
+                                                                        isActive={isCurrent(
+                                                                            path,
+                                                                            child,
+                                                                        )}
+                                                                    >
+                                                                        <Link
+                                                                            href={
+                                                                                child.href
+                                                                            }
+                                                                        >
+                                                                            <span>
+                                                                                {
+                                                                                    child.label
+                                                                                }
+                                                                            </span>
+                                                                        </Link>
+                                                                    </SidebarMenuSubButton>
+                                                                </SidebarMenuSubItem>
+                                                            ),
+                                                        )}
                                                     </SidebarMenuSub>
                                                 </CollapsibleContent>
                                             </SidebarMenuItem>
@@ -246,7 +274,10 @@ export default function ProviderLayout({
                     <SidebarMenu>
                         {operator !== null && (
                             <SidebarMenuItem>
-                                <SidebarMenuButton size="lg" tooltip={operator.name}>
+                                <SidebarMenuButton
+                                    size="lg"
+                                    tooltip={operator.name}
+                                >
                                     <Avatar size="sm">
                                         <AvatarFallback>
                                             {initials(operator.name)}
@@ -292,12 +323,16 @@ export default function ProviderLayout({
                 <main className={`mx-auto w-full px-6 py-10 ${width}`}>
                     {props.flash?.status && (
                         <Alert className="mb-6">
-                            <AlertDescription>{props.flash.status}</AlertDescription>
+                            <AlertDescription>
+                                {props.flash.status}
+                            </AlertDescription>
                         </Alert>
                     )}
                     {props.errors?.billing && (
                         <Alert variant="destructive" className="mb-6">
-                            <AlertDescription>{props.errors.billing}</AlertDescription>
+                            <AlertDescription>
+                                {props.errors.billing}
+                            </AlertDescription>
                         </Alert>
                     )}
                     {children}

@@ -1,6 +1,10 @@
 import { expect, test } from '@playwright/test';
 
-import { schoolCode, seedDemoSchoolData, studentRecord } from './support/database';
+import {
+    schoolCode,
+    seedDemoSchoolData,
+    studentRecord,
+} from './support/database';
 import { accounts, centralUrl } from './support/env';
 
 /**
@@ -24,7 +28,9 @@ const slow = 30_000;
 
 test.beforeAll(() => seedDemoSchoolData());
 
-test('a student signs in with NIS and birth date and has to choose a new password', async ({ browser }) => {
+test('a student signs in with NIS and birth date and has to choose a new password', async ({
+    browser,
+}) => {
     // Three logins, a class of accounts and a password change, all hashed at full cost.
     test.setTimeout(180_000);
 
@@ -37,15 +43,21 @@ test('a student signs in with NIS and birth date and has to choose a new passwor
 
     await admin.goto(`${centralUrl}/login`);
     await admin.getByLabel('Kode sekolah').fill(code);
-    await admin.getByLabel('Email atau NIS/NIP').fill(accounts.schoolAdmin.email);
+    await admin
+        .getByLabel('Email atau NIS/NIP')
+        .fill(accounts.schoolAdmin.email);
     await admin.getByLabel('Kata sandi').fill(accounts.schoolAdmin.password);
     await admin.getByRole('button', { name: 'Masuk' }).click();
     await expect(admin).toHaveURL(`${centralUrl}/beranda`, { timeout: 30_000 });
 
     await admin.goto(`${centralUrl}/master/kelas/${student.classId}`);
     await admin.getByRole('button', { name: 'Buatkan akun siswa' }).click();
-    await admin.getByRole('button', { name: 'Buatkan akun', exact: true }).click();
-    await expect(admin.getByText(/akun dibuat\./)).toBeVisible({ timeout: slow });
+    await admin
+        .getByRole('button', { name: 'Buatkan akun', exact: true })
+        .click();
+    await expect(admin.getByText(/akun dibuat\./)).toBeVisible({
+        timeout: slow,
+    });
 
     await adminContext.close();
 
@@ -59,7 +71,9 @@ test('a student signs in with NIS and birth date and has to choose a new passwor
     await page.getByLabel('Kata sandi').fill(student.birthPassword);
     await page.getByRole('button', { name: 'Masuk' }).click();
 
-    await expect(page).toHaveURL(`${centralUrl}/ganti-kata-sandi`, { timeout: slow });
+    await expect(page).toHaveURL(`${centralUrl}/ganti-kata-sandi`, {
+        timeout: slow,
+    });
 
     // Every other page leads back here until the password is changed.
     await page.goto(`${centralUrl}/beranda`);
@@ -84,7 +98,9 @@ test('a student signs in with NIS and birth date and has to choose a new passwor
     await later.getByLabel('Email atau NIS/NIP').fill(nis);
     await later.getByLabel('Kata sandi').fill(student.birthPassword);
     await later.getByRole('button', { name: 'Masuk' }).click();
-    await expect(later.getByText('These credentials do not match our records.')).toBeVisible({ timeout: slow });
+    await expect(
+        later.getByText('These credentials do not match our records.'),
+    ).toBeVisible({ timeout: slow });
     await expect(later).toHaveURL(`${centralUrl}/login`);
 
     await later.getByLabel('Kode sekolah').fill(code);

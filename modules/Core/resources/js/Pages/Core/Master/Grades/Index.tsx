@@ -82,7 +82,11 @@ export default function GradesIndex({
 
                 <TabsContent value="grades" className="mt-6">
                     <DataTable
-                        head={['Tingkat', 'Urutan', 'Rombel tahun ajaran aktif']}
+                        head={[
+                            'Tingkat',
+                            'Urutan',
+                            'Rombel tahun ajaran aktif',
+                        ]}
                     >
                         {grades.map((grade) => (
                             <TableRow key={grade.id}>
@@ -135,7 +139,9 @@ export default function GradesIndex({
                                         <TableCell className="text-muted-foreground">
                                             {major.concentrations.length === 0
                                                 ? '—'
-                                                : major.concentrations.join(', ')}
+                                                : major.concentrations.join(
+                                                      ', ',
+                                                  )}
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex justify-end gap-2">

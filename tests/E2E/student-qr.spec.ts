@@ -1,6 +1,10 @@
 import { expect, test } from '@playwright/test';
 
-import { schoolCode, seedDemoSchoolData, studentRecord } from './support/database';
+import {
+    schoolCode,
+    seedDemoSchoolData,
+    studentRecord,
+} from './support/database';
 import { accounts, centralUrl } from './support/env';
 
 /**
@@ -24,7 +28,9 @@ const slow = 30_000;
 
 test.beforeAll(() => seedDemoSchoolData());
 
-test('a student shows a one-time QR code and the gate records it once', async ({ browser }) => {
+test('a student shows a one-time QR code and the gate records it once', async ({
+    browser,
+}) => {
     test.setTimeout(180_000);
 
     const code = schoolCode(accounts.schoolAdmin.schoolSlug);
@@ -36,16 +42,22 @@ test('a student shows a one-time QR code and the gate records it once', async ({
 
     await admin.goto(`${centralUrl}/login`);
     await admin.getByLabel('Kode sekolah').fill(code);
-    await admin.getByLabel('Email atau NIS/NIP').fill(accounts.schoolAdmin.email);
+    await admin
+        .getByLabel('Email atau NIS/NIP')
+        .fill(accounts.schoolAdmin.email);
     await admin.getByLabel('Kata sandi').fill(accounts.schoolAdmin.password);
     await admin.getByRole('button', { name: 'Masuk' }).click();
     await expect(admin).toHaveURL(`${centralUrl}/beranda`, { timeout: slow });
 
     await admin.goto(`${centralUrl}/master/kelas/${student.classId}`);
     await admin.getByRole('button', { name: 'Buatkan akun siswa' }).click();
-    await admin.getByRole('button', { name: 'Buatkan akun', exact: true }).click();
+    await admin
+        .getByRole('button', { name: 'Buatkan akun', exact: true })
+        .click();
     // Another spec may have made them already.
-    await expect(admin.getByText(/akun dibuat\.|sudah punya akun/)).toBeVisible({ timeout: slow });
+    await expect(admin.getByText(/akun dibuat\.|sudah punya akun/)).toBeVisible(
+        { timeout: slow },
+    );
 
     // --- The student signs in and chooses a password
     const studentContext = await browser.newContext();
@@ -58,7 +70,9 @@ test('a student shows a one-time QR code and the gate records it once', async ({
     await page.getByLabel('Email atau NIS/NIP').fill(nis);
     await page.getByLabel('Kata sandi').fill(student.birthPassword);
     await page.getByRole('button', { name: 'Masuk' }).click();
-    await expect(page).toHaveURL(`${centralUrl}/ganti-kata-sandi`, { timeout: slow });
+    await expect(page).toHaveURL(`${centralUrl}/ganti-kata-sandi`, {
+        timeout: slow,
+    });
 
     await page.getByLabel('Kata sandi sekarang').fill(student.birthPassword);
     await page.getByLabel('Kata sandi baru', { exact: true }).fill(newPassword);
@@ -68,10 +82,14 @@ test('a student shows a one-time QR code and the gate records it once', async ({
 
     // --- The student's menu holds the QR page and nothing else of Absensi
     await expect(page.getByRole('link', { name: 'QR Absensi' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Rekap Hari Ini' })).toHaveCount(0);
+    await expect(
+        page.getByRole('link', { name: 'Rekap Hari Ini' }),
+    ).toHaveCount(0);
 
     await page.getByRole('link', { name: 'QR Absensi' }).click();
-    await expect(page).toHaveURL(`${centralUrl}/absensi/qr-saya`, { timeout: slow });
+    await expect(page).toHaveURL(`${centralUrl}/absensi/qr-saya`, {
+        timeout: slow,
+    });
 
     const qr = page.getByTestId('attendance-qr');
     await expect(qr).toBeVisible({ timeout: slow });
@@ -95,7 +113,9 @@ test('a student shows a one-time QR code and the gate records it once', async ({
 
     await codeField.fill(firstCode as string);
     await record.click();
-    await expect(admin.getByText('Kode QR tidak dikenal atau sudah kedaluwarsa')).toBeVisible();
+    await expect(
+        admin.getByText('Kode QR tidak dikenal atau sudah kedaluwarsa'),
+    ).toBeVisible();
 
     await codeField.fill(liveCode as string);
     await record.click();
@@ -104,7 +124,9 @@ test('a student shows a one-time QR code and the gate records it once', async ({
 
     await codeField.fill(liveCode as string);
     await record.click();
-    await expect(admin.getByText('Kode QR tidak dikenal atau sudah kedaluwarsa')).toHaveCount(2);
+    await expect(
+        admin.getByText('Kode QR tidak dikenal atau sudah kedaluwarsa'),
+    ).toHaveCount(2);
 
     // --- The student sees the arrival on the QR page
     await page.reload();

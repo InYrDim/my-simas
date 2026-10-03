@@ -44,8 +44,14 @@ export default function PortalPage({
                     </div>
                     {account !== undefined && (
                         <div className="flex items-center gap-3 text-sm">
-                            <span className="hidden text-muted-foreground sm:inline">{account.name}</span>
-                            <Button variant="outline" size="sm" onClick={() => router.post(signOut.url())}>
+                            <span className="hidden text-muted-foreground sm:inline">
+                                {account.name}
+                            </span>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => router.post(signOut.url())}
+                            >
                                 Keluar
                             </Button>
                         </div>
@@ -60,13 +66,23 @@ export default function PortalPage({
                     )}
 
                     <div className="flex flex-col gap-1.5">
-                        <h1 className="text-2xl font-semibold tracking-tight text-balance">{title}</h1>
-                        {description !== undefined && <p className="text-sm text-muted-foreground">{description}</p>}
+                        <h1 className="text-2xl font-semibold tracking-tight text-balance">
+                            {title}
+                        </h1>
+                        {description !== undefined && (
+                            <p className="text-sm text-muted-foreground">
+                                {description}
+                            </p>
+                        )}
                     </div>
 
                     {children}
 
-                    {footer !== undefined && <div className="border-t pt-4 text-sm text-muted-foreground">{footer}</div>}
+                    {footer !== undefined && (
+                        <div className="border-t pt-4 text-sm text-muted-foreground">
+                            {footer}
+                        </div>
+                    )}
                 </main>
             </div>
         </div>

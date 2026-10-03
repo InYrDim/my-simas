@@ -52,9 +52,18 @@ const invoices = [
 ] as const;
 
 const helpTopics = [
-    ['Mengundang guru dan staf', 'Buka Pengguna, pilih Undang, lalu isi email dan peran.'],
-    ['Mengimpor data siswa', 'Unduh templat CSV di Impor Data, isi, unggah, lalu konfirmasi.'],
-    ['Lupa kata sandi', 'Gunakan Lupa kata sandi di halaman masuk dengan kode sekolah dan email.'],
+    [
+        'Mengundang guru dan staf',
+        'Buka Pengguna, pilih Undang, lalu isi email dan peran.',
+    ],
+    [
+        'Mengimpor data siswa',
+        'Unduh templat CSV di Impor Data, isi, unggah, lalu konfirmasi.',
+    ],
+    [
+        'Lupa kata sandi',
+        'Gunakan Lupa kata sandi di halaman masuk dengan kode sekolah dan email.',
+    ],
 ];
 
 const panels: Record<PanelKey, { title: string; description: string }> = {
@@ -100,7 +109,9 @@ function PlanPanel() {
             <div className="flex items-start justify-between gap-4">
                 <div>
                     <p className="text-base font-semibold">Sekolah Standar</p>
-                    <p className="text-muted-foreground">Rp 750.000 per bulan</p>
+                    <p className="text-muted-foreground">
+                        Rp 750.000 per bulan
+                    </p>
                 </div>
                 <Badge>Berlangganan</Badge>
             </div>
@@ -112,7 +123,9 @@ function PlanPanel() {
                     return (
                         <div key={row.label}>
                             <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">{row.label}</span>
+                                <span className="text-muted-foreground">
+                                    {row.label}
+                                </span>
                                 <span className="font-medium">
                                     {row.used} / {row.limit}
                                 </span>
@@ -126,7 +139,11 @@ function PlanPanel() {
                                 className="mt-1.5 h-1.5 bg-muted"
                             >
                                 <div
-                                    className={percent >= 90 ? 'h-full bg-accent' : 'h-full bg-primary'}
+                                    className={
+                                        percent >= 90
+                                            ? 'h-full bg-accent'
+                                            : 'h-full bg-primary'
+                                    }
                                     style={{ width: `${percent}%` }}
                                 />
                             </div>
@@ -147,10 +164,15 @@ function InvoicesPanel() {
     return (
         <ul className="flex flex-col divide-y divide-border">
             {invoices.map((invoice) => (
-                <li key={invoice.number} className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
+                <li
+                    key={invoice.number}
+                    className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"
+                >
                     <div>
                         <p className="font-mono text-xs">{invoice.number}</p>
-                        <p className="text-xs text-muted-foreground">{invoice.date} · Rp 750.000</p>
+                        <p className="text-xs text-muted-foreground">
+                            {invoice.date} · Rp 750.000
+                        </p>
                     </div>
                     {invoice.status === 'unpaid' ? (
                         <div className="flex items-center gap-3">
@@ -184,7 +206,13 @@ function HelpPanel() {
     );
 }
 
-function AboutPanel({ schoolName, schoolCode }: { schoolName: string; schoolCode: string }) {
+function AboutPanel({
+    schoolName,
+    schoolCode,
+}: {
+    schoolName: string;
+    schoolCode: string;
+}) {
     return (
         <dl>
             <Row label="Aplikasi">SIMAS</Row>
@@ -226,10 +254,14 @@ export default function AccountMenu({
                 <DropdownMenuTrigger asChild>
                     <SidebarMenuButton size="lg" tooltip={user.name}>
                         <Avatar size="sm">
-                            <AvatarFallback>{initials(user.name)}</AvatarFallback>
+                            <AvatarFallback>
+                                {initials(user.name)}
+                            </AvatarFallback>
                         </Avatar>
                         <span className="grid flex-1 text-left leading-tight">
-                            <span className="truncate text-sm font-medium">{user.name}</span>
+                            <span className="truncate text-sm font-medium">
+                                {user.name}
+                            </span>
                             <span className="truncate text-xs text-muted-foreground">
                                 {identity}
                             </span>
@@ -280,7 +312,12 @@ export default function AccountMenu({
                         </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                        <Link href={logoutHref} method="post" as="button" className="w-full">
+                        <Link
+                            href={logoutHref}
+                            method="post"
+                            as="button"
+                            className="w-full"
+                        >
                             <LogOutIcon />
                             Keluar
                         </Link>
@@ -288,17 +325,25 @@ export default function AccountMenu({
                 </DropdownMenuContent>
             </DropdownMenu>
 
-            <Dialog open={open !== null} onOpenChange={(next) => !next && setOpen(null)}>
+            <Dialog
+                open={open !== null}
+                onOpenChange={(next) => !next && setOpen(null)}
+            >
                 <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
                         <DialogTitle>{panel?.title}</DialogTitle>
-                        <DialogDescription>{panel?.description}</DialogDescription>
+                        <DialogDescription>
+                            {panel?.description}
+                        </DialogDescription>
                     </DialogHeader>
                     {open === 'plan' && <PlanPanel />}
                     {open === 'invoices' && <InvoicesPanel />}
                     {open === 'help' && <HelpPanel />}
                     {open === 'about' && (
-                        <AboutPanel schoolName={schoolName} schoolCode={schoolCode} />
+                        <AboutPanel
+                            schoolName={schoolName}
+                            schoolCode={schoolCode}
+                        />
                     )}
                     <p className="text-xs text-muted-foreground">
                         Tampilan contoh — data belum tersimpan.

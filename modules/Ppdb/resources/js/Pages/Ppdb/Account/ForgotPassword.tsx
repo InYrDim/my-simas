@@ -4,7 +4,13 @@ import type { FormEvent } from 'react';
 import { email } from '@/actions/Modules/Ppdb/App/Http/Controllers/Account/PasswordController';
 import { login } from '@/routes/ppdb/account';
 import { Button } from '@shared/components/ui/button';
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@shared/components/ui/field';
+import {
+    Field,
+    FieldDescription,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+} from '@shared/components/ui/field';
 import { Input } from '@shared/components/ui/input';
 
 import PortalPage from '../../../Components/PortalPage';
@@ -26,7 +32,10 @@ export default function ForgotPassword() {
             title="Lupa kata sandi"
             description="Masukkan email akun PPDB Anda. Kami mengirim tautan untuk membuat kata sandi baru."
             footer={
-                <Link href={login.url()} className="text-primary hover:underline">
+                <Link
+                    href={login.url()}
+                    className="text-primary hover:underline"
+                >
                     Kembali ke halaman masuk
                 </Link>
             }
@@ -44,9 +53,14 @@ export default function ForgotPassword() {
                             required
                             value={form.data.email}
                             aria-invalid={!!form.errors.email}
-                            onChange={(event) => form.setData('email', event.target.value)}
+                            onChange={(event) =>
+                                form.setData('email', event.target.value)
+                            }
                         />
-                        <FieldDescription>Tautan berlaku 60 menit dan hanya bisa dipakai sekali.</FieldDescription>
+                        <FieldDescription>
+                            Tautan berlaku 60 menit dan hanya bisa dipakai
+                            sekali.
+                        </FieldDescription>
                         <FieldError>{form.errors.email}</FieldError>
                     </Field>
 

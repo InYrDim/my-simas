@@ -115,7 +115,13 @@ export default function BillingSubscriptions({
                     <EmptyState>Tidak ada langganan yang cocok.</EmptyState>
                 ) : (
                     <DataTable
-                        head={['Sekolah', 'Paket', 'Status', 'Periode', 'Tarif']}
+                        head={[
+                            'Sekolah',
+                            'Paket',
+                            'Status',
+                            'Periode',
+                            'Tarif',
+                        ]}
                     >
                         {subscriptions.data.map((subscription) => (
                             <TableRow key={subscription.id}>

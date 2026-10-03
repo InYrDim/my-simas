@@ -190,7 +190,10 @@ export function OptionSelect({
             value={value === '' && allLabel !== undefined ? ALL : value}
             onValueChange={(next) => onChange(next === ALL ? '' : next)}
         >
-            <SelectTrigger aria-label={label} className={cn('w-full', className)}>
+            <SelectTrigger
+                aria-label={label}
+                className={cn('w-full', className)}
+            >
                 <SelectValue placeholder={placeholder ?? allLabel} />
             </SelectTrigger>
             <SelectContent>

@@ -10,7 +10,12 @@ import PpdbPage from '../../Components/PpdbPage';
 import { statusOf } from '../../Components/status';
 
 interface OverviewProps {
-    period: { id: number; name: string; status: string; closesOn: string | null } | null;
+    period: {
+        id: number;
+        name: string;
+        status: string;
+        closesOn: string | null;
+    } | null;
     funnel: { key: string; label: string; count: number }[];
     waves: {
         id: number;
@@ -24,16 +29,28 @@ interface OverviewProps {
 }
 
 /** Ringkasan PPDB: the admissions funnel and the registration waves. */
-export default function Overview({ period, funnel, waves, can }: OverviewProps) {
+export default function Overview({
+    period,
+    funnel,
+    waves,
+    can,
+}: OverviewProps) {
     if (period === null) {
         return (
-            <PpdbPage title="Ringkasan PPDB" description="Belum ada periode PPDB yang berjalan." width="max-w-6xl">
+            <PpdbPage
+                title="Ringkasan PPDB"
+                description="Belum ada periode PPDB yang berjalan."
+                width="max-w-6xl"
+            >
                 <EmptyState>
                     Belum ada periode PPDB yang berjalan.
                     {can.manageSettings && (
                         <>
                             {' '}
-                            <Link href={settings.url()} className="underline underline-offset-4">
+                            <Link
+                                href={settings.url()}
+                                className="underline underline-offset-4"
+                            >
                                 Atur periode, gelombang, dan kuota
                             </Link>{' '}
                             untuk memulai.
@@ -50,10 +67,17 @@ export default function Overview({ period, funnel, waves, can }: OverviewProps) 
     return (
         <PpdbPage
             title="Ringkasan PPDB"
-            description={period.closesOn === null ? period.name : `${period.name} · ditutup ${period.closesOn}`}
+            description={
+                period.closesOn === null
+                    ? period.name
+                    : `${period.name} · ditutup ${period.closesOn}`
+            }
             actions={
                 <>
-                    <Badge variant={periodStatus.variant} className="self-center">
+                    <Badge
+                        variant={periodStatus.variant}
+                        className="self-center"
+                    >
                         {periodStatus.label}
                     </Badge>
                     <Button asChild>
@@ -70,7 +94,9 @@ export default function Overview({ period, funnel, waves, can }: OverviewProps) 
                             <li key={step.key}>
                                 <div className="flex items-baseline justify-between text-sm">
                                     <span>{step.label}</span>
-                                    <span className="font-semibold">{step.count}</span>
+                                    <span className="font-semibold">
+                                        {step.count}
+                                    </span>
                                 </div>
                                 <div
                                     role="progressbar"
@@ -82,7 +108,9 @@ export default function Overview({ period, funnel, waves, can }: OverviewProps) 
                                 >
                                     <div
                                         className="h-full bg-primary"
-                                        style={{ width: `${Math.round((step.count / Math.max(top, 1)) * 100)}%` }}
+                                        style={{
+                                            width: `${Math.round((step.count / Math.max(top, 1)) * 100)}%`,
+                                        }}
                                     />
                                 </div>
                             </li>
@@ -91,14 +119,21 @@ export default function Overview({ period, funnel, waves, can }: OverviewProps) 
                 </Panel>
             )}
 
-            <h2 className={`mb-3 text-sm font-semibold ${funnel.length > 0 ? 'mt-10' : ''}`}>Gelombang pendaftaran</h2>
+            <h2
+                className={`mb-3 text-sm font-semibold ${funnel.length > 0 ? 'mt-10' : ''}`}
+            >
+                Gelombang pendaftaran
+            </h2>
             {waves.length === 0 ? (
                 <EmptyState>
                     Periode ini belum punya gelombang pendaftaran.
                     {can.manageSettings && (
                         <>
                             {' '}
-                            <Link href={settings.url()} className="underline underline-offset-4">
+                            <Link
+                                href={settings.url()}
+                                className="underline underline-offset-4"
+                            >
                                 Tambah gelombang
                             </Link>
                             .
@@ -106,18 +141,30 @@ export default function Overview({ period, funnel, waves, can }: OverviewProps) 
                     )}
                 </EmptyState>
             ) : (
-                <DataTable head={['Gelombang', 'Dibuka', 'Ditutup', 'Pendaftar', 'Status']}>
+                <DataTable
+                    head={[
+                        'Gelombang',
+                        'Dibuka',
+                        'Ditutup',
+                        'Pendaftar',
+                        'Status',
+                    ]}
+                >
                     {waves.map((wave) => {
                         const status = statusOf(wave.status);
 
                         return (
                             <TableRow key={wave.id}>
-                                <TableCell className="font-medium">{wave.name}</TableCell>
+                                <TableCell className="font-medium">
+                                    {wave.name}
+                                </TableCell>
                                 <TableCell>{wave.opensOn}</TableCell>
                                 <TableCell>{wave.closesOn}</TableCell>
                                 <TableCell>{wave.applicants}</TableCell>
                                 <TableCell>
-                                    <Badge variant={status.variant}>{status.label}</Badge>
+                                    <Badge variant={status.variant}>
+                                        {status.label}
+                                    </Badge>
                                 </TableCell>
                             </TableRow>
                         );

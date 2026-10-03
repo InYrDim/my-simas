@@ -45,7 +45,10 @@ export default function Register() {
             footer={
                 <span>
                     Sudah punya akun?{' '}
-                    <Link href={login.url()} className="text-primary hover:underline">
+                    <Link
+                        href={login.url()}
+                        className="text-primary hover:underline"
+                    >
                         Masuk
                     </Link>
                 </span>
@@ -63,7 +66,9 @@ export default function Register() {
                             required
                             value={form.data.name}
                             aria-invalid={!!form.errors.name}
-                            onChange={(event) => form.setData('name', event.target.value)}
+                            onChange={(event) =>
+                                form.setData('name', event.target.value)
+                            }
                         />
                         <FieldError>{form.errors.name}</FieldError>
                     </Field>
@@ -78,7 +83,9 @@ export default function Register() {
                             required
                             value={form.data.email}
                             aria-invalid={!!form.errors.email}
-                            onChange={(event) => form.setData('email', event.target.value)}
+                            onChange={(event) =>
+                                form.setData('email', event.target.value)
+                            }
                         />
                         <FieldDescription>
                             Email ini kelak menjadi akun admin sekolah.
@@ -96,7 +103,9 @@ export default function Register() {
                             required
                             value={form.data.password}
                             aria-invalid={!!form.errors.password}
-                            onChange={(event) => form.setData('password', event.target.value)}
+                            onChange={(event) =>
+                                form.setData('password', event.target.value)
+                            }
                         />
                         <FieldError>{form.errors.password}</FieldError>
                     </Field>
@@ -113,7 +122,10 @@ export default function Register() {
                             required
                             value={form.data.password_confirmation}
                             onChange={(event) =>
-                                form.setData('password_confirmation', event.target.value)
+                                form.setData(
+                                    'password_confirmation',
+                                    event.target.value,
+                                )
                             }
                         />
                     </Field>
@@ -128,7 +140,9 @@ export default function Register() {
                                 tabIndex={-1}
                                 autoComplete="off"
                                 value={form.data.website}
-                                onChange={(event) => form.setData('website', event.target.value)}
+                                onChange={(event) =>
+                                    form.setData('website', event.target.value)
+                                }
                             />
                         </label>
                     </div>

@@ -32,7 +32,10 @@ export default function RoleSelectField({
                 value={value === '' ? NO_ROLE : value}
                 onValueChange={(next) => onChange(next === NO_ROLE ? '' : next)}
             >
-                <SelectTrigger id="role" aria-invalid={error ? true : undefined}>
+                <SelectTrigger
+                    id="role"
+                    aria-invalid={error ? true : undefined}
+                >
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

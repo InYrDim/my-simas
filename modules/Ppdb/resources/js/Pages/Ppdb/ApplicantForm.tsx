@@ -7,7 +7,12 @@ import { Alert, AlertDescription } from '@shared/components/ui/alert';
 import { Button } from '@shared/components/ui/button';
 import { Field, FieldError, FieldLabel } from '@shared/components/ui/field';
 
-import FormRenderer, { formBinding, initialAnswers, type ApplicantData, type FormFieldDef } from '../../Components/FormRenderer';
+import FormRenderer, {
+    formBinding,
+    initialAnswers,
+    type ApplicantData,
+    type FormFieldDef,
+} from '../../Components/FormRenderer';
 import PpdbPage from '../../Components/PpdbPage';
 
 type Option = { value: string; label: string };
@@ -39,7 +44,9 @@ export default function ApplicantForm({
         answers: initialAnswers(fields, {}),
     });
     const errors: Partial<Record<string, string>> = form.errors;
-    const binding = formBinding(form.data, errors, (key, value) => form.setData(key as keyof ApplicantData, value as never));
+    const binding = formBinding(form.data, errors, (key, value) =>
+        form.setData(key as keyof ApplicantData, value as never),
+    );
 
     if (period === null || waves.length === 0) {
         return (
@@ -48,7 +55,10 @@ export default function ApplicantForm({
                     {period === null
                         ? 'Belum ada periode PPDB yang berjalan, jadi belum ada yang bisa didaftarkan.'
                         : 'Periode ini belum punya gelombang pendaftaran.'}{' '}
-                    <Link href={applicants.url()} className="underline underline-offset-4">
+                    <Link
+                        href={applicants.url()}
+                        className="underline underline-offset-4"
+                    >
                         Kembali ke daftar pendaftar
                     </Link>
                 </EmptyState>
@@ -57,7 +67,11 @@ export default function ApplicantForm({
     }
 
     return (
-        <PpdbPage title="Tambah pendaftar" description={`Pendaftar baru untuk ${period.name}.`} width="max-w-3xl">
+        <PpdbPage
+            title="Tambah pendaftar"
+            description={`Pendaftar baru untuk ${period.name}.`}
+            width="max-w-3xl"
+        >
             <form
                 onSubmit={(event) => {
                     event.preventDefault();
@@ -81,10 +95,14 @@ export default function ApplicantForm({
                                     label="Gelombang"
                                     placeholder="Pilih gelombang"
                                     value={form.data.wave_id}
-                                    onChange={(value) => form.setData('wave_id', value)}
+                                    onChange={(value) =>
+                                        form.setData('wave_id', value)
+                                    }
                                     options={waves}
                                 />
-                                {errors.wave_id !== undefined && <FieldError>{errors.wave_id}</FieldError>}
+                                {errors.wave_id !== undefined && (
+                                    <FieldError>{errors.wave_id}</FieldError>
+                                )}
                             </Field>
                         }
                     />

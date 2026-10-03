@@ -38,7 +38,9 @@ export default function ClassesShow({
     canCreateAccounts: boolean;
     assignments: Assignment[];
 }) {
-    const withoutAccount = students.filter((student) => !student.hasAccount).length;
+    const withoutAccount = students.filter(
+        (student) => !student.hasAccount,
+    ).length;
 
     return (
         <MasterPage
@@ -50,10 +52,20 @@ export default function ClassesShow({
             actions={
                 <>
                     <Button asChild variant="outline">
-                        <Link href={assignmentsPage.url({ query: { kelas: group.id } })}>Atur pengampu</Link>
+                        <Link
+                            href={assignmentsPage.url({
+                                query: { kelas: group.id },
+                            })}
+                        >
+                            Atur pengampu
+                        </Link>
                     </Button>
                     <Button asChild variant="outline">
-                        <Link href={placement.url({ query: { kelas: group.id } })}>Pindahkan siswa</Link>
+                        <Link
+                            href={placement.url({ query: { kelas: group.id } })}
+                        >
+                            Pindahkan siswa
+                        </Link>
                     </Button>
                 </>
             }
@@ -74,11 +86,17 @@ export default function ClassesShow({
                 <div className="flex flex-col gap-6 lg:col-span-2">
                     <Panel title="Pengampu mata pelajaran">
                         {assignments.length === 0 ? (
-                            <EmptyState>Belum ada pengampu untuk kelas ini.</EmptyState>
+                            <EmptyState>
+                                Belum ada pengampu untuk kelas ini.
+                            </EmptyState>
                         ) : (
-                            <DataTable head={['Mata pelajaran', 'Guru', 'JP/minggu']}>
+                            <DataTable
+                                head={['Mata pelajaran', 'Guru', 'JP/minggu']}
+                            >
                                 {assignments.map((row) => (
-                                    <TableRow key={`${row.subject}-${row.teacher}`}>
+                                    <TableRow
+                                        key={`${row.subject}-${row.teacher}`}
+                                    >
                                         <TableCell>{row.subject}</TableCell>
                                         <TableCell>{row.teacher}</TableCell>
                                         <TableCell>{row.hours}</TableCell>
@@ -108,14 +126,18 @@ export default function ClassesShow({
                         }
                     >
                         {students.length === 0 ? (
-                            <EmptyState>Belum ada siswa di kelas ini.</EmptyState>
+                            <EmptyState>
+                                Belum ada siswa di kelas ini.
+                            </EmptyState>
                         ) : (
                             <DataTable head={['Nama', 'NIS', 'Status', 'Akun']}>
                                 {students.map((student) => (
                                     <TableRow key={student.id}>
                                         <TableCell className="font-medium">
                                             <Link
-                                                href={studentShow.url(student.id)}
+                                                href={studentShow.url(
+                                                    student.id,
+                                                )}
                                                 className="hover:underline"
                                             >
                                                 {student.name}
@@ -123,11 +145,17 @@ export default function ClassesShow({
                                         </TableCell>
                                         <TableCell>{student.nis}</TableCell>
                                         <TableCell>
-                                            <StatusBadge status={student.status} />
+                                            <StatusBadge
+                                                status={student.status}
+                                            />
                                         </TableCell>
                                         <TableCell>
                                             <StatusBadge
-                                                status={student.hasAccount ? 'linked' : 'unlinked'}
+                                                status={
+                                                    student.hasAccount
+                                                        ? 'linked'
+                                                        : 'unlinked'
+                                                }
                                             />
                                         </TableCell>
                                     </TableRow>

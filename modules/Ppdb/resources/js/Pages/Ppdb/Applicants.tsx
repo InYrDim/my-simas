@@ -4,12 +4,19 @@ import { PlusIcon } from 'lucide-react';
 import { index } from '@/actions/Modules/Ppdb/App/Http/Controllers/ApplicantController';
 import { settings } from '@/routes/ppdb';
 import { create, show } from '@/routes/ppdb/applicants';
-import { DataTable, EmptyState, OptionSelect } from '@shared/components/page-parts';
+import {
+    DataTable,
+    EmptyState,
+    OptionSelect,
+} from '@shared/components/page-parts';
 import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
 import { Input } from '@shared/components/ui/input';
 import { TableCell, TableRow } from '@shared/components/ui/table';
-import ListPager, { type Pagination, useListFilters } from '@shared/components/ListPager';
+import ListPager, {
+    type Pagination,
+    useListFilters,
+} from '@shared/components/ListPager';
 
 import PpdbPage from '../../Components/PpdbPage';
 import { statusOf } from '../../Components/status';
@@ -37,21 +44,38 @@ interface ApplicantsProps {
 }
 
 /** Pendaftar: every applicant of the period, searchable and filterable. */
-export default function Applicants({ period, showOrigin, applicants, pagination, filters: initial, paths, statuses, can }: ApplicantsProps) {
+export default function Applicants({
+    period,
+    showOrigin,
+    applicants,
+    pagination,
+    filters: initial,
+    paths,
+    statuses,
+    can,
+}: ApplicantsProps) {
     const url = index.url();
     const { filters, set } = useListFilters(url, initial);
-    const filtered = initial.cari !== '' || initial.jalur !== '' || initial.status !== '';
+    const filtered =
+        initial.cari !== '' || initial.jalur !== '' || initial.status !== '';
 
     if (period === null) {
         return (
-            <PpdbPage title="Pendaftar" description="Belum ada periode PPDB." width="max-w-6xl">
+            <PpdbPage
+                title="Pendaftar"
+                description="Belum ada periode PPDB."
+                width="max-w-6xl"
+            >
                 <EmptyState>
                     Belum ada periode PPDB, jadi belum ada pendaftar.
                     {can.manage && (
                         <>
                             {' '}
                             Admin sekolah mengatur periode di{' '}
-                            <Link href={settings.url()} className="underline underline-offset-4">
+                            <Link
+                                href={settings.url()}
+                                className="underline underline-offset-4"
+                            >
                                 Pengaturan PPDB
                             </Link>
                             .
@@ -86,30 +110,70 @@ export default function Applicants({ period, showOrigin, applicants, pagination,
                     value={filters.cari}
                     onChange={(event) => set('cari', event.target.value)}
                 />
-                <OptionSelect label="Jalur" value={filters.jalur} onChange={(value) => set('jalur', value)} options={paths} allLabel="Semua jalur" />
-                <OptionSelect label="Status" value={filters.status} onChange={(value) => set('status', value)} options={statuses} allLabel="Semua status" />
+                <OptionSelect
+                    label="Jalur"
+                    value={filters.jalur}
+                    onChange={(value) => set('jalur', value)}
+                    options={paths}
+                    allLabel="Semua jalur"
+                />
+                <OptionSelect
+                    label="Status"
+                    value={filters.status}
+                    onChange={(value) => set('status', value)}
+                    options={statuses}
+                    allLabel="Semua status"
+                />
             </div>
 
             {applicants.length === 0 ? (
-                <EmptyState>{filtered ? 'Tidak ada pendaftar yang cocok.' : 'Belum ada pendaftar.'}</EmptyState>
+                <EmptyState>
+                    {filtered
+                        ? 'Tidak ada pendaftar yang cocok.'
+                        : 'Belum ada pendaftar.'}
+                </EmptyState>
             ) : (
-                <DataTable head={['No. daftar', 'Nama', ...(showOrigin ? ['Asal sekolah'] : []), 'Jalur', 'Tanggal', 'Status']}>
+                <DataTable
+                    head={[
+                        'No. daftar',
+                        'Nama',
+                        ...(showOrigin ? ['Asal sekolah'] : []),
+                        'Jalur',
+                        'Tanggal',
+                        'Status',
+                    ]}
+                >
                     {applicants.map((applicant) => {
                         const status = statusOf(applicant.status);
 
                         return (
                             <TableRow key={applicant.id}>
-                                <TableCell className="font-mono text-xs">{applicant.number}</TableCell>
+                                <TableCell className="font-mono text-xs">
+                                    {applicant.number}
+                                </TableCell>
                                 <TableCell className="font-medium">
-                                    <Link href={show.url({ applicant: applicant.id })} className="hover:underline">
+                                    <Link
+                                        href={show.url({
+                                            applicant: applicant.id,
+                                        })}
+                                        className="hover:underline"
+                                    >
                                         {applicant.name}
                                     </Link>
                                 </TableCell>
-                                {showOrigin && <TableCell className="text-muted-foreground">{applicant.origin ?? '—'}</TableCell>}
-                                <TableCell>{applicant.pathName ?? '—'}</TableCell>
+                                {showOrigin && (
+                                    <TableCell className="text-muted-foreground">
+                                        {applicant.origin ?? '—'}
+                                    </TableCell>
+                                )}
+                                <TableCell>
+                                    {applicant.pathName ?? '—'}
+                                </TableCell>
                                 <TableCell>{applicant.registeredOn}</TableCell>
                                 <TableCell>
-                                    <Badge variant={status.variant}>{status.label}</Badge>
+                                    <Badge variant={status.variant}>
+                                        {status.label}
+                                    </Badge>
                                 </TableCell>
                             </TableRow>
                         );

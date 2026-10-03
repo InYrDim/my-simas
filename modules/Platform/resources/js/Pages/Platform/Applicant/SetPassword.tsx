@@ -63,7 +63,9 @@ export default function SetPassword({
                             required
                             value={form.data.password}
                             aria-invalid={!!form.errors.password}
-                            onChange={(event) => form.setData('password', event.target.value)}
+                            onChange={(event) =>
+                                form.setData('password', event.target.value)
+                            }
                         />
                         <FieldError>{form.errors.password}</FieldError>
                     </Field>
@@ -80,7 +82,10 @@ export default function SetPassword({
                             required
                             value={form.data.password_confirmation}
                             onChange={(event) =>
-                                form.setData('password_confirmation', event.target.value)
+                                form.setData(
+                                    'password_confirmation',
+                                    event.target.value,
+                                )
                             }
                         />
                     </Field>

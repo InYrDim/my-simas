@@ -13,7 +13,7 @@ const statuses: Record<string, [Variant, string]> = {
     current: ['default', 'Berjalan'],
     upcoming: ['outline', 'Akan datang'],
     finished: ['secondary', 'Selesai'],
-    linked:['default', 'Punya akun'],
+    linked: ['default', 'Punya akun'],
     unlinked: ['outline', 'Belum punya akun'],
 };
 

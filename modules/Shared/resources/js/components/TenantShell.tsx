@@ -1,17 +1,17 @@
-import { Link, usePage } from "@inertiajs/react";
-import { ChevronRightIcon } from "lucide-react";
-import { DynamicIcon } from "lucide-react/dynamic";
-import type { IconName } from "lucide-react/dynamic";
-import type { ReactNode } from "react";
+import { Link, usePage } from '@inertiajs/react';
+import { ChevronRightIcon } from 'lucide-react';
+import { DynamicIcon } from 'lucide-react/dynamic';
+import type { IconName } from 'lucide-react/dynamic';
+import type { ReactNode } from 'react';
 
-import AccountMenu from "@shared/components/AccountMenu";
-import { Alert, AlertDescription } from "@shared/components/ui/alert";
+import AccountMenu from '@shared/components/AccountMenu';
+import { Alert, AlertDescription } from '@shared/components/ui/alert';
 import {
     Collapsible,
     CollapsibleContent,
     CollapsibleTrigger,
-} from "@shared/components/ui/collapsible";
-import { Separator } from "@shared/components/ui/separator";
+} from '@shared/components/ui/collapsible';
+import { Separator } from '@shared/components/ui/separator';
 import {
     Sidebar,
     SidebarContent,
@@ -30,13 +30,13 @@ import {
     SidebarProvider,
     SidebarRail,
     SidebarTrigger,
-} from "@shared/components/ui/sidebar";
-import { useTenant } from "@shared/hooks/useTenant";
+} from '@shared/components/ui/sidebar';
+import { useTenant } from '@shared/hooks/useTenant';
 
 interface NavLinkItem {
     label: string;
     href: string;
-    match: "exact" | "prefix";
+    match: 'exact' | 'prefix';
 }
 
 /** A sidebar entry as shared by the server (`tenantNav`). */
@@ -50,13 +50,17 @@ interface NavItem extends NavLinkItem {
 
 type SharedProps = {
     auth: {
-        user: { name: string; email: string | null; username?: string | null } | null;
+        user: {
+            name: string;
+            email: string | null;
+            username?: string | null;
+        } | null;
     };
     flash: { status?: string | null };
     tenantNav: NavItem[];
 };
 
-const sidebarCookie = "sidebar_state";
+const sidebarCookie = 'sidebar_state';
 
 function readSidebarOpen(): boolean {
     try {
@@ -67,7 +71,7 @@ function readSidebarOpen(): boolean {
 }
 
 function isCurrent(path: string, item: NavLinkItem): boolean {
-    return item.match === "exact"
+    return item.match === 'exact'
         ? path === item.href
         : path === item.href || path.startsWith(`${item.href}/`);
 }
@@ -97,7 +101,7 @@ function initials(name: string): string {
         .filter(Boolean)
         .slice(0, 2)
         .map((part) => part[0].toUpperCase())
-        .join("");
+        .join('');
 }
 
 /**
@@ -107,9 +111,9 @@ function initials(name: string): string {
  */
 export default function TenantShell({
     children,
-    width = "max-w-5xl",
-    logoutHref = "/logout",
-    changePasswordHref = "/ganti-kata-sandi",
+    width = 'max-w-5xl',
+    logoutHref = '/logout',
+    changePasswordHref = '/ganti-kata-sandi',
 }: {
     children: ReactNode;
     width?: string;
@@ -118,9 +122,9 @@ export default function TenantShell({
 }) {
     const { url, props } = usePage<SharedProps>();
     const tenant = useTenant();
-    const path = url.split("?")[0];
+    const path = url.split('?')[0];
     const user = props.auth?.user ?? null;
-    const schoolName = tenant?.name ?? "SIMAS";
+    const schoolName = tenant?.name ?? 'SIMAS';
 
     return (
         <SidebarProvider defaultOpen={readSidebarOpen()}>
@@ -128,7 +132,7 @@ export default function TenantShell({
                 <SidebarHeader className="h-16 justify-center">
                     <div className="flex items-center gap-3 px-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
                         <span className="flex size-9 shrink-0 items-center justify-center bg-primary text-sm font-semibold text-primary-foreground">
-                            {initials(schoolName) || "S"}
+                            {initials(schoolName) || 'S'}
                         </span>
                         <span className="grid leading-tight group-data-[collapsible=icon]:hidden">
                             <span className="truncate text-sm font-semibold">
@@ -143,7 +147,7 @@ export default function TenantShell({
 
                 <SidebarContent>
                     {groupNav(props.tenantNav ?? []).map((section) => (
-                        <SidebarGroup key={section.label ?? "ungrouped"}>
+                        <SidebarGroup key={section.label ?? 'ungrouped'}>
                             {section.label && (
                                 <SidebarGroupLabel>
                                     {section.label}
@@ -268,7 +272,7 @@ export default function TenantShell({
                                 <AccountMenu
                                     user={user}
                                     schoolName={schoolName}
-                                    schoolCode={tenant?.slug ?? ""}
+                                    schoolCode={tenant?.slug ?? ''}
                                     logoutHref={logoutHref}
                                     changePasswordHref={changePasswordHref}
                                 />

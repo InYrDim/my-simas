@@ -1,5 +1,4 @@
 import { Link } from '@inertiajs/react';
-import type { ReactNode } from 'react';
 
 import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';

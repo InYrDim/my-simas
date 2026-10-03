@@ -2,7 +2,11 @@ import { usePage } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 
 import { DefinitionList, Panel } from '@shared/components/page-parts';
-import { Alert, AlertDescription, AlertTitle } from '@shared/components/ui/alert';
+import {
+    Alert,
+    AlertDescription,
+    AlertTitle,
+} from '@shared/components/ui/alert';
 import { Badge } from '@shared/components/ui/badge';
 
 import type { LinkedAccount } from '../types/master';

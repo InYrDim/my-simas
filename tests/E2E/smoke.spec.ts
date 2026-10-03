@@ -22,7 +22,9 @@ test.describe('front doors', () => {
         await page.goto('/');
 
         await expect(page).toHaveURL(/\/login$/);
-        await expect(page.getByRole('heading', { name: 'Masuk ke akun Anda' })).toBeVisible();
+        await expect(
+            page.getByRole('heading', { name: 'Masuk ke akun Anda' }),
+        ).toBeVisible();
         await expect(page.getByLabel('Kode sekolah')).toBeVisible();
     });
 

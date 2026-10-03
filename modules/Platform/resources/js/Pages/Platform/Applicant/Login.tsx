@@ -39,7 +39,10 @@ export default function Login() {
             footer={
                 <span>
                     Belum punya akun?{' '}
-                    <Link href={register.url()} className="text-primary hover:underline">
+                    <Link
+                        href={register.url()}
+                        className="text-primary hover:underline"
+                    >
                         Daftarkan sekolah
                     </Link>
                 </span>
@@ -58,7 +61,9 @@ export default function Login() {
                             required
                             value={form.data.email}
                             aria-invalid={!!form.errors.email}
-                            onChange={(event) => form.setData('email', event.target.value)}
+                            onChange={(event) =>
+                                form.setData('email', event.target.value)
+                            }
                         />
                         <FieldError>{form.errors.email}</FieldError>
                     </Field>
@@ -73,7 +78,9 @@ export default function Login() {
                             required
                             value={form.data.password}
                             aria-invalid={!!form.errors.password}
-                            onChange={(event) => form.setData('password', event.target.value)}
+                            onChange={(event) =>
+                                form.setData('password', event.target.value)
+                            }
                         />
                         <FieldError>{form.errors.password}</FieldError>
                     </Field>

@@ -12,7 +12,11 @@ import { Button } from '@shared/components/ui/button';
 import { TableCell, TableRow } from '@shared/components/ui/table';
 
 import MasterPage from '../../../../Components/MasterPage';
-import type { ClassGroup, SchoolSummary, Teacher } from '../../../../types/master';
+import type {
+    ClassGroup,
+    SchoolSummary,
+    Teacher,
+} from '../../../../types/master';
 
 const NONE = 'none';
 
@@ -31,7 +35,10 @@ export default function HomeroomsIndex({
 }) {
     const form = useForm<{ homerooms: Record<number, string> }>({
         homerooms: Object.fromEntries(
-            classes.map((group) => [group.id, String(group.homeroomId ?? NONE)]),
+            classes.map((group) => [
+                group.id,
+                String(group.homeroomId ?? NONE),
+            ]),
         ),
     });
     const chosen = form.data.homerooms;
@@ -46,7 +53,8 @@ export default function HomeroomsIndex({
     const load = (teacherId: string) =>
         teacherId === NONE
             ? 0
-            : Object.values(chosen).filter((value) => value === teacherId).length;
+            : Object.values(chosen).filter((value) => value === teacherId)
+                  .length;
 
     return (
         <MasterPage
@@ -77,14 +85,18 @@ export default function HomeroomsIndex({
 
             {classes.length === 0 ? (
                 <EmptyState>
-                    Belum ada kelas pada tahun ajaran aktif. Aktifkan tahun ajaran
-                    dan buat kelasnya di Master Data.
+                    Belum ada kelas pada tahun ajaran aktif. Aktifkan tahun
+                    ajaran dan buat kelasnya di Master Data.
                 </EmptyState>
             ) : (
-                <DataTable head={['Kelas', 'Ruangan', school.homeroomLabel, '']}>
+                <DataTable
+                    head={['Kelas', 'Ruangan', school.homeroomLabel, '']}
+                >
                     {classes.map((group) => (
                         <TableRow key={group.id}>
-                            <TableCell className="font-medium">{group.name}</TableCell>
+                            <TableCell className="font-medium">
+                                {group.name}
+                            </TableCell>
                             <TableCell>{group.room ?? '—'}</TableCell>
                             <TableCell className="w-80">
                                 <OptionSelect

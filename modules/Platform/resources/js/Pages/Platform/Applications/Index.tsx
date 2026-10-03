@@ -32,7 +32,9 @@ export default function ApplicationsIndex({ applications }: IndexProps) {
 
             <div className="mt-8">
                 {applications.length === 0 ? (
-                    <EmptyState>Tidak ada pengajuan pending. Semua beres.</EmptyState>
+                    <EmptyState>
+                        Tidak ada pengajuan pending. Semua beres.
+                    </EmptyState>
                 ) : (
                     <ul className="flex flex-col gap-3">
                         {applications.map((application) => (

@@ -1,6 +1,9 @@
 import { router, useForm } from '@inertiajs/react';
 
-import { index, update } from '@/actions/Modules/Attendance/App/Http/Controllers/LessonAttendanceController';
+import {
+    index,
+    update,
+} from '@/actions/Modules/Attendance/App/Http/Controllers/LessonAttendanceController';
 import { EmptyState, OptionSelect, Panel } from '@shared/components/page-parts';
 import { Alert, AlertDescription } from '@shared/components/ui/alert';
 import { Badge } from '@shared/components/ui/badge';
@@ -11,7 +14,11 @@ import { cn } from '@shared/lib/utils';
 import AttendancePage from '../../Components/AttendancePage';
 import ClassSelect from '../../Components/ClassSelect';
 import Filter from '../../Components/Filter';
-import { lessonStatuses, pressedClass, statusMeta } from '../../Components/status';
+import {
+    lessonStatuses,
+    pressedClass,
+    statusMeta,
+} from '../../Components/status';
 import type { AttendanceStatus, ClassOption } from '../../Components/status';
 
 interface Student {
@@ -62,12 +69,18 @@ export default function Lessons({
         router.get(index.url({ query }));
 
     return (
-        <AttendancePage title="Absensi Jam Pelajaran" description={date.label} width="max-w-3xl">
+        <AttendancePage
+            title="Absensi Jam Pelajaran"
+            description={date.label}
+            width="max-w-3xl"
+        >
             <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
                 <Filter label="Kelas">
                     <ClassSelect
                         value={classId}
-                        onChange={(kelas) => open({ kelas, tanggal: date.iso, jam: slotId })}
+                        onChange={(kelas) =>
+                            open({ kelas, tanggal: date.iso, jam: slotId })
+                        }
                         options={classes}
                     />
                 </Filter>
@@ -79,7 +92,10 @@ export default function Lessons({
                         max={today}
                         onChange={(event) =>
                             event.target.value !== '' &&
-                            open({ kelas: classId, tanggal: event.target.value })
+                            open({
+                                kelas: classId,
+                                tanggal: event.target.value,
+                            })
                         }
                     />
                 </Filter>
@@ -88,7 +104,9 @@ export default function Lessons({
                         <OptionSelect
                             label="Jam pelajaran"
                             value={slotId}
-                            onChange={(jam) => open({ kelas: classId, tanggal: date.iso, jam })}
+                            onChange={(jam) =>
+                                open({ kelas: classId, tanggal: date.iso, jam })
+                            }
                             options={slots}
                         />
                     </Filter>
@@ -97,8 +115,8 @@ export default function Lessons({
 
             {classId === '' ? (
                 <EmptyState>
-                    Belum ada kelas pada tahun ajaran aktif. Aktifkan tahun ajaran dan
-                    buat kelas di Master Data lebih dulu.
+                    Belum ada kelas pada tahun ajaran aktif. Aktifkan tahun
+                    ajaran dan buat kelas di Master Data lebih dulu.
                 </EmptyState>
             ) : slots.length === 0 ? (
                 <EmptyState>
@@ -154,10 +172,14 @@ function LessonRoll({
         date,
         period_slot_id: slotId,
         subject_id: subjectId === '' ? NO_SUBJECT : subjectId,
-        marks: Object.fromEntries(students.map((student) => [student.id, student.status])),
+        marks: Object.fromEntries(
+            students.map((student) => [student.id, student.status]),
+        ),
     });
     const marks = form.data.marks;
-    const unmarked = students.filter((student) => marks[student.id] === null).length;
+    const unmarked = students.filter(
+        (student) => marks[student.id] === null,
+    ).length;
 
     const mark = (id: number, status: AttendanceStatus) =>
         form.setData('marks', { ...marks, [id]: status });
@@ -168,7 +190,10 @@ function LessonRoll({
             subject_id: data.subject_id === NO_SUBJECT ? null : data.subject_id,
             marks: Object.entries(data.marks)
                 .filter(([, status]) => status !== null)
-                .map(([student_id, status]) => ({ student_id: Number(student_id), status })),
+                .map(([student_id, status]) => ({
+                    student_id: Number(student_id),
+                    status,
+                })),
         }));
         form.put(update.url(), { preserveScroll: true });
     };
@@ -194,7 +219,10 @@ function LessonRoll({
                         label="Mata pelajaran"
                         value={form.data.subject_id}
                         onChange={(value) => form.setData('subject_id', value)}
-                        options={[{ value: NO_SUBJECT, label: 'Tidak dicatat' }, ...subjects]}
+                        options={[
+                            { value: NO_SUBJECT, label: 'Tidak dicatat' },
+                            ...subjects,
+                        ]}
                     />
                 </Filter>
                 <Button
@@ -225,7 +253,9 @@ function LessonRoll({
                             className="flex flex-col gap-3 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
                         >
                             <div className="min-w-0">
-                                <p className="truncate text-sm font-medium">{student.name}</p>
+                                <p className="truncate text-sm font-medium">
+                                    {student.name}
+                                </p>
                                 <p className="font-mono text-xs text-muted-foreground">
                                     {student.nis}
                                     {student.scanned && ' · dipindai'}
@@ -246,9 +276,13 @@ function LessonRoll({
                                             key={status}
                                             type="button"
                                             size="sm"
-                                            variant={active ? 'default' : 'outline'}
+                                            variant={
+                                                active ? 'default' : 'outline'
+                                            }
                                             aria-pressed={active}
-                                            onClick={() => mark(student.id, status)}
+                                            onClick={() =>
+                                                mark(student.id, status)
+                                            }
                                             className={cn(
                                                 'min-w-16 flex-1 sm:flex-none',
                                                 active && pressedClass[status],
@@ -267,19 +301,34 @@ function LessonRoll({
             <div className="sticky bottom-0 mt-6 flex flex-wrap items-center justify-between gap-3 border border-border bg-card p-4 shadow-sm">
                 <div className="flex flex-wrap gap-2">
                     {lessonStatuses.map((status) => (
-                        <Badge key={status} variant={statusMeta[status].variant}>
+                        <Badge
+                            key={status}
+                            variant={statusMeta[status].variant}
+                        >
                             {statusMeta[status].label}{' '}
-                            {students.filter((student) => marks[student.id] === status).length}
+                            {
+                                students.filter(
+                                    (student) => marks[student.id] === status,
+                                ).length
+                            }
                         </Badge>
                     ))}
-                    {unmarked > 0 && <Badge variant="outline">Belum ditandai {unmarked}</Badge>}
+                    {unmarked > 0 && (
+                        <Badge variant="outline">
+                            Belum ditandai {unmarked}
+                        </Badge>
+                    )}
                 </div>
                 <div className="flex items-center gap-3">
                     {recorded && (
-                        <span className="text-sm text-muted-foreground">Sudah pernah disimpan</span>
+                        <span className="text-sm text-muted-foreground">
+                            Sudah pernah disimpan
+                        </span>
                     )}
                     <Button
-                        disabled={form.processing || unmarked === students.length}
+                        disabled={
+                            form.processing || unmarked === students.length
+                        }
                         onClick={save}
                     >
                         Simpan absensi

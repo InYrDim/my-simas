@@ -26,7 +26,12 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@shared/components/ui/dialog';
-import { Field, FieldDescription, FieldError, FieldLabel } from '@shared/components/ui/field';
+import {
+    Field,
+    FieldDescription,
+    FieldError,
+    FieldLabel,
+} from '@shared/components/ui/field';
 import { Spinner } from '@shared/components/ui/spinner';
 import { Textarea } from '@shared/components/ui/textarea';
 import { TableCell, TableRow } from '@shared/components/ui/table';
@@ -98,14 +103,25 @@ const historyStatus: Record<MessageRow['status'], [BadgeVariant, string]> = {
     no_recipient: ['secondary', 'Tanpa nomor tujuan'],
 };
 
-const dayFormat = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+const dayFormat = new Intl.DateTimeFormat('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+});
 
 function fillTemplate(body: string, sample: Record<string, string>): string {
-    return body.replace(/\{(\w+)\}/g, (match, key: string) => sample[key] ?? match);
+    return body.replace(
+        /\{(\w+)\}/g,
+        (match, key: string) => sample[key] ?? match,
+    );
 }
 
 /** Heading, badge and explanation of the status panel, per stage. */
-function describe(state: WhatsappState): { heading: string; badge: [BadgeVariant, string]; text: string } {
+function describe(state: WhatsappState): {
+    heading: string;
+    badge: [BadgeVariant, string];
+    text: string;
+} {
     switch (state.stage) {
         case 'pending':
             return {
@@ -120,13 +136,17 @@ function describe(state: WhatsappState): { heading: string; badge: [BadgeVariant
             return {
                 heading: 'Pengajuan ditolak',
                 badge: ['destructive', 'Ditolak'],
-                text: state.note ?? 'Penyedia layanan menolak pengajuan ini tanpa catatan.',
+                text:
+                    state.note ??
+                    'Penyedia layanan menolak pengajuan ini tanpa catatan.',
             };
         case 'disabled':
             return {
                 heading: 'WhatsApp dinonaktifkan',
                 badge: ['destructive', 'Dinonaktifkan'],
-                text: state.note ?? 'Penyedia layanan menonaktifkan WhatsApp sekolah ini.',
+                text:
+                    state.note ??
+                    'Penyedia layanan menonaktifkan WhatsApp sekolah ini.',
             };
         case 'active':
             return describeConnection(state);
@@ -140,7 +160,11 @@ function describe(state: WhatsappState): { heading: string; badge: [BadgeVariant
 }
 
 /** The same, for an approved WhatsApp: where the link to a number stands. */
-function describeConnection(state: WhatsappState): { heading: string; badge: [BadgeVariant, string]; text: string } {
+function describeConnection(state: WhatsappState): {
+    heading: string;
+    badge: [BadgeVariant, string];
+    text: string;
+} {
     switch (state.connection) {
         case 'ready':
             return {
@@ -218,7 +242,10 @@ export default function WhatsappIndex({
     const { errors } = usePage<{ errors: Record<string, string> }>().props;
     const active = state.stage === 'active';
     const connected = active && state.connection === 'ready';
-    const underWay = active && state.connection !== null && linking.includes(state.connection);
+    const underWay =
+        active &&
+        state.connection !== null &&
+        linking.includes(state.connection);
     const queued = history.some((row) => row.status === 'pending');
     const status = describe(state);
     const [requesting, setRequesting] = useState(false);
@@ -260,23 +287,38 @@ export default function WhatsappIndex({
                         </span>
                         <div>
                             <div className="flex items-center gap-3">
-                                <h2 className="text-base font-semibold">{status.heading}</h2>
-                                <Badge variant={status.badge[0]}>{status.badge[1]}</Badge>
+                                <h2 className="text-base font-semibold">
+                                    {status.heading}
+                                </h2>
+                                <Badge variant={status.badge[0]}>
+                                    {status.badge[1]}
+                                </Badge>
                             </div>
-                            <p className="mt-1 max-w-prose text-sm text-muted-foreground">{status.text}</p>
+                            <p className="mt-1 max-w-prose text-sm text-muted-foreground">
+                                {status.text}
+                            </p>
                         </div>
                     </div>
 
                     {(state.stage === 'none' || state.stage === 'rejected') && (
-                        <Button onClick={() => post(requestWhatsapp.url())} disabled={requesting}>
-                            {state.stage === 'rejected' ? 'Ajukan lagi' : 'Ajukan WhatsApp'}
+                        <Button
+                            onClick={() => post(requestWhatsapp.url())}
+                            disabled={requesting}
+                        >
+                            {state.stage === 'rejected'
+                                ? 'Ajukan lagi'
+                                : 'Ajukan WhatsApp'}
                         </Button>
                     )}
 
                     {active && !connected && !underWay && (
-                        <Button onClick={() => post(connectWhatsapp.url())} disabled={requesting}>
+                        <Button
+                            onClick={() => post(connectWhatsapp.url())}
+                            disabled={requesting}
+                        >
                             <QrCodeIcon />
-                            {state.connection === 'failed' || state.connection === 'action_required'
+                            {state.connection === 'failed' ||
+                            state.connection === 'action_required'
                                 ? 'Hubungkan lagi'
                                 : 'Hubungkan'}
                         </Button>
@@ -319,16 +361,21 @@ export default function WhatsappIndex({
                             title="Putuskan WhatsApp sekolah?"
                             description="Pesan tidak bisa dikirim sampai nomor dihubungkan lagi dengan memindai kode QR baru."
                             confirmLabel="Putuskan"
-                            trigger={<Button variant="outline">Putuskan</Button>}
+                            trigger={
+                                <Button variant="outline">Putuskan</Button>
+                            }
                         />
                     )}
                 </div>
 
-                {state.lastError !== null && state.lastError !== errors?.status && (
-                    <Alert variant="destructive" className="mt-4">
-                        <AlertDescription>{state.lastError}</AlertDescription>
-                    </Alert>
-                )}
+                {state.lastError !== null &&
+                    state.lastError !== errors?.status && (
+                        <Alert variant="destructive" className="mt-4">
+                            <AlertDescription>
+                                {state.lastError}
+                            </AlertDescription>
+                        </Alert>
+                    )}
 
                 {underWay && (
                     <div className="mt-6 border-t border-border pt-6">
@@ -342,7 +389,10 @@ export default function WhatsappIndex({
                                 />
                                 <ol className="list-decimal pl-5 text-sm text-muted-foreground">
                                     <li>Buka WhatsApp di ponsel sekolah.</li>
-                                    <li>Pilih Perangkat tertaut, lalu Tautkan perangkat.</li>
+                                    <li>
+                                        Pilih Perangkat tertaut, lalu Tautkan
+                                        perangkat.
+                                    </li>
                                     <li>Arahkan kamera ke kode ini.</li>
                                 </ol>
                             </div>
@@ -358,37 +408,57 @@ export default function WhatsappIndex({
                 )}
             </Panel>
 
-            <h2 className="mt-10 mb-3 text-sm font-semibold">Pemberitahuan otomatis</h2>
+            <h2 className="mt-10 mb-3 text-sm font-semibold">
+                Pemberitahuan otomatis
+            </h2>
             {kinds.length === 0 ? (
                 <EmptyState>Belum ada pemberitahuan yang tersedia.</EmptyState>
             ) : (
                 <Panel>
                     {!connected && (
                         <p className="mb-4 text-sm text-muted-foreground">
-                            Pemberitahuan yang aktif baru terkirim setelah WhatsApp sekolah terhubung.
+                            Pemberitahuan yang aktif baru terkirim setelah
+                            WhatsApp sekolah terhubung.
                         </p>
                     )}
                     <ul className="flex flex-col divide-y divide-border">
                         {kinds.map((kind) => (
-                            <li key={kind.key} className="py-3 first:pt-0 last:pb-0">
+                            <li
+                                key={kind.key}
+                                className="py-3 first:pt-0 last:pb-0"
+                            >
                                 <Field orientation="horizontal">
                                     <Checkbox
                                         id={`wa-${kind.key}`}
                                         checked={kind.enabled}
                                         disabled={!kind.available}
-                                        onCheckedChange={(checked) => toggle(kind, checked === true)}
+                                        onCheckedChange={(checked) =>
+                                            toggle(kind, checked === true)
+                                        }
                                     />
                                     <div className="flex-1">
-                                        <FieldLabel htmlFor={`wa-${kind.key}`}>{kind.title}</FieldLabel>
-                                        <FieldDescription>{kind.description}</FieldDescription>
+                                        <FieldLabel htmlFor={`wa-${kind.key}`}>
+                                            {kind.title}
+                                        </FieldLabel>
+                                        <FieldDescription>
+                                            {kind.description}
+                                        </FieldDescription>
                                     </div>
-                                    <Badge variant="secondary">{kind.recipient}</Badge>
+                                    <Badge variant="secondary">
+                                        {kind.recipient}
+                                    </Badge>
                                     {kind.available ? (
-                                        <Button variant="ghost" size="sm" onClick={() => setEditing(kind)}>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setEditing(kind)}
+                                        >
                                             Ubah isi pesan
                                         </Button>
                                     ) : (
-                                        <Badge variant="outline">Segera hadir</Badge>
+                                        <Badge variant="outline">
+                                            Segera hadir
+                                        </Badge>
                                     )}
                                 </Field>
                             </li>
@@ -407,7 +477,11 @@ export default function WhatsappIndex({
             >
                 <DialogContent className="sm:max-w-xl">
                     {editing !== null && (
-                        <TemplateForm key={editing.key} kind={editing} onDone={() => setEditing(null)} />
+                        <TemplateForm
+                            key={editing.key}
+                            kind={editing}
+                            onDone={() => setEditing(null)}
+                        />
                     )}
                 </DialogContent>
             </Dialog>
@@ -417,7 +491,9 @@ export default function WhatsappIndex({
             {history.length === 0 ? (
                 <EmptyState>Belum ada pesan yang dikirim.</EmptyState>
             ) : (
-                <DataTable head={['Waktu', 'Penerima', 'Nomor', 'Jenis', 'Status']}>
+                <DataTable
+                    head={['Waktu', 'Penerima', 'Nomor', 'Jenis', 'Status']}
+                >
                     {history.map((row) => {
                         const [variant, label] = historyStatus[row.status];
 
@@ -425,34 +501,50 @@ export default function WhatsappIndex({
                             <TableRow key={row.id}>
                                 <TableCell>{row.at}</TableCell>
                                 <TableCell>{row.recipient}</TableCell>
-                                <TableCell className="font-mono text-xs">{row.to}</TableCell>
+                                <TableCell className="font-mono text-xs">
+                                    {row.to}
+                                </TableCell>
                                 <TableCell>{row.kind}</TableCell>
                                 <TableCell>
                                     <Badge variant={variant}>{label}</Badge>
-                                    {row.error !== null && row.status !== 'sent' && (
-                                        <span className="mt-1 block text-xs text-muted-foreground">
-                                            {row.error}
-                                        </span>
-                                    )}
+                                    {row.error !== null &&
+                                        row.status !== 'sent' && (
+                                            <span className="mt-1 block text-xs text-muted-foreground">
+                                                {row.error}
+                                            </span>
+                                        )}
                                 </TableCell>
                             </TableRow>
                         );
                     })}
                 </DataTable>
             )}
-            <ListPager url={whatsappIndex.url()} filters={{}} pagination={pagination} />
+            <ListPager
+                url={whatsappIndex.url()}
+                filters={{}}
+                pagination={pagination}
+            />
         </MasterPage>
     );
 }
 
 /** Reword one kind of notice, with a preview on sample values. */
-function TemplateForm({ kind, onDone }: { kind: NoticeKind; onDone: () => void }) {
+function TemplateForm({
+    kind,
+    onDone,
+}: {
+    kind: NoticeKind;
+    onDone: () => void;
+}) {
     const form = useForm({ enabled: kind.enabled, template: kind.template });
 
     function submit(event: FormEvent) {
         event.preventDefault();
 
-        form.put(updateNotice.url(kind.key), { preserveScroll: true, onSuccess: onDone });
+        form.put(updateNotice.url(kind.key), {
+            preserveScroll: true,
+            onSuccess: onDone,
+        });
     }
 
     return (
@@ -468,7 +560,9 @@ function TemplateForm({ kind, onDone }: { kind: NoticeKind; onDone: () => void }
                     id="wa-template"
                     rows={5}
                     value={form.data.template}
-                    onChange={(event) => form.setData('template', event.target.value)}
+                    onChange={(event) =>
+                        form.setData('template', event.target.value)
+                    }
                     aria-invalid={!!form.errors.template}
                 />
                 {form.errors.template ? (
@@ -477,7 +571,10 @@ function TemplateForm({ kind, onDone }: { kind: NoticeKind; onDone: () => void }
                     <FieldDescription>
                         Variabel:{' '}
                         {Object.keys(kind.sample).map((variable) => (
-                            <code key={variable} className="mr-1 font-mono text-xs">
+                            <code
+                                key={variable}
+                                className="mr-1 font-mono text-xs"
+                            >
                                 {`{${variable}}`}
                             </code>
                         ))}
@@ -486,8 +583,15 @@ function TemplateForm({ kind, onDone }: { kind: NoticeKind; onDone: () => void }
             </Field>
 
             <div className="mb-5 border border-border bg-muted p-3 text-sm">
-                <p className="mb-1 text-xs font-medium text-muted-foreground">Pratinjau</p>
-                {fillTemplate(form.data.template === '' ? kind.defaultTemplate : form.data.template, kind.sample)}
+                <p className="mb-1 text-xs font-medium text-muted-foreground">
+                    Pratinjau
+                </p>
+                {fillTemplate(
+                    form.data.template === ''
+                        ? kind.defaultTemplate
+                        : form.data.template,
+                    kind.sample,
+                )}
             </div>
 
             <DialogFooter>
@@ -495,7 +599,9 @@ function TemplateForm({ kind, onDone }: { kind: NoticeKind; onDone: () => void }
                     type="button"
                     variant="ghost"
                     className="sm:mr-auto"
-                    onClick={() => form.setData('template', kind.defaultTemplate)}
+                    onClick={() =>
+                        form.setData('template', kind.defaultTemplate)
+                    }
                     disabled={form.data.template === kind.defaultTemplate}
                 >
                     Kembalikan ke bawaan

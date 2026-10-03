@@ -68,7 +68,8 @@ function PlacementForm({
     const targets =
         action === 'move'
             ? classes.filter(
-                  (item) => item.yearId === source.yearId && item.id !== source.id,
+                  (item) =>
+                      item.yearId === source.yearId && item.id !== source.id,
               )
             : action === 'promote'
               ? classes.filter((item) => String(item.yearId) === toYear)
@@ -123,7 +124,9 @@ function PlacementForm({
                     {action !== 'graduate' && (
                         <OptionSelect
                             label="Rombel tujuan"
-                            value={target === undefined ? '' : String(target.id)}
+                            value={
+                                target === undefined ? '' : String(target.id)
+                            }
                             onChange={setTargetClass}
                             options={targets.map((item) => ({
                                 value: String(item.id),
@@ -138,7 +141,9 @@ function PlacementForm({
             <div className="flex flex-col gap-6 lg:col-span-2">
                 <Panel title={`Siswa ${source.name}`}>
                     {students.length === 0 ? (
-                        <EmptyState>Belum ada siswa aktif di rombel ini.</EmptyState>
+                        <EmptyState>
+                            Belum ada siswa aktif di rombel ini.
+                        </EmptyState>
                     ) : (
                         <>
                             <div className="mb-3 flex justify-end">
@@ -149,7 +154,9 @@ function PlacementForm({
                                         setSelected(
                                             selected.length === students.length
                                                 ? []
-                                                : students.map((student) => student.id),
+                                                : students.map(
+                                                      (student) => student.id,
+                                                  ),
                                         )
                                     }
                                 >
@@ -164,9 +171,14 @@ function PlacementForm({
                                         <TableCell className="w-10">
                                             <Checkbox
                                                 aria-label={`Pilih ${student.name}`}
-                                                checked={selected.includes(student.id)}
+                                                checked={selected.includes(
+                                                    student.id,
+                                                )}
                                                 onCheckedChange={(checked) =>
-                                                    toggle(student.id, checked === true)
+                                                    toggle(
+                                                        student.id,
+                                                        checked === true,
+                                                    )
                                                 }
                                             />
                                         </TableCell>
@@ -195,7 +207,10 @@ function PlacementForm({
                               : `${selected.length} siswa dari ${source.name} akan ${verbs[action]} ke ${target?.name ?? '—'}.`}
                     </p>
                     <div className="mt-4 flex justify-end">
-                        <Button disabled={!canSubmit || form.processing} onClick={submit}>
+                        <Button
+                            disabled={!canSubmit || form.processing}
+                            onClick={submit}
+                        >
                             Konfirmasi penempatan
                         </Button>
                     </div>
@@ -221,20 +236,31 @@ function UnplacedForm({
 }) {
     const open = years
         .filter((year) => year.status !== 'archived')
-        .sort((a, b) => Number(b.status === 'active') - Number(a.status === 'active') || a.start.localeCompare(b.start));
+        .sort(
+            (a, b) =>
+                Number(b.status === 'active') - Number(a.status === 'active') ||
+                a.start.localeCompare(b.start),
+        );
     const targets = open.flatMap((year) =>
         classes
             .filter((item) => item.yearId === year.id)
-            .map((item) => ({ value: String(item.id), label: `${item.name} · ${year.name}`, name: item.name })),
+            .map((item) => ({
+                value: String(item.id),
+                label: `${item.name} · ${year.name}`,
+                name: item.name,
+            })),
     );
 
     const [targetClass, setTargetClass] = useState('');
     const [selected, setSelected] = useState<number[]>([]);
     const form = useForm({});
 
-    const target = targets.find((item) => item.value === targetClass) ?? targets[0];
+    const target =
+        targets.find((item) => item.value === targetClass) ?? targets[0];
     const toggle = (id: number, checked: boolean) =>
-        setSelected((current) => (checked ? [...current, id] : current.filter((item) => item !== id)));
+        setSelected((current) =>
+            checked ? [...current, id] : current.filter((item) => item !== id),
+        );
     const canSubmit = selected.length > 0 && target !== undefined;
 
     form.transform(() => ({
@@ -264,7 +290,9 @@ function UnplacedForm({
                     />
                     {targets.length === 0 && (
                         <p className="text-sm text-muted-foreground">
-                            Belum ada rombel pada tahun ajaran yang berjalan atau akan datang. Buat kelas di Master Data lebih dulu.
+                            Belum ada rombel pada tahun ajaran yang berjalan
+                            atau akan datang. Buat kelas di Master Data lebih
+                            dulu.
                         </p>
                     )}
                 </div>
@@ -273,16 +301,28 @@ function UnplacedForm({
             <div className="flex flex-col gap-6 lg:col-span-2">
                 <Panel title="Siswa belum ditempatkan">
                     {students.length === 0 ? (
-                        <EmptyState>Semua siswa aktif sudah punya kelas.</EmptyState>
+                        <EmptyState>
+                            Semua siswa aktif sudah punya kelas.
+                        </EmptyState>
                     ) : (
                         <>
                             <div className="mb-3 flex justify-end">
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => setSelected(selected.length === students.length ? [] : students.map((student) => student.id))}
+                                    onClick={() =>
+                                        setSelected(
+                                            selected.length === students.length
+                                                ? []
+                                                : students.map(
+                                                      (student) => student.id,
+                                                  ),
+                                        )
+                                    }
                                 >
-                                    {selected.length === students.length ? 'Kosongkan pilihan' : 'Pilih semua'}
+                                    {selected.length === students.length
+                                        ? 'Kosongkan pilihan'
+                                        : 'Pilih semua'}
                                 </Button>
                             </div>
                             <DataTable head={['', 'Nama', 'NIS']}>
@@ -291,11 +331,20 @@ function UnplacedForm({
                                         <TableCell className="w-10">
                                             <Checkbox
                                                 aria-label={`Pilih ${student.name}`}
-                                                checked={selected.includes(student.id)}
-                                                onCheckedChange={(checked) => toggle(student.id, checked === true)}
+                                                checked={selected.includes(
+                                                    student.id,
+                                                )}
+                                                onCheckedChange={(checked) =>
+                                                    toggle(
+                                                        student.id,
+                                                        checked === true,
+                                                    )
+                                                }
                                             />
                                         </TableCell>
-                                        <TableCell className="font-medium">{student.name}</TableCell>
+                                        <TableCell className="font-medium">
+                                            {student.name}
+                                        </TableCell>
                                         <TableCell>{student.nis}</TableCell>
                                     </TableRow>
                                 ))}
@@ -316,7 +365,10 @@ function UnplacedForm({
                             : `${selected.length} siswa belum ditempatkan akan ditempatkan ke ${target?.name ?? '—'}.`}
                     </p>
                     <div className="mt-4 flex justify-end">
-                        <Button disabled={!canSubmit || form.processing} onClick={submit}>
+                        <Button
+                            disabled={!canSubmit || form.processing}
+                            onClick={submit}
+                        >
                             Tempatkan
                         </Button>
                     </div>
@@ -373,9 +425,16 @@ export default function PlacementIndex({
                         <OptionSelect
                             label="Rombel asal"
                             value="belum"
-                            onChange={(value) => open(value === 'belum' ? 'belum' : Number(value))}
+                            onChange={(value) =>
+                                open(
+                                    value === 'belum' ? 'belum' : Number(value),
+                                )
+                            }
                             options={[
-                                { value: 'belum', label: `Belum ditempatkan (${unplacedCount})` },
+                                {
+                                    value: 'belum',
+                                    label: `Belum ditempatkan (${unplacedCount})`,
+                                },
                                 ...classes.map((item) => ({
                                     value: String(item.id),
                                     label: item.name,
@@ -383,7 +442,11 @@ export default function PlacementIndex({
                             ]}
                         />
                     </div>
-                    <UnplacedForm years={years} classes={classes} students={students} />
+                    <UnplacedForm
+                        years={years}
+                        classes={classes}
+                        students={students}
+                    />
                 </>
             ) : source === undefined || sourceYear === undefined ? (
                 <EmptyState>
@@ -394,8 +457,15 @@ export default function PlacementIndex({
                     {unplacedCount > 0 && (
                         <Alert className="mb-6">
                             <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-                                <span>{unplacedCount} siswa aktif belum ditempatkan di rombel mana pun.</span>
-                                <Button variant="outline" size="sm" onClick={() => open('belum')}>
+                                <span>
+                                    {unplacedCount} siswa aktif belum
+                                    ditempatkan di rombel mana pun.
+                                </span>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => open('belum')}
+                                >
                                     Tempatkan siswa
                                 </Button>
                             </AlertDescription>
@@ -422,13 +492,24 @@ export default function PlacementIndex({
                         <OptionSelect
                             label="Rombel asal"
                             value={String(source.id)}
-                            onChange={(value) => open(value === 'belum' ? 'belum' : Number(value))}
+                            onChange={(value) =>
+                                open(
+                                    value === 'belum' ? 'belum' : Number(value),
+                                )
+                            }
                             options={[
                                 ...(unplacedCount > 0
-                                    ? [{ value: 'belum', label: `Belum ditempatkan (${unplacedCount})` }]
+                                    ? [
+                                          {
+                                              value: 'belum',
+                                              label: `Belum ditempatkan (${unplacedCount})`,
+                                          },
+                                      ]
                                     : []),
                                 ...classes
-                                    .filter((item) => item.yearId === sourceYear.id)
+                                    .filter(
+                                        (item) => item.yearId === sourceYear.id,
+                                    )
                                     .map((item) => ({
                                         value: String(item.id),
                                         label: item.name,

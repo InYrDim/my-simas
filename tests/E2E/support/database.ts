@@ -40,7 +40,9 @@ export function schoolCode(slug: string): string {
     ).trim();
 
     if (code === '') {
-        throw new Error(`No seeded school with slug [${slug}] in ${databasePath}.`);
+        throw new Error(
+            `No seeded school with slug [${slug}] in ${databasePath}.`,
+        );
     }
 
     return code;
@@ -94,7 +96,9 @@ export function verifyPpdbAccount(email: string): void {
     ).trim();
 
     if (changed !== '1') {
-        throw new Error(`No PPDB account [${email}] to verify in ${databasePath}.`);
+        throw new Error(
+            `No PPDB account [${email}] to verify in ${databasePath}.`,
+        );
     }
 }
 
@@ -102,7 +106,10 @@ export function verifyPpdbAccount(email: string): void {
  * A seeded student of a school: the class to open, the name to look for
  * and the first password of the account (the birth date as ddmmyyyy).
  */
-export function studentRecord(slug: string, nis: string): { name: string; classId: number; birthPassword: string } {
+export function studentRecord(
+    slug: string,
+    nis: string,
+): { name: string; classId: number; birthPassword: string } {
     const row = execFileSync(
         'php',
         [
@@ -115,13 +122,25 @@ export function studentRecord(slug: string, nis: string): { name: string; classI
         { encoding: 'utf8' },
     ).trim();
 
-    const student = JSON.parse(row) as { name: string; class_id: number | null; birth_date: string | null } | false;
+    const student = JSON.parse(row) as
+        | { name: string; class_id: number | null; birth_date: string | null }
+        | false;
 
-    if (student === false || student.class_id === null || student.birth_date === null) {
-        throw new Error(`No seeded student [${nis}] with a class and a birth date in school [${slug}].`);
+    if (
+        student === false ||
+        student.class_id === null ||
+        student.birth_date === null
+    ) {
+        throw new Error(
+            `No seeded student [${nis}] with a class and a birth date in school [${slug}].`,
+        );
     }
 
     const [year, month, day] = student.birth_date.slice(0, 10).split('-');
 
-    return { name: student.name, classId: Number(student.class_id), birthPassword: `${day}${month}${year}` };
+    return {
+        name: student.name,
+        classId: Number(student.class_id),
+        birthPassword: `${day}${month}${year}`,
+    };
 }

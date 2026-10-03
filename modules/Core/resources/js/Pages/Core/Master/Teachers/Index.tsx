@@ -6,7 +6,11 @@ import {
     show,
     store,
 } from '@/actions/Modules/Core/App/Http/Controllers/TeacherController';
-import { DataTable, EmptyState, OptionSelect } from '@shared/components/page-parts';
+import {
+    DataTable,
+    EmptyState,
+    OptionSelect,
+} from '@shared/components/page-parts';
 import { Button } from '@shared/components/ui/button';
 import { Input } from '@shared/components/ui/input';
 import { TableCell, TableRow } from '@shared/components/ui/table';
@@ -16,7 +20,11 @@ import FormDialog from '../../../../Components/FormDialog';
 import MasterPage from '../../../../Components/MasterPage';
 import StatusBadge from '../../../../Components/StatusBadge';
 import TeacherForm from '../../../../Components/TeacherForm';
-import type { Pagination, SchoolSummary, Teacher } from '../../../../types/master';
+import type {
+    Pagination,
+    SchoolSummary,
+    Teacher,
+} from '../../../../types/master';
 
 /** Guru & Tenaga Kependidikan, with search and employment filter. */
 export default function TeachersIndex({
@@ -81,7 +89,13 @@ export default function TeachersIndex({
                 </EmptyState>
             ) : (
                 <DataTable
-                    head={['Nama', 'NIP / NUPTK', 'Status', 'Tugas', 'Akun login']}
+                    head={[
+                        'Nama',
+                        'NIP / NUPTK',
+                        'Status',
+                        'Tugas',
+                        'Akun login',
+                    ]}
                 >
                     {teachers.map((teacher) => (
                         <TableRow key={teacher.id}>
@@ -100,7 +114,11 @@ export default function TeachersIndex({
                             <TableCell>{teacher.duty}</TableCell>
                             <TableCell>
                                 <StatusBadge
-                                    status={teacher.hasAccount ? 'linked' : 'unlinked'}
+                                    status={
+                                        teacher.hasAccount
+                                            ? 'linked'
+                                            : 'unlinked'
+                                    }
                                 />
                             </TableCell>
                         </TableRow>

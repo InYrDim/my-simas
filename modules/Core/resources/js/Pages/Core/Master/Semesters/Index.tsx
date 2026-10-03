@@ -20,8 +20,18 @@ function SemesterForm({ semester }: { semester: SemesterRow }) {
                 {semester.year} · Semester {semester.name}
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
-                <InputField label="Mulai" id="start_date" type="date" defaultValue={semester.start} />
-                <InputField label="Selesai" id="end_date" type="date" defaultValue={semester.end} />
+                <InputField
+                    label="Mulai"
+                    id="start_date"
+                    type="date"
+                    defaultValue={semester.start}
+                />
+                <InputField
+                    label="Selesai"
+                    id="end_date"
+                    type="date"
+                    defaultValue={semester.end}
+                />
             </div>
         </>
     );
@@ -59,14 +69,20 @@ export default function SemestersIndex({
                                 <StatusBadge status="current" />
                             </div>
                             <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-                                <CalendarDaysIcon className="size-4" aria-hidden />
-                                {formatDate(current.start)} – {formatDate(current.end)}
+                                <CalendarDaysIcon
+                                    className="size-4"
+                                    aria-hidden
+                                />
+                                {formatDate(current.start)} –{' '}
+                                {formatDate(current.end)}
                             </p>
                         </div>
                         <FormDialog
                             route={update(current.id)}
                             title={`Ubah semester ${current.name} ${current.year}`}
-                            trigger={<Button variant="outline">Ubah tanggal</Button>}
+                            trigger={
+                                <Button variant="outline">Ubah tanggal</Button>
+                            }
                         >
                             <SemesterForm semester={current} />
                         </FormDialog>
@@ -74,8 +90,12 @@ export default function SemestersIndex({
 
                     <div className="mt-6">
                         <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Minggu ke-{current.week}</span>
-                            <span className="font-medium">dari {current.weeks} minggu</span>
+                            <span className="text-muted-foreground">
+                                Minggu ke-{current.week}
+                            </span>
+                            <span className="font-medium">
+                                dari {current.weeks} minggu
+                            </span>
                         </div>
                         <div
                             role="progressbar"
@@ -87,7 +107,9 @@ export default function SemestersIndex({
                         >
                             <div
                                 className="h-full bg-primary"
-                                style={{ width: `${Math.round((current.week / current.weeks) * 100)}%` }}
+                                style={{
+                                    width: `${Math.round((current.week / current.weeks) * 100)}%`,
+                                }}
                             />
                         </div>
                     </div>
@@ -95,18 +117,31 @@ export default function SemestersIndex({
             ) : (
                 <Panel className="mb-8">
                     <p className="text-sm text-muted-foreground">
-                        Belum ada semester yang berjalan. Aktifkan tahun ajaran, atau periksa tanggal semesternya.
+                        Belum ada semester yang berjalan. Aktifkan tahun ajaran,
+                        atau periksa tanggal semesternya.
                     </p>
                 </Panel>
             )}
 
-            <DataTable head={['Tahun ajaran', 'Semester', 'Periode', 'Minggu', 'Status', '']}>
+            <DataTable
+                head={[
+                    'Tahun ajaran',
+                    'Semester',
+                    'Periode',
+                    'Minggu',
+                    'Status',
+                    '',
+                ]}
+            >
                 {semesters.map((semester) => (
                     <TableRow key={semester.id}>
-                        <TableCell className="font-medium">{semester.year}</TableCell>
+                        <TableCell className="font-medium">
+                            {semester.year}
+                        </TableCell>
                         <TableCell>{semester.name}</TableCell>
                         <TableCell>
-                            {formatDate(semester.start)} – {formatDate(semester.end)}
+                            {formatDate(semester.start)} –{' '}
+                            {formatDate(semester.end)}
                         </TableCell>
                         <TableCell>{semester.weeks}</TableCell>
                         <TableCell>

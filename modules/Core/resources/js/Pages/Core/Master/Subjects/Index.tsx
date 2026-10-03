@@ -84,13 +84,21 @@ export default function SubjectsIndex({
             {subjects.length === 0 ? (
                 <EmptyState>Belum ada mata pelajaran.</EmptyState>
             ) : (
-                <DataTable head={['Kode', 'Nama', 'Kelompok', 'Tingkat', 'KKM', '']}>
+                <DataTable
+                    head={['Kode', 'Nama', 'Kelompok', 'Tingkat', 'KKM', '']}
+                >
                     {subjects.map((subject) => (
                         <TableRow key={subject.id}>
-                            <TableCell className="font-mono text-xs">{subject.code}</TableCell>
-                            <TableCell className="font-medium">{subject.name}</TableCell>
+                            <TableCell className="font-mono text-xs">
+                                {subject.code}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                                {subject.name}
+                            </TableCell>
                             <TableCell>
-                                <Badge variant="secondary">{subject.group}</Badge>
+                                <Badge variant="secondary">
+                                    {subject.group}
+                                </Badge>
                             </TableCell>
                             <TableCell>{subject.grades}</TableCell>
                             <TableCell>{subject.kkm}</TableCell>

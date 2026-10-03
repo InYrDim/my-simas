@@ -36,7 +36,10 @@ export default function VerifyNotice({ email }: { email: string }) {
                 >
                     {sending ? 'Mengirim...' : 'Kirim ulang tautan'}
                 </Button>
-                <Button variant="outline" onClick={() => router.post(logout.url())}>
+                <Button
+                    variant="outline"
+                    onClick={() => router.post(logout.url())}
+                >
                     Keluar
                 </Button>
             </div>

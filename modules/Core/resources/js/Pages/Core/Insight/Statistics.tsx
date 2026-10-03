@@ -59,7 +59,9 @@ function Bars({ points }: { points: Point[] }) {
                 <li key={point.label}>
                     <div className="flex justify-between text-sm">
                         <span>{point.label}</span>
-                        <span className="font-medium">{format(point.value)}</span>
+                        <span className="font-medium">
+                            {format(point.value)}
+                        </span>
                     </div>
                     <div
                         role="progressbar"
@@ -71,7 +73,9 @@ function Bars({ points }: { points: Point[] }) {
                     >
                         <div
                             className="h-full bg-primary"
-                            style={{ width: `${Math.round((point.value / widest) * 100)}%` }}
+                            style={{
+                                width: `${Math.round((point.value / widest) * 100)}%`,
+                            }}
                         />
                     </div>
                 </li>
@@ -92,7 +96,9 @@ function Share({ points }: { points: Point[] }) {
         <>
             <div
                 role="img"
-                aria-label={points.map((point) => `${point.label} ${point.value}`).join(', ')}
+                aria-label={points
+                    .map((point) => `${point.label} ${point.value}`)
+                    .join(', ')}
                 className="flex h-3 overflow-hidden"
             >
                 {points.map((point, index) => (
@@ -108,12 +114,17 @@ function Share({ points }: { points: Point[] }) {
                     <div key={point.label}>
                         <dt className="flex items-center gap-2 text-muted-foreground">
                             <span
-                                className={cn('size-2.5', shareColors[index % shareColors.length])}
+                                className={cn(
+                                    'size-2.5',
+                                    shareColors[index % shareColors.length],
+                                )}
                                 aria-hidden
                             />
                             {point.label}
                         </dt>
-                        <dd className="mt-1 text-xl font-semibold">{format(point.value)}</dd>
+                        <dd className="mt-1 text-xl font-semibold">
+                            {format(point.value)}
+                        </dd>
                     </div>
                 ))}
             </dl>
@@ -122,7 +133,12 @@ function Share({ points }: { points: Point[] }) {
 }
 
 /** Statistik: the school in numbers — headcounts and how the students spread. */
-export default function Statistics({ school, period, figures, panels }: StatisticsProps) {
+export default function Statistics({
+    school,
+    period,
+    figures,
+    panels,
+}: StatisticsProps) {
     return (
         <MasterPage
             school={school}
@@ -146,7 +162,11 @@ export default function Statistics({ school, period, figures, panels }: Statisti
                         />
                     ) : (
                         <div key={figure.key} className="opacity-60">
-                            <StatCard label={figure.label} value="—" hint="Segera hadir" />
+                            <StatCard
+                                label={figure.label}
+                                value="—"
+                                hint="Segera hadir"
+                            />
                         </div>
                     ),
                 )}
@@ -170,7 +190,9 @@ export default function Statistics({ school, period, figures, panels }: Statisti
                                     <Bars points={panel.points} />
                                 )}
                                 {panel.note !== null && (
-                                    <p className="mt-4 text-xs text-muted-foreground">{panel.note}</p>
+                                    <p className="mt-4 text-xs text-muted-foreground">
+                                        {panel.note}
+                                    </p>
                                 )}
                             </>
                         )}

@@ -1,11 +1,11 @@
-import { router } from "@inertiajs/react";
-import { useState } from "react";
+import { router } from '@inertiajs/react';
+import { useState } from 'react';
 
-import { destroy as logout } from "@/actions/Modules/Platform/App/Http/Controllers/Applicant/SessionController";
-import { resend } from "@/actions/Modules/Platform/App/Http/Controllers/Applicant/VerificationController";
-import { Button } from "@shared/components/ui/button";
+import { destroy as logout } from '@/actions/Modules/Platform/App/Http/Controllers/Applicant/SessionController';
+import { resend } from '@/actions/Modules/Platform/App/Http/Controllers/Applicant/VerificationController';
+import { Button } from '@shared/components/ui/button';
 
-import ApplicantShell from "../../../Components/ApplicantShell";
+import ApplicantShell from '../../../Components/ApplicantShell';
 
 /**
  * Shown until the applicant opens the link in their verification mail.
@@ -35,7 +35,7 @@ export default function VerifyNotice({ email }: { email: string }) {
                         )
                     }
                 >
-                    {sending ? "Mengirim..." : "Kirim ulang tautan"}
+                    {sending ? 'Mengirim...' : 'Kirim ulang tautan'}
                 </Button>
                 <Button
                     variant="outline"

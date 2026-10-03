@@ -12,7 +12,12 @@ import {
     update,
 } from '@/actions/Modules/Core/App/Http/Controllers/TeacherController';
 import { index as usersIndex } from '@/actions/Modules/Identity/App/Http/Controllers/UsersManagementController';
-import { DataTable, DefinitionList, EmptyState, Panel } from '@shared/components/page-parts';
+import {
+    DataTable,
+    DefinitionList,
+    EmptyState,
+    Panel,
+} from '@shared/components/page-parts';
 import { Button } from '@shared/components/ui/button';
 import { TableCell, TableRow } from '@shared/components/ui/table';
 
@@ -100,14 +105,24 @@ export default function TeachersShow({
                                         title={`Buat akun untuk ${teacher.name}`}
                                         description={`Nama pengguna ${teacher.nip}. Kata sandi sementara tampil sekali setelah akun dibuat.`}
                                         submitLabel="Buat akun"
-                                        trigger={<Button variant="outline">Buat akun</Button>}
+                                        trigger={
+                                            <Button variant="outline">
+                                                Buat akun
+                                            </Button>
+                                        }
                                     >
                                         <SelectField
                                             label="Peran"
                                             id="role"
                                             options={[
-                                                { value: 'guru', label: 'Guru' },
-                                                { value: 'staf-tu', label: 'Staf/TU' },
+                                                {
+                                                    value: 'guru',
+                                                    label: 'Guru',
+                                                },
+                                                {
+                                                    value: 'staf-tu',
+                                                    label: 'Staf/TU',
+                                                },
                                             ]}
                                         />
                                     </FormDialog>
@@ -135,12 +150,18 @@ export default function TeachersShow({
                                     title={`Reset kata sandi ${teacher.name}?`}
                                     description="Kata sandi baru dibuat acak, tampil sekali, dan wajib diganti saat login berikutnya."
                                     confirmLabel="Reset kata sandi"
-                                    trigger={<Button variant="outline">Reset kata sandi</Button>}
+                                    trigger={
+                                        <Button variant="outline">
+                                            Reset kata sandi
+                                        </Button>
+                                    }
                                 />
                             )}
                         {login.account !== null && (
                             <Button asChild variant="outline">
-                                <Link href={usersIndex.url()}>Kelola di Pengguna</Link>
+                                <Link href={usersIndex.url()}>
+                                    Kelola di Pengguna
+                                </Link>
                             </Button>
                         )}
                     </AccountPanel>
@@ -150,14 +171,21 @@ export default function TeachersShow({
                     <Panel title={school.homeroomLabel}>
                         {homeroomOf.length === 0 ? (
                             <p className="text-sm text-muted-foreground">
-                                Tidak menjadi {school.homeroomLabel.toLowerCase()}.
+                                Tidak menjadi{' '}
+                                {school.homeroomLabel.toLowerCase()}.
                             </p>
                         ) : (
                             <ul className="flex flex-wrap gap-2">
                                 {homeroomOf.map((group) => (
                                     <li key={group.id}>
-                                        <Button asChild variant="outline" size="sm">
-                                            <Link href={classShow.url(group.id)}>
+                                        <Button
+                                            asChild
+                                            variant="outline"
+                                            size="sm"
+                                        >
+                                            <Link
+                                                href={classShow.url(group.id)}
+                                            >
                                                 {group.name}
                                             </Link>
                                         </Button>
@@ -169,11 +197,17 @@ export default function TeachersShow({
 
                     <Panel title="Mengampu">
                         {assignments.length === 0 ? (
-                            <EmptyState>Belum mengampu mata pelajaran.</EmptyState>
+                            <EmptyState>
+                                Belum mengampu mata pelajaran.
+                            </EmptyState>
                         ) : (
-                            <DataTable head={['Mata pelajaran', 'Kelas', 'JP/minggu']}>
+                            <DataTable
+                                head={['Mata pelajaran', 'Kelas', 'JP/minggu']}
+                            >
                                 {assignments.map((row) => (
-                                    <TableRow key={`${row.class}-${row.subject}`}>
+                                    <TableRow
+                                        key={`${row.class}-${row.subject}`}
+                                    >
                                         <TableCell>{row.subject}</TableCell>
                                         <TableCell>{row.class}</TableCell>
                                         <TableCell>{row.hours}</TableCell>

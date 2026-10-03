@@ -1,12 +1,21 @@
 import { Link, useForm } from '@inertiajs/react';
 
-import { store, update } from '@/actions/Modules/Ppdb/App/Http/Controllers/Account/ApplicationController';
+import {
+    store,
+    update,
+} from '@/actions/Modules/Ppdb/App/Http/Controllers/Account/ApplicationController';
 import { home } from '@/routes/ppdb/account';
 import { Panel } from '@shared/components/page-parts';
 import { Alert, AlertDescription } from '@shared/components/ui/alert';
 import { Button } from '@shared/components/ui/button';
 
-import FormRenderer, { formBinding, initialAnswers, type ApplicantData, type FormFieldDef, type StoredFile } from '../../../Components/FormRenderer';
+import FormRenderer, {
+    formBinding,
+    initialAnswers,
+    type ApplicantData,
+    type FormFieldDef,
+    type StoredFile,
+} from '../../../Components/FormRenderer';
 import PortalPage from '../../../Components/PortalPage';
 
 type Option = { value: string; label: string };
@@ -37,7 +46,15 @@ interface FormProps {
  * The applicant's registration form: filled once, and again only when the
  * committee asks for a correction (then the committee's note shows on top).
  */
-export default function Form({ period, paths, fields, answers, files, applicant, defaultName }: FormProps) {
+export default function Form({
+    period,
+    paths,
+    fields,
+    answers,
+    files,
+    applicant,
+    defaultName,
+}: FormProps) {
     const form = useForm<ApplicantData>({
         wave_id: '',
         path_id: applicant?.pathId ?? '',
@@ -53,13 +70,19 @@ export default function Form({ period, paths, fields, answers, files, applicant,
         answers: initialAnswers(fields, answers),
     });
     const errors: Partial<Record<string, string>> = form.errors;
-    const binding = formBinding(form.data, errors, (key, value) => form.setData(key as keyof ApplicantData, value as never));
+    const binding = formBinding(form.data, errors, (key, value) =>
+        form.setData(key as keyof ApplicantData, value as never),
+    );
     const correcting = applicant !== null;
     const refusal = errors.period ?? errors.application ?? errors.school;
 
     return (
         <PortalPage
-            title={correcting ? 'Perbaiki data pendaftaran' : 'Formulir pendaftaran'}
+            title={
+                correcting
+                    ? 'Perbaiki data pendaftaran'
+                    : 'Formulir pendaftaran'
+            }
             description={period}
             width="max-w-2xl"
         >
@@ -92,7 +115,12 @@ export default function Form({ period, paths, fields, answers, files, applicant,
                 )}
 
                 <Panel>
-                    <FormRenderer fields={fields} paths={paths} storedFiles={files} {...binding} />
+                    <FormRenderer
+                        fields={fields}
+                        paths={paths}
+                        storedFiles={files}
+                        {...binding}
+                    />
                 </Panel>
 
                 <div className="flex gap-3">

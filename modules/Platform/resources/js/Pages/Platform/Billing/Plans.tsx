@@ -69,7 +69,9 @@ export default function BillingPlans({ plans, modules }: PlansProps) {
                 title="Paket"
                 description="Katalog paket yang bisa dipilih sekolah."
                 actions={
-                    <Button onClick={() => setEditing('new')}>Buat paket</Button>
+                    <Button onClick={() => setEditing('new')}>
+                        Buat paket
+                    </Button>
                 }
             />
 
@@ -83,15 +85,20 @@ export default function BillingPlans({ plans, modules }: PlansProps) {
             ) : (
                 <div className="mt-8 grid gap-6 lg:grid-cols-3">
                     {plans.map((plan) => {
-                        const saving = plan.priceMonthly * 12 - plan.priceYearly;
+                        const saving =
+                            plan.priceMonthly * 12 - plan.priceYearly;
 
                         return (
                             <Panel key={plan.id} title={plan.name}>
                                 <div className="flex flex-wrap gap-2">
                                     {plan.archived ? (
-                                        <Badge variant="secondary">diarsipkan</Badge>
+                                        <Badge variant="secondary">
+                                            diarsipkan
+                                        </Badge>
                                     ) : !plan.isActive ? (
-                                        <Badge variant="secondary">nonaktif</Badge>
+                                        <Badge variant="secondary">
+                                            nonaktif
+                                        </Badge>
                                     ) : null}
                                 </div>
                                 <p className="mt-1 text-xl font-semibold">
@@ -106,7 +113,8 @@ export default function BillingPlans({ plans, modules }: PlansProps) {
                                 </p>
                                 {saving > 0 && (
                                     <p className="mt-1 text-xs text-muted-foreground">
-                                        Hemat {formatRupiah(saving)} bila tahunan
+                                        Hemat {formatRupiah(saving)} bila
+                                        tahunan
                                     </p>
                                 )}
 
@@ -145,7 +153,9 @@ export default function BillingPlans({ plans, modules }: PlansProps) {
                                             onClick={() =>
                                                 send(
                                                     'post',
-                                                    restorePlan.url({ plan: plan.id }),
+                                                    restorePlan.url({
+                                                        plan: plan.id,
+                                                    }),
                                                 )
                                             }
                                         >
@@ -157,7 +167,9 @@ export default function BillingPlans({ plans, modules }: PlansProps) {
                                             onClick={() =>
                                                 send(
                                                     'post',
-                                                    archivePlan.url({ plan: plan.id }),
+                                                    archivePlan.url({
+                                                        plan: plan.id,
+                                                    }),
                                                 )
                                             }
                                         >
@@ -298,7 +310,10 @@ function PlanForm({
                             min={0}
                             value={form.data.price_monthly}
                             onChange={(event) =>
-                                form.setData('price_monthly', Number(event.target.value))
+                                form.setData(
+                                    'price_monthly',
+                                    Number(event.target.value),
+                                )
                             }
                             aria-invalid={!!form.errors.price_monthly}
                         />
@@ -314,14 +329,19 @@ function PlanForm({
                             min={0}
                             value={form.data.price_yearly}
                             onChange={(event) =>
-                                form.setData('price_yearly', Number(event.target.value))
+                                form.setData(
+                                    'price_yearly',
+                                    Number(event.target.value),
+                                )
                             }
                             aria-invalid={!!form.errors.price_yearly}
                         />
                         <FieldError>{form.errors.price_yearly}</FieldError>
                     </Field>
                     <Field data-invalid={!!form.errors.max_users}>
-                        <FieldLabel htmlFor="plan-users">Batas pengguna</FieldLabel>
+                        <FieldLabel htmlFor="plan-users">
+                            Batas pengguna
+                        </FieldLabel>
                         <Input
                             id="plan-users"
                             type="number"
@@ -346,14 +366,19 @@ function PlanForm({
                         )}
                     </Field>
                     <Field data-invalid={!!form.errors.sort_order}>
-                        <FieldLabel htmlFor="plan-order">Urutan tampil</FieldLabel>
+                        <FieldLabel htmlFor="plan-order">
+                            Urutan tampil
+                        </FieldLabel>
                         <Input
                             id="plan-order"
                             type="number"
                             min={0}
                             value={form.data.sort_order}
                             onChange={(event) =>
-                                form.setData('sort_order', Number(event.target.value))
+                                form.setData(
+                                    'sort_order',
+                                    Number(event.target.value),
+                                )
                             }
                             aria-invalid={!!form.errors.sort_order}
                         />
@@ -362,7 +387,9 @@ function PlanForm({
                 </div>
 
                 <FieldSet>
-                    <FieldLegend variant="label">Modul yang termasuk</FieldLegend>
+                    <FieldLegend variant="label">
+                        Modul yang termasuk
+                    </FieldLegend>
                     <FieldGroup className="gap-3">
                         {modules.map((module) => (
                             <Field key={module.key} orientation="horizontal">
@@ -374,10 +401,15 @@ function PlanForm({
                                     }
                                     disabled={module.alwaysActive}
                                     onCheckedChange={(checked) =>
-                                        toggleModule(module.key, checked === true)
+                                        toggleModule(
+                                            module.key,
+                                            checked === true,
+                                        )
                                     }
                                 />
-                                <FieldLabel htmlFor={`plan-module-${module.key}`}>
+                                <FieldLabel
+                                    htmlFor={`plan-module-${module.key}`}
+                                >
                                     {module.label}
                                     {module.alwaysActive && (
                                         <span className="font-normal text-muted-foreground">

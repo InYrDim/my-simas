@@ -2,7 +2,12 @@ import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 
 import { Button } from '@shared/components/ui/button';
-import { Field, FieldError, FieldGroup, FieldLabel } from '@shared/components/ui/field';
+import {
+    Field,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+} from '@shared/components/ui/field';
 import { Input } from '@shared/components/ui/input';
 
 import PortalPage from '../../../Components/PortalPage';
@@ -11,7 +16,13 @@ import PortalPage from '../../../Components/PortalPage';
  * Set a new password from an emailed link. `action` is the signed URL the
  * page was opened with — the form posts back to it, signature included.
  */
-export default function SetPassword({ email, action }: { email: string; action: string }) {
+export default function SetPassword({
+    email,
+    action,
+}: {
+    email: string;
+    action: string;
+}) {
     const form = useForm({
         password: '',
         password_confirmation: '',
@@ -26,7 +37,10 @@ export default function SetPassword({ email, action }: { email: string; action: 
     }
 
     return (
-        <PortalPage title="Buat kata sandi baru" description={`Buat kata sandi baru untuk ${email}.`}>
+        <PortalPage
+            title="Buat kata sandi baru"
+            description={`Buat kata sandi baru untuk ${email}.`}
+        >
             <form onSubmit={submit} noValidate>
                 <FieldGroup>
                     <Field data-invalid={!!form.errors.password}>
@@ -40,13 +54,17 @@ export default function SetPassword({ email, action }: { email: string; action: 
                             required
                             value={form.data.password}
                             aria-invalid={!!form.errors.password}
-                            onChange={(event) => form.setData('password', event.target.value)}
+                            onChange={(event) =>
+                                form.setData('password', event.target.value)
+                            }
                         />
                         <FieldError>{form.errors.password}</FieldError>
                     </Field>
 
                     <Field>
-                        <FieldLabel htmlFor="password_confirmation">Ulangi kata sandi</FieldLabel>
+                        <FieldLabel htmlFor="password_confirmation">
+                            Ulangi kata sandi
+                        </FieldLabel>
                         <Input
                             id="password_confirmation"
                             name="password_confirmation"
@@ -54,7 +72,12 @@ export default function SetPassword({ email, action }: { email: string; action: 
                             autoComplete="new-password"
                             required
                             value={form.data.password_confirmation}
-                            onChange={(event) => form.setData('password_confirmation', event.target.value)}
+                            onChange={(event) =>
+                                form.setData(
+                                    'password_confirmation',
+                                    event.target.value,
+                                )
+                            }
                         />
                     </Field>
 

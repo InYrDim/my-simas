@@ -11,7 +11,12 @@ import {
     store as addMember,
 } from '@/actions/Modules/Core/App/Http/Controllers/ExtracurricularMemberController';
 import { show as studentShow } from '@/actions/Modules/Core/App/Http/Controllers/StudentController';
-import { DataTable, DefinitionList, EmptyState, Panel } from '@shared/components/page-parts';
+import {
+    DataTable,
+    DefinitionList,
+    EmptyState,
+    Panel,
+} from '@shared/components/page-parts';
 import { Button } from '@shared/components/ui/button';
 import { TableCell, TableRow } from '@shared/components/ui/table';
 
@@ -44,7 +49,10 @@ export default function ExtracurricularsShow({
             school={school}
             title={extracurricular.name}
             description={extracurricular.schedule ?? undefined}
-            back={{ href: extracurricularsIndex.url(), label: 'Semua ekstrakurikuler' }}
+            back={{
+                href: extracurricularsIndex.url(),
+                label: 'Semua ekstrakurikuler',
+            }}
             mock={false}
             actions={
                 <>
@@ -60,7 +68,10 @@ export default function ExtracurricularsShow({
                         title={`Ubah ${extracurricular.name}`}
                         trigger={<Button variant="outline">Ubah</Button>}
                     >
-                        <ExtracurricularForm item={extracurricular} teachers={teachers} />
+                        <ExtracurricularForm
+                            item={extracurricular}
+                            teachers={teachers}
+                        />
                     </FormDialog>
                     <FormDialog
                         route={addMember(extracurricular.id)}
@@ -106,18 +117,24 @@ export default function ExtracurricularsShow({
                                         </Link>
                                     </TableCell>
                                     <TableCell>{student.nis}</TableCell>
-                                    <TableCell>{student.class ?? '—'}</TableCell>
+                                    <TableCell>
+                                        {student.class ?? '—'}
+                                    </TableCell>
                                     <TableCell className="text-right">
                                         <ConfirmAction
                                             route={removeMember({
-                                                extracurricular: extracurricular.id,
+                                                extracurricular:
+                                                    extracurricular.id,
                                                 student: student.id,
                                             })}
                                             title={`Keluarkan ${student.name}?`}
                                             description="Siswa dikeluarkan dari kegiatan ini."
                                             confirmLabel="Keluarkan"
                                             trigger={
-                                                <Button variant="ghost" size="sm">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                >
                                                     Keluarkan
                                                 </Button>
                                             }

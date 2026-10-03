@@ -32,7 +32,10 @@ export default function ForgotPassword() {
             title="Lupa kata sandi"
             description="Masukkan email akun pendaftaran sekolah Anda. Kami mengirim petunjuk untuk membuat kata sandi baru."
             footer={
-                <Link href={login.url()} className="text-primary hover:underline">
+                <Link
+                    href={login.url()}
+                    className="text-primary hover:underline"
+                >
                     Kembali ke halaman masuk
                 </Link>
             }
@@ -50,7 +53,9 @@ export default function ForgotPassword() {
                             required
                             value={form.data.email}
                             aria-invalid={!!form.errors.email}
-                            onChange={(event) => form.setData('email', event.target.value)}
+                            onChange={(event) =>
+                                form.setData('email', event.target.value)
+                            }
                         />
                         <FieldError>{form.errors.email}</FieldError>
                     </Field>

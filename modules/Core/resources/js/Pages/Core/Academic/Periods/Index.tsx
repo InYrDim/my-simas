@@ -24,7 +24,11 @@ import ConfirmAction from '../../../../Components/ConfirmAction';
 import FormDialog from '../../../../Components/FormDialog';
 import { InputField, SelectField } from '../../../../Components/FormField';
 import MasterPage from '../../../../Components/MasterPage';
-import type { PeriodDay, PeriodSlot, SchoolSummary } from '../../../../types/master';
+import type {
+    PeriodDay,
+    PeriodSlot,
+    SchoolSummary,
+} from '../../../../types/master';
 
 function SlotForm({
     day,
@@ -73,7 +77,8 @@ export default function PeriodsIndex({
     types: string[];
 }) {
     const [tab, setTab] = useState(String(days[0]?.dayNumber ?? 1));
-    const current = days.find((day) => String(day.dayNumber) === tab) ?? days[0];
+    const current =
+        days.find((day) => String(day.dayNumber) === tab) ?? days[0];
 
     return (
         <MasterPage
@@ -95,7 +100,11 @@ export default function PeriodsIndex({
                         </Button>
                     }
                 >
-                    <input type="hidden" name="from_day" value={current.dayNumber} />
+                    <input
+                        type="hidden"
+                        name="from_day"
+                        value={current.dayNumber}
+                    />
                     {days
                         .filter((day) => day.dayNumber !== current.dayNumber)
                         .map((day) => (
@@ -105,7 +114,9 @@ export default function PeriodsIndex({
                                     name="days[]"
                                     value={String(day.dayNumber)}
                                 />
-                                <FieldLabel htmlFor={`copy-day-${day.dayNumber}`}>
+                                <FieldLabel
+                                    htmlFor={`copy-day-${day.dayNumber}`}
+                                >
                                     {day.day}
                                 </FieldLabel>
                             </Field>
@@ -116,14 +127,21 @@ export default function PeriodsIndex({
             <Tabs value={tab} onValueChange={setTab}>
                 <TabsList>
                     {days.map((day) => (
-                        <TabsTrigger key={day.dayNumber} value={String(day.dayNumber)}>
+                        <TabsTrigger
+                            key={day.dayNumber}
+                            value={String(day.dayNumber)}
+                        >
                             {day.day}
                         </TabsTrigger>
                     ))}
                 </TabsList>
 
                 {days.map((day) => (
-                    <TabsContent key={day.dayNumber} value={String(day.dayNumber)} className="mt-6">
+                    <TabsContent
+                        key={day.dayNumber}
+                        value={String(day.dayNumber)}
+                        className="mt-6"
+                    >
                         <div className="mb-4 flex justify-end">
                             <FormDialog
                                 route={store()}
@@ -140,9 +158,19 @@ export default function PeriodsIndex({
                         </div>
 
                         {day.slots.length === 0 ? (
-                            <EmptyState>Belum ada jam untuk hari {day.day}.</EmptyState>
+                            <EmptyState>
+                                Belum ada jam untuk hari {day.day}.
+                            </EmptyState>
                         ) : (
-                            <DataTable head={['Jam ke', 'Mulai', 'Selesai', 'Jenis', '']}>
+                            <DataTable
+                                head={[
+                                    'Jam ke',
+                                    'Mulai',
+                                    'Selesai',
+                                    'Jenis',
+                                    '',
+                                ]}
+                            >
                                 {day.slots.map((slot) => (
                                     <TableRow key={slot.id}>
                                         <TableCell className="font-medium">
@@ -153,7 +181,9 @@ export default function PeriodsIndex({
                                         <TableCell>
                                             <Badge
                                                 variant={
-                                                    slot.type === 'Pelajaran' ? 'default' : 'secondary'
+                                                    slot.type === 'Pelajaran'
+                                                        ? 'default'
+                                                        : 'secondary'
                                                 }
                                             >
                                                 {slot.type}
@@ -165,12 +195,19 @@ export default function PeriodsIndex({
                                                     route={update(slot.id)}
                                                     title={`Ubah jam ${slot.start}`}
                                                     trigger={
-                                                        <Button variant="ghost" size="sm">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                        >
                                                             Ubah
                                                         </Button>
                                                     }
                                                 >
-                                                    <SlotForm day={day} types={types} slot={slot} />
+                                                    <SlotForm
+                                                        day={day}
+                                                        types={types}
+                                                        slot={slot}
+                                                    />
                                                 </FormDialog>
                                                 <ConfirmAction
                                                     route={destroy(slot.id)}
@@ -178,7 +215,10 @@ export default function PeriodsIndex({
                                                     description="Jam ini akan dihapus dari template hari tersebut."
                                                     confirmLabel="Hapus"
                                                     trigger={
-                                                        <Button variant="ghost" size="sm">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                        >
                                                             Hapus
                                                         </Button>
                                                     }

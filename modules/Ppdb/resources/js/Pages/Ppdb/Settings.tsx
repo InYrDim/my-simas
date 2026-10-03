@@ -12,11 +12,21 @@ import {
     updateWave,
 } from '@/actions/Modules/Ppdb/App/Http/Controllers/SettingsController';
 import { settings as settingsRoute } from '@/routes/ppdb';
-import { DataTable, EmptyState, OptionSelect, Panel } from '@shared/components/page-parts';
+import {
+    DataTable,
+    EmptyState,
+    OptionSelect,
+    Panel,
+} from '@shared/components/page-parts';
 import { Alert, AlertDescription } from '@shared/components/ui/alert';
 import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
-import { Field, FieldDescription, FieldError, FieldLabel } from '@shared/components/ui/field';
+import {
+    Field,
+    FieldDescription,
+    FieldError,
+    FieldLabel,
+} from '@shared/components/ui/field';
 import { Input } from '@shared/components/ui/input';
 import { TableCell, TableRow } from '@shared/components/ui/table';
 
@@ -61,7 +71,17 @@ interface SettingsProps {
 type FormErrors = Partial<Record<string, string>>;
 
 /** A read-only value with a button that copies it. */
-function CopyField({ id, label, value, hint }: { id: string; label: string; value: string; hint?: string }) {
+function CopyField({
+    id,
+    label,
+    value,
+    hint,
+}: {
+    id: string;
+    label: string;
+    value: string;
+    hint?: string;
+}) {
     const [copied, setCopied] = useState(false);
 
     async function copy() {
@@ -78,8 +98,19 @@ function CopyField({ id, label, value, hint }: { id: string; label: string; valu
         <Field>
             <FieldLabel htmlFor={id}>{label}</FieldLabel>
             <div className="flex gap-2">
-                <Input id={id} readOnly value={value} className="font-mono text-xs" onFocus={(event) => event.target.select()} />
-                <Button type="button" variant="outline" onClick={copy} aria-label={`Salin ${label.toLowerCase()}`}>
+                <Input
+                    id={id}
+                    readOnly
+                    value={value}
+                    className="font-mono text-xs"
+                    onFocus={(event) => event.target.select()}
+                />
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={copy}
+                    aria-label={`Salin ${label.toLowerCase()}`}
+                >
                     {copied ? <CheckIcon /> : <CopyIcon />}
                     {copied ? 'Tersalin' : 'Salin'}
                 </Button>
@@ -127,27 +158,39 @@ function PeriodForm({
             }}
         >
             <Field data-invalid={errors.name !== undefined}>
-                <FieldLabel htmlFor={`period-name-${method}`}>Nama periode</FieldLabel>
+                <FieldLabel htmlFor={`period-name-${method}`}>
+                    Nama periode
+                </FieldLabel>
                 <Input
                     id={`period-name-${method}`}
                     value={form.data.name}
-                    onChange={(event) => form.setData('name', event.target.value)}
+                    onChange={(event) =>
+                        form.setData('name', event.target.value)
+                    }
                     aria-invalid={errors.name !== undefined}
                 />
-                {errors.name !== undefined && <FieldError>{errors.name}</FieldError>}
+                {errors.name !== undefined && (
+                    <FieldError>{errors.name}</FieldError>
+                )}
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
                 <Field data-invalid={errors.entry_year !== undefined}>
-                    <FieldLabel htmlFor={`period-year-${method}`}>Tahun masuk siswa baru</FieldLabel>
+                    <FieldLabel htmlFor={`period-year-${method}`}>
+                        Tahun masuk siswa baru
+                    </FieldLabel>
                     <Input
                         id={`period-year-${method}`}
                         type="number"
                         inputMode="numeric"
                         value={form.data.entry_year}
-                        onChange={(event) => form.setData('entry_year', event.target.value)}
+                        onChange={(event) =>
+                            form.setData('entry_year', event.target.value)
+                        }
                         aria-invalid={errors.entry_year !== undefined}
                     />
-                    {errors.entry_year !== undefined && <FieldError>{errors.entry_year}</FieldError>}
+                    {errors.entry_year !== undefined && (
+                        <FieldError>{errors.entry_year}</FieldError>
+                    )}
                 </Field>
                 <Field data-invalid={errors.status !== undefined}>
                     <FieldLabel>Status</FieldLabel>
@@ -157,12 +200,22 @@ function PeriodForm({
                         onChange={(value) => form.setData('status', value)}
                         options={statuses}
                     />
-                    <FieldDescription>Hanya satu periode yang berjalan; menjalankan periode ini menutup yang lain.</FieldDescription>
-                    {errors.status !== undefined && <FieldError>{errors.status}</FieldError>}
+                    <FieldDescription>
+                        Hanya satu periode yang berjalan; menjalankan periode
+                        ini menutup yang lain.
+                    </FieldDescription>
+                    {errors.status !== undefined && (
+                        <FieldError>{errors.status}</FieldError>
+                    )}
                 </Field>
             </div>
             <div>
-                <Button type="submit" disabled={form.processing || (method === 'put' && !form.isDirty)}>
+                <Button
+                    type="submit"
+                    disabled={
+                        form.processing || (method === 'put' && !form.isDirty)
+                    }
+                >
                     {submitLabel}
                 </Button>
             </div>
@@ -213,10 +266,14 @@ function WaveForm({
                 <Input
                     id="wave-name"
                     value={form.data.name}
-                    onChange={(event) => form.setData('name', event.target.value)}
+                    onChange={(event) =>
+                        form.setData('name', event.target.value)
+                    }
                     aria-invalid={errors.name !== undefined}
                 />
-                {errors.name !== undefined && <FieldError>{errors.name}</FieldError>}
+                {errors.name !== undefined && (
+                    <FieldError>{errors.name}</FieldError>
+                )}
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
                 <Field data-invalid={errors.opens_on !== undefined}>
@@ -225,10 +282,14 @@ function WaveForm({
                         id="wave-opens"
                         type="date"
                         value={form.data.opens_on}
-                        onChange={(event) => form.setData('opens_on', event.target.value)}
+                        onChange={(event) =>
+                            form.setData('opens_on', event.target.value)
+                        }
                         aria-invalid={errors.opens_on !== undefined}
                     />
-                    {errors.opens_on !== undefined && <FieldError>{errors.opens_on}</FieldError>}
+                    {errors.opens_on !== undefined && (
+                        <FieldError>{errors.opens_on}</FieldError>
+                    )}
                 </Field>
                 <Field data-invalid={errors.closes_on !== undefined}>
                     <FieldLabel htmlFor="wave-closes">Ditutup</FieldLabel>
@@ -236,10 +297,14 @@ function WaveForm({
                         id="wave-closes"
                         type="date"
                         value={form.data.closes_on}
-                        onChange={(event) => form.setData('closes_on', event.target.value)}
+                        onChange={(event) =>
+                            form.setData('closes_on', event.target.value)
+                        }
                         aria-invalid={errors.closes_on !== undefined}
                     />
-                    {errors.closes_on !== undefined && <FieldError>{errors.closes_on}</FieldError>}
+                    {errors.closes_on !== undefined && (
+                        <FieldError>{errors.closes_on}</FieldError>
+                    )}
                 </Field>
             </div>
             <div className="flex gap-3">
@@ -259,14 +324,20 @@ function WaveForm({
 /** Paths of the period with the number of seats each offers. */
 function PathsForm({ periodId, paths }: { periodId: number; paths: Path[] }) {
     const form = useForm({
-        paths: paths.map((path) => ({ id: path.id as number | null, name: path.name, quota: String(path.quota) })),
+        paths: paths.map((path) => ({
+            id: path.id as number | null,
+            name: path.name,
+            quota: String(path.quota),
+        })),
     });
     const errors: FormErrors = form.errors;
 
     function change(index: number, field: 'name' | 'quota', value: string) {
         form.setData(
             'paths',
-            form.data.paths.map((row, position) => (position === index ? { ...row, [field]: value } : row)),
+            form.data.paths.map((row, position) =>
+                position === index ? { ...row, [field]: value } : row,
+            ),
         );
     }
 
@@ -281,22 +352,37 @@ function PathsForm({ periodId, paths }: { periodId: number; paths: Path[] }) {
                 });
             }}
         >
-            {errors.paths !== undefined && <FieldError>{errors.paths}</FieldError>}
+            {errors.paths !== undefined && (
+                <FieldError>{errors.paths}</FieldError>
+            )}
             <div className="flex flex-col gap-3">
                 {form.data.paths.map((row, index) => {
                     const nameError = errors[`paths.${index}.name`];
-                    const quotaError = errors[`paths.${index}.quota`] ?? errors[`paths.${index}.id`];
+                    const quotaError =
+                        errors[`paths.${index}.quota`] ??
+                        errors[`paths.${index}.id`];
 
                     return (
-                        <div key={row.id ?? `new-${index}`} className="grid grid-cols-[1fr_7rem_auto] items-start gap-3">
+                        <div
+                            key={row.id ?? `new-${index}`}
+                            className="grid grid-cols-[1fr_7rem_auto] items-start gap-3"
+                        >
                             <Field data-invalid={nameError !== undefined}>
                                 <Input
                                     aria-label={`Nama jalur ${index + 1}`}
                                     value={row.name}
-                                    onChange={(event) => change(index, 'name', event.target.value)}
+                                    onChange={(event) =>
+                                        change(
+                                            index,
+                                            'name',
+                                            event.target.value,
+                                        )
+                                    }
                                     aria-invalid={nameError !== undefined}
                                 />
-                                {nameError !== undefined && <FieldError>{nameError}</FieldError>}
+                                {nameError !== undefined && (
+                                    <FieldError>{nameError}</FieldError>
+                                )}
                             </Field>
                             <Field data-invalid={quotaError !== undefined}>
                                 <Input
@@ -305,10 +391,18 @@ function PathsForm({ periodId, paths }: { periodId: number; paths: Path[] }) {
                                     inputMode="numeric"
                                     min={0}
                                     value={row.quota}
-                                    onChange={(event) => change(index, 'quota', event.target.value)}
+                                    onChange={(event) =>
+                                        change(
+                                            index,
+                                            'quota',
+                                            event.target.value,
+                                        )
+                                    }
                                     aria-invalid={quotaError !== undefined}
                                 />
-                                {quotaError !== undefined && <FieldError>{quotaError}</FieldError>}
+                                {quotaError !== undefined && (
+                                    <FieldError>{quotaError}</FieldError>
+                                )}
                             </Field>
                             {row.id === null ? (
                                 <Button
@@ -317,7 +411,10 @@ function PathsForm({ periodId, paths }: { periodId: number; paths: Path[] }) {
                                     onClick={() =>
                                         form.setData(
                                             'paths',
-                                            form.data.paths.filter((_, position) => position !== index),
+                                            form.data.paths.filter(
+                                                (_, position) =>
+                                                    position !== index,
+                                            ),
                                         )
                                     }
                                 >
@@ -333,7 +430,14 @@ function PathsForm({ periodId, paths }: { periodId: number; paths: Path[] }) {
                                     title={`Hapus jalur ${row.name}?`}
                                     description="Jalur dihapus dari periode ini. Jalur yang sudah punya pendaftar tidak bisa dihapus."
                                     confirmLabel="Hapus jalur"
-                                    onConfirm={() => router.delete(destroyPath.url({ path: row.id as number }), { preserveScroll: true })}
+                                    onConfirm={() =>
+                                        router.delete(
+                                            destroyPath.url({
+                                                path: row.id as number,
+                                            }),
+                                            { preserveScroll: true },
+                                        )
+                                    }
                                 />
                             )}
                         </div>
@@ -344,11 +448,19 @@ function PathsForm({ periodId, paths }: { periodId: number; paths: Path[] }) {
                 <Button
                     type="button"
                     variant="outline"
-                    onClick={() => form.setData('paths', [...form.data.paths, { id: null, name: '', quota: '0' }])}
+                    onClick={() =>
+                        form.setData('paths', [
+                            ...form.data.paths,
+                            { id: null, name: '', quota: '0' },
+                        ])
+                    }
                 >
                     Tambah jalur
                 </Button>
-                <Button type="submit" disabled={form.processing || !form.isDirty}>
+                <Button
+                    type="submit"
+                    disabled={form.processing || !form.isDirty}
+                >
                     Simpan jalur dan kuota
                 </Button>
             </div>
@@ -360,7 +472,14 @@ function PathsForm({ periodId, paths }: { periodId: number; paths: Path[] }) {
  * Pengaturan PPDB: the school's code and link for applicants, its periods,
  * and the waves and paths of the chosen period.
  */
-export default function Settings({ periods, selected, waves, paths, statuses, school }: SettingsProps) {
+export default function Settings({
+    periods,
+    selected,
+    waves,
+    paths,
+    statuses,
+    school,
+}: SettingsProps) {
     const [creating, setCreating] = useState(selected === null);
     const [editingWave, setEditingWave] = useState<Wave | null>(null);
     const [addingWave, setAddingWave] = useState(false);
@@ -385,10 +504,15 @@ export default function Settings({ periods, selected, waves, paths, statuses, sc
                 <Panel title="Kode dan tautan sekolah">
                     <div className="flex flex-col gap-4">
                         <p className="text-sm text-muted-foreground">
-                            Bagikan tautan ini kepada calon siswa. Mereka membuat akun, lalu bergabung ke {school.name}{' '}
-                            dengan kode sekolah.
+                            Bagikan tautan ini kepada calon siswa. Mereka
+                            membuat akun, lalu bergabung ke {school.name} dengan
+                            kode sekolah.
                         </p>
-                        <CopyField id="school-link" label="Tautan pendaftaran" value={school.joinUrl} />
+                        <CopyField
+                            id="school-link"
+                            label="Tautan pendaftaran"
+                            value={school.joinUrl}
+                        />
                         <CopyField
                             id="school-code"
                             label="Kode sekolah"
@@ -402,7 +526,12 @@ export default function Settings({ periods, selected, waves, paths, statuses, sc
                     title="Periode"
                     actions={
                         selected !== null && !creating ? (
-                            <Button type="button" variant="outline" size="sm" onClick={() => setCreating(true)}>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCreating(true)}
+                            >
                                 Periode baru
                             </Button>
                         ) : undefined
@@ -425,7 +554,11 @@ export default function Settings({ periods, selected, waves, paths, statuses, sc
                             />
                             {selected !== null && (
                                 <div>
-                                    <Button type="button" variant="ghost" onClick={() => setCreating(false)}>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        onClick={() => setCreating(false)}
+                                    >
                                         Batal
                                     </Button>
                                 </div>
@@ -436,12 +569,22 @@ export default function Settings({ periods, selected, waves, paths, statuses, sc
                             <div className="flex flex-col gap-6">
                                 {periods.length > 1 && (
                                     <Field>
-                                        <FieldLabel>Periode yang diatur</FieldLabel>
+                                        <FieldLabel>
+                                            Periode yang diatur
+                                        </FieldLabel>
                                         <OptionSelect
                                             label="Periode yang diatur"
                                             value={String(selected.id)}
                                             onChange={(value) =>
-                                                router.get(settingsRoute.url({ query: { periode: value } }), {}, { preserveScroll: true })
+                                                router.get(
+                                                    settingsRoute.url({
+                                                        query: {
+                                                            periode: value,
+                                                        },
+                                                    }),
+                                                    {},
+                                                    { preserveScroll: true },
+                                                )
                                             }
                                             options={periods.map((period) => ({
                                                 value: String(period.id),
@@ -454,7 +597,9 @@ export default function Settings({ periods, selected, waves, paths, statuses, sc
                                     key={`period-${selected.id}-${selected.name}-${selected.entryYear}-${selected.status}`}
                                     initial={selected}
                                     statuses={statuses}
-                                    url={updatePeriod.url({ period: selected.id })}
+                                    url={updatePeriod.url({
+                                        period: selected.id,
+                                    })}
                                     method="put"
                                     submitLabel="Simpan periode"
                                 />
@@ -464,14 +609,22 @@ export default function Settings({ periods, selected, waves, paths, statuses, sc
                 </Panel>
 
                 {selected === null ? (
-                    <EmptyState>Buat periode PPDB lebih dulu untuk mengatur gelombang, jalur, dan kuota.</EmptyState>
+                    <EmptyState>
+                        Buat periode PPDB lebih dulu untuk mengatur gelombang,
+                        jalur, dan kuota.
+                    </EmptyState>
                 ) : (
                     <>
                         <Panel
                             title="Gelombang pendaftaran"
                             actions={
                                 !addingWave && editingWave === null ? (
-                                    <Button type="button" variant="outline" size="sm" onClick={() => setAddingWave(true)}>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setAddingWave(true)}
+                                    >
                                         Tambah gelombang
                                     </Button>
                                 ) : undefined
@@ -480,20 +633,44 @@ export default function Settings({ periods, selected, waves, paths, statuses, sc
                             <div className="flex flex-col gap-6">
                                 {waves.length === 0 ? (
                                     <p className="text-sm text-muted-foreground">
-                                        Belum ada gelombang. Calon siswa baru bisa mendaftar saat sebuah gelombang dibuka.
+                                        Belum ada gelombang. Calon siswa baru
+                                        bisa mendaftar saat sebuah gelombang
+                                        dibuka.
                                     </p>
                                 ) : (
-                                    <DataTable head={['Gelombang', 'Dibuka', 'Ditutup', 'Status', '']}>
+                                    <DataTable
+                                        head={[
+                                            'Gelombang',
+                                            'Dibuka',
+                                            'Ditutup',
+                                            'Status',
+                                            '',
+                                        ]}
+                                    >
                                         {waves.map((wave) => {
-                                            const status = statusOf(wave.status);
+                                            const status = statusOf(
+                                                wave.status,
+                                            );
 
                                             return (
                                                 <TableRow key={wave.id}>
-                                                    <TableCell className="font-medium">{wave.name}</TableCell>
-                                                    <TableCell>{wave.opensLabel}</TableCell>
-                                                    <TableCell>{wave.closesLabel}</TableCell>
+                                                    <TableCell className="font-medium">
+                                                        {wave.name}
+                                                    </TableCell>
                                                     <TableCell>
-                                                        <Badge variant={status.variant}>{status.label}</Badge>
+                                                        {wave.opensLabel}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {wave.closesLabel}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge
+                                                            variant={
+                                                                status.variant
+                                                            }
+                                                        >
+                                                            {status.label}
+                                                        </Badge>
                                                     </TableCell>
                                                     <TableCell className="text-right">
                                                         <Button
@@ -501,22 +678,41 @@ export default function Settings({ periods, selected, waves, paths, statuses, sc
                                                             variant="ghost"
                                                             size="sm"
                                                             onClick={() => {
-                                                                setAddingWave(false);
-                                                                setEditingWave(wave);
+                                                                setAddingWave(
+                                                                    false,
+                                                                );
+                                                                setEditingWave(
+                                                                    wave,
+                                                                );
                                                             }}
                                                         >
                                                             Ubah
                                                         </Button>
                                                         <ConfirmAction
                                                             trigger={
-                                                                <Button type="button" variant="ghost" size="sm">
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                >
                                                                     Hapus
                                                                 </Button>
                                                             }
                                                             title={`Hapus ${wave.name}?`}
                                                             description="Gelombang dihapus dari periode ini. Gelombang yang sudah punya pendaftar tidak bisa dihapus."
                                                             confirmLabel="Hapus gelombang"
-                                                            onConfirm={() => router.delete(destroyWave.url({ wave: wave.id }), { preserveScroll: true })}
+                                                            onConfirm={() =>
+                                                                router.delete(
+                                                                    destroyWave.url(
+                                                                        {
+                                                                            wave: wave.id,
+                                                                        },
+                                                                    ),
+                                                                    {
+                                                                        preserveScroll: true,
+                                                                    },
+                                                                )
+                                                            }
                                                         />
                                                     </TableCell>
                                                 </TableRow>
@@ -546,7 +742,6 @@ export default function Settings({ periods, selected, waves, paths, statuses, sc
                                 paths={paths}
                             />
                         </Panel>
-
                     </>
                 )}
             </div>

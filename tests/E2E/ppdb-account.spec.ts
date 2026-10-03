@@ -1,6 +1,10 @@
 import { expect, test } from '@playwright/test';
 
-import { openAdmissions, schoolCode, verifyPpdbAccount } from './support/database';
+import {
+    openAdmissions,
+    schoolCode,
+    verifyPpdbAccount,
+} from './support/database';
 import { accounts, centralUrl } from './support/env';
 
 /**
@@ -26,7 +30,9 @@ const slow = 30_000;
 
 test.beforeAll(() => openAdmissions(accounts.schoolAdmin.schoolSlug));
 
-test('an applicant joins a school and sends the form, and the school admin sees it', async ({ browser }) => {
+test('an applicant joins a school and sends the form, and the school admin sees it', async ({
+    browser,
+}) => {
     test.setTimeout(180_000);
 
     const code = schoolCode(accounts.schoolAdmin.schoolSlug);
@@ -43,7 +49,9 @@ test('an applicant joins a school and sends the form, and the school admin sees 
     await applicant.getByLabel('Kata sandi', { exact: true }).fill(password);
     await applicant.getByLabel('Ulangi kata sandi').fill(password);
     await applicant.getByRole('button', { name: 'Buat akun' }).click();
-    await expect(applicant).toHaveURL(`${centralUrl}/calon-siswa/verifikasi`, { timeout: slow });
+    await expect(applicant).toHaveURL(`${centralUrl}/calon-siswa/verifikasi`, {
+        timeout: slow,
+    });
 
     // --- Until the email is verified the account stays at the notice
     await applicant.goto(`${centralUrl}/calon-siswa`);
@@ -54,12 +62,20 @@ test('an applicant joins a school and sends the form, and the school admin sees 
     // --- They join with the code from the school's link
     await applicant.goto(`${centralUrl}/calon-siswa/gabung?school=${code}`);
     await expect(applicant.getByLabel('Kode sekolah')).toHaveValue(code);
-    await applicant.getByRole('button', { name: 'Gabung', exact: true }).click();
-    await expect(applicant).toHaveURL(`${centralUrl}/calon-siswa`, { timeout: slow });
-    await expect(applicant.getByText('Anda sudah bergabung ke sekolah.')).toBeVisible();
+    await applicant
+        .getByRole('button', { name: 'Gabung', exact: true })
+        .click();
+    await expect(applicant).toHaveURL(`${centralUrl}/calon-siswa`, {
+        timeout: slow,
+    });
+    await expect(
+        applicant.getByText('Anda sudah bergabung ke sekolah.'),
+    ).toBeVisible();
 
     // --- They send the registration form
-    await applicant.getByRole('link', { name: 'Isi formulir pendaftaran' }).click();
+    await applicant
+        .getByRole('link', { name: 'Isi formulir pendaftaran' })
+        .click();
     await expect(applicant).toHaveURL(`${centralUrl}/calon-siswa/formulir`);
 
     await applicant.getByLabel('Nama lengkap').fill(childName);
@@ -73,10 +89,18 @@ test('an applicant joins a school and sends the form, and the school admin sees 
     await applicant.getByLabel('Telepon wali').fill('081234567890');
     await applicant.getByRole('button', { name: 'Kirim pendaftaran' }).click();
 
-    await expect(applicant).toHaveURL(`${centralUrl}/calon-siswa`, { timeout: slow });
-    await expect(applicant.getByText(/Pendaftaran terkirim\. Nomor pendaftaran Anda: PPDB-\d{2}-0001\./)).toBeVisible();
+    await expect(applicant).toHaveURL(`${centralUrl}/calon-siswa`, {
+        timeout: slow,
+    });
+    await expect(
+        applicant.getByText(
+            /Pendaftaran terkirim\. Nomor pendaftaran Anda: PPDB-\d{2}-0001\./,
+        ),
+    ).toBeVisible();
     await expect(applicant.getByText('Menunggu verifikasi')).toBeVisible();
-    await expect(applicant.getByText('Hasil seleksi belum diumumkan')).toBeVisible();
+    await expect(
+        applicant.getByText('Hasil seleksi belum diumumkan'),
+    ).toBeVisible();
 
     // --- The school admin, in another browser, finds the registration
     const adminContext = await browser.newContext();
@@ -84,7 +108,9 @@ test('an applicant joins a school and sends the form, and the school admin sees 
 
     await admin.goto(`${centralUrl}/login`);
     await admin.getByLabel('Kode sekolah').fill(code);
-    await admin.getByLabel('Email atau NIS/NIP').fill(accounts.schoolAdmin.email);
+    await admin
+        .getByLabel('Email atau NIS/NIP')
+        .fill(accounts.schoolAdmin.email);
     await admin.getByLabel('Kata sandi').fill(accounts.schoolAdmin.password);
     await admin.getByRole('button', { name: 'Masuk' }).click();
     await expect(admin).toHaveURL(`${centralUrl}/beranda`, { timeout: slow });
@@ -108,7 +134,9 @@ test('an applicant joins a school and sends the form, and the school admin sees 
     await applicant.getByLabel('Email').fill(email);
     await applicant.getByLabel('Kata sandi').fill(password);
     await applicant.getByRole('button', { name: 'Masuk' }).click();
-    await expect(applicant).toHaveURL(`${centralUrl}/calon-siswa`, { timeout: slow });
+    await expect(applicant).toHaveURL(`${centralUrl}/calon-siswa`, {
+        timeout: slow,
+    });
     await expect(applicant.getByText(childName)).toBeVisible();
 
     expect(errors).toEqual([]);

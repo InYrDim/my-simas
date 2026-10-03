@@ -2,12 +2,26 @@ import type { ReactNode } from 'react';
 
 import { OptionSelect } from '@shared/components/page-parts';
 import { Checkbox } from '@shared/components/ui/checkbox';
-import { Field, FieldDescription, FieldError, FieldLabel } from '@shared/components/ui/field';
+import {
+    Field,
+    FieldDescription,
+    FieldError,
+    FieldLabel,
+} from '@shared/components/ui/field';
 import { Input } from '@shared/components/ui/input';
 import { Label } from '@shared/components/ui/label';
 import { Textarea } from '@shared/components/ui/textarea';
 
-export type FieldType = 'builtin' | 'text' | 'paragraph' | 'number' | 'date' | 'select' | 'checkboxes' | 'file' | 'section';
+export type FieldType =
+    | 'builtin'
+    | 'text'
+    | 'paragraph'
+    | 'number'
+    | 'date'
+    | 'select'
+    | 'checkboxes'
+    | 'file'
+    | 'section';
 
 /** One field of a period's registration form, as the pages receive it. */
 export interface FormFieldDef {
@@ -49,7 +63,10 @@ const BUILTIN_TEXT_INPUT: Record<string, string> = {
     birth_date: 'date',
 };
 
-const ACCEPT: Record<string, string> = { pdf: 'application/pdf', image: 'image/jpeg,image/png' };
+const ACCEPT: Record<string, string> = {
+    pdf: 'application/pdf',
+    image: 'image/jpeg,image/png',
+};
 
 /** What the registration form of an applicant holds: the built-in fields by column, and the custom answers by field id. */
 export type ApplicantData = {
@@ -68,7 +85,10 @@ export type ApplicantData = {
 };
 
 /** The answers a form starts with: what is stored, else nothing (an empty list for a checkboxes field). */
-export function initialAnswers(fields: FormFieldDef[], stored: Record<string, string | string[]>): Record<string, FieldValue> {
+export function initialAnswers(
+    fields: FormFieldDef[],
+    stored: Record<string, string | string[]>,
+): Record<string, FieldValue> {
     const answers: Record<string, FieldValue> = {};
 
     for (const field of fields) {
@@ -76,7 +96,11 @@ export function initialAnswers(fields: FormFieldDef[], stored: Record<string, st
             continue;
         }
 
-        answers[String(field.id)] = field.type === 'file' ? null : (stored[String(field.id)] ?? (field.type === 'checkboxes' ? [] : ''));
+        answers[String(field.id)] =
+            field.type === 'file'
+                ? null
+                : (stored[String(field.id)] ??
+                  (field.type === 'checkboxes' ? [] : ''));
     }
 
     return answers;
@@ -96,10 +120,17 @@ export function formBinding(
         getValue: (field: FormFieldDef): FieldValue =>
             field.key !== null
                 ? ((data as unknown as Record<string, string>)[field.key] ?? '')
-                : (data.answers[String(field.id)] ?? (field.type === 'checkboxes' ? [] : '')),
+                : (data.answers[String(field.id)] ??
+                  (field.type === 'checkboxes' ? [] : '')),
         setValue: (field: FormFieldDef, value: FieldValue) =>
-            field.key !== null ? setField(field.key, value) : setField('answers', { ...data.answers, [String(field.id)]: value }),
-        errorOf: (field: FormFieldDef): string | undefined => errors[field.key ?? `answers.${field.id}`],
+            field.key !== null
+                ? setField(field.key, value)
+                : setField('answers', {
+                      ...data.answers,
+                      [String(field.id)]: value,
+                  }),
+        errorOf: (field: FormFieldDef): string | undefined =>
+            errors[field.key ?? `answers.${field.id}`],
     };
 }
 
@@ -113,7 +144,9 @@ function todayIso(): string {
 }
 
 function htmlId(field: FormFieldDef): string {
-    return field.key !== null ? (BUILTIN_IDS[field.key] ?? `applicant-${field.key}`) : `field-${field.id}`;
+    return field.key !== null
+        ? (BUILTIN_IDS[field.key] ?? `applicant-${field.key}`)
+        : `field-${field.id}`;
 }
 
 function asText(value: FieldValue): string {
@@ -126,7 +159,9 @@ function asList(value: FieldValue): string[] {
 
 /** The "(opsional)" mark of an input that may be left empty. */
 function OptionalMark({ field }: { field: FormFieldDef }) {
-    return field.required ? null : <span className="font-normal text-muted-foreground"> (opsional)</span>;
+    return field.required ? null : (
+        <span className="font-normal text-muted-foreground"> (opsional)</span>
+    );
 }
 
 function Control({
@@ -149,7 +184,15 @@ function Control({
     const id = htmlId(field);
 
     if (field.key === 'path_id') {
-        return <OptionSelect label={field.label} placeholder="Pilih jalur" value={asText(value)} onChange={onChange} options={paths} />;
+        return (
+            <OptionSelect
+                label={field.label}
+                placeholder="Pilih jalur"
+                value={asText(value)}
+                onChange={onChange}
+                options={paths}
+            />
+        );
     }
 
     if (field.key === 'gender') {
@@ -172,7 +215,11 @@ function Control({
             <Textarea
                 id={id}
                 value={asText(value)}
-                maxLength={typeof field.rules.max_length === 'number' ? field.rules.max_length : undefined}
+                maxLength={
+                    typeof field.rules.max_length === 'number'
+                        ? field.rules.max_length
+                        : undefined
+                }
                 onChange={(event) => onChange(event.target.value)}
                 aria-invalid={invalid}
             />
@@ -186,7 +233,10 @@ function Control({
                 placeholder="Pilih salah satu"
                 value={asText(value)}
                 onChange={onChange}
-                options={field.options.map((option) => ({ value: option, label: option }))}
+                options={field.options.map((option) => ({
+                    value: option,
+                    label: option,
+                }))}
             />
         );
     }
@@ -195,7 +245,11 @@ function Control({
         const chosen = asList(value);
 
         return (
-            <div className="flex flex-col gap-2" role="group" aria-label={field.label}>
+            <div
+                className="flex flex-col gap-2"
+                role="group"
+                aria-label={field.label}
+            >
                 {field.options.map((option, index) => {
                     const optionId = `${id}-${index}`;
 
@@ -205,7 +259,13 @@ function Control({
                                 id={optionId}
                                 checked={chosen.includes(option)}
                                 onCheckedChange={(checked) =>
-                                    onChange(checked === true ? [...chosen, option] : chosen.filter((item) => item !== option))
+                                    onChange(
+                                        checked === true
+                                            ? [...chosen, option]
+                                            : chosen.filter(
+                                                  (item) => item !== option,
+                                              ),
+                                    )
                                 }
                             />
                             <Label htmlFor={optionId} className="font-normal">
@@ -219,14 +279,19 @@ function Control({
     }
 
     if (field.type === 'file') {
-        const kinds = Array.isArray(field.rules.kinds) ? (field.rules.kinds as string[]) : ['pdf', 'image'];
+        const kinds = Array.isArray(field.rules.kinds)
+            ? (field.rules.kinds as string[])
+            : ['pdf', 'image'];
 
         return (
             <div className="flex flex-col gap-2">
                 {stored !== undefined && (
                     <p className="text-sm">
                         Berkas terkirim:{' '}
-                        <a href={stored.url} className="underline underline-offset-4">
+                        <a
+                            href={stored.url}
+                            className="underline underline-offset-4"
+                        >
                             {stored.name}
                         </a>
                         . Pilih berkas baru untuk menggantinya.
@@ -237,7 +302,9 @@ function Control({
                     type="file"
                     accept={kinds.map((kind) => ACCEPT[kind] ?? '').join(',')}
                     disabled={disabled}
-                    onChange={(event) => onChange(event.target.files?.[0] ?? null)}
+                    onChange={(event) =>
+                        onChange(event.target.files?.[0] ?? null)
+                    }
                     aria-invalid={invalid}
                 />
             </div>
@@ -253,8 +320,14 @@ function Control({
     if (field.type === 'number') {
         type = 'number';
         step = 'any';
-        min = typeof field.rules.min === 'number' ? String(field.rules.min) : undefined;
-        max = typeof field.rules.max === 'number' ? String(field.rules.max) : undefined;
+        min =
+            typeof field.rules.min === 'number'
+                ? String(field.rules.min)
+                : undefined;
+        max =
+            typeof field.rules.max === 'number'
+                ? String(field.rules.max)
+                : undefined;
     } else if (field.type === 'date') {
         type = 'date';
         max = field.rules.allow_future === false ? todayIso() : undefined;
@@ -280,7 +353,11 @@ function Control({
             min={min}
             max={max}
             step={step}
-            maxLength={typeof field.rules.max_length === 'number' ? field.rules.max_length : undefined}
+            maxLength={
+                typeof field.rules.max_length === 'number'
+                    ? field.rules.max_length
+                    : undefined
+            }
             value={asText(value)}
             onChange={(event) => onChange(event.target.value)}
             aria-invalid={invalid}
@@ -323,8 +400,14 @@ export default function FormRenderer({
                     if (field.type === 'section') {
                         return (
                             <div key={field.id} className="border-t pt-5">
-                                <h3 className="text-base font-semibold text-foreground">{field.label}</h3>
-                                {field.help !== null && field.help !== '' && <p className="mt-1 text-sm text-muted-foreground">{field.help}</p>}
+                                <h3 className="text-base font-semibold text-foreground">
+                                    {field.label}
+                                </h3>
+                                {field.help !== null && field.help !== '' && (
+                                    <p className="mt-1 text-sm text-muted-foreground">
+                                        {field.help}
+                                    </p>
+                                )}
                             </div>
                         );
                     }
@@ -332,15 +415,27 @@ export default function FormRenderer({
                     const error = errorOf(field);
                     const id = htmlId(field);
                     const isGroup = field.type === 'checkboxes';
-                    const isSelect = field.key === 'path_id' || field.key === 'gender' || field.type === 'select';
+                    const isSelect =
+                        field.key === 'path_id' ||
+                        field.key === 'gender' ||
+                        field.type === 'select';
 
                     return (
-                        <Field key={field.id} data-invalid={error !== undefined}>
-                            <FieldLabel htmlFor={isGroup || isSelect ? undefined : id}>
+                        <Field
+                            key={field.id}
+                            data-invalid={error !== undefined}
+                        >
+                            <FieldLabel
+                                htmlFor={isGroup || isSelect ? undefined : id}
+                            >
                                 {field.label}
                                 <OptionalMark field={field} />
                             </FieldLabel>
-                            {field.help !== null && field.help !== '' && <FieldDescription>{field.help}</FieldDescription>}
+                            {field.help !== null && field.help !== '' && (
+                                <FieldDescription>
+                                    {field.help}
+                                </FieldDescription>
+                            )}
                             <Control
                                 field={field}
                                 value={getValue(field)}
@@ -350,7 +445,9 @@ export default function FormRenderer({
                                 stored={storedFiles?.[String(field.id)]}
                                 disabled={disabled}
                             />
-                            {error !== undefined && <FieldError>{error}</FieldError>}
+                            {error !== undefined && (
+                                <FieldError>{error}</FieldError>
+                            )}
                         </Field>
                     );
                 })}

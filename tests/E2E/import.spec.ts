@@ -18,7 +18,9 @@ test('a school admin imports students from a CSV file', async ({ page }) => {
     page.on('pageerror', (error) => errors.push(error.message));
 
     await page.goto('/login');
-    await page.getByLabel('Kode sekolah').fill(schoolCode(accounts.schoolAdmin.schoolSlug));
+    await page
+        .getByLabel('Kode sekolah')
+        .fill(schoolCode(accounts.schoolAdmin.schoolSlug));
     await page.getByLabel('Email').fill(accounts.schoolAdmin.email);
     await page.getByLabel('Kata sandi').fill(accounts.schoolAdmin.password);
     await page.getByRole('button', { name: 'Masuk' }).click();
@@ -26,7 +28,9 @@ test('a school admin imports students from a CSV file', async ({ page }) => {
     await expect(page).toHaveURL(`${centralUrl}/beranda`, { timeout: 30_000 });
 
     await page.goto('/kelola/impor');
-    await expect(page.getByRole('button', { name: 'Lanjut ke pratinjau' })).toBeDisabled();
+    await expect(
+        page.getByRole('button', { name: 'Lanjut ke pratinjau' }),
+    ).toBeDisabled();
 
     // The way a spreadsheet saves it: `;` separated behind a `sep=` line.
     // The second row names a class the school does not have.
@@ -45,11 +49,21 @@ test('a school admin imports students from a CSV file', async ({ page }) => {
     });
     await page.getByRole('button', { name: 'Lanjut ke pratinjau' }).click();
 
-    await expect(page.getByText('2 baris terbaca: 1 baru, 0 diperbarui, 1 perlu diperbaiki.')).toBeVisible();
-    await expect(page.getByText('Kelas "Kelas Tidak Ada" tidak ada di tahun ajaran aktif.')).toBeVisible();
+    await expect(
+        page.getByText(
+            '2 baris terbaca: 1 baru, 0 diperbarui, 1 perlu diperbaiki.',
+        ),
+    ).toBeVisible();
+    await expect(
+        page.getByText(
+            'Kelas "Kelas Tidak Ada" tidak ada di tahun ajaran aktif.',
+        ),
+    ).toBeVisible();
 
     await page.getByRole('button', { name: 'Impor 1 baris yang siap' }).click();
-    await expect(page.getByText('1 baris ditambahkan, 0 diperbarui, 1 dilewati.')).toBeVisible();
+    await expect(
+        page.getByText('1 baris ditambahkan, 0 diperbarui, 1 dilewati.'),
+    ).toBeVisible();
 
     await page.getByRole('link', { name: 'Lihat daftar Siswa' }).click();
     await expect(page).toHaveURL(`${centralUrl}/master/siswa`);

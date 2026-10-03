@@ -81,8 +81,12 @@ export default function WhatsappIndex({
         action: NoteAction;
     } | null>(null);
 
-    const pending = instances.filter((instance) => instance.status === 'pending');
-    const decided = instances.filter((instance) => instance.status !== 'pending');
+    const pending = instances.filter(
+        (instance) => instance.status === 'pending',
+    );
+    const decided = instances.filter(
+        (instance) => instance.status !== 'pending',
+    );
 
     return (
         <ProviderLayout>
@@ -97,8 +101,8 @@ export default function WhatsappIndex({
                 <Alert variant="destructive" className="mt-6">
                     <AlertDescription>
                         Gateway belum dikonfigurasi. Isi OPENWA_API_BASE_URL,
-                        OPENWA_ADMIN_API_KEY, dan OPENWA_CREDENTIALS_KEY di
-                        .env sebelum menyetujui pengajuan.
+                        OPENWA_ADMIN_API_KEY, dan OPENWA_CREDENTIALS_KEY di .env
+                        sebelum menyetujui pengajuan.
                     </AlertDescription>
                 </Alert>
             )}
@@ -168,7 +172,10 @@ export default function WhatsappIndex({
                                     <Button
                                         variant="outline"
                                         onClick={() =>
-                                            setNoting({ instance, action: 'reject' })
+                                            setNoting({
+                                                instance,
+                                                action: 'reject',
+                                            })
                                         }
                                     >
                                         Tolak
@@ -199,7 +206,14 @@ export default function WhatsappIndex({
                 <EmptyState>Belum ada sekolah yang diputuskan.</EmptyState>
             ) : (
                 <DataTable
-                    head={['Sekolah', 'Status', 'Sambungan', 'Diputuskan', 'Catatan', '']}
+                    head={[
+                        'Sekolah',
+                        'Status',
+                        'Sambungan',
+                        'Diputuskan',
+                        'Catatan',
+                        '',
+                    ]}
                 >
                     {decided.map((instance) => (
                         <TableRow key={instance.id}>
@@ -238,7 +252,10 @@ export default function WhatsappIndex({
                                         variant="ghost"
                                         size="sm"
                                         onClick={() =>
-                                            setNoting({ instance, action: 'disable' })
+                                            setNoting({
+                                                instance,
+                                                action: 'disable',
+                                            })
                                         }
                                     >
                                         Nonaktifkan
@@ -351,7 +368,9 @@ function NoteForm({
                     id="whatsapp-reject-note"
                     rows={3}
                     value={form.data.note}
-                    onChange={(event) => form.setData('note', event.target.value)}
+                    onChange={(event) =>
+                        form.setData('note', event.target.value)
+                    }
                     aria-invalid={!!form.errors.note}
                     autoFocus
                 />

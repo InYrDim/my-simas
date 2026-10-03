@@ -1,8 +1,16 @@
 import { Link, router, useForm, usePage } from '@inertiajs/react';
 
-import { publish, update } from '@/actions/Modules/Ppdb/App/Http/Controllers/SelectionController';
+import {
+    publish,
+    update,
+} from '@/actions/Modules/Ppdb/App/Http/Controllers/SelectionController';
 import { selection, settings } from '@/routes/ppdb';
-import { DataTable, EmptyState, OptionSelect, StatCard } from '@shared/components/page-parts';
+import {
+    DataTable,
+    EmptyState,
+    OptionSelect,
+    StatCard,
+} from '@shared/components/page-parts';
 import { Alert, AlertDescription } from '@shared/components/ui/alert';
 import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
@@ -34,7 +42,13 @@ interface Candidate {
 }
 
 interface SelectionProps {
-    period: { id: number; name: string; status: string; resultsPublished: boolean; publishedOn: string | null } | null;
+    period: {
+        id: number;
+        name: string;
+        status: string;
+        resultsPublished: boolean;
+        publishedOn: string | null;
+    } | null;
     paths: PathSummary[];
     selectedPathId: number | null;
     quota: { capacity: number; accepted: number; waitlist: number };
@@ -70,12 +84,19 @@ function Ranking({
     function change(index: number, patch: Partial<Row>) {
         form.setData(
             'rows',
-            form.data.rows.map((row, position) => (position === index ? { ...row, ...patch } : row)),
+            form.data.rows.map((row, position) =>
+                position === index ? { ...row, ...patch } : row,
+            ),
         );
     }
 
     if (candidates.length === 0) {
-        return <EmptyState>Belum ada pendaftar terverifikasi di jalur ini. Pendaftar muncul di sini setelah panitia memverifikasinya.</EmptyState>;
+        return (
+            <EmptyState>
+                Belum ada pendaftar terverifikasi di jalur ini. Pendaftar muncul
+                di sini setelah panitia memverifikasinya.
+            </EmptyState>
+        );
     }
 
     return (
@@ -83,7 +104,10 @@ function Ranking({
             className="flex flex-col gap-4"
             onSubmit={(event) => {
                 event.preventDefault();
-                form.put(update.url(), { preserveScroll: true, onSuccess: () => form.setDefaults() });
+                form.put(update.url(), {
+                    preserveScroll: true,
+                    onSuccess: () => form.setDefaults(),
+                });
             }}
         >
             {errors.quota !== undefined && (
@@ -92,22 +116,34 @@ function Ranking({
                 </Alert>
             )}
 
-            <DataTable head={['#', 'No. daftar', 'Nama', 'Nilai', 'Keputusan', '']}>
+            <DataTable
+                head={['#', 'No. daftar', 'Nama', 'Nilai', 'Keputusan', '']}
+            >
                 {candidates.map((candidate, index) => {
                     const row = form.data.rows[index];
                     const status = statusOf(row.decision);
                     const locked = !canManage || candidate.enrolled;
                     const scoreError = errors[`rows.${index}.score`];
-                    const decisionError = errors[`rows.${index}.decision`] ?? errors[`rows.${index}.applicant_id`];
+                    const decisionError =
+                        errors[`rows.${index}.decision`] ??
+                        errors[`rows.${index}.applicant_id`];
                     // After the announcement a waiting-list applicant can still be moved up.
-                    const canPromote = periodPublished && candidate.decision === 'waitlist';
-                    const decisionsLocked = locked || (periodPublished && !canPromote);
+                    const canPromote =
+                        periodPublished && candidate.decision === 'waitlist';
+                    const decisionsLocked =
+                        locked || (periodPublished && !canPromote);
 
                     return (
                         <TableRow key={candidate.id}>
-                            <TableCell className="text-muted-foreground">{candidate.rank ?? '—'}</TableCell>
-                            <TableCell className="font-mono text-xs">{candidate.number}</TableCell>
-                            <TableCell className="font-medium">{candidate.name}</TableCell>
+                            <TableCell className="text-muted-foreground">
+                                {candidate.rank ?? '—'}
+                            </TableCell>
+                            <TableCell className="font-mono text-xs">
+                                {candidate.number}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                                {candidate.name}
+                            </TableCell>
                             <TableCell className="w-28">
                                 <Input
                                     type="number"
@@ -118,14 +154,28 @@ function Ranking({
                                     aria-label={`Nilai ${candidate.name}`}
                                     value={row.score}
                                     disabled={locked || periodPublished}
-                                    onChange={(event) => change(index, { score: event.target.value })}
+                                    onChange={(event) =>
+                                        change(index, {
+                                            score: event.target.value,
+                                        })
+                                    }
                                     aria-invalid={scoreError !== undefined}
                                 />
-                                {scoreError !== undefined && <p className="mt-1 text-xs text-destructive">{scoreError}</p>}
+                                {scoreError !== undefined && (
+                                    <p className="mt-1 text-xs text-destructive">
+                                        {scoreError}
+                                    </p>
+                                )}
                             </TableCell>
                             <TableCell>
-                                <Badge variant={status.variant}>{status.label}</Badge>
-                                {decisionError !== undefined && <p className="mt-1 text-xs text-destructive">{decisionError}</p>}
+                                <Badge variant={status.variant}>
+                                    {status.label}
+                                </Badge>
+                                {decisionError !== undefined && (
+                                    <p className="mt-1 text-xs text-destructive">
+                                        {decisionError}
+                                    </p>
+                                )}
                             </TableCell>
                             <TableCell>
                                 <div className="flex justify-end gap-2">
@@ -140,10 +190,28 @@ function Ranking({
                                             key={decision}
                                             type="button"
                                             size="sm"
-                                            variant={row.decision === decision ? 'default' : 'outline'}
-                                            aria-pressed={row.decision === decision}
-                                            disabled={decisionsLocked || (periodPublished && decision !== 'accepted')}
-                                            onClick={() => change(index, { decision: row.decision === decision ? 'pending' : decision })}
+                                            variant={
+                                                row.decision === decision
+                                                    ? 'default'
+                                                    : 'outline'
+                                            }
+                                            aria-pressed={
+                                                row.decision === decision
+                                            }
+                                            disabled={
+                                                decisionsLocked ||
+                                                (periodPublished &&
+                                                    decision !== 'accepted')
+                                            }
+                                            onClick={() =>
+                                                change(index, {
+                                                    decision:
+                                                        row.decision ===
+                                                        decision
+                                                            ? 'pending'
+                                                            : decision,
+                                                })
+                                            }
                                         >
                                             {label}
                                         </Button>
@@ -157,7 +225,10 @@ function Ranking({
 
             {canManage && (
                 <div>
-                    <Button type="submit" disabled={form.processing || !form.isDirty}>
+                    <Button
+                        type="submit"
+                        disabled={form.processing || !form.isDirty}
+                    >
                         Simpan seleksi
                     </Button>
                 </div>
@@ -170,15 +241,30 @@ function Ranking({
  * Seleksi & Pengumuman: candidates of a path ranked by score; the
  * committee decides within the quota, then announces the results.
  */
-export default function Selection({ period, paths, selectedPathId, quota, candidates, pending, can }: SelectionProps) {
+export default function Selection({
+    period,
+    paths,
+    selectedPathId,
+    quota,
+    candidates,
+    pending,
+    can,
+}: SelectionProps) {
     const errors = usePage<{ errors: Record<string, string> }>().props.errors;
 
     if (period === null) {
         return (
-            <PpdbPage title="Seleksi & Pengumuman" description="Belum ada periode PPDB." width="max-w-6xl">
+            <PpdbPage
+                title="Seleksi & Pengumuman"
+                description="Belum ada periode PPDB."
+                width="max-w-6xl"
+            >
                 <EmptyState>
                     Belum ada periode PPDB, jadi belum ada yang diseleksi.{' '}
-                    <Link href={settings.url()} className="underline underline-offset-4">
+                    <Link
+                        href={settings.url()}
+                        className="underline underline-offset-4"
+                    >
                         Pengaturan PPDB
                     </Link>
                 </EmptyState>
@@ -192,14 +278,22 @@ export default function Selection({ period, paths, selectedPathId, quota, candid
             description={`Urutan pendaftar terverifikasi berdasarkan nilai seleksi · ${period.name}`}
             actions={
                 period.resultsPublished ? (
-                    <Badge className="self-center">Diumumkan {period.publishedOn}</Badge>
+                    <Badge className="self-center">
+                        Diumumkan {period.publishedOn}
+                    </Badge>
                 ) : can.manage ? (
                     <ConfirmAction
                         trigger={<Button>Umumkan hasil</Button>}
                         title="Umumkan hasil seleksi?"
                         description="Setelah diumumkan, tiap pendaftar melihat keputusannya di halaman akun mereka. Nilai tidak lagi bisa diubah; yang masih bisa dilakukan hanya menaikkan pendaftar dari cadangan menjadi diterima."
                         confirmLabel="Umumkan hasil"
-                        onConfirm={() => router.post(publish.url(), { period_id: period.id }, { preserveScroll: true })}
+                        onConfirm={() =>
+                            router.post(
+                                publish.url(),
+                                { period_id: period.id },
+                                { preserveScroll: true },
+                            )
+                        }
                     />
                 ) : undefined
             }
@@ -219,20 +313,38 @@ export default function Selection({ period, paths, selectedPathId, quota, candid
                         <OptionSelect
                             label="Jalur"
                             value={String(selectedPathId ?? '')}
-                            onChange={(value) => router.get(selection.url({ query: { jalur: value, periode: period.id } }), {}, { preserveScroll: true })}
+                            onChange={(value) =>
+                                router.get(
+                                    selection.url({
+                                        query: {
+                                            jalur: value,
+                                            periode: period.id,
+                                        },
+                                    }),
+                                    {},
+                                    { preserveScroll: true },
+                                )
+                            }
                             options={paths.map((path) => ({
                                 value: String(path.id),
                                 label: `${path.name} · ${path.accepted}/${path.quota} diterima`,
                             }))}
                         />
                         {pending > 0 && !period.resultsPublished && (
-                            <p className="text-sm text-muted-foreground">{pending} pendaftar terverifikasi di semua jalur belum diputuskan.</p>
+                            <p className="text-sm text-muted-foreground">
+                                {pending} pendaftar terverifikasi di semua jalur
+                                belum diputuskan.
+                            </p>
                         )}
                     </div>
 
                     <div className="mb-8 grid grid-cols-3 gap-4">
                         <StatCard label="Kuota" value={quota.capacity} />
-                        <StatCard label="Diterima" value={quota.accepted} hint={`sisa ${Math.max(quota.capacity - quota.accepted, 0)} kursi`} />
+                        <StatCard
+                            label="Diterima"
+                            value={quota.accepted}
+                            hint={`sisa ${Math.max(quota.capacity - quota.accepted, 0)} kursi`}
+                        />
                         <StatCard label="Cadangan" value={quota.waitlist} />
                     </div>
 

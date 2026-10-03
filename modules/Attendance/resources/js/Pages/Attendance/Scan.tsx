@@ -10,7 +10,11 @@ import { EmptyState, OptionSelect, Panel } from '@shared/components/page-parts';
 import { Alert, AlertDescription } from '@shared/components/ui/alert';
 import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
-import { Field, FieldDescription, FieldLabel } from '@shared/components/ui/field';
+import {
+    Field,
+    FieldDescription,
+    FieldLabel,
+} from '@shared/components/ui/field';
 import { Input } from '@shared/components/ui/input';
 import { cn } from '@shared/lib/utils';
 
@@ -72,8 +76,18 @@ const REPEAT_GUARD_MS = 4000;
  * one-time QR — by camera, by a handheld scanner typing into the code
  * field — or by picking them by name or NIS.
  */
-export default function Scan({ date, can, classes, classId, slots, slotId }: ScanProps) {
-    const modes: Mode[] = [...(can.gate ? (['gate-in', 'gate-out'] as Mode[]) : []), ...(can.lesson ? (['lesson'] as Mode[]) : [])];
+export default function Scan({
+    date,
+    can,
+    classes,
+    classId,
+    slots,
+    slotId,
+}: ScanProps) {
+    const modes: Mode[] = [
+        ...(can.gate ? (['gate-in', 'gate-out'] as Mode[]) : []),
+        ...(can.lesson ? (['lesson'] as Mode[]) : []),
+    ];
 
     const [mode, setMode] = useState<Mode>(modes[0]);
     const [lessonClass, setLessonClass] = useState(classId);
@@ -93,10 +107,16 @@ export default function Scan({ date, can, classes, classId, slots, slotId }: Sca
     const last = useRef<{ token: string; at: number } | null>(null);
     const entryKey = useRef(0);
 
-    const lessonReady = mode !== 'lesson' || (lessonClass !== '' && lessonSlot !== '');
+    const lessonReady =
+        mode !== 'lesson' || (lessonClass !== '' && lessonSlot !== '');
 
     const add = (ok: boolean, title: string, detail: string) =>
-        setLog((entries) => [{ key: ++entryKey.current, ok, title, detail }, ...entries].slice(0, 30));
+        setLog((entries) =>
+            [{ key: ++entryKey.current, ok, title, detail }, ...entries].slice(
+                0,
+                30,
+            ),
+        );
 
     const record = (target: { token: string } | { student_id: number }) => {
         if (busy.current || !lessonReady) {
@@ -107,7 +127,9 @@ export default function Scan({ date, can, classes, classId, slots, slotId }: Sca
         scan.transform(() => ({
             mode,
             ...target,
-            ...(mode === 'lesson' ? { class_id: lessonClass, period_slot_id: lessonSlot } : {}),
+            ...(mode === 'lesson'
+                ? { class_id: lessonClass, period_slot_id: lessonSlot }
+                : {}),
         }));
         scan.post(store.url(), {
             headers: { Accept: 'application/json' },
@@ -115,12 +137,28 @@ export default function Scan({ date, can, classes, classId, slots, slotId }: Sca
                 add(
                     true,
                     response.student.name,
-                    [response.student.class, response.status, response.time].filter(Boolean).join(' · '),
+                    [response.student.class, response.status, response.time]
+                        .filter(Boolean)
+                        .join(' · '),
                 ),
             onError: (errors) =>
-                add(false, 'Tidak tercatat', String(Object.values(errors)[0] ?? 'Permintaan ditolak.')),
-            onHttpException: () => add(false, 'Tidak tercatat', 'Permintaan ditolak. Muat ulang halaman lalu coba lagi.'),
-            onNetworkError: () => add(false, 'Tidak tercatat', 'Tidak ada sambungan. Periksa internet lalu coba lagi.'),
+                add(
+                    false,
+                    'Tidak tercatat',
+                    String(Object.values(errors)[0] ?? 'Permintaan ditolak.'),
+                ),
+            onHttpException: () =>
+                add(
+                    false,
+                    'Tidak tercatat',
+                    'Permintaan ditolak. Muat ulang halaman lalu coba lagi.',
+                ),
+            onNetworkError: () =>
+                add(
+                    false,
+                    'Tidak tercatat',
+                    'Tidak ada sambungan. Periksa internet lalu coba lagi.',
+                ),
             onFinish: () => {
                 busy.current = false;
             },
@@ -139,7 +177,10 @@ export default function Scan({ date, can, classes, classId, slots, slotId }: Sca
             return;
         }
 
-        let scanner: { start: () => Promise<void>; destroy: () => void } | null = null;
+        let scanner: {
+            start: () => Promise<void>;
+            destroy: () => void;
+        } | null = null;
         let stopped = false;
 
         void import('qr-scanner').then(({ default: QrScanner }) => {
@@ -163,7 +204,11 @@ export default function Scan({ date, can, classes, classId, slots, slotId }: Sca
                     last.current = { token: result.data, at: now };
                     recordRef.current({ token: result.data });
                 },
-                { preferredCamera: 'environment', highlightScanRegion: true, maxScansPerSecond: 5 },
+                {
+                    preferredCamera: 'environment',
+                    highlightScanRegion: true,
+                    maxScansPerSecond: 5,
+                },
             );
 
             scanner.start().catch(() => {
@@ -215,8 +260,16 @@ export default function Scan({ date, can, classes, classId, slots, slotId }: Sca
     }
 
     return (
-        <AttendancePage title="Pindai QR" description={date.label} width="max-w-3xl">
-            <div role="group" aria-label="Mode" className="mb-6 flex flex-wrap gap-2">
+        <AttendancePage
+            title="Pindai QR"
+            description={date.label}
+            width="max-w-3xl"
+        >
+            <div
+                role="group"
+                aria-label="Mode"
+                className="mb-6 flex flex-wrap gap-2"
+            >
                 {modes.map((option) => (
                     <Button
                         key={option}
@@ -233,7 +286,11 @@ export default function Scan({ date, can, classes, classId, slots, slotId }: Sca
             {mode === 'lesson' && (
                 <div className="mb-6 flex flex-col gap-4 sm:flex-row">
                     <Filter label="Kelas">
-                        <ClassSelect value={lessonClass} onChange={setLessonClass} options={classes} />
+                        <ClassSelect
+                            value={lessonClass}
+                            onChange={setLessonClass}
+                            options={classes}
+                        />
                     </Filter>
                     {slots.length > 0 && (
                         <Filter label="Jam pelajaran">
@@ -274,58 +331,84 @@ export default function Scan({ date, can, classes, classId, slots, slotId }: Sca
                     >
                         {cameraError !== null && (
                             <Alert variant="destructive" className="mb-4">
-                                <AlertDescription>{cameraError}</AlertDescription>
+                                <AlertDescription>
+                                    {cameraError}
+                                </AlertDescription>
                             </Alert>
                         )}
                         <video
                             ref={video}
                             muted
                             playsInline
-                            className={cn('aspect-video w-full bg-muted object-cover', !camera && 'hidden')}
+                            className={cn(
+                                'aspect-video w-full bg-muted object-cover',
+                                !camera && 'hidden',
+                            )}
                         />
                         {!camera && (
                             <p className="text-sm text-muted-foreground">
-                                Nyalakan kamera lalu arahkan ke QR di HP siswa. Kamera butuh
-                                sambungan aman (https).
+                                Nyalakan kamera lalu arahkan ke QR di HP siswa.
+                                Kamera butuh sambungan aman (https).
                             </p>
                         )}
                     </Panel>
 
                     <Panel title="Kode QR">
-                        <form onSubmit={submitCode} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                        <form
+                            onSubmit={submitCode}
+                            className="flex flex-col gap-3 sm:flex-row sm:items-end"
+                        >
                             <Field className="flex-1">
-                                <FieldLabel htmlFor="scan-code">Kode</FieldLabel>
+                                <FieldLabel htmlFor="scan-code">
+                                    Kode
+                                </FieldLabel>
                                 <Input
                                     id="scan-code"
                                     name="code"
                                     autoComplete="off"
                                     value={code}
-                                    onChange={(event) => setCode(event.target.value)}
+                                    onChange={(event) =>
+                                        setCode(event.target.value)
+                                    }
                                 />
                                 <FieldDescription>
-                                    Untuk alat pemindai yang mengetik sendiri: klik kolom ini,
-                                    lalu pindai.
+                                    Untuk alat pemindai yang mengetik sendiri:
+                                    klik kolom ini, lalu pindai.
                                 </FieldDescription>
                             </Field>
-                            <Button type="submit" disabled={scan.processing || code.trim() === ''}>
+                            <Button
+                                type="submit"
+                                disabled={scan.processing || code.trim() === ''}
+                            >
                                 Catat
                             </Button>
                         </form>
                     </Panel>
 
                     <Panel title="Tanpa HP: cari siswa">
-                        <form onSubmit={submitSearch} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                        <form
+                            onSubmit={submitSearch}
+                            className="flex flex-col gap-3 sm:flex-row sm:items-end"
+                        >
                             <Field className="flex-1">
-                                <FieldLabel htmlFor="scan-search">Nama atau NIS</FieldLabel>
+                                <FieldLabel htmlFor="scan-search">
+                                    Nama atau NIS
+                                </FieldLabel>
                                 <Input
                                     id="scan-search"
                                     name="q"
                                     autoComplete="off"
                                     value={term}
-                                    onChange={(event) => setTerm(event.target.value)}
+                                    onChange={(event) =>
+                                        setTerm(event.target.value)
+                                    }
                                 />
                             </Field>
-                            <Button type="submit" variant="outline" disabled={search.processing}>
+                            <Button
+                                type="submit"
+                                variant="outline"
+                                disabled={search.processing}
+                            >
                                 Cari
                             </Button>
                         </form>
@@ -343,19 +426,28 @@ export default function Scan({ date, can, classes, classId, slots, slotId }: Sca
                                             className="flex items-center justify-between gap-3 py-2"
                                         >
                                             <div className="min-w-0">
-                                                <p className="truncate text-sm font-medium">{student.name}</p>
+                                                <p className="truncate text-sm font-medium">
+                                                    {student.name}
+                                                </p>
                                                 <p className="font-mono text-xs text-muted-foreground">
-                                                    {student.nis} · {student.class ?? 'tanpa kelas'}
+                                                    {student.nis} ·{' '}
+                                                    {student.class ??
+                                                        'tanpa kelas'}
                                                 </p>
                                             </div>
                                             <Button
                                                 type="button"
                                                 size="sm"
                                                 disabled={scan.processing}
-                                                onClick={() => record({ student_id: student.id })}
+                                                onClick={() =>
+                                                    record({
+                                                        student_id: student.id,
+                                                    })
+                                                }
                                                 aria-label={`Catat ${student.name}`}
                                             >
-                                                Catat {modeLabels[mode].toLowerCase()}
+                                                Catat{' '}
+                                                {modeLabels[mode].toLowerCase()}
                                             </Button>
                                         </li>
                                     ))}
@@ -365,16 +457,34 @@ export default function Scan({ date, can, classes, classId, slots, slotId }: Sca
 
                     <Panel title="Hasil">
                         {log.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">Belum ada yang dicatat.</p>
+                            <p className="text-sm text-muted-foreground">
+                                Belum ada yang dicatat.
+                            </p>
                         ) : (
-                            <ul className="flex flex-col divide-y divide-border" aria-live="polite">
+                            <ul
+                                className="flex flex-col divide-y divide-border"
+                                aria-live="polite"
+                            >
                                 {log.map((entry) => (
-                                    <li key={entry.key} className="flex items-center justify-between gap-3 py-2">
+                                    <li
+                                        key={entry.key}
+                                        className="flex items-center justify-between gap-3 py-2"
+                                    >
                                         <div className="min-w-0">
-                                            <p className="truncate text-sm font-medium">{entry.title}</p>
-                                            <p className="text-sm text-muted-foreground">{entry.detail}</p>
+                                            <p className="truncate text-sm font-medium">
+                                                {entry.title}
+                                            </p>
+                                            <p className="text-sm text-muted-foreground">
+                                                {entry.detail}
+                                            </p>
                                         </div>
-                                        <Badge variant={entry.ok ? 'default' : 'destructive'}>
+                                        <Badge
+                                            variant={
+                                                entry.ok
+                                                    ? 'default'
+                                                    : 'destructive'
+                                            }
+                                        >
                                             {entry.ok ? 'Tercatat' : 'Ditolak'}
                                         </Badge>
                                     </li>

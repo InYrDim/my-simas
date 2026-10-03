@@ -11,9 +11,7 @@ import {
     store as inviteAdmin,
 } from '@/actions/Modules/Identity/App/Http/Controllers/Console/SchoolAdminController';
 import { show as showTenant } from '@/actions/Modules/Platform/App/Http/Controllers/TenantConsoleController';
-import {
-    consolePath,
-} from '@platform/Components/consolePath';
+import { consolePath } from '@platform/Components/consolePath';
 import {
     DataTable,
     EmptyState,
@@ -148,7 +146,9 @@ export default function SchoolAdminsIndex({
                                 <FieldError>{form.errors.tenant_id}</FieldError>
                             </Field>
                             <Field data-invalid={!!form.errors.name}>
-                                <FieldLabel htmlFor="admin-name">Nama</FieldLabel>
+                                <FieldLabel htmlFor="admin-name">
+                                    Nama
+                                </FieldLabel>
                                 <Input
                                     id="admin-name"
                                     value={form.data.name}
@@ -161,13 +161,18 @@ export default function SchoolAdminsIndex({
                                 <FieldError>{form.errors.name}</FieldError>
                             </Field>
                             <Field data-invalid={!!form.errors.email}>
-                                <FieldLabel htmlFor="admin-email">Email</FieldLabel>
+                                <FieldLabel htmlFor="admin-email">
+                                    Email
+                                </FieldLabel>
                                 <Input
                                     id="admin-email"
                                     type="email"
                                     value={form.data.email}
                                     onChange={(event) =>
-                                        form.setData('email', event.target.value)
+                                        form.setData(
+                                            'email',
+                                            event.target.value,
+                                        )
                                     }
                                     aria-invalid={!!form.errors.email}
                                     required
@@ -269,7 +274,9 @@ export default function SchoolAdminsIndex({
                                                 onClick={() =>
                                                     send(
                                                         'post',
-                                                        reactivateAdmin.url(target(admin)),
+                                                        reactivateAdmin.url(
+                                                            target(admin),
+                                                        ),
                                                     )
                                                 }
                                             >
@@ -283,7 +290,9 @@ export default function SchoolAdminsIndex({
                                                 onClick={() =>
                                                     send(
                                                         'post',
-                                                        resendInvite.url(target(admin)),
+                                                        resendInvite.url(
+                                                            target(admin),
+                                                        ),
                                                     )
                                                 }
                                             >
@@ -295,7 +304,12 @@ export default function SchoolAdminsIndex({
                                                 size="sm"
                                                 variant="outline"
                                                 onClick={() =>
-                                                    send('post', sendReset.url(target(admin)))
+                                                    send(
+                                                        'post',
+                                                        sendReset.url(
+                                                            target(admin),
+                                                        ),
+                                                    )
                                                 }
                                             >
                                                 Kirim tautan reset
@@ -304,20 +318,25 @@ export default function SchoolAdminsIndex({
                                         {admin.status !== 'deactivated' && (
                                             <AlertDialog>
                                                 <AlertDialogTrigger asChild>
-                                                    <Button size="sm" variant="outline">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                    >
                                                         Nonaktifkan
                                                     </Button>
                                                 </AlertDialogTrigger>
                                                 <AlertDialogContent>
                                                     <AlertDialogHeader>
                                                         <AlertDialogTitle>
-                                                            Nonaktifkan {admin.name}?
+                                                            Nonaktifkan{' '}
+                                                            {admin.name}?
                                                         </AlertDialogTitle>
                                                         <AlertDialogDescription>
-                                                            Akun tidak bisa masuk
-                                                            sampai diaktifkan
-                                                            kembali. Data dan peran
-                                                            tetap tersimpan.
+                                                            Akun tidak bisa
+                                                            masuk sampai
+                                                            diaktifkan kembali.
+                                                            Data dan peran tetap
+                                                            tersimpan.
                                                         </AlertDialogDescription>
                                                     </AlertDialogHeader>
                                                     <AlertDialogFooter>
@@ -329,7 +348,11 @@ export default function SchoolAdminsIndex({
                                                             onClick={() =>
                                                                 send(
                                                                     'post',
-                                                                    deactivateAdmin.url(target(admin)),
+                                                                    deactivateAdmin.url(
+                                                                        target(
+                                                                            admin,
+                                                                        ),
+                                                                    ),
                                                                 )
                                                             }
                                                         >

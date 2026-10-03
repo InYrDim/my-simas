@@ -13,7 +13,11 @@ import { TableCell, TableRow } from '@shared/components/ui/table';
 import ExtracurricularForm from '../../../../Components/ExtracurricularForm';
 import FormDialog from '../../../../Components/FormDialog';
 import MasterPage from '../../../../Components/MasterPage';
-import type { Extracurricular, SchoolSummary, Teacher } from '../../../../types/master';
+import type {
+    Extracurricular,
+    SchoolSummary,
+    Teacher,
+} from '../../../../types/master';
 
 /** Ekstrakurikuler: activities with coach, schedule and member count. */
 export default function ExtracurricularsIndex({
@@ -50,18 +54,29 @@ export default function ExtracurricularsIndex({
             {extracurriculars.length === 0 ? (
                 <EmptyState>Belum ada ekstrakurikuler.</EmptyState>
             ) : (
-                <DataTable head={['Kegiatan', 'Pembina', 'Jadwal', 'Jenis', 'Anggota']}>
+                <DataTable
+                    head={['Kegiatan', 'Pembina', 'Jadwal', 'Jenis', 'Anggota']}
+                >
                     {extracurriculars.map((item) => (
                         <TableRow key={item.id}>
                             <TableCell className="font-medium">
-                                <Link href={show.url(item.id)} className="hover:underline">
+                                <Link
+                                    href={show.url(item.id)}
+                                    className="hover:underline"
+                                >
                                     {item.name}
                                 </Link>
                             </TableCell>
                             <TableCell>{item.coach ?? '—'}</TableCell>
                             <TableCell>{item.schedule ?? '—'}</TableCell>
                             <TableCell>
-                                <Badge variant={item.kind === 'Wajib' ? 'default' : 'secondary'}>
+                                <Badge
+                                    variant={
+                                        item.kind === 'Wajib'
+                                            ? 'default'
+                                            : 'secondary'
+                                    }
+                                >
                                     {item.kind}
                                 </Badge>
                             </TableCell>

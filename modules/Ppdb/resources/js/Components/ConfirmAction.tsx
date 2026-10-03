@@ -35,11 +35,15 @@ export default function ConfirmAction({
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>{title}</AlertDialogTitle>
-                    <AlertDialogDescription>{description}</AlertDialogDescription>
+                    <AlertDialogDescription>
+                        {description}
+                    </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Batal</AlertDialogCancel>
-                    <AlertDialogAction onClick={onConfirm}>{confirmLabel}</AlertDialogAction>
+                    <AlertDialogAction onClick={onConfirm}>
+                        {confirmLabel}
+                    </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>

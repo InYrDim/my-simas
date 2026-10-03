@@ -49,13 +49,23 @@ export default function Roles({ roles }: { roles: Role[] }) {
                             <CardHeader>
                                 <div className="flex items-start justify-between gap-3">
                                     <CardTitle>{role.label}</CardTitle>
-                                    <Badge variant={role.userCount > 0 ? 'default' : 'secondary'}>
+                                    <Badge
+                                        variant={
+                                            role.userCount > 0
+                                                ? 'default'
+                                                : 'secondary'
+                                        }
+                                    >
                                         {role.userCount} pengguna
                                     </Badge>
                                 </div>
-                                <p className="font-mono text-xs text-muted-foreground">{role.name}</p>
+                                <p className="font-mono text-xs text-muted-foreground">
+                                    {role.name}
+                                </p>
                                 {role.description !== null && (
-                                    <CardDescription>{role.description}</CardDescription>
+                                    <CardDescription>
+                                        {role.description}
+                                    </CardDescription>
                                 )}
                             </CardHeader>
                             <CardContent>
@@ -69,7 +79,10 @@ export default function Roles({ roles }: { roles: Role[] }) {
                                 ) : (
                                     <ul className="flex flex-col gap-1.5 text-sm">
                                         {role.permissions.map((permission) => (
-                                            <li key={permission} className="flex items-start gap-2">
+                                            <li
+                                                key={permission}
+                                                className="flex items-start gap-2"
+                                            >
                                                 <CheckIcon className="mt-0.5 size-4 shrink-0 text-primary" />
                                                 {permission}
                                             </li>

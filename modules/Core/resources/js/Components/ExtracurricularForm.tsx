@@ -11,7 +11,11 @@ export default function ExtracurricularForm({
 }) {
     return (
         <>
-            <InputField label="Nama kegiatan" id="name" defaultValue={item?.name} />
+            <InputField
+                label="Nama kegiatan"
+                id="name"
+                defaultValue={item?.name}
+            />
             <SelectField
                 label="Pembina"
                 id="coach_teacher_id"
@@ -20,7 +24,9 @@ export default function ExtracurricularForm({
                     value: String(teacher.id),
                     label: teacher.name,
                 }))}
-                defaultValue={item?.coachId == null ? undefined : String(item.coachId)}
+                defaultValue={
+                    item?.coachId == null ? undefined : String(item.coachId)
+                }
             />
             <InputField
                 label="Jadwal"

@@ -54,61 +54,97 @@ export default function Settings({
             >
                 <Panel title="Jenis absensi">
                     <div className="flex flex-col gap-4">
-                        <Field orientation="horizontal" data-invalid={form.errors.gate_enabled !== undefined}>
+                        <Field
+                            orientation="horizontal"
+                            data-invalid={
+                                form.errors.gate_enabled !== undefined
+                            }
+                        >
                             <Checkbox
                                 id="gate-enabled"
                                 checked={form.data.gate_enabled}
-                                onCheckedChange={(checked) => form.setData('gate_enabled', checked === true)}
+                                onCheckedChange={(checked) =>
+                                    form.setData(
+                                        'gate_enabled',
+                                        checked === true,
+                                    )
+                                }
                             />
                             <FieldContent>
-                                <FieldLabel htmlFor="gate-enabled">Absensi gerbang</FieldLabel>
+                                <FieldLabel htmlFor="gate-enabled">
+                                    Absensi gerbang
+                                </FieldLabel>
                                 <FieldDescription>
-                                    Mencatat siswa masuk dan pulang di gerbang, dengan QR atau
-                                    pilih nama. Jika mati, mode Masuk dan Pulang di Pindai QR
-                                    tidak tersedia.
+                                    Mencatat siswa masuk dan pulang di gerbang,
+                                    dengan QR atau pilih nama. Jika mati, mode
+                                    Masuk dan Pulang di Pindai QR tidak
+                                    tersedia.
                                 </FieldDescription>
                                 {form.errors.gate_enabled !== undefined && (
-                                    <FieldError>{form.errors.gate_enabled}</FieldError>
+                                    <FieldError>
+                                        {form.errors.gate_enabled}
+                                    </FieldError>
                                 )}
                             </FieldContent>
                         </Field>
-                        <Field orientation="horizontal" data-invalid={form.errors.lesson_enabled !== undefined}>
+                        <Field
+                            orientation="horizontal"
+                            data-invalid={
+                                form.errors.lesson_enabled !== undefined
+                            }
+                        >
                             <Checkbox
                                 id="lesson-enabled"
                                 checked={form.data.lesson_enabled}
-                                onCheckedChange={(checked) => form.setData('lesson_enabled', checked === true)}
+                                onCheckedChange={(checked) =>
+                                    form.setData(
+                                        'lesson_enabled',
+                                        checked === true,
+                                    )
+                                }
                             />
                             <FieldContent>
-                                <FieldLabel htmlFor="lesson-enabled">Absensi jam pelajaran</FieldLabel>
+                                <FieldLabel htmlFor="lesson-enabled">
+                                    Absensi jam pelajaran
+                                </FieldLabel>
                                 <FieldDescription>
-                                    Mencatat kehadiran siswa di tiap jam pelajaran. Jika mati,
-                                    menu Jam Pelajaran dan mode Jam pelajaran di Pindai QR
+                                    Mencatat kehadiran siswa di tiap jam
+                                    pelajaran. Jika mati, menu Jam Pelajaran dan
+                                    mode Jam pelajaran di Pindai QR
                                     disembunyikan.
                                 </FieldDescription>
                                 {form.errors.lesson_enabled !== undefined && (
-                                    <FieldError>{form.errors.lesson_enabled}</FieldError>
+                                    <FieldError>
+                                        {form.errors.lesson_enabled}
+                                    </FieldError>
                                 )}
                             </FieldContent>
                         </Field>
                         <p className="text-sm text-muted-foreground">
-                            Data yang sudah tercatat tidak dihapus saat sebuah jenis dimatikan.
+                            Data yang sudah tercatat tidak dihapus saat sebuah
+                            jenis dimatikan.
                         </p>
                     </div>
                 </Panel>
 
                 <Panel title="Batas jam masuk" className="mt-6">
                     <Field data-invalid={form.errors.late_after !== undefined}>
-                        <FieldLabel htmlFor="late-after">Tepat waktu sampai pukul</FieldLabel>
+                        <FieldLabel htmlFor="late-after">
+                            Tepat waktu sampai pukul
+                        </FieldLabel>
                         <Input
                             id="late-after"
                             type="time"
                             className="w-40"
                             value={form.data.late_after}
-                            onChange={(event) => form.setData('late_after', event.target.value)}
+                            onChange={(event) =>
+                                form.setData('late_after', event.target.value)
+                            }
                             aria-invalid={form.errors.late_after !== undefined}
                         />
                         <FieldDescription>
-                            Siswa yang tercatat masuk setelah menit ini berstatus Terlambat.
+                            Siswa yang tercatat masuk setelah menit ini
+                            berstatus Terlambat.
                         </FieldDescription>
                         {form.errors.late_after !== undefined && (
                             <FieldError>{form.errors.late_after}</FieldError>
@@ -117,7 +153,10 @@ export default function Settings({
                 </Panel>
 
                 <div className="mt-6">
-                    <Button type="submit" disabled={!form.isDirty || form.processing}>
+                    <Button
+                        type="submit"
+                        disabled={!form.isDirty || form.processing}
+                    >
                         Simpan
                     </Button>
                 </div>
@@ -125,13 +164,15 @@ export default function Settings({
 
             <Panel title="Pemberitahuan ke wali murid" className="mt-6">
                 <p className="text-sm text-muted-foreground">
-                    Pesan WhatsApp saat siswa masuk, pulang, tidak hadir, atau alpa di jam
-                    pelajaran diatur per jenis di Integrasi › WhatsApp. Semua jenis mati
-                    sampai sekolah menyalakannya.
+                    Pesan WhatsApp saat siswa masuk, pulang, tidak hadir, atau
+                    alpa di jam pelajaran diatur per jenis di Integrasi ›
+                    WhatsApp. Semua jenis mati sampai sekolah menyalakannya.
                 </p>
                 {can.manageNotices && (
                     <Button asChild variant="outline" className="mt-4">
-                        <Link href={whatsapp.url()}>Buka Integrasi › WhatsApp</Link>
+                        <Link href={whatsapp.url()}>
+                            Buka Integrasi › WhatsApp
+                        </Link>
                     </Button>
                 )}
             </Panel>

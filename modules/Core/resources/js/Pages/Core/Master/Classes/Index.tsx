@@ -70,7 +70,9 @@ function ClassForm({
                     value: String(item.id),
                     label: `Kelas ${item.name}`,
                 }))}
-                defaultValue={group === undefined ? undefined : String(group.gradeId)}
+                defaultValue={
+                    group === undefined ? undefined : String(group.gradeId)
+                }
             />
             {school.hasMajors && (
                 <SelectField
@@ -81,7 +83,11 @@ function ClassForm({
                         value: String(item.id),
                         label: `${item.code} — ${item.name}`,
                     }))}
-                    defaultValue={group?.majorId == null ? undefined : String(group.majorId)}
+                    defaultValue={
+                        group?.majorId == null
+                            ? undefined
+                            : String(group.majorId)
+                    }
                 />
             )}
             <SelectField
@@ -92,7 +98,9 @@ function ClassForm({
                     value: String(item.id),
                     label: item.name,
                 }))}
-                defaultValue={group?.roomId == null ? undefined : String(group.roomId)}
+                defaultValue={
+                    group?.roomId == null ? undefined : String(group.roomId)
+                }
             />
         </>
     );
@@ -117,7 +125,11 @@ export default function ClassesIndex({
     years: AcademicYear[];
 }) {
     const [year, setYear] = useState(
-        String(years.find((item) => item.status === 'active')?.id ?? years[0]?.id ?? ''),
+        String(
+            years.find((item) => item.status === 'active')?.id ??
+                years[0]?.id ??
+                '',
+        ),
     );
     const [grade, setGrade] = useState('');
     const [major, setMajor] = useState('');

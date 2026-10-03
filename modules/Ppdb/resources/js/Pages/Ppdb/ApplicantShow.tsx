@@ -1,11 +1,18 @@
 import { Link, router, useForm, usePage } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 
-import { destroy, update } from '@/actions/Modules/Ppdb/App/Http/Controllers/ApplicantController';
+import {
+    destroy,
+    update,
+} from '@/actions/Modules/Ppdb/App/Http/Controllers/ApplicantController';
 import { store as enroll } from '@/actions/Modules/Ppdb/App/Http/Controllers/EnrollmentController';
 import { update as updateVerification } from '@/actions/Modules/Ppdb/App/Http/Controllers/VerificationController';
 import { applicants } from '@/routes/ppdb';
-import { DefinitionList, OptionSelect, Panel } from '@shared/components/page-parts';
+import {
+    DefinitionList,
+    OptionSelect,
+    Panel,
+} from '@shared/components/page-parts';
 import { Alert, AlertDescription } from '@shared/components/ui/alert';
 import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
@@ -14,7 +21,13 @@ import { Input } from '@shared/components/ui/input';
 import { Textarea } from '@shared/components/ui/textarea';
 
 import ConfirmAction from '../../Components/ConfirmAction';
-import FormRenderer, { formBinding, initialAnswers, type ApplicantData, type FormFieldDef, type StoredFile } from '../../Components/FormRenderer';
+import FormRenderer, {
+    formBinding,
+    initialAnswers,
+    type ApplicantData,
+    type FormFieldDef,
+    type StoredFile,
+} from '../../Components/FormRenderer';
 import PpdbPage from '../../Components/PpdbPage';
 import { statusOf } from '../../Components/status';
 
@@ -76,7 +89,10 @@ function DataPanel({
     answers,
     files,
     editable,
-}: Pick<ApplicantProps, 'applicant' | 'waves' | 'paths' | 'fields' | 'answers' | 'files'> & { editable: boolean }) {
+}: Pick<
+    ApplicantProps,
+    'applicant' | 'waves' | 'paths' | 'fields' | 'answers' | 'files'
+> & { editable: boolean }) {
     const form = useForm<ApplicantData>({
         wave_id: String(applicant.waveId),
         path_id: String(applicant.pathId),
@@ -92,7 +108,9 @@ function DataPanel({
         answers: initialAnswers(fields, answers),
     });
     const errors: Partial<Record<string, string>> = form.errors;
-    const binding = formBinding(form.data, errors, (key, value) => form.setData(key as keyof ApplicantData, value as never));
+    const binding = formBinding(form.data, errors, (key, value) =>
+        form.setData(key as keyof ApplicantData, value as never),
+    );
 
     if (!editable) {
         const recorded: Record<string, string | null> = {
@@ -117,7 +135,10 @@ function DataPanel({
             }
 
             const file = files[String(field.id)];
-            const value = field.key !== null ? (recorded[field.key] ?? '') : answerText(answers[String(field.id)]);
+            const value =
+                field.key !== null
+                    ? (recorded[field.key] ?? '')
+                    : answerText(answers[String(field.id)]);
 
             if (field.type === 'file') {
                 if (!field.archived || file !== undefined) {
@@ -126,7 +147,10 @@ function DataPanel({
                         file === undefined ? (
                             '—'
                         ) : (
-                            <a href={file.url} className="underline underline-offset-4">
+                            <a
+                                href={file.url}
+                                className="underline underline-offset-4"
+                            >
                                 {file.name}
                             </a>
                         ),
@@ -176,15 +200,22 @@ function DataPanel({
                                 label="Gelombang"
                                 placeholder="Pilih gelombang"
                                 value={form.data.wave_id}
-                                onChange={(value) => form.setData('wave_id', value)}
+                                onChange={(value) =>
+                                    form.setData('wave_id', value)
+                                }
                                 options={waves}
                             />
-                            {errors.wave_id !== undefined && <FieldError>{errors.wave_id}</FieldError>}
+                            {errors.wave_id !== undefined && (
+                                <FieldError>{errors.wave_id}</FieldError>
+                            )}
                         </Field>
                     }
                 />
                 <div>
-                    <Button type="submit" disabled={form.processing || !form.isDirty}>
+                    <Button
+                        type="submit"
+                        disabled={form.processing || !form.isDirty}
+                    >
                         Simpan data
                     </Button>
                 </div>
@@ -194,7 +225,10 @@ function DataPanel({
 }
 
 /** The committee's check: waiting, needs correction (with a note), verified. */
-function VerificationPanel({ applicant, statuses }: Pick<ApplicantProps, 'applicant' | 'statuses'>) {
+function VerificationPanel({
+    applicant,
+    statuses,
+}: Pick<ApplicantProps, 'applicant' | 'statuses'>) {
     const form = useForm({
         status: applicant.status,
         verification_note: applicant.verificationNote ?? '',
@@ -207,30 +241,52 @@ function VerificationPanel({ applicant, statuses }: Pick<ApplicantProps, 'applic
                 className="flex flex-col gap-4"
                 onSubmit={(event) => {
                     event.preventDefault();
-                    form.put(updateVerification.url({ applicant: applicant.id }), {
-                        preserveScroll: true,
-                        onSuccess: () => form.setDefaults(),
-                    });
+                    form.put(
+                        updateVerification.url({ applicant: applicant.id }),
+                        {
+                            preserveScroll: true,
+                            onSuccess: () => form.setDefaults(),
+                        },
+                    );
                 }}
             >
                 <Field data-invalid={errors.status !== undefined}>
                     <FieldLabel>Status</FieldLabel>
-                    <OptionSelect label="Status verifikasi" value={form.data.status} onChange={(value) => form.setData('status', value)} options={statuses} />
-                    {errors.status !== undefined && <FieldError>{errors.status}</FieldError>}
+                    <OptionSelect
+                        label="Status verifikasi"
+                        value={form.data.status}
+                        onChange={(value) => form.setData('status', value)}
+                        options={statuses}
+                    />
+                    {errors.status !== undefined && (
+                        <FieldError>{errors.status}</FieldError>
+                    )}
                 </Field>
                 <Field data-invalid={errors.verification_note !== undefined}>
-                    <FieldLabel htmlFor="verification-note">Catatan untuk pendaftar</FieldLabel>
+                    <FieldLabel htmlFor="verification-note">
+                        Catatan untuk pendaftar
+                    </FieldLabel>
                     <Textarea
                         id="verification-note"
                         value={form.data.verification_note}
-                        onChange={(event) => form.setData('verification_note', event.target.value)}
+                        onChange={(event) =>
+                            form.setData(
+                                'verification_note',
+                                event.target.value,
+                            )
+                        }
                         placeholder="Wajib diisi bila statusnya Perlu perbaikan."
                         aria-invalid={errors.verification_note !== undefined}
                     />
-                    {errors.verification_note !== undefined && <FieldError>{errors.verification_note}</FieldError>}
+                    {errors.verification_note !== undefined && (
+                        <FieldError>{errors.verification_note}</FieldError>
+                    )}
                 </Field>
                 <div>
-                    <Button type="submit" disabled={form.processing || !form.isDirty}>
+                    <Button
+                        type="submit"
+                        disabled={form.processing || !form.isDirty}
+                    >
                         Simpan verifikasi
                     </Button>
                 </div>
@@ -251,11 +307,15 @@ function EnrollPanel({ applicant }: Pick<ApplicantProps, 'applicant'>) {
                 className="flex flex-col gap-4"
                 onSubmit={(event) => {
                     event.preventDefault();
-                    form.post(enroll.url({ applicant: applicant.id }), { preserveScroll: true });
+                    form.post(enroll.url({ applicant: applicant.id }), {
+                        preserveScroll: true,
+                    });
                 }}
             >
                 <p className="text-sm text-muted-foreground">
-                    Catat daftar ulang setelah {applicant.name} datang melengkapi berkas. Pendaftar menjadi siswa di Warga Sekolah (belum berkelas; tempatkan di Akademik › Penempatan Siswa ›
+                    Catat daftar ulang setelah {applicant.name} datang
+                    melengkapi berkas. Pendaftar menjadi siswa di Warga Sekolah
+                    (belum berkelas; tempatkan di Akademik › Penempatan Siswa ›
                     Belum ditempatkan); NIS diberikan oleh sekolah.
                 </p>
                 {refusal !== undefined && (
@@ -268,10 +328,14 @@ function EnrollPanel({ applicant }: Pick<ApplicantProps, 'applicant'>) {
                     <Input
                         id="enroll-nis"
                         value={form.data.nis}
-                        onChange={(event) => form.setData('nis', event.target.value)}
+                        onChange={(event) =>
+                            form.setData('nis', event.target.value)
+                        }
                         aria-invalid={errors.nis !== undefined}
                     />
-                    {errors.nis !== undefined && <FieldError>{errors.nis}</FieldError>}
+                    {errors.nis !== undefined && (
+                        <FieldError>{errors.nis}</FieldError>
+                    )}
                 </Field>
                 <div>
                     <Button type="submit" disabled={form.processing}>
@@ -284,10 +348,24 @@ function EnrollPanel({ applicant }: Pick<ApplicantProps, 'applicant'>) {
 }
 
 /** Pendaftar: one applicant's page — data, verification, the selection result and re-registration. */
-export default function ApplicantShow({ applicant, period, waves, paths, fields, answers, files, statuses, can }: ApplicantProps) {
+export default function ApplicantShow({
+    applicant,
+    period,
+    waves,
+    paths,
+    fields,
+    answers,
+    files,
+    statuses,
+    can,
+}: ApplicantProps) {
     const page = usePage<{ errors: Record<string, string> }>();
     const cancelError = page.props.errors.applicant;
-    const status = statusOf(applicant.decision === 'pending' ? applicant.status : applicant.decision);
+    const status = statusOf(
+        applicant.decision === 'pending'
+            ? applicant.status
+            : applicant.decision,
+    );
     const editable = can.manage && !applicant.enrolled;
 
     return (
@@ -310,7 +388,9 @@ export default function ApplicantShow({ applicant, period, waves, paths, fields,
                 {applicant.enrolled && (
                     <Alert>
                         <AlertDescription>
-                            Pendaftar ini sudah daftar ulang pada {applicant.enrolledOn} dan menjadi siswa; datanya tidak diubah dari sini.
+                            Pendaftar ini sudah daftar ulang pada{' '}
+                            {applicant.enrolledOn} dan menjadi siswa; datanya
+                            tidak diubah dari sini.
                         </AlertDescription>
                     </Alert>
                 )}
@@ -320,11 +400,25 @@ export default function ApplicantShow({ applicant, period, waves, paths, fields,
                     </Alert>
                 )}
 
-                <DataPanel applicant={applicant} waves={waves} paths={paths} fields={fields} answers={answers} files={files} editable={editable} />
+                <DataPanel
+                    applicant={applicant}
+                    waves={waves}
+                    paths={paths}
+                    fields={fields}
+                    answers={answers}
+                    files={files}
+                    editable={editable}
+                />
 
-                {editable && <VerificationPanel applicant={applicant} statuses={statuses} />}
+                {editable && (
+                    <VerificationPanel
+                        applicant={applicant}
+                        statuses={statuses}
+                    />
+                )}
 
-                {(applicant.score !== null || applicant.decision !== 'pending') && (
+                {(applicant.score !== null ||
+                    applicant.decision !== 'pending') && (
                     <Panel title="Hasil seleksi">
                         <DefinitionList
                             rows={[
@@ -335,20 +429,31 @@ export default function ApplicantShow({ applicant, period, waves, paths, fields,
                     </Panel>
                 )}
 
-                {can.manage && can.enroll && <EnrollPanel applicant={applicant} />}
+                {can.manage && can.enroll && (
+                    <EnrollPanel applicant={applicant} />
+                )}
 
                 {can.manage && can.cancel && (
                     <Panel title="Batalkan pendaftaran">
                         <p className="mb-4 text-sm text-muted-foreground">
-                            Untuk pendaftaran yang salah atau ganda. Pendaftaran dihapus dan nomornya tidak dipakai lagi. Hanya bisa selama belum ada keputusan
-                            seleksi.
+                            Untuk pendaftaran yang salah atau ganda. Pendaftaran
+                            dihapus dan nomornya tidak dipakai lagi. Hanya bisa
+                            selama belum ada keputusan seleksi.
                         </p>
                         <ConfirmAction
-                            trigger={<Button variant="destructive">Batalkan pendaftaran</Button>}
+                            trigger={
+                                <Button variant="destructive">
+                                    Batalkan pendaftaran
+                                </Button>
+                            }
                             title={`Batalkan pendaftaran ${applicant.number}?`}
                             description={`Pendaftaran ${applicant.name} dihapus dan tidak bisa dikembalikan.`}
                             confirmLabel="Batalkan pendaftaran"
-                            onConfirm={() => router.delete(destroy.url({ applicant: applicant.id }))}
+                            onConfirm={() =>
+                                router.delete(
+                                    destroy.url({ applicant: applicant.id }),
+                                )
+                            }
                         />
                     </Panel>
                 )}

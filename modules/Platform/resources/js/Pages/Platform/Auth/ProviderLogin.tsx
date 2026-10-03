@@ -69,14 +69,19 @@ export default function ProviderLogin() {
                                     value={form.data.email}
                                     aria-invalid={!!form.errors.email}
                                     onChange={(event) =>
-                                        form.setData('email', event.target.value)
+                                        form.setData(
+                                            'email',
+                                            event.target.value,
+                                        )
                                     }
                                 />
                                 <FieldError>{form.errors.email}</FieldError>
                             </Field>
 
                             <Field data-invalid={!!form.errors.password}>
-                                <FieldLabel htmlFor="password">Kata sandi</FieldLabel>
+                                <FieldLabel htmlFor="password">
+                                    Kata sandi
+                                </FieldLabel>
                                 <Input
                                     id="password"
                                     name="password"
@@ -86,7 +91,10 @@ export default function ProviderLogin() {
                                     value={form.data.password}
                                     aria-invalid={!!form.errors.password}
                                     onChange={(event) =>
-                                        form.setData('password', event.target.value)
+                                        form.setData(
+                                            'password',
+                                            event.target.value,
+                                        )
                                     }
                                 />
                                 <FieldError>{form.errors.password}</FieldError>
@@ -97,10 +105,15 @@ export default function ProviderLogin() {
                                     id="remember"
                                     checked={form.data.remember}
                                     onCheckedChange={(checked) =>
-                                        form.setData('remember', checked === true)
+                                        form.setData(
+                                            'remember',
+                                            checked === true,
+                                        )
                                     }
                                 />
-                                <FieldLabel htmlFor="remember">Ingat saya</FieldLabel>
+                                <FieldLabel htmlFor="remember">
+                                    Ingat saya
+                                </FieldLabel>
                             </Field>
 
                             <Button type="submit" disabled={form.processing}>

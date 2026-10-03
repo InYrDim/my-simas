@@ -18,12 +18,16 @@ import { accounts, centralUrl } from './support/env';
  */
 test.beforeAll(() => seedDemoSchoolData());
 
-test('a school admin reads the statistics, downloads a report and opens its print view', async ({ page }) => {
+test('a school admin reads the statistics, downloads a report and opens its print view', async ({
+    page,
+}) => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
 
     await page.goto('/login');
-    await page.getByLabel('Kode sekolah').fill(schoolCode(accounts.schoolAdmin.schoolSlug));
+    await page
+        .getByLabel('Kode sekolah')
+        .fill(schoolCode(accounts.schoolAdmin.schoolSlug));
     await page.getByLabel('Email').fill(accounts.schoolAdmin.email);
     await page.getByLabel('Kata sandi').fill(accounts.schoolAdmin.password);
     await page.getByRole('button', { name: 'Masuk' }).click();
@@ -31,25 +35,33 @@ test('a school admin reads the statistics, downloads a report and opens its prin
 
     await page.goto('/statistik-laporan/statistik');
     await expect(page.getByText('Tampilan contoh')).toHaveCount(0);
-    await expect(page.getByText('Gambaran singkat sekolah pada tahun ajaran 2025/2026.')).toBeVisible();
+    await expect(
+        page.getByText('Gambaran singkat sekolah pada tahun ajaran 2025/2026.'),
+    ).toBeVisible();
     await expect(page.getByText('Siswa aktif', { exact: true })).toBeVisible();
     await expect(page.getByText('Siswa per tingkat')).toBeVisible();
     // The school uses Absensi, so its figure is real, not announced.
     await expect(page.getByText('Rata-rata kehadiran')).toBeVisible();
 
     await page.goto('/statistik-laporan/laporan');
-    await expect(page.getByRole('combobox', { name: 'Tahun ajaran' })).toContainText('2025/2026 (aktif)');
+    await expect(
+        page.getByRole('combobox', { name: 'Tahun ajaran' }),
+    ).toContainText('2025/2026 (aktif)');
 
     const [download] = await Promise.all([
         page.waitForEvent('download'),
-        page.getByRole('link', { name: 'Unduh CSV Daftar Siswa per Kelas' }).click(),
+        page
+            .getByRole('link', { name: 'Unduh CSV Daftar Siswa per Kelas' })
+            .click(),
     ]);
 
     expect(download.suggestedFilename()).toBe('student-list-2025-2026.csv');
 
     const csv = fs.readFileSync(await download.path(), 'utf8');
 
-    expect(csv.startsWith('sep=;\r\nKelas;NIS;NISN;Nama;L/P;Keterangan\r\n')).toBe(true);
+    expect(
+        csv.startsWith('sep=;\r\nKelas;NIS;NISN;Nama;L/P;Keterangan\r\n'),
+    ).toBe(true);
     expect(csv).toContain('"Aditya Nugraha"');
 
     const [printTab] = await Promise.all([
@@ -58,11 +70,17 @@ test('a school admin reads the statistics, downloads a report and opens its prin
     ]);
 
     await expect(printTab).toHaveURL(
-        new RegExp(`^${centralUrl}/statistik-laporan/laporan/teaching-load/cetak\\?tahun=\\d+$`),
+        new RegExp(
+            `^${centralUrl}/statistik-laporan/laporan/teaching-load/cetak\\?tahun=\\d+$`,
+        ),
     );
-    await expect(printTab.getByRole('heading', { name: 'Beban Mengajar Guru' })).toBeVisible();
+    await expect(
+        printTab.getByRole('heading', { name: 'Beban Mengajar Guru' }),
+    ).toBeVisible();
     await expect(printTab.getByText('Tahun ajaran 2025/2026')).toBeVisible();
-    await expect(printTab.getByRole('columnheader', { name: 'Jam per minggu' })).toBeVisible();
+    await expect(
+        printTab.getByRole('columnheader', { name: 'Jam per minggu' }),
+    ).toBeVisible();
     await expect(printTab.getByRole('button', { name: 'Cetak' })).toBeVisible();
 
     expect(errors).toEqual([]);

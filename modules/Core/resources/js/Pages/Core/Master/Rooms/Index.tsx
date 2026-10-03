@@ -28,11 +28,21 @@ function RoomForm({ room }: { room?: Room }) {
                     defaultValue={room?.capacity}
                 />
             </div>
-            <InputField label="Nama ruangan" id="name" defaultValue={room?.name} />
+            <InputField
+                label="Nama ruangan"
+                id="name"
+                defaultValue={room?.name}
+            />
             <SelectField
                 label="Jenis"
                 id="type"
-                options={['Kelas', 'Laboratorium', 'Aula', 'Perpustakaan', 'Lainnya']}
+                options={[
+                    'Kelas',
+                    'Laboratorium',
+                    'Aula',
+                    'Perpustakaan',
+                    'Lainnya',
+                ]}
                 defaultValue={room?.type}
             />
             <SelectField
@@ -81,11 +91,17 @@ export default function RoomsIndex({
             {rooms.length === 0 ? (
                 <EmptyState>Belum ada ruangan.</EmptyState>
             ) : (
-                <DataTable head={['Kode', 'Nama', 'Jenis', 'Kapasitas', 'Status', '']}>
+                <DataTable
+                    head={['Kode', 'Nama', 'Jenis', 'Kapasitas', 'Status', '']}
+                >
                     {rooms.map((room) => (
                         <TableRow key={room.id}>
-                            <TableCell className="font-mono text-xs">{room.code}</TableCell>
-                            <TableCell className="font-medium">{room.name}</TableCell>
+                            <TableCell className="font-mono text-xs">
+                                {room.code}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                                {room.name}
+                            </TableCell>
                             <TableCell>{room.type}</TableCell>
                             <TableCell>{room.capacity}</TableCell>
                             <TableCell>

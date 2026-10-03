@@ -8,11 +8,7 @@ import {
 } from '@/actions/Modules/Core/App/Http/Controllers/ImportController';
 import { index as studentsPage } from '@/actions/Modules/Core/App/Http/Controllers/StudentController';
 import { index as teachersPage } from '@/actions/Modules/Core/App/Http/Controllers/TeacherController';
-import {
-    DataTable,
-    OptionSelect,
-    Panel,
-} from '@shared/components/page-parts';
+import { DataTable, OptionSelect, Panel } from '@shared/components/page-parts';
 import { Alert, AlertDescription } from '@shared/components/ui/alert';
 import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
@@ -100,9 +96,11 @@ export default function ImportIndex({
         targets.find((item) => item.value === http.data.target) ?? targets[0];
     const isStudents = target.value === 'students';
     const keyLabel = isStudents ? 'NIS' : 'NIP';
-    const ready = preview === null ? 0 : preview.summary.create + preview.summary.update;
+    const ready =
+        preview === null ? 0 : preview.summary.create + preview.summary.update;
     const rows =
-        preview?.rows.filter((row) => !onlyErrors || row.outcome === 'error') ?? [];
+        preview?.rows.filter((row) => !onlyErrors || row.outcome === 'error') ??
+        [];
 
     const send = <T,>(url: string, done: (response: T) => void) => {
         setFailed(false);
@@ -158,7 +156,8 @@ export default function ImportIndex({
                         <span
                             className={cn(
                                 'flex size-6 items-center justify-center rounded-full border text-xs',
-                                index <= step && 'border-primary bg-primary text-primary-foreground',
+                                index <= step &&
+                                    'border-primary bg-primary text-primary-foreground',
                             )}
                         >
                             {index + 1}
@@ -183,7 +182,9 @@ export default function ImportIndex({
                                 <OptionSelect
                                     label="Jenis data"
                                     value={http.data.target}
-                                    onChange={(value) => http.setData('target', value)}
+                                    onChange={(value) =>
+                                        http.setData('target', value)
+                                    }
                                     options={targets}
                                 />
                             </Field>
@@ -192,7 +193,9 @@ export default function ImportIndex({
                                 <OptionSelect
                                     label="Mode impor"
                                     value={http.data.mode}
-                                    onChange={(value) => http.setData('mode', value)}
+                                    onChange={(value) =>
+                                        http.setData('mode', value)
+                                    }
                                     options={modes}
                                 />
                                 <FieldDescription>
@@ -208,14 +211,18 @@ export default function ImportIndex({
                                 accept=".csv,text/csv"
                                 aria-invalid={http.errors.file !== undefined}
                                 onChange={(event) => {
-                                    http.setData('file', event.target.files?.[0] ?? null);
+                                    http.setData(
+                                        'file',
+                                        event.target.files?.[0] ?? null,
+                                    );
                                     http.clearErrors('file');
                                 }}
                             />
                             <FieldDescription>
                                 Kolom: {target.columns.join(', ')}. Wajib diisi:{' '}
                                 {target.required.join(', ')}. Paling banyak{' '}
-                                {maxRows.toLocaleString('id-ID')} baris per berkas.
+                                {maxRows.toLocaleString('id-ID')} baris per
+                                berkas.
                                 {isStudents
                                     ? ' Kolom kelas diisi nama rombel tahun ajaran aktif.'
                                     : ` Guru tanpa NIP selalu ditambahkan sebagai data baru.`}{' '}
@@ -235,7 +242,9 @@ export default function ImportIndex({
                             </Button>
                             <Button
                                 onClick={runPreview}
-                                disabled={http.data.file === null || http.processing}
+                                disabled={
+                                    http.data.file === null || http.processing
+                                }
                             >
                                 Lanjut ke pratinjau
                             </Button>
@@ -253,14 +262,18 @@ export default function ImportIndex({
                     </p>
                     {http.errors.file !== undefined && (
                         <Alert variant="destructive" className="mt-4">
-                            <AlertDescription>{http.errors.file}</AlertDescription>
+                            <AlertDescription>
+                                {http.errors.file}
+                            </AlertDescription>
                         </Alert>
                     )}
                     {preview.summary.error > 0 && (
                         <label className="mt-4 flex items-center gap-2 text-sm">
                             <Checkbox
                                 checked={onlyErrors}
-                                onCheckedChange={(checked) => setOnlyErrors(checked === true)}
+                                onCheckedChange={(checked) =>
+                                    setOnlyErrors(checked === true)
+                                }
                             />
                             Hanya tampilkan baris yang perlu diperbaiki
                         </label>
@@ -287,15 +300,21 @@ export default function ImportIndex({
                                     <TableCell>{row.detail || '—'}</TableCell>
                                     <TableCell className="whitespace-normal">
                                         {row.outcome === 'create' && (
-                                            <Badge variant="secondary">Baru</Badge>
+                                            <Badge variant="secondary">
+                                                Baru
+                                            </Badge>
                                         )}
                                         {row.outcome === 'update' && (
-                                            <Badge variant="outline">Diperbarui</Badge>
+                                            <Badge variant="outline">
+                                                Diperbarui
+                                            </Badge>
                                         )}
                                         {row.outcome === 'error' && (
                                             <ul className="flex flex-col gap-1 text-sm text-destructive">
                                                 {row.messages.map((message) => (
-                                                    <li key={message}>{message}</li>
+                                                    <li key={message}>
+                                                        {message}
+                                                    </li>
                                                 ))}
                                             </ul>
                                         )}
@@ -333,7 +352,11 @@ export default function ImportIndex({
                     <div className="mt-6 flex flex-wrap gap-3">
                         <Button asChild>
                             <Link
-                                href={isStudents ? studentsPage.url() : teachersPage.url()}
+                                href={
+                                    isStudents
+                                        ? studentsPage.url()
+                                        : teachersPage.url()
+                                }
                             >
                                 Lihat daftar {target.label}
                             </Link>

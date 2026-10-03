@@ -21,10 +21,18 @@ export default function StudentForm({
 }) {
     return (
         <>
-            <InputField label="Nama lengkap" id="name" defaultValue={student?.name} />
+            <InputField
+                label="Nama lengkap"
+                id="name"
+                defaultValue={student?.name}
+            />
             <div className="grid gap-4 sm:grid-cols-2">
                 <InputField label="NIS" id="nis" defaultValue={student?.nis} />
-                <InputField label="NISN" id="nisn" defaultValue={student?.nisn ?? ''} />
+                <InputField
+                    label="NISN"
+                    id="nisn"
+                    defaultValue={student?.nisn ?? ''}
+                />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
                 <SelectField
@@ -63,7 +71,11 @@ export default function StudentForm({
                     value: String(item.id),
                     label: item.name,
                 }))}
-                defaultValue={student?.classId == null ? undefined : String(student.classId)}
+                defaultValue={
+                    student?.classId == null
+                        ? undefined
+                        : String(student.classId)
+                }
             />
             {student !== undefined && (
                 <SelectField

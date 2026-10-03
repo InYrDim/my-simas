@@ -1,27 +1,27 @@
-import { Head, usePage } from "@inertiajs/react";
-import { CheckIcon, GraduationCapIcon } from "lucide-react";
-import type { ReactNode } from "react";
+import { Head, usePage } from '@inertiajs/react';
+import { CheckIcon, GraduationCapIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 
-import { Alert, AlertDescription } from "@shared/components/ui/alert";
-import { cn } from "@shared/lib/utils";
+import { Alert, AlertDescription } from '@shared/components/ui/alert';
+import { cn } from '@shared/lib/utils';
 
 /**
  * The registration steps, in order. A page names its own step (1-based);
  * pages outside the registration flow (masuk, lupa kata sandi) pass none.
  */
 const steps = [
-    { title: "Buat akun", hint: "Nama, email, dan kata sandi Anda" },
-    { title: "Verifikasi email", hint: "Buka tautan yang kami kirim" },
+    { title: 'Buat akun', hint: 'Nama, email, dan kata sandi Anda' },
+    { title: 'Verifikasi email', hint: 'Buka tautan yang kami kirim' },
     {
-        title: "Data sekolah & paket",
-        hint: "Isi data sekolah, pilih paket trial",
+        title: 'Data sekolah & paket',
+        hint: 'Isi data sekolah, pilih paket trial',
     },
-    { title: "Persetujuan", hint: "Tim kami meninjau, lalu sekolah aktif" },
+    { title: 'Persetujuan', hint: 'Tim kami meninjau, lalu sekolah aktif' },
 ];
 
 function Brand({ className }: { className?: string }) {
     return (
-        <div className={cn("flex items-center gap-2 font-semibold", className)}>
+        <div className={cn('flex items-center gap-2 font-semibold', className)}>
             <span className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
                 <GraduationCapIcon className="size-4" />
             </span>
@@ -62,18 +62,18 @@ function SidePanel({ step }: { step?: number }) {
                             return (
                                 <li
                                     key={item.title}
-                                    aria-current={current ? "step" : undefined}
+                                    aria-current={current ? 'step' : undefined}
                                     className={cn(
-                                        "flex items-start gap-3",
-                                        !done && !current && "opacity-60",
+                                        'flex items-start gap-3',
+                                        !done && !current && 'opacity-60',
                                     )}
                                 >
                                     <span
                                         className={cn(
-                                            "flex size-7 shrink-0 items-center justify-center rounded-full border text-sm font-medium",
+                                            'flex size-7 shrink-0 items-center justify-center rounded-full border text-sm font-medium',
                                             current
-                                                ? "border-primary-foreground bg-primary-foreground text-primary"
-                                                : "border-primary-foreground/60",
+                                                ? 'border-primary-foreground bg-primary-foreground text-primary'
+                                                : 'border-primary-foreground/60',
                                         )}
                                     >
                                         {done ? (
@@ -117,16 +117,16 @@ function MobileHeader({ step }: { step?: number }) {
                             <span
                                 key={item.title}
                                 className={cn(
-                                    "h-1 flex-1 rounded-full",
+                                    'h-1 flex-1 rounded-full',
                                     index + 1 <= step
-                                        ? "bg-primary"
-                                        : "bg-muted",
+                                        ? 'bg-primary'
+                                        : 'bg-muted',
                                 )}
                             />
                         ))}
                     </div>
                     <p className="text-sm text-muted-foreground">
-                        Langkah {step} dari {steps.length} ·{" "}
+                        Langkah {step} dari {steps.length} ·{' '}
                         <span className="font-medium text-foreground">
                             {steps[step - 1]?.title}
                         </span>
@@ -146,7 +146,7 @@ function MobileHeader({ step }: { step?: number }) {
 export default function ApplicantShell({
     title,
     description,
-    width = "max-w-md",
+    width = 'max-w-md',
     step,
     footer,
     children,
@@ -167,7 +167,7 @@ export default function ApplicantShell({
             <SidePanel step={step} />
 
             <main className="flex flex-col gap-8 px-4 py-6 sm:px-8 sm:py-10 lg:items-center lg:justify-center lg:px-12 lg:py-14">
-                <div className={cn("flex w-full flex-col gap-8", width)}>
+                <div className={cn('flex w-full flex-col gap-8', width)}>
                     <MobileHeader step={step} />
 
                     <div className="flex flex-col gap-6">

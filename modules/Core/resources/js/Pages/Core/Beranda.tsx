@@ -182,7 +182,9 @@ export default function Beranda({
                     never replace the day's sentence; they only back it. */}
                 <dl className="mt-10 border-t border-border">
                     <div className="flex items-baseline justify-between gap-6 border-b border-border py-3">
-                        <dt className="text-xs text-muted-foreground">Kode sekolah</dt>
+                        <dt className="text-xs text-muted-foreground">
+                            Kode sekolah
+                        </dt>
                         <dd className="font-mono text-xs text-foreground">
                             {school.slug}
                         </dd>
@@ -190,7 +192,9 @@ export default function Beranda({
 
                     {me?.kind === 'student' && (
                         <div className="flex items-baseline justify-between gap-6 border-b border-border py-3">
-                            <dt className="text-xs text-muted-foreground">NIS</dt>
+                            <dt className="text-xs text-muted-foreground">
+                                NIS
+                            </dt>
                             <dd className="font-mono text-xs text-foreground">
                                 {me.nis}
                             </dd>
@@ -200,14 +204,18 @@ export default function Beranda({
                     {accountSummary !== null && (
                         <>
                             <div className="flex items-baseline justify-between gap-6 border-b border-border py-3">
-                                <dt className="text-xs text-muted-foreground">Peran</dt>
+                                <dt className="text-xs text-muted-foreground">
+                                    Peran
+                                </dt>
                                 <dd className="text-right text-xs text-foreground">
                                     {roles.join(' · ')}
                                 </dd>
                             </div>
 
                             <div className="flex items-baseline justify-between gap-6 border-b border-border py-3">
-                                <dt className="text-xs text-muted-foreground">Akun</dt>
+                                <dt className="text-xs text-muted-foreground">
+                                    Akun
+                                </dt>
                                 <dd className="text-right text-xs text-foreground">
                                     {accountSummary}
                                 </dd>

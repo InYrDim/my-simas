@@ -16,7 +16,11 @@ import FormDialog from '../../../../Components/FormDialog';
 import { InputField, SelectField } from '../../../../Components/FormField';
 import { formatRange } from '../../../../Components/format';
 import MasterPage from '../../../../Components/MasterPage';
-import type { CalendarEvent, EventCategory, SchoolSummary } from '../../../../types/master';
+import type {
+    CalendarEvent,
+    EventCategory,
+    SchoolSummary,
+} from '../../../../types/master';
 
 const categories: Record<EventCategory, { label: string; dot: string }> = {
     holiday: { label: 'Libur', dot: 'bg-destructive' },
@@ -24,7 +28,10 @@ const categories: Record<EventCategory, { label: string; dot: string }> = {
     activity: { label: 'Kegiatan', dot: 'bg-primary' },
 };
 
-const monthName = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' });
+const monthName = new Intl.DateTimeFormat('id-ID', {
+    month: 'long',
+    year: 'numeric',
+});
 const weekdays = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
 
 function iso(year: number, month: number, day: number): string {
@@ -125,10 +132,20 @@ export default function CalendarIndex({
                             {monthName.format(first)}
                         </h2>
                         <div className="flex gap-1">
-                            <Button variant="ghost" size="sm" aria-label="Bulan sebelumnya" onClick={() => shift(-1)}>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                aria-label="Bulan sebelumnya"
+                                onClick={() => shift(-1)}
+                            >
                                 <ChevronLeftIcon />
                             </Button>
-                            <Button variant="ghost" size="sm" aria-label="Bulan berikutnya" onClick={() => shift(1)}>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                aria-label="Bulan berikutnya"
+                                onClick={() => shift(1)}
+                            >
                                 <ChevronRightIcon />
                             </Button>
                         </div>
@@ -163,7 +180,11 @@ export default function CalendarIndex({
                                             <span
                                                 key={event.id}
                                                 title={event.title}
-                                                className={cn('size-1.5 rounded-full', categories[event.category].dot)}
+                                                className={cn(
+                                                    'size-1.5 rounded-full',
+                                                    categories[event.category]
+                                                        .dot,
+                                                )}
                                             />
                                         ))}
                                     </span>
@@ -174,8 +195,16 @@ export default function CalendarIndex({
 
                     <ul className="mt-4 flex flex-wrap gap-4 text-xs text-muted-foreground">
                         {Object.values(categories).map((item) => (
-                            <li key={item.label} className="flex items-center gap-1.5">
-                                <span className={cn('size-2 rounded-full', item.dot)} />
+                            <li
+                                key={item.label}
+                                className="flex items-center gap-1.5"
+                            >
+                                <span
+                                    className={cn(
+                                        'size-2 rounded-full',
+                                        item.dot,
+                                    )}
+                                />
                                 {item.label}
                             </li>
                         ))}
@@ -184,22 +213,35 @@ export default function CalendarIndex({
 
                 <Panel title="Semua peristiwa" className="lg:col-span-2">
                     {events.length === 0 ? (
-                        <EmptyState>Belum ada peristiwa di kalender.</EmptyState>
+                        <EmptyState>
+                            Belum ada peristiwa di kalender.
+                        </EmptyState>
                     ) : (
                         <ul className="flex flex-col gap-4">
                             {events.map((event) => (
-                                <li key={event.id} className="flex items-start justify-between gap-3">
+                                <li
+                                    key={event.id}
+                                    className="flex items-start justify-between gap-3"
+                                >
                                     <div>
-                                        <p className="text-sm font-medium">{event.title}</p>
+                                        <p className="text-sm font-medium">
+                                            {event.title}
+                                        </p>
                                         <p className="text-xs text-muted-foreground">
-                                            {formatRange(event.date, event.endDate)}
+                                            {formatRange(
+                                                event.date,
+                                                event.endDate,
+                                            )}
                                         </p>
                                         <div className="mt-1 flex gap-1">
                                             <FormDialog
                                                 route={update(event.id)}
                                                 title={`Ubah ${event.title}`}
                                                 trigger={
-                                                    <Button variant="ghost" size="sm">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                    >
                                                         Ubah
                                                     </Button>
                                                 }
@@ -212,14 +254,19 @@ export default function CalendarIndex({
                                                 description="Peristiwa akan dihapus dari kalender akademik."
                                                 confirmLabel="Hapus"
                                                 trigger={
-                                                    <Button variant="ghost" size="sm">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                    >
                                                         Hapus
                                                     </Button>
                                                 }
                                             />
                                         </div>
                                     </div>
-                                    <Badge variant="outline">{categories[event.category].label}</Badge>
+                                    <Badge variant="outline">
+                                        {categories[event.category].label}
+                                    </Badge>
                                 </li>
                             ))}
                         </ul>

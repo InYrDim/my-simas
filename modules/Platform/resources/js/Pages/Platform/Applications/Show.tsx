@@ -47,7 +47,9 @@ const isPending = (status: string) => status === 'pending';
  */
 export default function ApplicationsShow({ application, plans }: ShowProps) {
     const planName = (key: string | null) =>
-        key === null ? 'Paket trial default' : (plans.find((plan) => plan.key === key)?.name ?? key);
+        key === null
+            ? 'Paket trial default'
+            : (plans.find((plan) => plan.key === key)?.name ?? key);
 
     const decideForm = useForm({
         school_name: application.schoolName,
@@ -63,7 +65,9 @@ export default function ApplicationsShow({ application, plans }: ShowProps) {
         event.preventDefault();
 
         decideForm.post(
-            consolePath(approveApplication.url({ application: application.id })),
+            consolePath(
+                approveApplication.url({ application: application.id }),
+            ),
         );
     }
 
@@ -120,10 +124,14 @@ export default function ApplicationsShow({ application, plans }: ShowProps) {
                 <DefinitionList rows={rows} />
             </Panel>
 
-            {(decideForm.errors as Record<string, string>).application !== undefined && (
+            {(decideForm.errors as Record<string, string>).application !==
+                undefined && (
                 <Alert variant="destructive" className="mt-6">
                     <AlertDescription>
-                        {(decideForm.errors as Record<string, string>).application}
+                        {
+                            (decideForm.errors as Record<string, string>)
+                                .application
+                        }
                     </AlertDescription>
                 </Alert>
             )}
@@ -136,7 +144,11 @@ export default function ApplicationsShow({ application, plans }: ShowProps) {
                                 Data di form ini menjadi data final tenant.
                             </p>
                             <FieldGroup>
-                                <Field data-invalid={!!decideForm.errors.school_name}>
+                                <Field
+                                    data-invalid={
+                                        !!decideForm.errors.school_name
+                                    }
+                                >
                                     <FieldLabel htmlFor="school-name">
                                         Nama sekolah
                                     </FieldLabel>
@@ -144,14 +156,25 @@ export default function ApplicationsShow({ application, plans }: ShowProps) {
                                         id="school-name"
                                         value={decideForm.data.school_name}
                                         onChange={(event) =>
-                                            decideForm.setData('school_name', event.target.value)
+                                            decideForm.setData(
+                                                'school_name',
+                                                event.target.value,
+                                            )
                                         }
-                                        aria-invalid={!!decideForm.errors.school_name}
+                                        aria-invalid={
+                                            !!decideForm.errors.school_name
+                                        }
                                         required
                                     />
-                                    <FieldError>{decideForm.errors.school_name}</FieldError>
+                                    <FieldError>
+                                        {decideForm.errors.school_name}
+                                    </FieldError>
                                 </Field>
-                                <Field data-invalid={!!decideForm.errors.desired_slug}>
+                                <Field
+                                    data-invalid={
+                                        !!decideForm.errors.desired_slug
+                                    }
+                                >
                                     <FieldLabel htmlFor="school-slug">
                                         Slug sekolah
                                     </FieldLabel>
@@ -159,13 +182,20 @@ export default function ApplicationsShow({ application, plans }: ShowProps) {
                                         id="school-slug"
                                         value={decideForm.data.desired_slug}
                                         onChange={(event) =>
-                                            decideForm.setData('desired_slug', event.target.value)
+                                            decideForm.setData(
+                                                'desired_slug',
+                                                event.target.value,
+                                            )
                                         }
                                         className="font-mono"
-                                        aria-invalid={!!decideForm.errors.desired_slug}
+                                        aria-invalid={
+                                            !!decideForm.errors.desired_slug
+                                        }
                                         required
                                     />
-                                    <FieldError>{decideForm.errors.desired_slug}</FieldError>
+                                    <FieldError>
+                                        {decideForm.errors.desired_slug}
+                                    </FieldError>
                                 </Field>
                                 <Field>
                                     <FieldLabel>Zona waktu</FieldLabel>
@@ -173,7 +203,10 @@ export default function ApplicationsShow({ application, plans }: ShowProps) {
                                         label="Zona waktu"
                                         value={decideForm.data.timezone}
                                         onChange={(timezone) =>
-                                            decideForm.setData('timezone', timezone)
+                                            decideForm.setData(
+                                                'timezone',
+                                                timezone,
+                                            )
                                         }
                                         options={TIMEZONES.map((timezone) => ({
                                             value: timezone,
@@ -182,7 +215,9 @@ export default function ApplicationsShow({ application, plans }: ShowProps) {
                                     />
                                 </Field>
                                 <Field>
-                                    <FieldLabel>Paket (trial dimulai di paket ini)</FieldLabel>
+                                    <FieldLabel>
+                                        Paket (trial dimulai di paket ini)
+                                    </FieldLabel>
                                     <OptionSelect
                                         label="Paket"
                                         allLabel={
@@ -192,7 +227,10 @@ export default function ApplicationsShow({ application, plans }: ShowProps) {
                                         }
                                         value={decideForm.data.plan_key}
                                         onChange={(planKey) =>
-                                            decideForm.setData('plan_key', planKey)
+                                            decideForm.setData(
+                                                'plan_key',
+                                                planKey,
+                                            )
                                         }
                                         options={plans.map((plan) => ({
                                             value: plan.key,
@@ -208,7 +246,10 @@ export default function ApplicationsShow({ application, plans }: ShowProps) {
                                         id="admin-note"
                                         value={decideForm.data.admin_note}
                                         onChange={(event) =>
-                                            decideForm.setData('admin_note', event.target.value)
+                                            decideForm.setData(
+                                                'admin_note',
+                                                event.target.value,
+                                            )
                                         }
                                         rows={2}
                                     />
@@ -237,7 +278,10 @@ export default function ApplicationsShow({ application, plans }: ShowProps) {
                                         id="reject-note"
                                         value={decideForm.data.admin_note}
                                         onChange={(event) =>
-                                            decideForm.setData('admin_note', event.target.value)
+                                            decideForm.setData(
+                                                'admin_note',
+                                                event.target.value,
+                                            )
                                         }
                                         rows={2}
                                     />
