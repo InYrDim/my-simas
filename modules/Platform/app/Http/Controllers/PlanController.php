@@ -107,13 +107,12 @@ final class PlanController
      */
     private function moduleOptions(): array
     {
-        return collect($this->registry->all())
+        return array_values(collect($this->registry->all())
             ->map(fn (array $meta, string $key): array => [
                 'key' => $key,
                 'label' => $meta['label'] ?? $key,
                 'alwaysActive' => $this->registry->isAlwaysActive($key),
             ])
-            ->values()
-            ->all();
+            ->all());
     }
 }

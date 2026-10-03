@@ -65,14 +65,14 @@ final class TeacherController
 
     public function store(TeacherRequest $request, SaveTeacher $save): RedirectResponse
     {
-        $teacher = $save->handle(null, $request->validated());
+        $teacher = $save->handle(null, $request->teacherData());
 
         return back()->with('status', "{$teacher->name} ditambahkan.");
     }
 
     public function update(TeacherRequest $request, Teacher $teacher, SaveTeacher $save): RedirectResponse
     {
-        $save->handle($teacher, $request->validated());
+        $save->handle($teacher, $request->teacherData());
 
         return back()->with('status', "Data {$teacher->name} diperbarui.");
     }

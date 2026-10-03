@@ -28,7 +28,7 @@ final class SemesterController
 
     public function update(SemesterRequest $request, Semester $semester, UpdateSemester $update): RedirectResponse
     {
-        $update->handle($semester, $request->validated());
+        $update->handle($semester, $request->semesterData());
 
         return back()->with('status', "Semester {$semester->name} diperbarui.");
     }

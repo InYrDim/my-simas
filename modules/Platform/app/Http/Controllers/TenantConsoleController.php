@@ -97,7 +97,7 @@ final class TenantConsoleController
     public function show(Tenant $tenant, TenantRoles $roles, PermissionRegistry $permissions): Response
     {
         $subscription = Subscription::query()->with(['plan', 'tenant'])->where('tenant_id', $tenant->id)->first();
-        $planModules = $subscription?->plan?->modules ?? [];
+        $planModules = (array) data_get($subscription, 'plan.modules', []);
         $protected = (array) config('tenancy.onboarding_modules', []);
 
         $modules = collect($this->registry->all())->map(fn (array $meta, string $key): array => [

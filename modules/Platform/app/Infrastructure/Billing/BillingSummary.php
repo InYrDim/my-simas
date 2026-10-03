@@ -95,7 +95,7 @@ final class BillingSummary
             $month = $first->copy()->addMonths($i);
 
             $trend[] = [
-                'month' => $month->copy()->locale('id')->translatedFormat('M'),
+                'month' => $month->copy()->settings(['locale' => 'id'])->translatedFormat('M'),
                 'newTenants' => (int) ($tenantsByMonth[$month->format('Y-m')] ?? 0),
                 'revenue' => (int) ($revenueByMonth[$month->format('Y-m')] ?? 0),
             ];

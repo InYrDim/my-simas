@@ -49,14 +49,14 @@ final class ExtracurricularController
 
     public function store(ExtracurricularRequest $request, SaveExtracurricular $save): RedirectResponse
     {
-        $activity = $save->handle(null, $request->validated());
+        $activity = $save->handle(null, $request->activityData());
 
         return back()->with('status', "{$activity->name} ditambahkan.");
     }
 
     public function update(ExtracurricularRequest $request, Extracurricular $extracurricular, SaveExtracurricular $save): RedirectResponse
     {
-        $save->handle($extracurricular, $request->validated());
+        $save->handle($extracurricular, $request->activityData());
 
         return back()->with('status', "{$extracurricular->name} diperbarui.");
     }

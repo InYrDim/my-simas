@@ -33,4 +33,30 @@ final class ExtracurricularRequest extends MasterFormRequest
             'kind' => 'Jenis',
         ];
     }
+
+    /**
+     * The validated fields as the action takes them; optional fields are
+     * present only when the form sent them.
+     *
+     * @return array{name: string, coach_teacher_id?: int|null, schedule?: string|null, kind: string}
+     */
+    public function activityData(): array
+    {
+        $validated = $this->validated();
+
+        $data = [
+            'name' => (string) $validated['name'],
+            'kind' => (string) $validated['kind'],
+        ];
+
+        if (array_key_exists('coach_teacher_id', $validated)) {
+            $data['coach_teacher_id'] = $validated['coach_teacher_id'] === null ? null : (int) $validated['coach_teacher_id'];
+        }
+
+        if (array_key_exists('schedule', $validated)) {
+            $data['schedule'] = $validated['schedule'] === null ? null : (string) $validated['schedule'];
+        }
+
+        return $data;
+    }
 }

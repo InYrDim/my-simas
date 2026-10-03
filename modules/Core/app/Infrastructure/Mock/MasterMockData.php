@@ -84,10 +84,6 @@ final class MasterMockData
 
             foreach ($groups as $group) {
                 foreach ([1, 2] as $number) {
-                    if ($this->majors() === [] && $number > 2) {
-                        continue;
-                    }
-
                     $name = trim($grade['name'].' '.($group['code'] ?? '').' '.$number);
                     $rows[] = [
                         'id' => $id,

@@ -3,6 +3,7 @@
 namespace Modules\Platform\App\Http\Middleware;
 
 use Closure;
+use Illuminate\Auth\SessionGuard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Modules\Platform\App\Domain\Models\TenantStatus;
@@ -109,8 +110,11 @@ final class ResolveTenant
      */
     private function hasLoggedInSession(Request $request): bool
     {
-        return $request->hasSession()
-            && $request->session()->has(Auth::guard('web')->getName());
+        $guard = Auth::guard('web');
+
+        return $guard instanceof SessionGuard
+            && $request->hasSession()
+            && $request->session()->has($guard->getName());
     }
 
     /**
@@ -119,7 +123,12 @@ final class ResolveTenant
      */
     private function endSession(Request $request): void
     {
-        Auth::guard('web')->forgetUser();
+        $guard = Auth::guard('web');
+
+        if ($guard instanceof SessionGuard) {
+            $guard->forgetUser();
+        }
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
     }

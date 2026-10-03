@@ -33,6 +33,6 @@ class BillingMasterDataSeeder extends Seeder
             );
         }
 
-        $this->command?->info('Seeded billing master data: plans starter, standard, pro.');
+        $this->command->info('Seeded billing master data: plans starter, standard, pro.');
     }
 }

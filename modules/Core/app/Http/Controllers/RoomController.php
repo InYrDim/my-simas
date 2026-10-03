@@ -24,14 +24,14 @@ final class RoomController
 
     public function store(RoomRequest $request, SaveRoom $save): RedirectResponse
     {
-        $room = $save->handle(null, $request->validated());
+        $room = $save->handle(null, $request->roomData());
 
         return back()->with('status', "Ruangan {$room->name} ditambahkan.");
     }
 
     public function update(RoomRequest $request, Room $room, SaveRoom $save): RedirectResponse
     {
-        $save->handle($room, $request->validated());
+        $save->handle($room, $request->roomData());
 
         return back()->with('status', "Ruangan {$room->name} diperbarui.");
     }

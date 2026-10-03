@@ -31,14 +31,14 @@ final class AcademicYearController
 
     public function store(AcademicYearRequest $request, CreateAcademicYear $create): RedirectResponse
     {
-        $year = $create->handle($request->validated());
+        $year = $create->handle($request->yearData());
 
         return back()->with('status', "Tahun ajaran {$year->name} ditambahkan.");
     }
 
     public function update(AcademicYearRequest $request, AcademicYear $year, UpdateAcademicYear $update): RedirectResponse
     {
-        $update->handle($year, $request->validated());
+        $update->handle($year, $request->yearData());
 
         return back()->with('status', "Tahun ajaran {$year->name} diperbarui.");
     }

@@ -67,14 +67,14 @@ final class ClassGroupController
 
     public function store(ClassGroupRequest $request, SaveClassGroup $save): RedirectResponse
     {
-        $class = $save->handle(null, $request->validated());
+        $class = $save->handle(null, $request->classData());
 
         return back()->with('status', "Kelas {$class->name} ditambahkan.");
     }
 
     public function update(ClassGroupRequest $request, ClassGroup $classGroup, SaveClassGroup $save): RedirectResponse
     {
-        $save->handle($classGroup, $request->validated());
+        $save->handle($classGroup, $request->classData());
 
         return back()->with('status', "Kelas {$classGroup->name} diperbarui.");
     }

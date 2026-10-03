@@ -49,4 +49,19 @@ final class AcademicYearRequest extends MasterFormRequest
             'name.unique' => 'Tahun ajaran ini sudah ada.',
         ];
     }
+
+    /**
+     * The validated fields as the action takes them.
+     *
+     * @return array{name: string, curriculum: string, start_date: string, end_date: string}
+     */
+    public function yearData(): array
+    {
+        return [
+            'name' => (string) $this->validated('name'),
+            'curriculum' => (string) $this->validated('curriculum'),
+            'start_date' => (string) $this->validated('start_date'),
+            'end_date' => (string) $this->validated('end_date'),
+        ];
+    }
 }

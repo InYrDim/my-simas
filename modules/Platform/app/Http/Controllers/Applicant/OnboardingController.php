@@ -107,7 +107,7 @@ final class OnboardingController
      */
     private function plans(): array
     {
-        return Plan::query()
+        return array_values(Plan::query()
             ->selectable()
             ->orderBy('sort_order')
             ->get()
@@ -119,7 +119,7 @@ final class OnboardingController
                 'maxUsers' => $plan->max_users,
                 'modules' => $plan->modules,
             ])
-            ->all();
+            ->all());
     }
 
     private function applicant(): Applicant

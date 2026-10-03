@@ -43,4 +43,19 @@ final class SubjectRequest extends MasterFormRequest
     {
         return [...parent::messages(), 'code.unique' => 'Kode mata pelajaran ini sudah dipakai.'];
     }
+
+    /**
+     * The validated fields as the action takes them.
+     *
+     * @return array{code: string, name: string, group: string, kkm: int}
+     */
+    public function subjectData(): array
+    {
+        return [
+            'code' => (string) $this->validated('code'),
+            'name' => (string) $this->validated('name'),
+            'group' => (string) $this->validated('group'),
+            'kkm' => (int) $this->validated('kkm'),
+        ];
+    }
 }

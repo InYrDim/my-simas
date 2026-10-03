@@ -45,4 +45,28 @@ final class RoomRequest extends MasterFormRequest
     {
         return [...parent::messages(), 'code.unique' => 'Kode ruangan ini sudah dipakai.'];
     }
+
+    /**
+     * The validated fields as the action takes them; status is present
+     * only when the form sent it.
+     *
+     * @return array{code: string, name: string, type: string, capacity: int, status?: string}
+     */
+    public function roomData(): array
+    {
+        $validated = $this->validated();
+
+        $data = [
+            'code' => (string) $validated['code'],
+            'name' => (string) $validated['name'],
+            'type' => (string) $validated['type'],
+            'capacity' => (int) $validated['capacity'],
+        ];
+
+        if (array_key_exists('status', $validated)) {
+            $data['status'] = (string) $validated['status'];
+        }
+
+        return $data;
+    }
 }

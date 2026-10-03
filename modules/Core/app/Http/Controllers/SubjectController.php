@@ -33,14 +33,14 @@ final class SubjectController
 
     public function store(SubjectRequest $request, SaveSubject $save): RedirectResponse
     {
-        $subject = $save->handle(null, $request->validated());
+        $subject = $save->handle(null, $request->subjectData());
 
         return back()->with('status', "Mata pelajaran {$subject->name} ditambahkan.");
     }
 
     public function update(SubjectRequest $request, Subject $subject, SaveSubject $save): RedirectResponse
     {
-        $save->handle($subject, $request->validated());
+        $save->handle($subject, $request->subjectData());
 
         return back()->with('status', "Mata pelajaran {$subject->name} diperbarui.");
     }

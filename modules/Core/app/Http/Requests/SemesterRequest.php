@@ -25,4 +25,17 @@ final class SemesterRequest extends MasterFormRequest
             'end_date' => 'Tanggal selesai',
         ];
     }
+
+    /**
+     * The validated fields as the action takes them.
+     *
+     * @return array{start_date: string, end_date: string}
+     */
+    public function semesterData(): array
+    {
+        return [
+            'start_date' => (string) $this->validated('start_date'),
+            'end_date' => (string) $this->validated('end_date'),
+        ];
+    }
 }

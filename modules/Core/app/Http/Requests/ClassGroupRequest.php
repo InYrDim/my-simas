@@ -50,4 +50,31 @@ final class ClassGroupRequest extends MasterFormRequest
     {
         return [...parent::messages(), 'name.unique' => 'Nama kelas ini sudah dipakai pada tahun ajaran tersebut.'];
     }
+
+    /**
+     * The validated fields as the action takes them; optional fields are
+     * present only when the form sent them.
+     *
+     * @return array{academic_year_id: int, grade_id: int, major_id?: int|null, room_id?: int|null, name: string}
+     */
+    public function classData(): array
+    {
+        $validated = $this->validated();
+
+        $data = [
+            'academic_year_id' => (int) $validated['academic_year_id'],
+            'grade_id' => (int) $validated['grade_id'],
+            'name' => (string) $validated['name'],
+        ];
+
+        if (array_key_exists('major_id', $validated)) {
+            $data['major_id'] = $validated['major_id'] === null ? null : (int) $validated['major_id'];
+        }
+
+        if (array_key_exists('room_id', $validated)) {
+            $data['room_id'] = $validated['room_id'] === null ? null : (int) $validated['room_id'];
+        }
+
+        return $data;
+    }
 }

@@ -12,14 +12,14 @@ final class MajorController
 {
     public function store(MajorRequest $request, SaveMajor $save): RedirectResponse
     {
-        $major = $save->handle(null, $request->validated());
+        $major = $save->handle(null, $request->majorData());
 
         return back()->with('status', "Jurusan {$major->code} ditambahkan.");
     }
 
     public function update(MajorRequest $request, Major $major, SaveMajor $save): RedirectResponse
     {
-        $save->handle($major, $request->validated());
+        $save->handle($major, $request->majorData());
 
         return back()->with('status', "Jurusan {$major->code} diperbarui.");
     }

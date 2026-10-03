@@ -44,7 +44,7 @@ final class BerandaController
                 'timezone' => $tenant->timezone,
             ],
             'today' => [
-                'label' => $today->locale('id')->isoFormat('dddd, D MMMM Y'),
+                'label' => $today->settings(['locale' => 'id'])->isoFormat('dddd, D MMMM Y'),
                 'iso' => $today->toDateString(),
             ],
             'me' => $this->me(),
@@ -55,7 +55,7 @@ final class BerandaController
                 'deactivated' => $summary->deactivated,
                 'withoutRole' => $summary->withoutRole,
             ],
-            'roles' => $canViewUsers ? $this->roleLabels($roles->names($tenant->id)) : [],
+            'roles' => $canViewUsers ? $this->roleLabels(array_values($roles->names($tenant->id))) : [],
             'can' => [
                 'viewUsers' => $canViewUsers,
                 'invite' => Gate::allows('identity.users.create'),
@@ -110,9 +110,9 @@ final class BerandaController
         /** @var array<string, array{label: string}> $definitions */
         $definitions = config('roles', []);
 
-        return array_values(array_map(
+        return array_map(
             fn (string $name): string => $definitions[$name]['label'] ?? $name,
             $names,
-        ));
+        );
     }
 }

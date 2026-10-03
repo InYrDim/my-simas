@@ -56,4 +56,35 @@ final class TeacherRequest extends MasterFormRequest
     {
         return [...parent::messages(), 'nip.unique' => 'NIP ini sudah terdaftar.'];
     }
+
+    /**
+     * The validated fields as the action takes them; optional fields are
+     * present only when the form sent them.
+     *
+     * @return array{name: string, nip?: string|null, nuptk?: string|null, employment: string, duty: string, email?: string|null}
+     */
+    public function teacherData(): array
+    {
+        $validated = $this->validated();
+
+        $data = [
+            'name' => (string) $validated['name'],
+            'employment' => (string) $validated['employment'],
+            'duty' => (string) $validated['duty'],
+        ];
+
+        if (array_key_exists('nip', $validated)) {
+            $data['nip'] = $validated['nip'] === null ? null : (string) $validated['nip'];
+        }
+
+        if (array_key_exists('nuptk', $validated)) {
+            $data['nuptk'] = $validated['nuptk'] === null ? null : (string) $validated['nuptk'];
+        }
+
+        if (array_key_exists('email', $validated)) {
+            $data['email'] = $validated['email'] === null ? null : (string) $validated['email'];
+        }
+
+        return $data;
+    }
 }

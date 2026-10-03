@@ -24,9 +24,8 @@ interface ResolvesUsers
     /**
      * Count the accounts of the CURRENT tenant so other modules can
      * report on a school without importing the User model. Fails
-     * closed without tenant context, like every user read.
-     *
-     * @throws Exceptions\TenantNotSetException without a tenant context.
+     * closed without tenant context, like every user read (Platform's
+     * TenantNotSetException).
      */
     public function currentTenantSummary(): UserSummary;
 }

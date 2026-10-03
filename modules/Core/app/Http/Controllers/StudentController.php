@@ -94,11 +94,11 @@ final class StudentController
      */
     private function activeYearClasses(): array
     {
-        return ClassGroup::query()
+        return array_values(ClassGroup::query()
             ->whereHas('academicYear', fn ($query) => $query->where('status', AcademicYearStatus::Active->value))
             ->orderBy('name')
             ->get(['id', 'name'])
             ->map(fn (ClassGroup $class): array => ['id' => $class->id, 'name' => $class->name])
-            ->all();
+            ->all());
     }
 }

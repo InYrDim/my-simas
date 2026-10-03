@@ -56,4 +56,27 @@ final class MajorRequest extends MasterFormRequest
     {
         return [...parent::messages(), 'code.unique' => 'Kode jurusan ini sudah dipakai.'];
     }
+
+    /**
+     * The validated fields as the action takes them; concentrations are
+     * present only when the form sent them.
+     *
+     * @return array{code: string, name: string, kind: string, concentrations?: list<string>}
+     */
+    public function majorData(): array
+    {
+        $validated = $this->validated();
+
+        $data = [
+            'code' => (string) $validated['code'],
+            'name' => (string) $validated['name'],
+            'kind' => (string) $validated['kind'],
+        ];
+
+        if (is_array($validated['concentrations'] ?? null)) {
+            $data['concentrations'] = array_values(array_map(strval(...), $validated['concentrations']));
+        }
+
+        return $data;
+    }
 }
