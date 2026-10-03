@@ -11,6 +11,7 @@ import {
     EmptyState,
     Panel,
 } from '@shared/components/page-parts';
+import Can from '@shared/components/Can';
 import { Button } from '@shared/components/ui/button';
 import { TableCell, TableRow } from '@shared/components/ui/table';
 
@@ -50,7 +51,7 @@ export default function ClassesShow({
             back={{ href: classesIndex.url(), label: 'Semua kelas' }}
             mock={false}
             actions={
-                <>
+                <Can permission="core.academic.manage">
                     <Button asChild variant="outline">
                         <Link
                             href={assignmentsPage.url({
@@ -67,7 +68,7 @@ export default function ClassesShow({
                             Pindahkan siswa
                         </Link>
                     </Button>
-                </>
+                </Can>
             }
         >
             <div className="grid gap-6 lg:grid-cols-3">

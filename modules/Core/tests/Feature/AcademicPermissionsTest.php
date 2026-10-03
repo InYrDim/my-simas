@@ -22,8 +22,21 @@ dataset('academicPages', [
 it('lets every default school role view the academic pages', function (string $role) {
     $tenant = schoolAs("akademik-{$role}", $role);
 
-    get(school($tenant->slug, '/akademik/wali-kelas'))->assertOk();
+    get(school($tenant->slug, '/akademik/jam-pelajaran'))->assertOk();
 })->with(['admin-sekolah', 'guru', 'staf-tu']);
+
+it('keeps the editor-only academic pages for roles that may manage', function (string $role, string $path, bool $allowed) {
+    $tenant = schoolAs("editor-{$role}", $role);
+
+    $response = get(school($tenant->slug, $path));
+
+    $allowed ? $response->assertOk() : $response->assertForbidden();
+})->with(function () {
+    foreach (['/akademik/penempatan', '/akademik/pengampu', '/akademik/wali-kelas'] as $path) {
+        yield "admin {$path}" => ['admin-sekolah', $path, true];
+        yield "teacher {$path}" => ['guru', $path, false];
+    }
+});
 
 it('refuses a signed-in user without the academic view permission', function (string $path) {
     $tenant = TenantFactory::new()->create(['slug' => 'akademik-none']);

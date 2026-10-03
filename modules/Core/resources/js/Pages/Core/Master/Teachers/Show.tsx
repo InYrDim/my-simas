@@ -18,6 +18,7 @@ import {
     EmptyState,
     Panel,
 } from '@shared/components/page-parts';
+import Can from '@shared/components/Can';
 import { Button } from '@shared/components/ui/button';
 import { TableCell, TableRow } from '@shared/components/ui/table';
 
@@ -158,11 +159,13 @@ export default function TeachersShow({
                                 />
                             )}
                         {login.account !== null && (
-                            <Button asChild variant="outline">
-                                <Link href={usersIndex.url()}>
-                                    Kelola di Pengguna
-                                </Link>
-                            </Button>
+                            <Can permission="identity.users.view">
+                                <Button asChild variant="outline">
+                                    <Link href={usersIndex.url()}>
+                                        Kelola di Pengguna
+                                    </Link>
+                                </Button>
+                            </Can>
                         )}
                     </AccountPanel>
                 </div>

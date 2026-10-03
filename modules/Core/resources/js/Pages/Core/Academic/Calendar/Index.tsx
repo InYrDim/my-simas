@@ -110,6 +110,7 @@ export default function CalendarIndex({
             title="Kalender Akademik"
             description="Hari libur, ujian, dan kegiatan sepanjang tahun ajaran."
             mock={false}
+            writePermission="core.academic.manage"
             actions={
                 <FormDialog
                     route={store()}

@@ -100,11 +100,11 @@ it('keeps each school profile separate', function () {
         ->assertInertia(fn (Assert $page) => $page->where('school.level', 'sma')->where('school.headmaster', ''));
 });
 
-it('forbids a teacher from changing the school profile', function () {
+it('forbids a teacher from the school profile page and from changing it', function () {
     $tenant = schoolAs('prof-f', 'guru');
 
     put(school($tenant->slug, '/master/sekolah'), ['level' => 'sd'])->assertForbidden();
-    get(school($tenant->slug, '/master/sekolah'))->assertOk();
+    get(school($tenant->slug, '/master/sekolah'))->assertForbidden();
 });
 
 // ---- Tahun Ajaran

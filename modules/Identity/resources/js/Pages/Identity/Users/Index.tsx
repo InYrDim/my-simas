@@ -17,8 +17,10 @@ import {
 } from '@shared/components/page-parts';
 import TenantShell from '@shared/components/TenantShell';
 import { Badge } from '@shared/components/ui/badge';
+import Can from '@shared/components/Can';
 import { Button } from '@shared/components/ui/button';
 import { Input } from '@shared/components/ui/input';
+import { useCan } from '@shared/hooks/useCan';
 import { TableCell, TableRow } from '@shared/components/ui/table';
 
 import type { ManagedUser } from '../../../types/ManagedUser';
@@ -55,6 +57,8 @@ export default function UsersIndex({
     pagination,
 }: IndexProps) {
     const url = usersIndex.url();
+    const can = useCan();
+    const canUpdate = can('identity.users.update');
     const { filters, set } = useListFilters(url, initial);
     const filtered = initial.q !== '' || initial.role !== '';
 
@@ -66,7 +70,7 @@ export default function UsersIndex({
                 title="Daftar Pengguna"
                 description="Kelola akun sekolah: profil, peran, dan status aktif."
                 actions={
-                    <>
+                    <Can permission="identity.users.create">
                         <Button asChild variant="outline">
                             <Link href={usersInvite.url()}>Undang</Link>
                         </Button>
@@ -75,7 +79,7 @@ export default function UsersIndex({
                                 Tambah Pengguna
                             </Link>
                         </Button>
-                    </>
+                    </Can>
                 }
             />
 
@@ -119,12 +123,18 @@ export default function UsersIndex({
                         {users.map((user) => (
                             <TableRow key={user.id}>
                                 <TableCell className="font-medium">
-                                    <Link
-                                        href={editUser.url({ userId: user.id })}
-                                        className="hover:underline"
-                                    >
-                                        {user.name}
-                                    </Link>
+                                    {canUpdate ? (
+                                        <Link
+                                            href={editUser.url({
+                                                userId: user.id,
+                                            })}
+                                            className="hover:underline"
+                                        >
+                                            {user.name}
+                                        </Link>
+                                    ) : (
+                                        user.name
+                                    )}
                                 </TableCell>
                                 <TableCell className="font-mono text-xs">
                                     {user.username ?? '—'}
@@ -154,15 +164,21 @@ export default function UsersIndex({
                                     <UserStatus user={user} />
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    <Button asChild size="sm" variant="outline">
-                                        <Link
-                                            href={editUser.url({
-                                                userId: user.id,
-                                            })}
+                                    {canUpdate && (
+                                        <Button
+                                            asChild
+                                            size="sm"
+                                            variant="outline"
                                         >
-                                            Ubah
-                                        </Link>
-                                    </Button>
+                                            <Link
+                                                href={editUser.url({
+                                                    userId: user.id,
+                                                })}
+                                            >
+                                                Ubah
+                                            </Link>
+                                        </Button>
+                                    )}
                                 </TableCell>
                             </TableRow>
                         ))}

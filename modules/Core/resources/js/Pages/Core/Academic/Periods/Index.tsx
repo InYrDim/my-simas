@@ -87,6 +87,7 @@ export default function PeriodsIndex({
             description="Template jam per hari: pelajaran, istirahat, dan kegiatan rutin."
             width="max-w-4xl"
             mock={false}
+            writePermission="core.academic.manage"
             actions={
                 <FormDialog
                     route={copy()}

@@ -183,10 +183,10 @@ it('removes the assignments of a deleted class', function () {
     expect(inSchool($tenant, fn () => TeachingAssignment::query()->count()))->toBe(0);
 });
 
-it('forbids a teacher role from saving but lets them view', function () {
+it('forbids a teacher role from saving and from the editor page', function () {
     [$tenant, $class, $subject, $teacher] = assignmentSetup('as-guru', 'guru');
 
-    get(school($tenant->slug, '/akademik/pengampu'))->assertOk();
+    get(school($tenant->slug, '/akademik/pengampu'))->assertForbidden();
 
     put(school($tenant->slug, "/akademik/pengampu/{$class->id}"), ['assignments' => [
         ['subject_id' => $subject->id, 'teacher_id' => $teacher->id, 'hours' => 2],

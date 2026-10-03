@@ -102,12 +102,12 @@ it('refuses a class outside the active academic year', function () {
     expect(inSchool($tenant, fn () => $class->fresh()->homeroom_teacher_id))->toBeNull();
 });
 
-it('forbids a teacher role from saving but lets them view', function () {
+it('forbids a teacher role from saving and from the editor page', function () {
     $tenant = schoolAs('hr-guru', 'guru');
     $class = classIn($tenant);
     $teacher = inSchool($tenant, fn () => Teacher::factory()->create());
 
-    get(school($tenant->slug, '/akademik/wali-kelas'))->assertOk();
+    get(school($tenant->slug, '/akademik/wali-kelas'))->assertForbidden();
 
     put(school($tenant->slug, '/akademik/wali-kelas'), ['homerooms' => [$class->id => $teacher->id]])
         ->assertForbidden();

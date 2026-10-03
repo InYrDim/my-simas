@@ -14,6 +14,7 @@ declare module '@inertiajs/core' {
             auth: Auth;
             tenant: Tenant | null;
             modules: TenantModules;
+            abilities: Record<string, boolean>;
             sidebarOpen: boolean;
             [key: string]: unknown;
         };

@@ -180,6 +180,7 @@ export default function AssignmentsIndex({
             description="Tentukan guru pengampu tiap mata pelajaran di sebuah kelas."
             width="max-w-5xl"
             mock={false}
+            writePermission="core.academic.manage"
         >
             {classGroup === undefined ? (
                 <EmptyState>

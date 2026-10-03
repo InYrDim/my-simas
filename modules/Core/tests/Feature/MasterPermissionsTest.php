@@ -32,13 +32,25 @@ it('registers the core master, academic and integration permissions', function (
 it('lets every default school role view master data', function (string $role) {
     $slug = masterUserWithRole("perm-{$role}", $role);
 
-    get(school($slug, '/master/sekolah'))->assertOk();
+    get(school($slug, '/master/ruangan'))->assertOk();
 })->with(['admin-sekolah', 'guru', 'staf-tu']);
+
+it('keeps the school profile form for roles that may manage master data', function (string $role, bool $allowed) {
+    $slug = masterUserWithRole("profile-{$role}", $role);
+
+    $response = get(school($slug, '/master/sekolah'));
+
+    $allowed ? $response->assertOk() : $response->assertForbidden();
+})->with([
+    'admin' => ['admin-sekolah', true],
+    'teacher' => ['guru', false],
+    'staff' => ['staf-tu', false],
+]);
 
 it('refuses a signed-in user without the view permission', function () {
     $slug = masterUserWithRole('perm-none', null);
 
-    get(school($slug, '/master/sekolah'))->assertForbidden();
+    get(school($slug, '/master/ruangan'))->assertForbidden();
 });
 
 it('sends guests to the login', function () {

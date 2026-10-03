@@ -19,3 +19,8 @@ Halaman dibaca dulu sebagai ringkasan; form dibuka saat diminta (modal), atau di
 Editor daftar baris (mis. jalur dan kuota) pindah ke modal; di halaman tampil sebagai tabel baca-saja. Keadaan kosong menawarkan satu langkah pertama saja.
 Contoh: Ppdb/Settings.tsx (ringkasan + FormModal).
 Deteksi: hitung Input/OptionSelect/Textarea yang selalu tampil dalam satu halaman, di luar Dialog/Sheet; form inline permanen dengan lebih dari patokan.
+
+## UX: UI mengikuti izin peran, jangan tampilkan yang tidak bisa diakses
+Setiap tombol/tautan tulis (tambah, ubah, hapus, impor, undang) wajib disembunyikan bila user tak punya izinnya: pakai `useCan()` / `<Can permission>` dari Shared (prop bersama `abilities`; bukan `can`, yang dipakai prop per halaman). Di Core, `MasterPage` menerima `writePermission` (default `core.master.manage`; akademik `core.academic.manage`) dan `FormDialog`/`ConfirmAction` menyembunyikan diri otomatis.
+Halaman yang hanya berisi form edit (tanpa tampilan baca-saja) butuh izin manage di anak menu (`registerNavigation`) DAN di route GET-nya; halaman daftar tetap `*.view` dengan tombol tulis disembunyikan. Menyembunyikan hanya kosmetik: `can:` di route tetap gerbang sebenarnya.
+Deteksi: tombol/Link ke route POST/PUT/DELETE atau ke halaman `manage` tanpa `Can`/`useCan`; menu yang mengarah ke halaman yang 403 untuk peran itu.

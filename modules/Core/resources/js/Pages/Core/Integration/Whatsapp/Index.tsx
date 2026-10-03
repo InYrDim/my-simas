@@ -278,6 +278,7 @@ export default function WhatsappIndex({
             description="Kirim pemberitahuan sekolah lewat WhatsApp ke wali murid dan staf."
             width="max-w-5xl"
             mock={false}
+            writePermission="core.integration.manage"
         >
             <Panel>
                 <div className="flex flex-wrap items-start justify-between gap-4">

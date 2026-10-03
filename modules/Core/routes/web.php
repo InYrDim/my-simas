@@ -38,7 +38,6 @@ Route::middleware('web')->group(function (): void {
         // core.master.view, writes core.master.manage. Pages not yet backed
         // by the database (see docs/ai/plan/fase-3) still read mock data.
         Route::prefix('master')->name('core.master.')->middleware('can:core.master.view')->group(function (): void {
-            Route::get('sekolah', [SchoolProfileController::class, 'show'])->name('school');
             Route::get('tahun-ajaran', [AcademicYearController::class, 'index'])->name('years');
             Route::get('semester', [SemesterController::class, 'index'])->name('semesters');
             Route::get('tingkat-jurusan', [GradeController::class, 'index'])->name('grades');
@@ -55,6 +54,8 @@ Route::middleware('web')->group(function (): void {
             Route::get('ekstrakurikuler/{extracurricular}', [ExtracurricularController::class, 'show'])->whereNumber('extracurricular')->name('extracurriculars.show');
 
             Route::middleware('can:core.master.manage')->group(function (): void {
+                // Only a form, so the page itself needs manage as well.
+                Route::get('sekolah', [SchoolProfileController::class, 'show'])->name('school');
                 Route::put('sekolah', [SchoolProfileController::class, 'update'])->name('school.update');
 
                 Route::post('tahun-ajaran', [AcademicYearController::class, 'store'])->name('years.store');
@@ -109,13 +110,15 @@ Route::middleware('web')->group(function (): void {
         // records. Reads need core.academic.view, writes
         // core.academic.manage.
         Route::prefix('akademik')->name('core.academic.')->middleware('can:core.academic.view')->group(function (): void {
-            Route::get('penempatan', [PlacementController::class, 'index'])->name('placement');
-            Route::get('pengampu', [TeachingAssignmentController::class, 'index'])->name('assignments');
-            Route::get('wali-kelas', [HomeroomController::class, 'index'])->name('homerooms');
             Route::get('jam-pelajaran', [PeriodSlotController::class, 'index'])->name('periods');
             Route::get('kalender', [CalendarEventController::class, 'index'])->name('calendar');
 
             Route::middleware('can:core.academic.manage')->group(function (): void {
+                // Editors without a read-only view, so the pages need manage too.
+                Route::get('penempatan', [PlacementController::class, 'index'])->name('placement');
+                Route::get('pengampu', [TeachingAssignmentController::class, 'index'])->name('assignments');
+                Route::get('wali-kelas', [HomeroomController::class, 'index'])->name('homerooms');
+
                 Route::post('penempatan', [PlacementController::class, 'store'])->name('placement.store');
 
                 Route::post('kalender', [CalendarEventController::class, 'store'])->name('calendar.store');

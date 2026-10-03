@@ -418,6 +418,7 @@ export default function PlacementIndex({
             title="Penempatan Siswa"
             description="Naikkan, pindahkan, atau luluskan siswa secara massal saat pergantian tahun ajaran."
             mock={false}
+            writePermission="core.academic.manage"
         >
             {unplaced ? (
                 <>

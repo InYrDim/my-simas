@@ -172,10 +172,10 @@ it('refuses classes and students of another school', function () {
     expect(inSchool($other, fn () => $foreignStudent->fresh()->status))->toBe('active');
 });
 
-it('forbids a teacher role from placing students but lets them view', function () {
+it('forbids a teacher role from placing students and from the editor page', function () {
     ['tenant' => $tenant, 'x1' => $x1, 'students' => $students] = placementSetup('pl-guru', 'guru');
 
-    get(school($tenant->slug, '/akademik/penempatan'))->assertOk();
+    get(school($tenant->slug, '/akademik/penempatan'))->assertForbidden();
 
     post(school($tenant->slug, '/akademik/penempatan'), [
         'action' => 'graduate', 'source_class_id' => $x1->id, 'student_ids' => [$students[0]->id],

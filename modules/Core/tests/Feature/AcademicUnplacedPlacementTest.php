@@ -163,7 +163,7 @@ it('does not place students or into classes of another school', function () {
 it('forbids a teacher role from placing students without a class', function () {
     ['tenant' => $tenant, 'x1' => $x1, 'unplaced' => $unplaced] = unplacedSetup('pl-belum-guru', 'guru');
 
-    get(school($tenant->slug, '/akademik/penempatan?kelas=belum'))->assertOk();
+    get(school($tenant->slug, '/akademik/penempatan?kelas=belum'))->assertForbidden();
 
     post(school($tenant->slug, '/akademik/penempatan'), [
         'action' => 'assign', 'target_class_id' => $x1->id, 'student_ids' => [$unplaced[0]->id],

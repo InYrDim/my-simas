@@ -4,8 +4,11 @@ namespace Modules\Platform\App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Modules\Platform\App\Contracts\ModuleRegistry;
+use Modules\Platform\App\Contracts\PermissionRegistry;
 use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Contracts\TenantModules;
 use Modules\Platform\App\Contracts\TenantNavigation;
@@ -17,6 +20,7 @@ use Symfony\Component\HttpFoundation\Response;
  * - `tenant`:  { name, slug, timezone } — null on central hosts
  * - `modules`: active module keys for the current tenant
  * - `tenantNav`: sidebar entries the signed-in user may see (lazy)
+ * - `abilities`: permission name => allowed for the signed-in user (lazy)
  *
  * Runs AFTER ResolveTenant (reads its context) and BEFORE
  * HandleInertiaRequests (whose share() merges with these props).
@@ -30,6 +34,7 @@ final class ShareTenantContext
         private readonly TenantModules $modules,
         private readonly ModuleRegistry $registry,
         private readonly TenantNavigation $navigation,
+        private readonly PermissionRegistry $permissions,
     ) {}
 
     /**
@@ -42,9 +47,40 @@ final class ShareTenantContext
             'modules' => $this->sharedModules(),
             // Lazy: the Gate needs the signed-in user, resolved at render.
             'tenantNav' => fn (): array => $this->navigation->forCurrentUser(),
+            'abilities' => fn (): array => $this->sharedAbilities(),
         ]);
 
         return $next($request);
+    }
+
+    /**
+     * Every registered permission (plus composite gates defined by
+     * modules) as name => allowed for the signed-in user, so pages can
+     * hide actions the server would refuse. Empty on central hosts and
+     * when nobody is signed in; the server stays the source of truth.
+     *
+     * @return array<string, bool>
+     */
+    private function sharedAbilities(): array
+    {
+        if ($this->context->id() === null || ! Auth::check()) {
+            return [];
+        }
+
+        $names = array_merge(
+            ...array_values($this->permissions->all()),
+            ...[array_keys(Gate::abilities())],
+        );
+
+        $abilities = [];
+
+        foreach (array_unique($names) as $name) {
+            $abilities[$name] = Gate::allows($name);
+        }
+
+        ksort($abilities);
+
+        return $abilities;
     }
 
     /**

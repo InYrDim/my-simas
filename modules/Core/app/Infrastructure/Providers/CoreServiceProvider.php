@@ -144,7 +144,7 @@ class CoreServiceProvider extends ServiceProvider
                 'group' => 'Data Induk',
                 'order' => 20,
                 'children' => [
-                    ['label' => 'Profil Sekolah', 'route' => 'core.master.school'],
+                    ['label' => 'Profil Sekolah', 'route' => 'core.master.school', 'permission' => 'core.master.manage'],
                     ['label' => 'Tahun Ajaran', 'route' => 'core.master.years'],
                     ['label' => 'Semester', 'route' => 'core.master.semesters'],
                     ['label' => 'Tingkat & Jurusan', 'route' => 'core.master.grades'],
@@ -174,9 +174,9 @@ class CoreServiceProvider extends ServiceProvider
                 'group' => 'Data Induk',
                 'order' => 30,
                 'children' => [
-                    ['label' => 'Penempatan Siswa', 'route' => 'core.academic.placement'],
-                    ['label' => 'Pengampu Mapel', 'route' => 'core.academic.assignments'],
-                    ['label' => 'Wali Kelas', 'route' => 'core.academic.homerooms'],
+                    ['label' => 'Penempatan Siswa', 'route' => 'core.academic.placement', 'permission' => 'core.academic.manage'],
+                    ['label' => 'Pengampu Mapel', 'route' => 'core.academic.assignments', 'permission' => 'core.academic.manage'],
+                    ['label' => 'Wali Kelas', 'route' => 'core.academic.homerooms', 'permission' => 'core.academic.manage'],
                     ['label' => 'Jam Pelajaran', 'route' => 'core.academic.periods'],
                     ['label' => 'Kalender Akademik', 'route' => 'core.academic.calendar'],
                 ],

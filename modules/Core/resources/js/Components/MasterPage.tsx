@@ -7,12 +7,15 @@ import TenantShell from '@shared/components/TenantShell';
 import { Alert, AlertDescription } from '@shared/components/ui/alert';
 
 import type { SchoolSummary } from '../types/master';
+import { WritePermissionContext, masterManage } from './WritePermission';
 
 /**
  * Frame for every master-data page: tenant shell, title, and the notice
  * for pages that are still mockups (`mock`, on by default until a page is
  * backed by the database). Refusals that belong to no field (a year that
  * cannot be deleted, ...) arrive as `errors.status` and show as an alert.
+ * `writePermission` is the permission that allows changes on the page;
+ * dialogs and confirm buttons inside hide without it.
  */
 export default function MasterPage({
     title,
@@ -21,6 +24,7 @@ export default function MasterPage({
     back,
     width = 'max-w-6xl',
     mock = true,
+    writePermission = masterManage,
     children,
 }: {
     school: SchoolSummary;
@@ -30,46 +34,49 @@ export default function MasterPage({
     back?: { href: string; label: string };
     width?: string;
     mock?: boolean;
+    writePermission?: string;
     children: ReactNode;
 }) {
     const { errors } = usePage<{ errors: Record<string, string> }>().props;
 
     return (
-        <TenantShell width={width}>
-            <Head title={title} />
+        <WritePermissionContext.Provider value={writePermission}>
+            <TenantShell width={width}>
+                <Head title={title} />
 
-            {mock && (
-                <Alert className="mb-6">
-                    <FlaskConicalIcon />
-                    <AlertDescription>
-                        Tampilan contoh — data belum tersimpan.
-                    </AlertDescription>
-                </Alert>
-            )}
+                {mock && (
+                    <Alert className="mb-6">
+                        <FlaskConicalIcon />
+                        <AlertDescription>
+                            Tampilan contoh — data belum tersimpan.
+                        </AlertDescription>
+                    </Alert>
+                )}
 
-            {errors?.status !== undefined && (
-                <Alert variant="destructive" className="mb-6">
-                    <AlertDescription>{errors.status}</AlertDescription>
-                </Alert>
-            )}
+                {errors?.status !== undefined && (
+                    <Alert variant="destructive" className="mb-6">
+                        <AlertDescription>{errors.status}</AlertDescription>
+                    </Alert>
+                )}
 
-            {back !== undefined && (
-                <Link
-                    href={back.href}
-                    className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
-                >
-                    <ChevronLeftIcon className="size-4" />
-                    {back.label}
-                </Link>
-            )}
+                {back !== undefined && (
+                    <Link
+                        href={back.href}
+                        className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                        <ChevronLeftIcon className="size-4" />
+                        {back.label}
+                    </Link>
+                )}
 
-            <PageHeader
-                title={title}
-                description={description}
-                actions={actions}
-            />
+                <PageHeader
+                    title={title}
+                    description={description}
+                    actions={actions}
+                />
 
-            <div className="mt-8">{children}</div>
-        </TenantShell>
+                <div className="mt-8">{children}</div>
+            </TenantShell>
+        </WritePermissionContext.Provider>
     );
 }

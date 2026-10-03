@@ -58,6 +58,22 @@ it('hides entries the user lacks the permission for', function () {
     );
 });
 
+it('shares what the signed-in user may do as a permission map', function () {
+    $tenant = navTenantAs('can-guru', 'guru');
+
+    get(school($tenant->slug, '/beranda'))->assertInertia(fn (Assert $page) => $page
+        ->where('abilities', fn ($can) => $can['core.master.view'] === true && $can['core.master.manage'] === false)
+    );
+});
+
+it('shares every write permission as allowed for an admin', function () {
+    $tenant = navTenantAs('can-admin', 'admin-sekolah');
+
+    get(school($tenant->slug, '/beranda'))->assertInertia(fn (Assert $page) => $page
+        ->where('abilities', fn ($can) => $can['core.master.manage'] === true && $can['core.academic.manage'] === true)
+    );
+});
+
 it('hides entries of modules the tenant has not enabled', function () {
     $tenant = navTenantAs('nav-no-identity', 'admin-sekolah', identity: false);
 

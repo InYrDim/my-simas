@@ -63,6 +63,7 @@ export default function HomeroomsIndex({
             description={`Tetapkan ${school.homeroomLabel.toLowerCase()} untuk tiap rombel tahun ajaran aktif.`}
             width="max-w-5xl"
             mock={false}
+            writePermission="core.academic.manage"
             actions={
                 <Button
                     disabled={!form.isDirty || form.processing}

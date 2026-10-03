@@ -15,6 +15,7 @@ import { FieldGroup } from '@shared/components/ui/field';
 
 import MasterForm from './MasterForm';
 import type { FormRoute } from './MasterForm';
+import { useCanWrite } from './WritePermission';
 
 /**
  * Create/edit dialog: submits to `route` and closes once the server
@@ -37,6 +38,7 @@ export default function FormDialog({
     children: ReactNode;
 }) {
     const [open, setOpen] = useState(false);
+    const canWrite = useCanWrite();
 
     const body = (processing: boolean) => (
         <>
@@ -63,6 +65,10 @@ export default function FormDialog({
             </DialogFooter>
         </>
     );
+
+    if (!canWrite) {
+        return null;
+    }
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>

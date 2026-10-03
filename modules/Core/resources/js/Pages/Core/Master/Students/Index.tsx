@@ -12,6 +12,7 @@ import {
     EmptyState,
     OptionSelect,
 } from '@shared/components/page-parts';
+import Can from '@shared/components/Can';
 import { Button } from '@shared/components/ui/button';
 import { Input } from '@shared/components/ui/input';
 import { TableCell, TableRow } from '@shared/components/ui/table';
@@ -62,12 +63,14 @@ export default function StudentsIndex({
             mock={false}
             actions={
                 <>
-                    <Button asChild variant="outline">
-                        <Link href={importPage.url()}>
-                            <UploadIcon />
-                            Impor CSV
-                        </Link>
-                    </Button>
+                    <Can permission="core.master.manage">
+                        <Button asChild variant="outline">
+                            <Link href={importPage.url()}>
+                                <UploadIcon />
+                                Impor CSV
+                            </Link>
+                        </Button>
+                    </Can>
 
                     <FormDialog
                         route={store()}

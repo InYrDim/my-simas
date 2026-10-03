@@ -479,6 +479,15 @@ surface minimal) — fixed in Fase 2 Stage 4.
   their own sidebar entries; shared prop `tenantNav` is filtered by active
   module + Gate) feeds Shared's generic `TenantShell`, used by Core's Beranda
   and Identity's `/users` pages. Icon names are kebab-case lucide names, loaded lazily by the shell.
+- UI follows permissions: Platform shares `abilities` (permission name -> bool for the
+  signed-in user, from `PermissionRegistry` plus defined Gates; empty without a user).
+  Shared's `useCan()` / `<Can permission>` hide actions the server would refuse. Name is
+  `abilities` on purpose: pages already return their own `can` prop. Core's `MasterPage`
+  takes `writePermission` (default `core.master.manage`; academic pages pass
+  `core.academic.manage`) and `FormDialog` / `ConfirmAction` hide themselves without it.
+  Rule: every write button or link needs `<Can>`/`useCan`, and a page that is only an editor
+  (Profil Sekolah, Penempatan, Pengampu, Wali Kelas) needs the manage permission on both its
+  nav child and its GET route. Hiding is cosmetic; the route `can:` stays the real gate.
 
 ## Accounts for students and teachers (Fase 8)
 

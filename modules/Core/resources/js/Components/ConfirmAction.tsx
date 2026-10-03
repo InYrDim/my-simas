@@ -14,6 +14,7 @@ import {
 } from '@shared/components/ui/alert-dialog';
 
 import type { FormRoute } from './MasterForm';
+import { useCanWrite } from './WritePermission';
 
 /**
  * A button that asks first, then sends the request (delete, activate, ...).
@@ -32,6 +33,10 @@ export default function ConfirmAction({
     confirmLabel: string;
     route: FormRoute;
 }) {
+    if (!useCanWrite()) {
+        return null;
+    }
+
     return (
         <AlertDialog>
             <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
