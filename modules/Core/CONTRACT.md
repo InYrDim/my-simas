@@ -273,7 +273,14 @@ school's choice on Integrasi › WhatsApp.
   landing record, phone-first, dated on the tenant's own clock. `me` is
   the student or teacher whose record carries the signed-in account; the
   account figures and role list are sent only to holders of
-  `identity.users.view` (`accounts: null` for everyone else). Surface
+  `identity.users.view` (`accounts: null` for everyone else). `setup` is
+  the school's setup checklist (`Domain/Queries/SetupChecklist`): the
+  master-data steps in the order the data depends on itself, computed
+  from the school's own records and stored nowhere. It goes only to
+  holders of `core.master.manage` while a required step is still open
+  (`setup: null` for everyone else and once the school is set up). A
+  school's profile counts as done when its grades exist, because grades
+  are only seeded when the profile is saved. Surface
   brief: `.impeccable/surfaces/modules-core-resources-js-pages-core-beranda-tsx.md`.
 - **Statistik & Laporan** (`/statistik-laporan/*`, database-backed; the
   pages and the sidebar entry need `core.master.view`, and each report

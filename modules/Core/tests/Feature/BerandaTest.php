@@ -3,10 +3,12 @@
 namespace Modules\Core\Tests\Feature;
 
 use Illuminate\Support\Carbon;
+use Modules\Core\App\Domain\Actions\SaveSchoolProfile;
 use Modules\Core\App\Domain\Models\AcademicYear;
 use Modules\Core\App\Domain\Models\ClassGroup;
 use Modules\Core\App\Domain\Models\Grade;
 use Modules\Core\App\Domain\Models\Student;
+use Modules\Core\App\Domain\Models\Subject;
 use Modules\Core\App\Domain\Models\Teacher;
 use Modules\Identity\Database\Factories\UserFactory;
 use Modules\Platform\App\Contracts\TenantContext;
@@ -229,4 +231,44 @@ it('never shows the person of another school', function () {
     });
 
     berandaVisit($tenant)->assertInertia(fn ($page) => $page->where('me', null));
+});
+
+it('gives the setup checklist to a school administrator of a new school', function () {
+    $tenant = berandaTenant('sdn-baru');
+    berandaSignIn($tenant);
+
+    berandaVisit($tenant)->assertInertia(fn ($page) => $page
+        ->where('setup.done', 0)
+        ->where('setup.total', 7)
+        ->where('setup.steps.0.key', 'profile')
+        ->where('setup.steps.0.state', 'next')
+        ->etc());
+});
+
+it('keeps the setup checklist from everyone who does not manage master data', function () {
+    $tenant = berandaTenant('sdn-guru-setup');
+    berandaSignInAsGuru($tenant);
+
+    berandaVisit($tenant)->assertInertia(fn ($page) => $page->where('setup', null));
+});
+
+it('stops sending the setup checklist once the school is set up', function () {
+    $tenant = berandaTenant('sdn-lengkap');
+    berandaSignIn($tenant);
+
+    app(TenantContext::class)->run($tenant->id, function (): void {
+        app(SaveSchoolProfile::class)->handle(['level' => 'sd']);
+
+        $year = AcademicYear::factory()->active()->create();
+        $class = ClassGroup::factory()->create([
+            'academic_year_id' => $year->id,
+            'grade_id' => Grade::query()->firstOrFail()->id,
+        ]);
+
+        Subject::factory()->create();
+        Teacher::factory()->create();
+        Student::factory()->create(['class_id' => $class->id]);
+    });
+
+    berandaVisit($tenant)->assertInertia(fn ($page) => $page->where('setup', null));
 });

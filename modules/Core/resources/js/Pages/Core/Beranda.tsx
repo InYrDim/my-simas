@@ -5,6 +5,10 @@ import { Button } from '@shared/components/ui/button';
 
 import { invite as usersInvite } from '@/actions/Modules/Identity/App/Http/Controllers/UsersManagementController';
 
+import SetupChecklist, {
+    type SetupChecklistData,
+} from '../../Components/SetupChecklist';
+
 type Accounts = {
     total: number;
     active: number;
@@ -26,6 +30,8 @@ interface BerandaProps {
     accounts: Accounts | null;
     roles: string[];
     can: { viewUsers: boolean; invite: boolean };
+    /** Only for those who manage master data, and only while required steps remain. */
+    setup: SetupChecklistData | null;
 }
 
 /** One sentence, one emphasised phrase — the single thing waiting here. */
@@ -119,6 +125,7 @@ export default function Beranda({
     accounts,
     roles,
     can,
+    setup,
 }: BerandaProps) {
     const line = accounts === null ? personLine(me) : dayLine(accounts);
 
@@ -177,6 +184,8 @@ export default function Beranda({
                         </Button>
                     )}
                 </div>
+
+                {setup !== null && <SetupChecklist setup={setup} />}
 
                 {/* The rest of the record: quiet, ruled, 12px. Numbers
                     never replace the day's sentence; they only back it. */}

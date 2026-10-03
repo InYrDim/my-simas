@@ -444,3 +444,14 @@ the latest; uploads live in `TenantStorage` and download as attachments);
 `ppdb` is in no plan yet. After a release: `php artisan migrate` and
 `php artisan roles:sync`. Details: modules/Ppdb/CONTRACT.md,
 modules/Core/CONTRACT.md, docs/architecture/modular-monolith.md.
+
+## Checklist persiapan sekolah (Fase 12)
+
+Beranda admin sekolah (`core.master.manage`) menampilkan "Persiapan
+sekolah": langkah Master Data menurut urutan dependensinya, satu ditandai
+berikutnya. Internal Core (`Domain/Queries/SetupChecklist`), tanpa
+kontrak dan tanpa tabel: status dihitung dari data sekolah tiap kunjungan
+dan kartu hilang setelah semua langkah wajib selesai. Profil dianggap
+selesai bila Tingkat sudah ada (di-seed saat profil disimpan); jurusan
+wajib hanya untuk jenjang yang memakainya. Rincian:
+modules/Core/CONTRACT.md, docs/architecture/modular-monolith.md.

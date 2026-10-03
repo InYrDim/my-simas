@@ -8,6 +8,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Core\App\Domain\Models\Student;
 use Modules\Core\App\Domain\Models\Teacher;
+use Modules\Core\App\Domain\Queries\SetupChecklist;
 use Modules\Identity\App\Contracts\ResolvesUsers;
 use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Contracts\TenantRoles;
@@ -22,6 +23,10 @@ use Modules\Platform\App\Contracts\TenantRoles;
  * `me` is the student or the teacher whose record carries the signed-in
  * account. The account figures and the role list are the business of
  * whoever manages users; everyone else gets `accounts: null`.
+ *
+ * `setup` is the school's setup checklist, for whoever manages master data
+ * and only while a required step is still open; null for everyone else
+ * and once the school is set up.
  */
 final class BerandaController
 {
@@ -29,6 +34,7 @@ final class BerandaController
         TenantContext $context,
         ResolvesUsers $users,
         TenantRoles $roles,
+        SetupChecklist $setup,
     ): Response {
         $tenant = $context->currentOrFail();
 
@@ -60,6 +66,7 @@ final class BerandaController
                 'viewUsers' => $canViewUsers,
                 'invite' => Gate::allows('identity.users.create'),
             ],
+            'setup' => Gate::allows('core.master.manage') ? $setup->forCurrentSchool() : null,
         ]);
     }
 

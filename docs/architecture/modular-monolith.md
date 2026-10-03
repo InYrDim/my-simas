@@ -674,3 +674,23 @@ The last module that was a mockup, and the first feature module with a
   a plan's modules or switches it on for a school.
 - **After the release** run `php artisan migrate` and
   `php artisan roles:sync` (new permissions for admin-sekolah and staf-tu).
+
+## School setup checklist (Fase 12)
+
+The school's Beranda shows "Persiapan sekolah" to whoever holds
+`core.master.manage`: the master-data steps in the order the data depends
+on itself (see `docs/architecture/master-data-dependencies.md`), one of
+them marked as next. It is Core-internal (`Domain/Queries/SetupChecklist`,
+no contract, no table): every state is computed from the school's own
+records on each visit, and the card disappears once all required steps are
+done.
+
+- **Profile = grades exist.** Grades are seeded only when the profile is
+  saved, so that is the real blocker for classes. Reading the checklist
+  never calls `SchoolProfile::current()` (it creates a row).
+- **Majors are required only where the level has them**
+  (`SchoolLevel::hasMajors()`), and classes wait for them, which keeps a
+  school from adding majors after its first classes.
+- **Students count once placed** in a class of the active year; the
+  step links to Penempatan Siswa `?kelas=belum` while some are not.
+- Details: `modules/Core/CONTRACT.md` (Surfaces).
