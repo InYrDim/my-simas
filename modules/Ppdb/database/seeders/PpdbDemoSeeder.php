@@ -64,7 +64,10 @@ class PpdbDemoSeeder extends Seeder
         }
     }
 
-    private function seedSchool(): void
+    /**
+     * Seeds the current tenant (call it inside the tenant's context).
+     */
+    public function seedSchool(): void
     {
         if (AdmissionPeriod::query()->exists()) {
             return;

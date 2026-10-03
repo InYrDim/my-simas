@@ -43,7 +43,10 @@ class AttendanceDemoSeeder extends Seeder
         }
     }
 
-    private function seedSchool(): void
+    /**
+     * Seeds the current tenant (call it inside the tenant's context).
+     */
+    public function seedSchool(): void
     {
         if (DailyAttendance::query()->exists()) {
             return;

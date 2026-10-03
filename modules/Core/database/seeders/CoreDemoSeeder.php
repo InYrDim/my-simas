@@ -46,7 +46,10 @@ class CoreDemoSeeder extends Seeder
         }
     }
 
-    private function seedSchool(): void
+    /**
+     * Seeds the current tenant (call it inside the tenant's context).
+     */
+    public function seedSchool(): void
     {
         if (AcademicYear::query()->exists()) {
             return;
@@ -91,6 +94,7 @@ class CoreDemoSeeder extends Seeder
             ]);
         }
 
+        $this->seedStaff();
         $this->seedClasses();
         $this->seedHomerooms();
         $this->seedAssignments();
@@ -98,6 +102,27 @@ class CoreDemoSeeder extends Seeder
         $this->seedCalendar($mock);
         $this->seedStudents($mock);
         $this->seedActivities($mock);
+    }
+
+    /**
+     * Tenaga kependidikan on top of the mock list (which has one), each with
+     * a NIP so they can be given an account.
+     */
+    private function seedStaff(): void
+    {
+        $staff = [
+            ['Rudi Hartono, S.Kom.', 'PNS', '198507122010011004', 'staf.tu@sekolah-contoh.sch.id'],
+            ['Mega Anggraeni, S.E.', 'PNS', '199001252015032002', 'bendahara@sekolah-contoh.sch.id'],
+            ['Wahyu Setiawan, S.Pd.', 'GTY', '199203182019031006', 'perpustakaan@sekolah-contoh.sch.id'],
+            ['Nurul Hidayah, A.Md.', 'Honorer', '199508302021042001', null],
+        ];
+
+        foreach ($staff as $index => [$name, $employment, $nip, $email]) {
+            app(SaveTeacher::class)->handle(null, [
+                'name' => $name, 'nip' => $nip, 'nuptk' => '6644'.str_pad((string) (3300000 + $index * 917), 8, '0', STR_PAD_LEFT),
+                'employment' => $employment, 'duty' => 'Tenaga Kependidikan', 'email' => $email,
+            ]);
+        }
     }
 
     private function seedClasses(): void
