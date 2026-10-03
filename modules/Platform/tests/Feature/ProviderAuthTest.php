@@ -18,7 +18,7 @@ use function Pest\Laravel\post;
 it('renders the provider login page on the console host', function () {
     get('http://console.localhost/login')
         ->assertOk()
-        ->assertSee('Console Provider', false);
+        ->assertInertia(fn ($page) => $page->component('Platform/Auth/ProviderLogin'));
 });
 
 it('refuses the provider console on the school host', function () {

@@ -22,9 +22,13 @@ test('the root on the console host sends a guest to the provider login', functio
 });
 
 test('the login path on the console host is the provider login', function () {
-    $this->get('http://console.localhost/login')->assertOk()->assertSee('SIMAS provider console', false);
+    $this->get('http://console.localhost/login')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->component('Platform/Auth/ProviderLogin'));
 });
 
 test('the login path on any other host is the school login', function () {
-    $this->get('http://localhost/login')->assertOk()->assertDontSee('SIMAS provider console', false);
+    $this->get('http://localhost/login')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->component('Identity/Auth/Login'));
 });
