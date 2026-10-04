@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Modules\Attendance\App\Http\Controllers\DailyInputController;
 use Modules\Attendance\App\Http\Controllers\LessonAttendanceController;
 use Modules\Attendance\App\Http\Controllers\MonthlyRecapController;
+use Modules\Attendance\App\Http\Controllers\MyAttendanceController;
 use Modules\Attendance\App\Http\Controllers\OverviewController;
 use Modules\Attendance\App\Http\Controllers\ScanController;
 use Modules\Attendance\App\Http\Controllers\SettingsController;
@@ -42,6 +43,12 @@ Route::middleware('web')->group(function (): void {
                 Route::get('pengaturan', [SettingsController::class, 'show'])->name('settings');
                 Route::put('pengaturan', [SettingsController::class, 'update'])->name('settings.update');
             });
+
+            // A student's own history; the controller finds the student
+            // from the signed-in account, never from the URL.
+            Route::get('saya', MyAttendanceController::class)
+                ->middleware('can:attendance.mine.view')
+                ->name('mine');
 
             // A student's own QR; the controller also asks for an account
             // linked to an active student.

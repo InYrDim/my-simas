@@ -15,7 +15,7 @@ use Modules\Platform\App\Contracts\TenantNavigation;
 final class DefaultTenantNavigation implements TenantNavigation
 {
     /**
-     * @var array<string, array{module: string, label: string, icon: string, group: ?string, route: string, permission: ?string, order: int, match: 'exact'|'prefix', children: list<array{label: string, route: string, permission: ?string, match: 'exact'|'prefix'}>}>
+     * @var array<string, array{module: string, label: string, icon: string, group: ?string, route: string, permission: ?string, order: int, match: 'exact'|'prefix', children: list<array{label: string, route: string, permission: ?string, match: 'exact'|'prefix', shortcut: bool}>, shortcut: bool}>
      */
     private array $items = [];
 
@@ -36,11 +36,13 @@ final class DefaultTenantNavigation implements TenantNavigation
                 'permission' => $item['permission'] ?? null,
                 'order' => $item['order'] ?? 100,
                 'match' => $this->match($item),
+                'shortcut' => ($item['shortcut'] ?? false) === true,
                 'children' => array_map(fn (array $child): array => [
                     'label' => $child['label'],
                     'route' => $child['route'],
                     'permission' => $child['permission'] ?? null,
                     'match' => $this->match($child),
+                    'shortcut' => ($child['shortcut'] ?? false) === true,
                 ], array_values($item['children'] ?? [])),
             ];
         }
@@ -80,10 +82,12 @@ final class DefaultTenantNavigation implements TenantNavigation
             'group' => $item['group'],
             'href' => route($item['route'], absolute: false),
             'match' => $item['match'],
+            'shortcut' => $item['shortcut'],
             'children' => array_map(fn (array $child): array => [
                 'label' => $child['label'],
                 'href' => route($child['route'], absolute: false),
                 'match' => $child['match'],
+                'shortcut' => $child['shortcut'],
             ], $item['children']),
         ], $visible);
     }

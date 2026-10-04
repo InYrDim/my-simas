@@ -17,8 +17,9 @@ namespace Modules\Platform\App\Contracts;
  * group (a section heading such as "Data Induk"; entries sharing one are
  * rendered together, sections ordered by their first entry; none = ungrouped),
  * optional order (lower first, default 100), optional match ("exact" for an index
- * that shares a prefix with sibling pages), optional children (sub-pages:
- * label, route, optional permission, optional match). A group shows only
+ * that shares a prefix with sibling pages), optional shortcut (true = also offered as a
+ * quick link on the signed-in user's Beranda), optional children (sub-pages:
+ * label, route, optional permission, optional match, optional shortcut). A group shows only
  * while at least one child is visible.
  */
 interface TenantNavigation
@@ -27,7 +28,7 @@ interface TenantNavigation
      * Register entries for the given module key. Called from the owning
      * module's service provider during boot. Idempotent per route name.
      *
-     * @param  array<int, array{label: string, icon: string, group?: string, route: string, permission?: string, order?: int, match?: 'exact', children?: array<int, array{label: string, route: string, permission?: string, match?: 'exact'}>}>  $items
+     * @param  array<int, array{label: string, icon: string, group?: string, route: string, permission?: string, order?: int, match?: 'exact', shortcut?: bool, children?: array<int, array{label: string, route: string, permission?: string, match?: 'exact', shortcut?: bool}>}>  $items
      */
     public function register(string $module, array $items): void;
 
@@ -36,7 +37,7 @@ interface TenantNavigation
      * with urls resolved. Empty without a tenant context or a signed-in
      * user.
      *
-     * @return list<array{label: string, icon: string, group: ?string, href: string, match: 'exact'|'prefix', children: list<array{label: string, href: string, match: 'exact'|'prefix'}>}>
+     * @return list<array{label: string, icon: string, group: ?string, href: string, match: 'exact'|'prefix', shortcut: bool, children: list<array{label: string, href: string, match: 'exact'|'prefix', shortcut: bool}>}>
      */
     public function forCurrentUser(): array;
 }

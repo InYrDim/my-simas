@@ -106,6 +106,8 @@ class CoreServiceProvider extends ServiceProvider
             'core.academic.view',
             'core.academic.manage',
             'core.integration.manage',
+            'core.me.view',
+            'core.teaching.view',
         ]);
     }
 
@@ -135,6 +137,30 @@ class CoreServiceProvider extends ServiceProvider
                 'icon' => 'layout-dashboard',
                 'route' => 'home',
                 'order' => 10,
+            ],
+            [
+                'label' => 'Profil Saya',
+                'icon' => 'user-round',
+                'route' => 'core.me.profile',
+                'permission' => 'core.me.view',
+                'group' => 'Saya',
+                'order' => 11,
+            ],
+            [
+                'label' => 'Kelas Saya',
+                'icon' => 'school',
+                'route' => 'core.me.classes',
+                'permission' => 'core.teaching.view',
+                'group' => 'Saya',
+                'order' => 14,
+            ],
+            [
+                'label' => 'Jadwal Mengajar',
+                'icon' => 'calendar-clock',
+                'route' => 'core.me.timetable',
+                'permission' => 'core.teaching.view',
+                'group' => 'Saya',
+                'order' => 15,
             ],
             [
                 'label' => 'Master Data',
@@ -178,6 +204,7 @@ class CoreServiceProvider extends ServiceProvider
                     ['label' => 'Pengampu Mapel', 'route' => 'core.academic.assignments', 'permission' => 'core.academic.manage'],
                     ['label' => 'Wali Kelas', 'route' => 'core.academic.homerooms', 'permission' => 'core.academic.manage'],
                     ['label' => 'Jam Pelajaran', 'route' => 'core.academic.periods'],
+                    ['label' => 'Jadwal Pelajaran', 'route' => 'core.academic.timetable'],
                     ['label' => 'Kalender Akademik', 'route' => 'core.academic.calendar'],
                 ],
             ],

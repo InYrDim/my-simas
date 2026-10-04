@@ -18,7 +18,9 @@
   guru, staf-tu), `attendance.daily.record` (gate and daily input —
   admin, guru, staf-tu), `attendance.lesson.record` (lesson attendance —
   admin, guru), `attendance.settings.manage` (admin) and
-  `attendance.qr.show` (a student's own QR — siswa).
+  `attendance.qr.show` (a student's own QR — siswa), `attendance.mine.view`
+  (Absensi Saya, `/absensi/saya`: a student's own daily history by month,
+  the student found from the signed-in account, never from the URL — siswa).
 
 ## Public interface (Contracts/)
 

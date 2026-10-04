@@ -1,4 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
+import { ChevronRightIcon } from 'lucide-react';
 
 import TenantShell from '@shared/components/TenantShell';
 import { Button } from '@shared/components/ui/button';
@@ -32,6 +33,15 @@ interface BerandaProps {
     can: { viewUsers: boolean; invite: boolean };
     /** Only for those who manage master data, and only while required steps remain. */
     setup: SetupChecklistData | null;
+    /** Quick links the signed-in role may use; empty for account managers. */
+    shortcuts: { label: string; href: string; icon: string }[];
+    /** A teacher's classes in the active year; empty for everyone else. */
+    classes: {
+        id: number;
+        name: string;
+        homeroom: boolean;
+        subjects: string[];
+    }[];
 }
 
 /** One sentence, one emphasised phrase — the single thing waiting here. */
@@ -126,6 +136,8 @@ export default function Beranda({
     roles,
     can,
     setup,
+    shortcuts,
+    classes,
 }: BerandaProps) {
     const line = accounts === null ? personLine(me) : dayLine(accounts);
 
@@ -184,6 +196,58 @@ export default function Beranda({
                         </Button>
                     )}
                 </div>
+
+                {shortcuts.length > 0 && (
+                    <section className="mt-8">
+                        <h2 className="text-xs font-medium text-muted-foreground">
+                            Pintasan
+                        </h2>
+                        <ul className="mt-2 border-t border-border">
+                            {shortcuts.map((shortcut) => (
+                                <li
+                                    key={shortcut.href}
+                                    className="border-b border-border"
+                                >
+                                    <Link
+                                        href={shortcut.href}
+                                        className="flex items-center justify-between gap-4 py-3 text-sm text-foreground"
+                                    >
+                                        {shortcut.label}
+                                        <ChevronRightIcon className="size-4 text-muted-foreground" />
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
+
+                {classes.length > 0 && (
+                    <section className="mt-8">
+                        <h2 className="text-xs font-medium text-muted-foreground">
+                            Kelas saya
+                        </h2>
+                        <ul className="mt-2 border-t border-border">
+                            {classes.map((classGroup) => (
+                                <li
+                                    key={classGroup.id}
+                                    className="flex items-baseline justify-between gap-6 border-b border-border py-3"
+                                >
+                                    <span className="text-sm text-foreground">
+                                        {classGroup.name}
+                                        {classGroup.homeroom && (
+                                            <span className="ml-2 text-xs text-muted-foreground">
+                                                wali kelas
+                                            </span>
+                                        )}
+                                    </span>
+                                    <span className="text-right text-xs text-muted-foreground">
+                                        {classGroup.subjects.join(' · ')}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
 
                 {setup !== null && <SetupChecklist setup={setup} />}
 

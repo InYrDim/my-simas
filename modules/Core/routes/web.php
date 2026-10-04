@@ -12,6 +12,7 @@ use Modules\Core\App\Http\Controllers\GradeController;
 use Modules\Core\App\Http\Controllers\HomeroomController;
 use Modules\Core\App\Http\Controllers\ImportController;
 use Modules\Core\App\Http\Controllers\MajorController;
+use Modules\Core\App\Http\Controllers\MeController;
 use Modules\Core\App\Http\Controllers\PeriodSlotController;
 use Modules\Core\App\Http\Controllers\PlacementController;
 use Modules\Core\App\Http\Controllers\ReportController;
@@ -23,6 +24,7 @@ use Modules\Core\App\Http\Controllers\StudentController;
 use Modules\Core\App\Http\Controllers\SubjectController;
 use Modules\Core\App\Http\Controllers\TeacherController;
 use Modules\Core\App\Http\Controllers\TeachingAssignmentController;
+use Modules\Core\App\Http\Controllers\TimetableController;
 use Modules\Core\App\Http\Controllers\WhatsappController;
 
 // Module routes are registered via loadRoutesFrom() and do NOT inherit
@@ -33,6 +35,19 @@ Route::middleware('web')->group(function (): void {
     // always-active, so there is no module flag to check.
     Route::middleware('auth')->group(function (): void {
         Route::get('beranda', BerandaController::class)->name('home');
+
+        // "Saya": pages about the signed-in person only (no ids in the URL).
+        Route::prefix('saya')->name('core.me.')->middleware('can:core.me.view')->group(function (): void {
+            Route::get('profil', [MeController::class, 'profile'])->name('profile');
+
+            Route::get('kelas', [MeController::class, 'classes'])
+                ->middleware('can:core.teaching.view')
+                ->name('classes');
+
+            Route::get('jadwal', [MeController::class, 'timetable'])
+                ->middleware('can:core.teaching.view')
+                ->name('timetable');
+        });
 
         // Master data = base records that must exist. Reads need
         // core.master.view, writes core.master.manage. Pages not yet backed
@@ -112,6 +127,7 @@ Route::middleware('web')->group(function (): void {
         Route::prefix('akademik')->name('core.academic.')->middleware('can:core.academic.view')->group(function (): void {
             Route::get('jam-pelajaran', [PeriodSlotController::class, 'index'])->name('periods');
             Route::get('kalender', [CalendarEventController::class, 'index'])->name('calendar');
+            Route::get('jadwal', [TimetableController::class, 'index'])->name('timetable');
 
             Route::middleware('can:core.academic.manage')->group(function (): void {
                 // Editors without a read-only view, so the pages need manage too.
@@ -129,6 +145,8 @@ Route::middleware('web')->group(function (): void {
                 Route::post('jam-pelajaran/salin', [PeriodSlotController::class, 'copy'])->name('periods.copy');
                 Route::put('jam-pelajaran/{periodSlot}', [PeriodSlotController::class, 'update'])->whereNumber('periodSlot')->name('periods.update');
                 Route::delete('jam-pelajaran/{periodSlot}', [PeriodSlotController::class, 'destroy'])->whereNumber('periodSlot')->name('periods.destroy');
+
+                Route::put('jadwal', [TimetableController::class, 'update'])->name('timetable.update');
 
                 Route::put('wali-kelas', [HomeroomController::class, 'update'])->name('homerooms.update');
                 Route::put('pengampu/{classGroup}', [TeachingAssignmentController::class, 'update'])->whereNumber('classGroup')->name('assignments.update');

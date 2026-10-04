@@ -83,8 +83,8 @@ it('gives admin-sekolah the identity.users, core, attendance and ppdb permission
         'ppdb.selection.manage',
         'ppdb.settings.manage',
         'ppdb.view',
-    ])->and($guru)->toBe(['attendance.daily.record', 'attendance.lesson.record', 'attendance.view', 'core.academic.view', 'core.master.view'])
-        ->and($staf)->toBe(['attendance.daily.record', 'attendance.view', 'core.academic.view', 'core.master.view', 'ppdb.applicants.manage', 'ppdb.view']);
+    ])->and($guru)->toBe(['attendance.daily.record', 'attendance.lesson.record', 'attendance.view', 'core.academic.view', 'core.master.view', 'core.me.view', 'core.teaching.view'])
+        ->and($staf)->toBe(['attendance.daily.record', 'attendance.view', 'core.academic.view', 'core.master.view', 'core.me.view', 'ppdb.applicants.manage', 'ppdb.view']);
 });
 
 it('creates the global permission rows as a side effect of seeding', function () {

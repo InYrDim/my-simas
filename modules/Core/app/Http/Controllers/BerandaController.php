@@ -9,8 +9,10 @@ use Inertia\Response;
 use Modules\Core\App\Domain\Models\Student;
 use Modules\Core\App\Domain\Models\Teacher;
 use Modules\Core\App\Domain\Queries\SetupChecklist;
+use Modules\Core\App\Domain\Queries\TeacherClasses;
 use Modules\Identity\App\Contracts\ResolvesUsers;
 use Modules\Platform\App\Contracts\TenantContext;
+use Modules\Platform\App\Contracts\TenantNavigation;
 use Modules\Platform\App\Contracts\TenantRoles;
 
 /**
@@ -24,6 +26,10 @@ use Modules\Platform\App\Contracts\TenantRoles;
  * account. The account figures and the role list are the business of
  * whoever manages users; everyone else gets `accounts: null`.
  *
+ * `shortcuts` and `classes` are for everyone but the account managers: the
+ * quick links their role may use and, for a teacher, the classes they look
+ * after in the active year.
+ *
  * `setup` is the school's setup checklist, for whoever manages master data
  * and only while a required step is still open; null for everyone else
  * and once the school is set up.
@@ -35,6 +41,8 @@ final class BerandaController
         ResolvesUsers $users,
         TenantRoles $roles,
         SetupChecklist $setup,
+        TenantNavigation $navigation,
+        TeacherClasses $teacherClasses,
     ): Response {
         $tenant = $context->currentOrFail();
 
@@ -67,7 +75,35 @@ final class BerandaController
                 'invite' => Gate::allows('identity.users.create'),
             ],
             'setup' => Gate::allows('core.master.manage') ? $setup->forCurrentSchool() : null,
+            'shortcuts' => $summary === null ? $this->shortcuts($navigation) : [],
+            'classes' => $summary === null ? $teacherClasses->forUser(Auth::id()) : [],
         ]);
+    }
+
+    /**
+     * The quick links the signed-in user may use, taken from the sidebar
+     * entries the modules marked as shortcuts (already filtered by module
+     * and permission). Core names no other module here.
+     *
+     * @return list<array{label: string, href: string, icon: string}>
+     */
+    private function shortcuts(TenantNavigation $navigation): array
+    {
+        $links = [];
+
+        foreach ($navigation->forCurrentUser() as $item) {
+            if ($item['shortcut']) {
+                $links[] = ['label' => $item['label'], 'href' => $item['href'], 'icon' => $item['icon']];
+            }
+
+            foreach ($item['children'] as $child) {
+                if ($child['shortcut']) {
+                    $links[] = ['label' => $child['label'], 'href' => $child['href'], 'icon' => $item['icon']];
+                }
+            }
+        }
+
+        return $links;
     }
 
     /**

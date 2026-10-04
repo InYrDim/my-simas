@@ -44,6 +44,8 @@ return [
         'label' => 'Guru',
         'description' => 'Pengajar: mencatat kegiatan belajar mengajar dan absensi jam pelajaran di kelasnya.',
         'permissions' => [
+            'core.me.view',
+            'core.teaching.view',
             'core.master.view',
             'core.academic.view',
             'attendance.view',
@@ -56,6 +58,7 @@ return [
         'label' => 'Staf/TU',
         'description' => 'Tata usaha: mengurus data administrasi sekolah sehari-hari.',
         'permissions' => [
+            'core.me.view',
             'core.master.view',
             'core.academic.view',
             'attendance.view',
@@ -68,6 +71,6 @@ return [
     'siswa' => [
         'label' => 'Siswa',
         'description' => 'Peserta didik: masuk dengan NIS untuk layanan siswa.',
-        'permissions' => ['attendance.qr.show'],
+        'permissions' => ['core.me.view', 'attendance.qr.show', 'attendance.mine.view'],
     ],
 ];

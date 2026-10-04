@@ -3,6 +3,7 @@
 namespace Modules\Core\Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Validation\ValidationException;
 use Modules\Core\App\Domain\Actions\ActivateAcademicYear;
 use Modules\Core\App\Domain\Actions\AssignHomerooms;
 use Modules\Core\App\Domain\Actions\CreateAcademicYear;
@@ -17,15 +18,18 @@ use Modules\Core\App\Domain\Actions\SaveSchoolProfile;
 use Modules\Core\App\Domain\Actions\SaveStudent;
 use Modules\Core\App\Domain\Actions\SaveSubject;
 use Modules\Core\App\Domain\Actions\SaveTeacher;
+use Modules\Core\App\Domain\Actions\SaveTimetableEntry;
 use Modules\Core\App\Domain\Actions\SyncDefaultGrades;
 use Modules\Core\App\Domain\Models\AcademicYear;
 use Modules\Core\App\Domain\Models\ClassGroup;
 use Modules\Core\App\Domain\Models\Grade;
 use Modules\Core\App\Domain\Models\Major;
+use Modules\Core\App\Domain\Models\PeriodSlot;
 use Modules\Core\App\Domain\Models\Room;
 use Modules\Core\App\Domain\Models\SchoolProfile;
 use Modules\Core\App\Domain\Models\Subject;
 use Modules\Core\App\Domain\Models\Teacher;
+use Modules\Core\App\Domain\Models\TeachingAssignment;
 use Modules\Core\App\Infrastructure\Mock\MasterMockData;
 use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Contracts\TenantDirectory;
@@ -99,6 +103,7 @@ class CoreDemoSeeder extends Seeder
         $this->seedHomerooms();
         $this->seedAssignments();
         $this->seedPeriods($mock);
+        $this->seedTimetable();
         $this->seedCalendar($mock);
         $this->seedStudents($mock);
         $this->seedActivities($mock);
@@ -181,6 +186,37 @@ class CoreDemoSeeder extends Seeder
                 app(SavePeriodSlot::class)->handle(null, [
                     'day' => $index + 1, 'start_time' => $slot['start'], 'end_time' => $slot['end'], 'type' => $slot['type'],
                 ]);
+            }
+        }
+    }
+
+    /**
+     * Fills each assigned class lesson slots with its subjects in turn,
+     * skipping a slot the teacher is already booked in.
+     */
+    private function seedTimetable(): void
+    {
+        $slotsByDay = PeriodSlot::query()->where('type', PeriodSlot::LESSON)->orderBy('day')->orderBy('start_time')->get()->groupBy('day');
+
+        foreach (ClassGroup::query()->orderBy('id')->limit(4)->get() as $classIndex => $class) {
+            $subjectIds = TeachingAssignment::query()->where('class_id', $class->id)->orderBy('id')->pluck('subject_id')->all();
+
+            if ($subjectIds === []) {
+                continue;
+            }
+
+            $turn = $classIndex;
+
+            foreach ($slotsByDay as $slots) {
+                foreach ($slots as $slot) {
+                    try {
+                        app(SaveTimetableEntry::class)->handle($slot->id, $class, $subjectIds[$turn % count($subjectIds)]);
+                    } catch (ValidationException) {
+                        // The teacher is teaching another class in this slot.
+                    }
+
+                    $turn++;
+                }
             }
         }
     }

@@ -127,6 +127,13 @@ class IdentityServiceProvider extends ServiceProvider
     {
         $this->app->make(TenantNavigation::class)->register('identity', [
             [
+                'label' => 'Ganti Kata Sandi',
+                'icon' => 'key-round',
+                'route' => 'password.change',
+                'group' => 'Saya',
+                'order' => 19,
+            ],
+            [
                 'label' => 'Pengguna',
                 'icon' => 'users',
                 'route' => 'identity.users.index',

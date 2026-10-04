@@ -103,7 +103,7 @@ it('splits the sidebar into base data, school members, academic management and i
         ->where('tenantNav.3.label', 'Akademik')
         ->where('tenantNav.3.children', fn ($children) => collect($children)->pluck('href')->all() === [
             '/akademik/penempatan', '/akademik/pengampu', '/akademik/wali-kelas',
-            '/akademik/jam-pelajaran', '/akademik/kalender',
+            '/akademik/jam-pelajaran', '/akademik/jadwal', '/akademik/kalender',
         ])
         ->where('tenantNav.4.label', 'Impor Data')
         ->where('tenantNav.4.href', '/kelola/impor')

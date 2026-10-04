@@ -40,6 +40,7 @@ it('registers the attendance permissions', function () {
         'attendance.lesson.record',
         'attendance.settings.manage',
         'attendance.qr.show',
+        'attendance.mine.view',
     ]);
 });
 
@@ -102,7 +103,7 @@ it('shows a student only the QR entry', function () {
     $tenant = attendanceTenant(role: 'siswa', slug: 'menu-siswa');
 
     get(school($tenant->slug, '/beranda'))->assertInertia(fn (Assert $page) => $page
-        ->where('tenantNav', fn ($nav) => collect($nav)->pluck('label')->all() === ['Beranda', 'QR Absensi'])
+        ->where('tenantNav', fn ($nav) => collect($nav)->pluck('label')->all() === ['Beranda', 'Profil Saya', 'QR Absensi', 'Absensi Saya'])
     );
 });
 

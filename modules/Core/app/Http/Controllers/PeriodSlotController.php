@@ -7,6 +7,7 @@ use Inertia\Response;
 use Modules\Core\App\Domain\Actions\CopyPeriodDay;
 use Modules\Core\App\Domain\Actions\SavePeriodSlot;
 use Modules\Core\App\Domain\Models\PeriodSlot;
+use Modules\Core\App\Domain\Models\TimetableEntry;
 use Modules\Core\App\Http\Concerns\RendersMasterPage;
 use Modules\Core\App\Http\Requests\CopyPeriodDayRequest;
 use Modules\Core\App\Http\Requests\PeriodSlotRequest;
@@ -58,6 +59,7 @@ final class PeriodSlotController
 
     public function destroy(PeriodSlot $periodSlot): RedirectResponse
     {
+        TimetableEntry::query()->where('period_slot_id', $periodSlot->id)->delete();
         $periodSlot->delete();
 
         return back()->with('status', 'Jam dihapus.');

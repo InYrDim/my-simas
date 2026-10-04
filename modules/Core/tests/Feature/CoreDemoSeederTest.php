@@ -5,6 +5,7 @@ namespace Modules\Core\Tests\Feature;
 use Modules\Core\App\Domain\Models\AcademicYear;
 use Modules\Core\App\Domain\Models\ClassGroup;
 use Modules\Core\App\Domain\Models\Student;
+use Modules\Core\App\Domain\Models\TimetableEntry;
 use Modules\Core\Database\Seeders\CoreDemoSeeder;
 use Modules\Platform\Database\Factories\TenantFactory;
 
@@ -21,6 +22,7 @@ it('fills a school with consistent sample master data, once', function () {
             ->and(AcademicYear::query()->where('status', 'active')->count())->toBe(1)
             ->and(ClassGroup::query()->count())->toBe(18)
             ->and(Student::query()->count())->toBe(24)
-            ->and(Student::query()->whereNotNull('class_id')->count())->toBeGreaterThan(0);
+            ->and(Student::query()->whereNotNull('class_id')->count())->toBeGreaterThan(0)
+            ->and(TimetableEntry::query()->count())->toBeGreaterThan(0);
     });
 });

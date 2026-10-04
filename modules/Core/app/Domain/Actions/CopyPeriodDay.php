@@ -5,6 +5,7 @@ namespace Modules\Core\App\Domain\Actions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\Core\App\Domain\Models\PeriodSlot;
+use Modules\Core\App\Domain\Models\TimetableEntry;
 
 /**
  * Replaces the slots of the target weekdays with a copy of the source
@@ -30,6 +31,9 @@ final class CopyPeriodDay
         }
 
         DB::transaction(function () use ($slots, $toDays): void {
+            $replaced = PeriodSlot::query()->whereIn('day', $toDays)->pluck('id');
+
+            TimetableEntry::query()->whereIn('period_slot_id', $replaced)->delete();
             PeriodSlot::query()->whereIn('day', $toDays)->delete();
 
             foreach ($toDays as $day) {

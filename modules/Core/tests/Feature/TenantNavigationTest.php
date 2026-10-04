@@ -44,7 +44,7 @@ it('shares the sidebar entries an admin may see, in order', function () {
     $tenant = navTenantAs('nav-admin', 'admin-sekolah');
 
     get(school($tenant->slug, '/beranda'))->assertInertia(fn (Assert $page) => $page
-        ->where('tenantNav', fn ($nav) => collect($nav)->pluck('label')->all() === ['Beranda', 'Master Data', 'Warga Sekolah', 'Akademik', 'Impor Data', 'Statistik & Laporan', 'Pengguna', 'Integrasi', 'Sistem'])
+        ->where('tenantNav', fn ($nav) => collect($nav)->pluck('label')->all() === ['Beranda', 'Ganti Kata Sandi', 'Master Data', 'Warga Sekolah', 'Akademik', 'Impor Data', 'Statistik & Laporan', 'Pengguna', 'Integrasi', 'Sistem'])
         ->where('tenantNav.0.href', '/beranda')
         ->where('tenantNav.0.icon', 'layout-dashboard')
     );
@@ -54,7 +54,7 @@ it('hides entries the user lacks the permission for', function () {
     $tenant = navTenantAs('nav-guru', 'guru');
 
     get(school($tenant->slug, '/beranda'))->assertInertia(fn (Assert $page) => $page
-        ->where('tenantNav', fn ($nav) => collect($nav)->pluck('label')->all() === ['Beranda', 'Master Data', 'Warga Sekolah', 'Akademik', 'Statistik & Laporan'])
+        ->where('tenantNav', fn ($nav) => collect($nav)->pluck('label')->all() === ['Beranda', 'Profil Saya', 'Kelas Saya', 'Jadwal Mengajar', 'Ganti Kata Sandi', 'Master Data', 'Warga Sekolah', 'Akademik', 'Statistik & Laporan'])
     );
 });
 
@@ -98,13 +98,23 @@ it('nests visible children and drops a group with none visible', function () {
     $admin = navTenantAs('nav-group-admin', 'admin-sekolah');
 
     get(school($admin->slug, '/beranda'))->assertInertia(fn (Assert $page) => $page
-        ->where('tenantNav.6.label', 'Grup')
-        ->where('tenantNav.6.children.0.href', '/users')
+        ->where('tenantNav.7.label', 'Grup')
+        ->where('tenantNav.7.children.0.href', '/users')
     );
 
     $guru = navTenantAs('nav-group-guru', 'guru');
 
     get(school($guru->slug, '/beranda'))->assertInertia(fn (Assert $page) => $page
-        ->where('tenantNav', fn ($nav) => collect($nav)->pluck('label')->all() === ['Beranda', 'Master Data', 'Warga Sekolah', 'Akademik', 'Statistik & Laporan'])
+        ->where('tenantNav', fn ($nav) => collect($nav)->pluck('label')->all() === ['Beranda', 'Profil Saya', 'Kelas Saya', 'Jadwal Mengajar', 'Ganti Kata Sandi', 'Master Data', 'Warga Sekolah', 'Akademik', 'Statistik & Laporan'])
+    );
+});
+
+it('puts the signed-in user\'s own pages in the Saya group', function () {
+    $tenant = navTenantAs('nav-saya', 'guru');
+
+    get(school($tenant->slug, '/beranda'))->assertInertia(fn (Assert $page) => $page
+        ->where('tenantNav.4.label', 'Ganti Kata Sandi')
+        ->where('tenantNav.4.group', 'Saya')
+        ->where('tenantNav.4.href', '/ganti-kata-sandi')
     );
 });

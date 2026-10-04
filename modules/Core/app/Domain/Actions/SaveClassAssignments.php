@@ -8,6 +8,7 @@ use Modules\Core\App\Domain\Enums\AcademicYearStatus;
 use Modules\Core\App\Domain\Models\AcademicYear;
 use Modules\Core\App\Domain\Models\ClassGroup;
 use Modules\Core\App\Domain\Models\TeachingAssignment;
+use Modules\Core\App\Domain\Models\TimetableEntry;
 
 /**
  * Replaces the teaching assignments of one class with the given rows: a
@@ -34,6 +35,11 @@ final class SaveClassAssignments
         }
 
         DB::transaction(function () use ($class, $rows): void {
+            TimetableEntry::query()
+                ->where('class_id', $class->id)
+                ->whereNotIn('subject_id', array_column($rows, 'subject_id'))
+                ->delete();
+
             TeachingAssignment::query()
                 ->where('class_id', $class->id)
                 ->whereNotIn('subject_id', array_column($rows, 'subject_id'))

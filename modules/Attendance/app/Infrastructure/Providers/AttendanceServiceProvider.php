@@ -65,6 +65,7 @@ class AttendanceServiceProvider extends ServiceProvider
             'attendance.lesson.record',
             'attendance.settings.manage',
             'attendance.qr.show',
+            'attendance.mine.view',
         ]);
     }
 
@@ -122,9 +123,9 @@ class AttendanceServiceProvider extends ServiceProvider
                 'order' => 50,
                 'children' => [
                     ['label' => 'Rekap Hari Ini', 'route' => 'attendance.overview', 'permission' => 'attendance.view', 'match' => 'exact'],
-                    ['label' => 'Input Absensi', 'route' => 'attendance.input', 'permission' => 'attendance.daily.record'],
+                    ['label' => 'Input Absensi', 'route' => 'attendance.input', 'permission' => 'attendance.daily.record', 'shortcut' => true],
                     ['label' => 'Jam Pelajaran', 'route' => 'attendance.lessons', 'permission' => 'attendance.lesson.use'],
-                    ['label' => 'Pindai QR', 'route' => 'attendance.scan', 'permission' => 'attendance.scan.use'],
+                    ['label' => 'Pindai QR', 'route' => 'attendance.scan', 'permission' => 'attendance.scan.use', 'shortcut' => true],
                     ['label' => 'Rekap Bulanan', 'route' => 'attendance.monthly', 'permission' => 'attendance.view'],
                     ['label' => 'Pengaturan', 'route' => 'attendance.settings', 'permission' => 'attendance.settings.manage'],
                 ],
@@ -134,8 +135,17 @@ class AttendanceServiceProvider extends ServiceProvider
                 'icon' => 'qr-code',
                 'route' => 'attendance.my-qr',
                 'permission' => 'attendance.qr.use',
-                'group' => 'Operasional',
-                'order' => 51,
+                'shortcut' => true,
+                'group' => 'Saya',
+                'order' => 12,
+            ],
+            [
+                'label' => 'Absensi Saya',
+                'icon' => 'calendar-check',
+                'route' => 'attendance.mine',
+                'permission' => 'attendance.mine.view',
+                'group' => 'Saya',
+                'order' => 13,
             ],
         ]);
     }

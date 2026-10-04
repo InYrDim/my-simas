@@ -27,6 +27,25 @@
   holds all four, guru and staf-tu only the two `view` permissions.
   `core.integration.manage` (Fase 9) gates Integrasi › WhatsApp and its
   sidebar entry; only admin-sekolah holds it.
+  `core.me.view` gates the "Saya" pages (`/saya/*`, sidebar group "Saya");
+  guru, staf-tu and siswa hold it. Profil Saya (`MeController`) is read
+  only and takes no id: it shows the student or teacher whose `user_id` is
+  the signed-in account (`Domain/Queries/SignedInPerson`), plus the sign-in
+  and roles through Identity's `ResolvesUsers`. `core.teaching.view` (guru)
+  gates Kelas Saya (`/saya/kelas`): the classes of the active year the
+  teacher is homeroom of or teaches in (`Domain/Queries/TeacherClasses`,
+  also behind the Beranda "Kelas saya" list). Beranda quick links come from
+  sidebar entries a module marks `shortcut: true` in `TenantNavigation`.
+  The lesson timetable (`timetable_entries`: lesson slot + class + subject;
+  the teacher is the one the class's teaching assignment names, so it is
+  not stored) is edited on Akademik › Jadwal Pelajaran (`core.academic.manage`;
+  read-only with `core.academic.view`; `SaveTimetableEntry` refuses a subject
+  without a teacher in that class and a teacher in two classes at once) and
+  read by a teacher on Jadwal Mengajar (`/saya/jadwal`, `core.teaching.view`,
+  `Domain/Queries/TeacherTimetable`). Deleting a slot or a class's subject
+  assignment removes its lessons. Nothing outside Core reads the timetable
+  yet; Attendance still has none. Other modules add their own
+  entries to the same group from their providers.
 
 ## Public interface (Contracts/)
 
