@@ -1,9 +1,9 @@
 ---
 name: testing-best-practices
-description: 'Laravel test design and review. Use when selecting coverage, naming or structuring tests, choosing assertions or test data, isolating dependencies, testing HTTP or security boundaries, improving suite performance, or reviewing test value. Use framework guidance or search-docs for Pest and PHPUnit syntax.'
+description: "Laravel test design and review. Use when selecting coverage, naming or structuring tests, choosing assertions or test data, isolating dependencies, testing HTTP or security boundaries, improving suite performance, or reviewing test value. Use framework guidance or search-docs for Pest and PHPUnit syntax."
 license: MIT
 metadata:
-    author: laravel
+  author: laravel
 ---
 
 # Testing Best Practices
@@ -29,7 +29,7 @@ Read this section before you write a test.
 - Leave framework behavior to framework tests. Testing project configuration is not testing the framework. A constrained relationship, cast, scope, or validation rule belongs to this project.
 - Keep every test that can detect a distinct defect. When two tests detect the same defect, trim the higher-layer test to one case and report the duplication. Do not delete an existing test.
 - Write a feature test first. Write a unit test only for logic that does not use the framework.
-- Write a feature test for every behavior reachable through a request. Real-browser tests require `pestphp/pest-plugin-browser` and a browser download, neither of which this project installs. Mention the package only if the user asks for a real-browser test.
+- Write a browser test only for behavior in JavaScript that a feature test cannot reach. Put a browser test in `tests/Browser`, and call `assertNoJavaScriptErrors()` in it.
 - Judge an architecture test by the convention it protects, not by the rules above. An `arch()` test declares a rule for an entire directory, such as the parent class of every model, the classes that may use an enum, or the methods every factory declares. It intentionally checks declarations and fails when a new file breaks the convention.
 - Use the test tools that the project installs. Add a new test dependency, plugin, or browser only after the user asks for it.
 
@@ -45,14 +45,14 @@ Read this section before you write a test.
 
 Most changes need more than one rule file.
 
-| Subject                                                                                           | Rule File                                                |
-| ------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| Test framework features that may already do the work                                              | [`rules/finding-features.md`](rules/finding-features.md) |
-| File layout, test names, and groups                                                               | [`rules/naming.md`](rules/naming.md)                     |
-| Arrange-act-assert and choosing the correct assertion                                             | [`rules/assertions.md`](rules/assertions.md)             |
-| Endpoint coverage, authentication, authorization, tenant isolation, validation, and browser tests | [`rules/endpoint-tests.md`](rules/endpoint-tests.md)     |
-| Factories, test data ownership, and repeated input values                                         | [`rules/test-data.md`](rules/test-data.md)               |
-| Fakes, mocks, outbound HTTP, time, randomness, and databases                                      | [`rules/isolation.md`](rules/isolation.md)               |
-| Escaping, injection, cross-tenant access, and privilege checks                                    | [`rules/security.md`](rules/security.md)                 |
-| Environment and CI settings for a slow suite                                                      | [`rules/performance.md`](rules/performance.md)           |
-| Reviewing a test or suite                                                                         | [`rules/review.md`](rules/review.md)                     |
+| Subject | Rule File |
+| --- | --- |
+| Test framework features that may already do the work | [`rules/finding-features.md`](rules/finding-features.md) |
+| File layout, test names, and groups | [`rules/naming.md`](rules/naming.md) |
+| Arrange-act-assert and choosing the correct assertion | [`rules/assertions.md`](rules/assertions.md) |
+| Endpoint coverage, authentication, authorization, tenant isolation, validation, and browser tests | [`rules/endpoint-tests.md`](rules/endpoint-tests.md) |
+| Factories, test data ownership, and repeated input values | [`rules/test-data.md`](rules/test-data.md) |
+| Fakes, mocks, outbound HTTP, time, randomness, and databases | [`rules/isolation.md`](rules/isolation.md) |
+| Escaping, injection, cross-tenant access, and privilege checks | [`rules/security.md`](rules/security.md) |
+| Environment and CI settings for a slow suite | [`rules/performance.md`](rules/performance.md) |
+| Reviewing a test or suite | [`rules/review.md`](rules/review.md) |
