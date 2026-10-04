@@ -22,15 +22,16 @@ function slotIn(Tenant $tenant, array $attributes = []): PeriodSlot
     return inSchool($tenant, fn (): PeriodSlot => PeriodSlot::factory()->create($attributes));
 }
 
-it('lists the six weekdays with lesson numbers that skip breaks', function () {
+it('lists the seven weekdays with lesson numbers that skip breaks', function () {
     $tenant = schoolAs('pr-list');
     slotIn($tenant, ['day' => 2, 'start_time' => '07:15:00', 'end_time' => '08:00:00']);
     slotIn($tenant, ['day' => 2, 'start_time' => '08:00:00', 'end_time' => '08:15:00', 'type' => 'Istirahat']);
     slotIn($tenant, ['day' => 2, 'start_time' => '08:15:00', 'end_time' => '09:00:00']);
+    slotIn($tenant, ['day' => 7, 'start_time' => '07:15:00', 'end_time' => '08:00:00']);
 
     get(school($tenant->slug, '/akademik/jam-pelajaran'))->assertOk()->assertInertia(fn (Assert $page) => $page
         ->component('Core/Academic/Periods/Index')
-        ->has('days', 6)
+        ->has('days', 7)
         ->where('days.0.day', 'Senin')
         ->has('days.0.slots', 0)
         ->where('days.1.day', 'Selasa')
@@ -38,6 +39,9 @@ it('lists the six weekdays with lesson numbers that skip breaks', function () {
         ->where('days.1.slots.0.order', 1)
         ->where('days.1.slots.1.order', null)
         ->where('days.1.slots.2.order', 2)
+        ->where('days.6.day', 'Minggu')
+        ->where('days.6.slots.0.start', '07:15')
+        ->where('days.6.slots.0.order', 1)
     );
 });
 
@@ -72,7 +76,7 @@ it('rejects an invalid slot and stores nothing', function (array $payload, strin
     'ends before it starts' => [['end_time' => '07:00'], 'end_time'],
     'ends when it starts' => [['end_time' => '07:15'], 'end_time'],
     'unknown type' => [['type' => 'Tidur'], 'type'],
-    'no day 7' => [['day' => 7], 'day'],
+    'no day 8' => [['day' => 8], 'day'],
     'badly formatted time' => [['start_time' => '7 pagi'], 'start_time'],
 ]);
 

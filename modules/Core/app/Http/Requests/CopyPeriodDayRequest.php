@@ -10,9 +10,9 @@ final class CopyPeriodDayRequest extends AcademicFormRequest
     public function rules(): array
     {
         return [
-            'from_day' => ['required', 'integer', 'between:1,6'],
+            'from_day' => ['required', 'integer', 'between:1,7'],
             'days' => ['required', 'array', 'min:1'],
-            'days.*' => ['integer', 'between:1,6', 'distinct'],
+            'days.*' => ['integer', 'between:1,7', 'distinct'],
         ];
     }
 

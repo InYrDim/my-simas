@@ -62,7 +62,7 @@ DTOs.
   `teaching_assignments`) and `idsTaughtBy(userId)` (classes of the active
   year the teacher behind that account teaches or leads; empty when the
   account is no teacher's).
-- `BellSchedule` — `slotsOn(day)` (1 = Senin ... 6 = Sabtu, by start time)
+- `BellSchedule` — `slotsOn(day)` (1 = Senin ... 7 = Minggu, by start time)
   and `find(slotId)`.
 - `DTOs/StudentRecord` (id, name, NIS, class id and name, active — no
   guardian details), `DTOs/ClassRecord` (id, name, academic year id,

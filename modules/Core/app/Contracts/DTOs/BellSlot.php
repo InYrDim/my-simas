@@ -4,7 +4,7 @@ namespace Modules\Core\App\Contracts\DTOs;
 
 /**
  * One slot of the school's bell schedule. Times are `H:i`; `day` is 1
- * (Senin) to 6 (Sabtu).
+ * (Senin) to 7 (Minggu).
  */
 final readonly class BellSlot
 {

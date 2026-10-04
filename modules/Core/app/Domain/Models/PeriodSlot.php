@@ -15,7 +15,7 @@ use Modules\Platform\App\Contracts\Concerns\BelongsToTenant;
  *
  * @property int $id
  * @property string $tenant_id
- * @property int $day 1 (Senin) to 6 (Sabtu)
+ * @property int $day 1 (Senin) to 7 (Minggu)
  * @property string $start_time
  * @property string $end_time
  * @property string $type one of self::TYPES
@@ -31,5 +31,5 @@ class PeriodSlot extends Model
 
     public const TYPES = ['Pelajaran', 'Istirahat', 'Pembiasaan', 'Upacara', 'Lainnya'];
 
-    public const DAYS = [1 => 'Senin', 2 => 'Selasa', 3 => 'Rabu', 4 => 'Kamis', 5 => 'Jumat', 6 => 'Sabtu'];
+    public const DAYS = [1 => 'Senin', 2 => 'Selasa', 3 => 'Rabu', 4 => 'Kamis', 5 => 'Jumat', 6 => 'Sabtu', 7 => 'Minggu'];
 }
