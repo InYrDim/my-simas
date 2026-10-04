@@ -83,7 +83,7 @@ it('gives admin-sekolah the identity.users, core, attendance and ppdb permission
         'ppdb.selection.manage',
         'ppdb.settings.manage',
         'ppdb.view',
-    ])->and($guru)->toBe(['attendance.daily.record', 'attendance.lesson.record', 'attendance.view', 'core.academic.view', 'core.master.view', 'core.me.view', 'core.teaching.view'])
+    ])->and($guru)->toBe(['attendance.class.record', 'core.academic.view', 'core.master.view', 'core.me.view', 'core.teaching.view'])
         ->and($staf)->toBe(['attendance.daily.record', 'attendance.view', 'core.academic.view', 'core.master.view', 'core.me.view', 'ppdb.applicants.manage', 'ppdb.view']);
 });
 

@@ -601,7 +601,7 @@ The first feature module with real data. Details:
 - **Two kinds of record.** `daily_attendances`: one row per student and
   day — the status (hadir, terlambat, sakit, izin, alpa) and the gate
   times. `lesson_sessions` + `lesson_attendances`: one class in one lesson
-  slot of one day. There is no timetable: any teacher may record any
+  slot of one day. There is no timetable: any teacher with school-wide permissions may record any
   class; the classes a teacher teaches or leads are offered first.
 - **One-time QR.** The student's page (`attendance.qr.show` + an account
   linked to an active student) asks for a random code kept in

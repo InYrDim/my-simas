@@ -19,7 +19,7 @@ final class LessonAttendanceRequest extends AttendanceFormRequest
     public function rules(): array
     {
         return [
-            'class_id' => ['required', 'integer'],
+            'class_id' => ['bail', 'required', 'integer', $this->recordableClassRule()],
             'date' => ['required', 'date_format:Y-m-d'],
             'period_slot_id' => ['required', 'integer'],
             'subject_id' => ['nullable', 'integer'],

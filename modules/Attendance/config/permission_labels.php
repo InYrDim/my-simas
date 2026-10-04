@@ -11,4 +11,5 @@ return [
     'attendance.settings.manage' => 'Mengatur absensi, seperti batas jam terlambat',
     'attendance.qr.show' => 'Menampilkan QR absensi milik sendiri',
     'attendance.mine.view' => 'Melihat riwayat absensi milik sendiri',
+    'attendance.class.record' => 'Mencatat absensi harian dan jam pelajaran di kelas yang diajar',
 ];

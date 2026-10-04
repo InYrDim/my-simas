@@ -2,13 +2,16 @@
 
 namespace Modules\Attendance\App\Domain\Queries;
 
+use Illuminate\Support\Facades\Gate;
 use Modules\Core\App\Contracts\ClassDirectory;
 use Modules\Core\App\Contracts\DTOs\ClassSubject;
 
 /**
- * The classes offered on a recording page. Everyone may record any class
- * of the active academic year; a teacher's own classes (subjects taught,
- * homeroom) come first, so the usual choice is already made.
+ * The classes offered on a recording page. Staff with the school-wide
+ * recording permissions may record any class of the active academic year,
+ * with a teacher's own classes (subjects taught, homeroom) first. A
+ * teacher who only holds `attendance.class.record` gets those own classes
+ * and nothing else.
  */
 final class ClassChoices
 {
@@ -29,10 +32,29 @@ final class ClassChoices
             'mine' => in_array($class->id, $mine, true),
         ], $this->classes->ofActiveYear());
 
+        if ($this->limitedToOwnClasses()) {
+            $options = array_values(array_filter($options, fn (array $option): bool => $option['mine']));
+        }
+
         // Stable: both halves keep the directory's order by name.
         usort($options, fn (array $a, array $b): int => $b['mine'] <=> $a['mine']);
 
         return $options;
+    }
+
+    /**
+     * Whether the user may record the class; the server-side twin of the
+     * list above, so a hand-made request cannot reach another class.
+     */
+    public function mayRecord(int $classId, ?int $userId): bool
+    {
+        return ! $this->limitedToOwnClasses()
+            || in_array((string) $classId, array_column($this->for($userId), 'value'), true);
+    }
+
+    private function limitedToOwnClasses(): bool
+    {
+        return ! Gate::any(['attendance.daily.record', 'attendance.lesson.record']);
     }
 
     /**

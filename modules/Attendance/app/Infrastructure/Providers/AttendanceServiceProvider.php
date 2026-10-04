@@ -66,6 +66,7 @@ class AttendanceServiceProvider extends ServiceProvider
             'attendance.settings.manage',
             'attendance.qr.show',
             'attendance.mine.view',
+            'attendance.class.record',
         ]);
     }
 
@@ -76,9 +77,12 @@ class AttendanceServiceProvider extends ServiceProvider
      */
     protected function registerFeatureAbilities(): void
     {
+        Gate::define('attendance.daily.use', fn (Authenticatable $user): bool => Gate::forUser($user)->any(['attendance.daily.record', 'attendance.class.record']));
         Gate::define('attendance.gate.use', fn (Authenticatable $user): bool => Gate::forUser($user)->allows('attendance.daily.record') && AttendanceSetting::gateEnabled());
-        Gate::define('attendance.lesson.use', fn (Authenticatable $user): bool => Gate::forUser($user)->allows('attendance.lesson.record') && AttendanceSetting::lessonEnabled());
+        Gate::define('attendance.lesson.use', fn (Authenticatable $user): bool => Gate::forUser($user)->any(['attendance.lesson.record', 'attendance.class.record']) && AttendanceSetting::lessonEnabled());
+        Gate::define('attendance.lesson.school', fn (Authenticatable $user): bool => Gate::forUser($user)->allows('attendance.lesson.record') && AttendanceSetting::lessonEnabled());
         Gate::define('attendance.scan.use', fn (Authenticatable $user): bool => Gate::forUser($user)->any(['attendance.gate.use', 'attendance.lesson.use']));
+        Gate::define('attendance.scan.school', fn (Authenticatable $user): bool => Gate::forUser($user)->any(['attendance.gate.use', 'attendance.lesson.school']));
         Gate::define('attendance.qr.use', fn (Authenticatable $user): bool => Gate::forUser($user)->allows('attendance.qr.show') && (AttendanceSetting::gateEnabled() || AttendanceSetting::lessonEnabled()));
     }
 
@@ -124,10 +128,23 @@ class AttendanceServiceProvider extends ServiceProvider
                 'children' => [
                     ['label' => 'Rekap Hari Ini', 'route' => 'attendance.overview', 'permission' => 'attendance.view', 'match' => 'exact'],
                     ['label' => 'Input Absensi', 'route' => 'attendance.input', 'permission' => 'attendance.daily.record', 'shortcut' => true],
-                    ['label' => 'Jam Pelajaran', 'route' => 'attendance.lessons', 'permission' => 'attendance.lesson.use'],
-                    ['label' => 'Pindai QR', 'route' => 'attendance.scan', 'permission' => 'attendance.scan.use', 'shortcut' => true],
+                    ['label' => 'Jam Pelajaran', 'route' => 'attendance.lessons', 'permission' => 'attendance.lesson.school'],
+                    ['label' => 'Pindai QR', 'route' => 'attendance.scan', 'permission' => 'attendance.scan.school', 'shortcut' => true],
                     ['label' => 'Rekap Bulanan', 'route' => 'attendance.monthly', 'permission' => 'attendance.view'],
                     ['label' => 'Pengaturan', 'route' => 'attendance.settings', 'permission' => 'attendance.settings.manage'],
+                ],
+            ],
+            [
+                'label' => 'Absensi Saya',
+                'icon' => 'clipboard-check',
+                'route' => 'attendance.input',
+                'permission' => 'attendance.class.record',
+                'group' => 'Saya',
+                'order' => 13,
+                'children' => [
+                    ['label' => 'Input Absensi', 'route' => 'attendance.input', 'permission' => 'attendance.daily.use', 'shortcut' => true],
+                    ['label' => 'Jam Pelajaran', 'route' => 'attendance.lessons', 'permission' => 'attendance.lesson.use'],
+                    ['label' => 'Pindai QR', 'route' => 'attendance.scan', 'permission' => 'attendance.scan.use', 'shortcut' => true],
                 ],
             ],
             [

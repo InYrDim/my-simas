@@ -195,7 +195,7 @@ it('shows a dash while nothing is recorded', function () {
 
 it('keeps the reports for holders of attendance.view', function () {
     [$tenant] = insightSchool('laporan-absensi-izin');
-    attendanceMember($tenant, 'guru');
+    attendanceMember($tenant, 'staf-tu');
 
     get(school($tenant->slug, '/statistik-laporan/laporan/attendance-monthly/unduh'))->assertOk();
 

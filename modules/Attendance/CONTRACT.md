@@ -15,9 +15,13 @@
   the four WhatsApp notices to guardians.
 - Permissions (names attached to the default roles through Identity's
   `config/roles.php`): `attendance.view` (recap and reports — admin,
-  guru, staf-tu), `attendance.daily.record` (gate and daily input —
-  admin, guru, staf-tu), `attendance.lesson.record` (lesson attendance —
-  admin, guru), `attendance.settings.manage` (admin) and
+  staf-tu), `attendance.daily.record` (gate and daily input for any
+  class — admin, staf-tu), `attendance.lesson.record` (lesson attendance
+  for any class — admin), `attendance.class.record` (daily and lesson
+  attendance, only for the classes the user teaches or leads — guru; the
+  sidebar group "Saya" › "Absensi Saya", with no gate mode and no school
+  recap; every write asks `ClassChoices::mayRecord`),
+  `attendance.settings.manage` (admin) and
   `attendance.qr.show` (a student's own QR — siswa), `attendance.mine.view`
   (Absensi Saya, `/absensi/saya`: a student's own daily history by month,
   the student found from the signed-in account, never from the URL — siswa).
@@ -102,9 +106,11 @@ Never another feature module (Ppdb), not even via its Public surface.
   `MarkLessonPresence`): a class of the active academic year, a slot of
   type `Pelajaran` on that day's weekday, an optional subject that must be
   taught in that class. One session per class, day and slot. There is no
-  timetable: a teacher may record any class, and the classes the teacher
-  teaches or leads (`ClassDirectory::idsTaughtBy`) are offered first, with
-  the teacher's own subject chosen. A lesson has no "terlambat".
+  timetable: holders of `daily.record`/`lesson.record` may record any
+  class, with the classes the user teaches or leads
+  (`ClassDirectory::idsTaughtBy`) offered first; a teacher holding only
+  `class.record` is offered and accepted for those classes alone, with the
+  own subject chosen. A lesson has no "terlambat".
 - **Switches** (`/absensi/pengaturan`): `attendance_settings.gate_enabled`
   and `lesson_enabled` (both on by default) let a school turn the gate and
   the lesson attendance off. Routes, sidebar entries and the scanner ask

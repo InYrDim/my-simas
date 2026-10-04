@@ -22,7 +22,7 @@ Route::middleware('web')->group(function (): void {
                 Route::get('rekap', MonthlyRecapController::class)->name('monthly');
             });
 
-            Route::middleware('can:attendance.daily.record')->group(function (): void {
+            Route::middleware('can:attendance.daily.use')->group(function (): void {
                 Route::get('input', [DailyInputController::class, 'index'])->name('input');
                 Route::put('input', [DailyInputController::class, 'update'])->name('input.update');
             });

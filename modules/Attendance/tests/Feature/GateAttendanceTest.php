@@ -251,7 +251,7 @@ it('lets staff record at the gate and nobody else', function (?string $role, int
 
     expect(gateRow($tenant, $adit) !== null)->toBe($status === 200);
 })->with([
-    'guru' => ['guru', 200],
+    'guru' => ['guru', 403],
     'staf' => ['staf-tu', 200],
     'siswa' => ['siswa', 403],
     'tanpa peran' => [null, 403],
@@ -284,7 +284,7 @@ it('offers the scanner modes the user may use', function (string $role, bool $ga
     );
 })->with([
     ['admin-sekolah', true, true],
-    ['guru', true, true],
+    ['guru', false, true],
     ['staf-tu', true, false],
 ]);
 

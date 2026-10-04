@@ -37,7 +37,7 @@ final class ScanRequest extends AttendanceFormRequest
             'mode' => ['required', Rule::in([self::GATE_IN, self::GATE_OUT, self::LESSON])],
             'token' => ['nullable', 'required_without:student_id', 'string', 'max:128'],
             'student_id' => ['nullable', 'required_without:token', 'integer'],
-            'class_id' => ['nullable', 'required_if:mode,'.self::LESSON, 'integer'],
+            'class_id' => ['bail', 'nullable', 'required_if:mode,'.self::LESSON, 'integer', $this->recordableClassRule()],
             'period_slot_id' => ['nullable', 'required_if:mode,'.self::LESSON, 'integer'],
         ];
     }

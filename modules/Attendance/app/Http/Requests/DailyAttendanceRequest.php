@@ -10,7 +10,7 @@ final class DailyAttendanceRequest extends AttendanceFormRequest
 {
     public function authorize(): bool
     {
-        return Gate::allows('attendance.daily.record');
+        return Gate::allows('attendance.daily.use');
     }
 
     /**
@@ -19,7 +19,7 @@ final class DailyAttendanceRequest extends AttendanceFormRequest
     public function rules(): array
     {
         return [
-            'class_id' => ['required', 'integer'],
+            'class_id' => ['bail', 'required', 'integer', $this->recordableClassRule()],
             'date' => ['required', 'date_format:Y-m-d'],
             'marks' => ['required', 'array'],
             'marks.*.student_id' => ['required', 'integer', 'distinct'],

@@ -41,6 +41,7 @@ it('registers the attendance permissions', function () {
         'attendance.settings.manage',
         'attendance.qr.show',
         'attendance.mine.view',
+        'attendance.class.record',
     ]);
 });
 
@@ -48,7 +49,17 @@ it('opens the recap pages for every staff role', function (string $role, string 
     $tenant = attendanceTenant(role: $role, slug: "akses-{$role}");
 
     get(school($tenant->slug, $path))->assertOk();
-})->with(['admin-sekolah', 'guru', 'staf-tu'])->with(['/absensi', '/absensi/rekap', '/absensi/input']);
+})->with(['admin-sekolah', 'staf-tu'])->with(['/absensi', '/absensi/rekap', '/absensi/input']);
+
+it('gives a teacher the input page but not the school-wide recaps', function (string $path, int $status) {
+    $tenant = attendanceTenant(role: 'guru', slug: 'akses-guru');
+
+    get(school($tenant->slug, $path))->assertStatus($status);
+})->with([
+    ['/absensi/input', 200],
+    ['/absensi', 403],
+    ['/absensi/rekap', 403],
+]);
 
 it('keeps the settings page for the school admin', function (string $role, int $status) {
     $tenant = attendanceTenant(role: $role, slug: "atur-{$role}");
@@ -95,9 +106,22 @@ it('shows each role the menu entries it may use', function (string $role, array 
     expect(attendanceMenu($tenant->slug))->toBe($labels);
 })->with([
     'admin' => ['admin-sekolah', ['Rekap Hari Ini', 'Input Absensi', 'Jam Pelajaran', 'Pindai QR', 'Rekap Bulanan', 'Pengaturan']],
-    'guru' => ['guru', ['Rekap Hari Ini', 'Input Absensi', 'Jam Pelajaran', 'Pindai QR', 'Rekap Bulanan']],
+    'guru' => ['guru', []],
     'staf' => ['staf-tu', ['Rekap Hari Ini', 'Input Absensi', 'Pindai QR', 'Rekap Bulanan']],
 ]);
+
+it('gives a teacher an Absensi Saya menu with the own-class pages only', function () {
+    $tenant = attendanceTenant(role: 'guru', slug: 'menu-saya-guru');
+
+    get(school($tenant->slug, '/beranda'))->assertInertia(function (Assert $page): void {
+        $nav = collect($page->toArray()['props']['tenantNav']);
+        $mine = $nav->firstWhere('label', 'Absensi Saya');
+
+        expect($nav->pluck('label')->contains('Absensi'))->toBeFalse()
+            ->and($mine['group'])->toBe('Saya')
+            ->and(collect($mine['children'])->pluck('label')->all())->toBe(['Input Absensi', 'Jam Pelajaran', 'Pindai QR']);
+    });
+});
 
 it('shows a student only the QR entry', function () {
     $tenant = attendanceTenant(role: 'siswa', slug: 'menu-siswa');

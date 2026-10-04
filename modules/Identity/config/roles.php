@@ -48,9 +48,7 @@ return [
             'core.teaching.view',
             'core.master.view',
             'core.academic.view',
-            'attendance.view',
-            'attendance.daily.record',
-            'attendance.lesson.record',
+            'attendance.class.record',
         ],
     ],
 

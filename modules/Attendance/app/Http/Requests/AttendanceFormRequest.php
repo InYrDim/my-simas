@@ -2,7 +2,10 @@
 
 namespace Modules\Attendance\App\Http\Requests;
 
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
+use Modules\Attendance\App\Domain\Queries\ClassChoices;
 
 /**
  * Base for the attendance writes: Indonesian messages (the app locale
@@ -10,6 +13,21 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 abstract class AttendanceFormRequest extends FormRequest
 {
+    /**
+     * Refuses a class the signed-in user may not record (a teacher holding
+     * only the own-class permission, asking for another class).
+     */
+    protected function recordableClassRule(): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail): void {
+            $userId = Auth::id();
+
+            if (! app(ClassChoices::class)->mayRecord((int) $value, $userId === null ? null : (int) $userId)) {
+                $fail('Kelas ini bukan kelas yang Anda ajar.');
+            }
+        };
+    }
+
     /**
      * @return array<string, string>
      */

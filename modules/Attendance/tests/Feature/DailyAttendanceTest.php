@@ -235,7 +235,6 @@ it('lets every staff role save and refuses the others', function (?string $role,
 
     expect(dailyRow($tenant, $adit) !== null)->toBe($allowed);
 })->with([
-    'guru' => ['guru', true],
     'staf' => ['staf-tu', true],
     'siswa' => ['siswa', false],
     'tanpa peran' => [null, false],
