@@ -19,6 +19,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Behind a Cloudflare Tunnel the app sees plain http from localhost;
+        // trust the forwarded headers so generated URLs and redirects use
+        // https and the public host.
+        $middleware->trustProxies(at: '*');
+
         $middleware->web(append: [
             // Tenant resolution reads the session (school code / logged-in
             // school), so it runs after StartSession — see the priority
