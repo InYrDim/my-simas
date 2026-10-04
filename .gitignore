@@ -45,3 +45,4 @@ yarn-error.log
 /tests/Browser/Screenshots
 /test-results
 /playwright-report
+/.obsidian
