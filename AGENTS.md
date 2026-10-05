@@ -471,3 +471,19 @@ dan kartu hilang setelah semua langkah wajib selesai. Profil dianggap
 selesai bila Tingkat sudah ada (di-seed saat profil disimpan); jurusan
 wajib hanya untuk jenjang yang memakainya. Rincian:
 modules/Core/CONTRACT.md, docs/architecture/modular-monolith.md.
+
+## Kelas Saya guru (Fase 13)
+
+Menu guru "Kelas Saya" (grup "Saya") kini satu pintu: Kelas Aktif,
+Jadwal Hari Ini, Absensi Kelas dan Riwayat Absensi; "Absensi Saya" tetap
+ada tapi kosong ("Segera hadir"). Kontrak publik baru Core
+`TeacherSchedule` (`week`/`onDay`, DTO `ScheduleDay`/`ScheduleLesson`)
+memberi Attendance jadwal pelajaran; halaman `/saya/kelas` lama dan entri
+menunya dihapus (Jadwal Mengajar tetap). Jam pelajaran menentukan
+segalanya: hanya jam yang sedang berlangsung yang bisa diisi di Absensi
+Kelas, kartu Jadwal Hari Ini hanya bisa dicentang setelah jamnya selesai
+(`lesson_checks`, ikut terisi saat absensi disimpan), dan koreksi di luar
+jam lewat Riwayat Absensi. Halaman sekolah (Input harian, Jam Pelajaran
+sekolah) kini milik admin/staf-tu; guru tetap bisa Pindai QR. Setelah
+rilis: `php artisan migrate`. Rincian: modules/Attendance/CONTRACT.md,
+modules/Core/CONTRACT.md, docs/architecture/modular-monolith.md.

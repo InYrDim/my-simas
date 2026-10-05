@@ -74,19 +74,3 @@ it('keeps the profile page from a role without core.me.view', function () {
 
     get(school($tenant->slug, '/saya/profil'))->assertForbidden();
 });
-
-it('shows a teacher the classes page and keeps it from other roles', function (string $role, int $status) {
-    $tenant = TenantFactory::new()->create(['slug' => "me-kelas-{$role}"]);
-    $account = UserFactory::new()->forTenant($tenant->id)->create(['email' => "{$role}@me-kelas.test"]);
-
-    app(TenantContext::class)->run($tenant->id, fn () => $account->assignTenantRole($role));
-
-    actingAs($account->fresh());
-
-    get(school($tenant->slug, '/saya/kelas'))->assertStatus($status);
-})->with([
-    ['guru', 200],
-    ['staf-tu', 403],
-    ['siswa', 403],
-    ['admin-sekolah', 403],
-]);

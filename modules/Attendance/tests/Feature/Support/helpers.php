@@ -5,7 +5,12 @@ namespace Modules\Attendance\Tests\Feature;
 use Modules\Core\App\Domain\Models\AcademicYear;
 use Modules\Core\App\Domain\Models\ClassGroup;
 use Modules\Core\App\Domain\Models\Grade;
+use Modules\Core\App\Domain\Models\PeriodSlot;
 use Modules\Core\App\Domain\Models\Student;
+use Modules\Core\App\Domain\Models\Subject;
+use Modules\Core\App\Domain\Models\Teacher;
+use Modules\Core\App\Domain\Models\TeachingAssignment;
+use Modules\Core\App\Domain\Models\TimetableEntry;
 use Modules\Identity\App\Domain\Models\User;
 use Modules\Identity\Database\Factories\UserFactory;
 use Modules\Platform\App\Contracts\TenantContext;
@@ -93,4 +98,60 @@ function attendanceStudent(Tenant $tenant, ClassGroup $class, string $name, arra
         'class_id' => $class->id,
         ...$attributes,
     ]));
+}
+
+/**
+ * A lesson slot of the bell schedule; Friday 07:15–08:00 by default.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function attendanceSlot(Tenant $tenant, array $attributes = []): PeriodSlot
+{
+    return attendanceSchool($tenant, fn (): PeriodSlot => PeriodSlot::factory()->create([
+        'day' => 5,
+        'start_time' => '07:15:00',
+        'end_time' => '08:00:00',
+        ...$attributes,
+    ]));
+}
+
+/**
+ * A subject taught in the class by a teacher and put in the slot: the
+ * subject, the teacher behind `$userId` (when given), the class teaching
+ * assignment and the timetable entry.
+ */
+function attendanceTeach(Tenant $tenant, ClassGroup $class, PeriodSlot $slot, string $subjectName = 'Matematika', ?int $userId = null): Subject
+{
+    return attendanceSchool($tenant, function () use ($class, $slot, $subjectName, $userId): Subject {
+        $subject = Subject::factory()->create(['name' => $subjectName]);
+        // One teacher record per account: a second lesson of the same
+        // account belongs to the same timetable.
+        $teacher = $userId === null ? null : Teacher::query()->where('user_id', $userId)->first();
+        $teacher ??= Teacher::factory()->create(['name' => "Guru {$subjectName}"]);
+
+        if ($userId !== null && $teacher->user_id === null) {
+            $teacher->forceFill(['user_id' => $userId])->save();
+        }
+
+        TeachingAssignment::factory()->create(['class_id' => $class->id, 'subject_id' => $subject->id, 'teacher_id' => $teacher->id]);
+        TimetableEntry::factory()->create(['period_slot_id' => $slot->id, 'class_id' => $class->id, 'subject_id' => $subject->id]);
+
+        return $subject;
+    });
+}
+
+/**
+ * The signed-in teacher's own lesson: a class of the active year with a
+ * subject taught and scheduled in a Friday slot.
+ *
+ * @param  array<string, mixed>  $slotAttributes
+ * @return array{0: ClassGroup, 1: PeriodSlot, 2: Subject}
+ */
+function attendanceOwnLesson(Tenant $tenant, array $slotAttributes = [], string $subjectName = 'Matematika'): array
+{
+    $slot = attendanceSlot($tenant, $slotAttributes);
+    $class = attendanceClass($tenant);
+    $subject = attendanceTeach($tenant, $class, $slot, $subjectName, auth()->id());
+
+    return [$class, $slot, $subject];
 }

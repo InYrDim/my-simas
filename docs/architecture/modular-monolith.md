@@ -63,7 +63,7 @@ Vendor/Laravel  ←  Shared  ←  Platform (Fase 1)  ←  Identity  ←  Core  �
 | Shared   | `Shared`   | Generic technical utilities           | Everything (by definition)                                       |
 | Platform | `Platform` | Tenancy, module registry, permissions | `Modules\Platform\App\Contracts`                                 |
 | Identity | `Identity` | Tenant-scoped users, auth lifecycle, user management | `Modules\Identity\App\Contracts` (`ResolvesUsers`, `UserRecord`, `AccountProvisioner`, `NewAccount`) |
-| Core     | `Core`     | Master data, academic management, CSV import, statistics and reports, WhatsApp notices | `Modules\Core\App\Contracts` (`StudentDirectory`, `ClassDirectory`, `BellSchedule`, `ReportRegistry`, `Report`, `StatisticsRegistry`, `StatisticsProvider`, `NoticeRegistry`, `GuardianNotifier`, `StudentAdmission`, DTOs) |
+| Core     | `Core`     | Master data, academic management, CSV import, statistics and reports, WhatsApp notices | `Modules\Core\App\Contracts` (`StudentDirectory`, `ClassDirectory`, `BellSchedule`, `TeacherSchedule`, `ReportRegistry`, `Report`, `StatisticsRegistry`, `StatisticsProvider`, `NoticeRegistry`, `GuardianNotifier`, `StudentAdmission`, DTOs) |
 | Attendance | `Attendance` | Student attendance (Absensi): gate, daily, per lesson, QR | `Modules\Attendance\App\Contracts` (none — nothing uses it)   |
 | Ppdb     | `Ppdb`     | Admissions (PPDB): applicants' accounts, registration, selection, announcement, re-registration | `Modules\Ppdb\App\Contracts` (none — nothing uses it) |
 
@@ -683,6 +683,36 @@ The last module that was a mockup, and the first feature module with a
   a plan's modules or switches it on for a school.
 - **After the release** run `php artisan migrate` and
   `php artisan roles:sync` (new permissions for admin-sekolah and staf-tu).
+
+## Kelas Saya for teachers (Fase 13)
+
+The teacher's workspace merges what used to be two sidebar entries —
+Core's Kelas Saya and Attendance's Absensi Saya — into one: **Kelas Saya**
+with Kelas Aktif, Jadwal Hari Ini, Absensi Kelas and Riwayat Absensi.
+"Absensi Saya" stays on the sidebar as a "Segera hadir" placeholder.
+
+- **The new public surface is Core's `TeacherSchedule`** (`week`, `onDay`,
+  `ScheduleDay` / `ScheduleLesson`): a feature module reads the lesson
+  timetable without Core's models. Core's own Jadwal Mengajar reads it
+  too; the old internal query is gone.
+- **Attendance owns the pages.** Three of the four pages are attendance
+  data, and Core may not depend on Attendance, so the merged menu is
+  registered by Attendance (`attendance.class.record`; Absensi Kelas and
+  Riwayat Absensi additionally need the school's lesson switch through the
+  new composite `attendance.class.lesson.use`). Core's `/saya/kelas` page,
+  its route and its sidebar entry are removed; `/saya/jadwal` (Jadwal
+  Mengajar, all lessons) stays Core's.
+- **The school's clock decides.** A lesson is `upcoming`, `running` or
+  `finished` on the tenant's timezone; only a running lesson may be filled
+  on Absensi Kelas (a future day is refused; the place to correct a record
+  is Riwayat Absensi), and the todo checkbox can only be ticked after the
+  lesson's hour. `lesson_checks` stores the teacher's own done mark and is
+  also written when the teacher saves the attendance.
+- **The school-wide pages stay the office's**: `/absensi/input` needs
+  `attendance.daily.record`, `/absensi/jam-pelajaran` needs
+  `attendance.lesson.school`; a teacher keeps only `Pindai QR`.
+- **After the release** run `php artisan migrate` (the `lesson_checks`
+  table).
 
 ## School setup checklist (Fase 12)
 

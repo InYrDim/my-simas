@@ -40,10 +40,6 @@ Route::middleware('web')->group(function (): void {
         Route::prefix('saya')->name('core.me.')->middleware('can:core.me.view')->group(function (): void {
             Route::get('profil', [MeController::class, 'profile'])->name('profile');
 
-            Route::get('kelas', [MeController::class, 'classes'])
-                ->middleware('can:core.teaching.view')
-                ->name('classes');
-
             Route::get('jadwal', [MeController::class, 'timetable'])
                 ->middleware('can:core.teaching.view')
                 ->name('timetable');
