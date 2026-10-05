@@ -87,7 +87,16 @@
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
+            "bash script/toggle_env.sh local",
+            "@php artisan config:clear --ansi",
             "@php artisan dev"
+        ],
+        "prod": [
+            "Composer\\Config::disableProcessTimeout",
+            "bash script/toggle_env.sh production",
+            "@php artisan config:clear --ansi",
+            "npm run build",
+            "@php artisan optimize --ansi"
         ],
         "lint": [
             "pint --parallel"
