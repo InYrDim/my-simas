@@ -69,7 +69,7 @@ it('creates a tenant-scoped token row and emails a school-coded link', function 
     // The queued mail carries the tenant-hosted URL (built by the User
     // model via TenantUrl before queueing).
     Mail::assertQueued(ResetPasswordMail::class, function (ResetPasswordMail $mail) use ($tenant): bool {
-        return str_contains($mail->resetUrl, 'school='.$tenant->id);
+        return str_contains($mail->resetUrl, 'school='.$tenant->slug);
     });
 });
 

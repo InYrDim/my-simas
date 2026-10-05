@@ -319,8 +319,8 @@ boot.
   logged out on mismatch.
 - Queue worker + scheduler run centrally; jobs carry their tenant in
   the payload (Stage 4 propagation) — no per-tenant workers needed.
-- Dev: `localhost:8000/login` for schools (school code = tenant id,
-  printed by `db:seed`), `console.localhost:8000/login` for the provider
+- Dev: `localhost:8000/login` for schools (school code = tenant slug,
+  printed by `db:seed`; a school's own address is `/<code>/login`), `console.localhost:8000/login` for the provider
   (`*.localhost` resolves without /etc/hosts entries); seed demo
   tenants with `php artisan db:seed` (local only).
 

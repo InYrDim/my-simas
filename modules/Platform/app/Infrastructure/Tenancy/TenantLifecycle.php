@@ -37,6 +37,29 @@ final class TenantLifecycle
     }
 
     /**
+     * Change the school code (the tenant's slug). Links and QR codes that
+     * carry the old code stop resolving at once, so the old lookup is
+     * flushed with the tenant itself.
+     */
+    public function changeCode(Tenant $tenant, string $code): Tenant
+    {
+        $previous = $tenant->slug;
+
+        if ($previous === $code) {
+            return $tenant;
+        }
+
+        $tenant->slug = $code;
+        $tenant->save();
+
+        TenantHydrator::flush($tenant->id);
+        SchoolCodeTenantResolver::forget($previous);
+        SchoolCodeTenantResolver::forget($code);
+
+        return $tenant;
+    }
+
+    /**
      * @param  array{name: string, timezone: string, domain: string|null}  $attributes
      */
     public function updateProfile(Tenant $tenant, array $attributes): Tenant

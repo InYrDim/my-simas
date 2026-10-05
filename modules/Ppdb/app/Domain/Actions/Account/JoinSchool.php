@@ -53,17 +53,14 @@ final class JoinSchool
      */
     private function resolve(string $code): string
     {
-        // A school code is a 26-character id; anything else is not worth a query.
-        if (strlen($code) !== 26 || ! ctype_alnum($code)) {
-            throw $this->refused();
-        }
+        $tenant = $this->tenants->findByCode($code);
 
-        $tenant = $this->tenants->findMany([$code])[$code] ?? null;
-
-        if ($tenant === null
+        if (
+            $tenant === null
             || $tenant->status->value !== 'active'
             || ! $this->modules->isEnabled('ppdb', $tenant->id)
-            || ! $this->context->run($tenant->id, fn (): bool => AdmissionPeriod::active() !== null)) {
+            || ! $this->context->run($tenant->id, fn (): bool => AdmissionPeriod::active() !== null)
+        ) {
             throw $this->refused();
         }
 

@@ -172,7 +172,7 @@ it('sends the reset link through the Stage 4 machinery', function () {
 
     Mail::assertQueued(
         ResetPasswordMail::class,
-        fn (ResetPasswordMail $mail): bool => str_contains($mail->resetUrl, 'school='.$tenant->id),
+        fn (ResetPasswordMail $mail): bool => str_contains($mail->resetUrl, 'school='.$tenant->slug),
     );
 
     // A token row was minted for the TARGET's tenant.

@@ -22,7 +22,8 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
  *                             authoritative; a `school` input cannot
  *                             switch a logged-in user to another school
  * - guest + `school` input  → resolved and remembered in the session
- *                             (login form field, emailed links)
+ *                             (login form field, emailed links, or the
+ *                             school's own login address `/{school}/login`)
  * - guest + session tenant  → the school chosen earlier in this session
  *
  * Fails closed: an unknown or malformed code leaves the request with NO
@@ -99,6 +100,12 @@ final class ResolveTenant
 
         if (is_string($submitted) && trim($submitted) !== '') {
             return $submitted;
+        }
+
+        $inPath = $request->route('school');
+
+        if (is_string($inPath) && trim($inPath) !== '') {
+            return $inPath;
         }
 
         return $remembered;

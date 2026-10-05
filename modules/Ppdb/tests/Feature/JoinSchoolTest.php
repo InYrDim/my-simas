@@ -64,6 +64,15 @@ it('joins the school with its code, however it is typed', function () {
     expect($account->fresh()->tenant_id)->toBe($tenant->id);
 });
 
+it('joins the school by its school code', function () {
+    [$tenant] = ppdbOpenSchool('gabung-kode');
+    $account = ppdbAccount();
+
+    post(JOIN_URL, ['code' => ' Gabung-Kode '])->assertRedirect(route('ppdb.account.home'));
+
+    expect($account->fresh()->tenant_id)->toBe($tenant->id);
+});
+
 it('refuses every school that cannot be joined with the very same message', function () {
     [$open] = ppdbOpenSchool('gabung-buka');
 

@@ -7,6 +7,8 @@ use Modules\Platform\App\Domain\Models\Plan;
 use Modules\Platform\App\Domain\Models\Subscription;
 use Modules\Platform\App\Domain\Models\SubscriptionStatus;
 use Modules\Platform\App\Domain\Models\TenantStatus;
+use Modules\Platform\App\Infrastructure\Tenancy\SchoolCodeTenantResolver;
+use Modules\Platform\App\Infrastructure\Tenancy\TenantMissingException;
 use Modules\Platform\Database\Factories\InvoiceFactory;
 use Modules\Platform\Database\Factories\PlanFactory;
 use Modules\Platform\Database\Factories\ProviderUserFactory;
@@ -161,6 +163,31 @@ describe('tenants', function () {
             'domain' => 'taken.sch.id',
         ])->assertSessionHasErrors('domain');
     });
+
+    it('changes the school code and the old code stops resolving at once', function () {
+        signInProvider();
+        $tenant = TenantFactory::new()->create(['slug' => 'sekolah-a']);
+        $resolver = app(SchoolCodeTenantResolver::class);
+
+        expect($resolver->resolve('sekolah-a')->id)->toBe($tenant->id);
+
+        put(console("/tenants/{$tenant->id}/code"), ['code' => ' Sekolah-Baru '])
+            ->assertSessionDoesntHaveErrors();
+
+        expect($tenant->refresh()->slug)->toBe('sekolah-baru')
+            ->and($resolver->resolve('sekolah-baru')->id)->toBe($tenant->id)
+            ->and(fn () => $resolver->resolve('sekolah-a'))->toThrow(TenantMissingException::class);
+    });
+
+    it('refuses a school code that is malformed, reserved or taken', function (string $code) {
+        signInProvider();
+        $tenant = TenantFactory::new()->create(['slug' => 'sekolah-a']);
+        TenantFactory::new()->create(['slug' => 'sudah-dipakai']);
+
+        put(console("/tenants/{$tenant->id}/code"), ['code' => $code])->assertSessionHasErrors('code');
+
+        expect($tenant->refresh()->slug)->toBe('sekolah-a');
+    })->with(['spaces' => 'kode sekolah', 'underscore' => 'kode_sekolah', 'reserved' => 'admin', 'taken' => 'sudah-dipakai', 'too short' => 'ab']);
 
     it('sets module flags but keeps onboarding modules on', function () {
         signInProvider();

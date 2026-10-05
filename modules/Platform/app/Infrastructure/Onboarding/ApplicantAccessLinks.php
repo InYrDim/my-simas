@@ -9,6 +9,7 @@ use Modules\Platform\App\Domain\Models\Applicant;
 use Modules\Platform\App\Infrastructure\Mail\ApplicantInvitationMail;
 use Modules\Platform\App\Infrastructure\Mail\ApplicantPasswordResetMail;
 use Modules\Platform\App\Infrastructure\Mail\ApplicantSchoolResetMail;
+use Modules\Platform\App\Infrastructure\Tenancy\TenantHydrator;
 
 /**
  * Mails an applicant the links that let them set a password: the
@@ -56,7 +57,7 @@ final class ApplicantAccessLinks
             Mail::to($applicant->email)->queue(new ApplicantSchoolResetMail(
                 $this->urls->url($applicant->tenant_id, 'forgot-password'),
                 $applicant->name,
-                $applicant->tenant_id,
+                (string) (TenantHydrator::find($applicant->tenant_id)?->slug ?? $applicant->tenant_id),
             ));
 
             return;

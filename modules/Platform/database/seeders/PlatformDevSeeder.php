@@ -17,7 +17,7 @@ use Modules\Platform\Database\Factories\SubscriptionFactory;
 /**
  * Local-development tenants. NEVER runs outside local: it creates
  * predictable slugs (sekolah-a/sekolah-b); log in with the school code
- * printed below (the tenant id).
+ * printed below (the tenant slug).
  */
 class PlatformDevSeeder extends Seeder
 {
@@ -44,7 +44,7 @@ class PlatformDevSeeder extends Seeder
                 }
             }
 
-            $this->command->info("Seeded tenant [{$tenant->slug}] ({$tenant->timezone}) — school code: {$tenant->id}");
+            $this->command->info("Seeded tenant [{$tenant->slug}] ({$tenant->timezone}) — school code: {$tenant->slug}");
         }
 
         $this->call(BillingMasterDataSeeder::class);

@@ -48,7 +48,7 @@ final class DefaultTenantUrl implements TenantUrl
         }
 
         return $this->root().'/'.ltrim($path, '/').'?'.http_build_query(
-            [...$query, 'school' => $tenantId],
+            [...$query, 'school' => $tenant->slug],
             '',
             '&',
             PHP_QUERY_RFC3986,

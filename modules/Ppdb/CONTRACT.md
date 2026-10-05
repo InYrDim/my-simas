@@ -80,8 +80,8 @@ Never another feature module (Attendance), not even via its Public surface.
   pages never use it: `TenantContext::run($account->tenant_id, …)` and only
   the registration with this `account_id`. `account_id` and the school
   never come from a request.
-- **Joining** (`JoinSchool`): the school code is the tenant id the school's
-  own people type at sign-in; the school's link is
+- **Joining** (`JoinSchool`): the school code is the one the school's
+  own people type at sign-in (`TenantDirectory::findByCode`); the school's link is
   `/calon-siswa/gabung?school=<code>` (a guest is sent to sign in first and
   comes back). `TenantDirectory` + `TenantModules` + a running period decide;
   EVERY refusal (unknown, suspended, no PPDB, no running period) gives the

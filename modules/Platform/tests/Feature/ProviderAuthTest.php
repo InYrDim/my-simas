@@ -25,7 +25,7 @@ it('refuses the provider console on the school host', function () {
     TenantFactory::new()->create(['slug' => 'sekolah-a']);
 
     get(school('sekolah-a', '/dashboard'))->assertNotFound();
-    get('http://localhost/platform/login')->assertNotFound();
+    get('http://localhost/platform/tenants')->assertNotFound();
 });
 
 it('logs a provider user in on the central host', function () {

@@ -9,7 +9,8 @@ use Modules\Platform\App\Domain\Models\Tenant;
 /**
  * The one and only tenant resolution strategy: by school code.
  *
- * The school code is the tenant id (ULID) today; it becomes the NPSN
+ * The school code is the tenant id (ULID) or the tenant's unique slug
+ * (the readable form used in `/{slug}/login`); it may become the NPSN
  * later — this class is the only place that mapping lives. Hosts play
  * no part: a tenant is chosen by the code typed on the login form (or
  * carried by an emailed link) and then remembered in the session.
@@ -24,11 +25,21 @@ final class SchoolCodeTenantResolver implements TenantResolver
      */
     private const CACHE_TTL = 300;
 
+    /**
+     * Drop the cached code → tenant lookup (the code was changed).
+     */
+    public static function forget(string $code): void
+    {
+        Cache::forget('platform:tenant:code:'.strtolower(trim($code)));
+    }
+
     public function resolve(string $code): TenantData
     {
         $code = strtolower(trim($code));
 
-        if (! preg_match('/^[0-9a-hjkmnp-tv-z]{26}$/', $code)) {
+        $isId = (bool) preg_match('/^[0-9a-hjkmnp-tv-z]{26}$/', $code);
+
+        if (! $isId && ! preg_match('/^[a-z0-9]+(-[a-z0-9]+)*$/', $code)) {
             throw new TenantMissingException($code);
         }
 
@@ -37,7 +48,8 @@ final class SchoolCodeTenantResolver implements TenantResolver
         $tenantId = Cache::remember(
             $cacheKey,
             self::CACHE_TTL,
-            fn (): ?string => Tenant::query()->where('id', $code)->value('id'),
+            fn (): ?string => ($isId ? Tenant::query()->where('id', $code)->value('id') : null)
+                ?? Tenant::query()->where('slug', $code)->value('id'),
         );
 
         if ($tenantId === null) {

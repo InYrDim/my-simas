@@ -53,9 +53,17 @@ it('runs without tenant context for an unknown or malformed school code', functi
         ->assertOk()
         ->assertSee('tenant-id:central', false);
 
-    get('/tenant-probe?school=sekolah-a')
+    get('/tenant-probe?school=Not%20A%20School!')
         ->assertOk()
         ->assertSee('tenant-id:central', false);
+});
+
+it('resolves a school by its slug as well', function () {
+    TenantFactory::new()->create(['slug' => 'sekolah-a']);
+
+    get('/tenant-probe?school=sekolah-a')
+        ->assertOk()
+        ->assertSee('tenant-id:sekolah-a', false);
 });
 
 it('forgets a remembered school when a new unknown code replaces it', function () {

@@ -52,18 +52,19 @@ it('throws for codes that match no tenant', function () {
     resolver()->resolve('01ARZ3NDEKTSV4RRFFQ69G5FAV');
 })->throws(TenantMissingException::class);
 
-it('throws for codes that cannot be a tenant id without querying', function () {
+it('throws for codes that are neither a tenant id nor a slug without querying', function () {
     DB::enableQueryLog();
 
-    expect(fn () => resolver()->resolve('sekolah-a'))->toThrow(TenantMissingException::class)
+    expect(fn () => resolver()->resolve('Sekolah A!'))->toThrow(TenantMissingException::class)
         ->and(DB::getQueryLog())->toBe([]);
 });
 
-it('does not resolve by slug or custom domain any more', function () {
-    createTenant(['slug' => 'sekolah-a', 'domain' => 'sekolah-a.sch.id']);
+it('resolves by slug but not by custom domain', function () {
+    $tenant = createTenant(['slug' => 'sekolah-a', 'domain' => 'sekolah-a.sch.id']);
 
-    expect(fn () => resolver()->resolve('sekolah-a'))->toThrow(TenantMissingException::class)
-        ->and(fn () => resolver()->resolve('sekolah-a.sch.id'))->toThrow(TenantMissingException::class);
+    expect(resolver()->resolve('Sekolah-A')->id)->toBe($tenant->id)
+        ->and(fn () => resolver()->resolve('sekolah-a.sch.id'))->toThrow(TenantMissingException::class)
+        ->and(fn () => resolver()->resolve('sekolah-z'))->toThrow(TenantMissingException::class);
 });
 
 it('resolves suspended tenants so the middleware can return 403', function () {

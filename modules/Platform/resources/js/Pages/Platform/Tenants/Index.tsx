@@ -68,7 +68,7 @@ export default function TenantsIndex({ tenants, filters, plans }: IndexProps) {
                     type="search"
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Cari nama, slug, atau kode sekolah"
+                    placeholder="Cari nama atau kode sekolah"
                     aria-label="Cari tenant"
                 />
                 <OptionSelect
@@ -137,7 +137,7 @@ export default function TenantsIndex({ tenants, filters, plans }: IndexProps) {
                                         {tenant.name}
                                     </Link>
                                     <p className="mt-0.5 font-mono text-xs text-muted-foreground">
-                                        /{tenant.slug}
+                                        {tenant.slug}
                                     </p>
                                 </TableCell>
                                 <TableCell>
