@@ -772,3 +772,24 @@ modules and Core must not import Attendance, so Attendance owns the entry and re
 Core through `ClassDirectory`, `StudentDirectory` and the new `ClassTimetable`
 contract. Permission `attendance.class.view-own` (role `siswa`); after a release run
 `php artisan roles:sync`. Details: `modules/Attendance/CONTRACT.md`, `modules/Core/CONTRACT.md`.
+
+## Menu guru (Fase 15)
+
+The teacher's sidebar is cut to what a teacher does: Beranda, Profil Saya,
+**Jadwal Saya**, **Kelas Mengajar**, Ganti Kata Sandi. Plan:
+`docs/ai/plan/fase-15/menu-guru-plan.md`.
+
+- **One schedule.** Attendance's Jadwal Saya (`/absensi/jadwal-saya`) has the
+  tabs Hari Ini (todo list, range banner) and Minggu Ini
+  (`TeacherSchedule::week()`). Core's Jadwal Mengajar menu entry is gone; its
+  `/saya/jadwal` page stays reachable.
+- **One door for lesson attendance.** Kelas Mengajar = Kelas Aktif, Absensi
+  Kelas (tabs Isi Absensi / Koreksi; Koreksi is the old Riwayat Absensi,
+  URLs unchanged) and Pindai QR. The empty teacher "Absensi Saya" and its
+  `/absensi/segera-hadir` route are removed. Students still have Kelas Saya.
+- **No school-wide admin pages for a teacher.** Role `guru` lost
+  `core.master.view` and `core.academic.view`, so Data Induk and Statistik
+  & Laporan are not on a teacher's menu (Kelas Aktif already lists the
+  students of the teacher's classes).
+- **After a release:** `php artisan roles:sync` (it replaces a role's
+  permissions, so existing schools lose the two from `guru`).

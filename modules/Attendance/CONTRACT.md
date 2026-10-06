@@ -140,21 +140,24 @@ Never another feature module (Ppdb), not even via its Public surface.
   through Kelas Saya below. The scanner still offers a teacher the classes
   they teach or lead (`ClassDirectory::idsTaughtBy`), and every write asks
   `ClassChoices::mayRecord`. A lesson has no "terlambat".
-- **Kelas Saya** (Fase 13; `/absensi/kelas-saya`, `/absensi/jadwal-hari-ini`,
-  `/absensi/absen-kelas`, `/absensi/riwayat`, plus the kept placeholder
-  `/absensi/segera-hadir`): the teacher's workshop in one sidebar entry.
+- **Kelas Mengajar** (Fase 13, renamed in Fase 15; `/absensi/kelas-saya`,
+  `/absensi/absen-kelas`, `/absensi/riwayat`) and **Jadwal Saya**
+  (`/absensi/jadwal-saya`): the teacher's workshop in two sidebar entries.
+  Kelas Mengajar has Kelas Aktif, Absensi Kelas (tabs Isi Absensi / Koreksi,
+  the latter being the old Riwayat Absensi) and Pindai QR; the students
+  keep the name Kelas Saya.
   Core's `TeacherSchedule` gives the lessons of the active year; one
   teacher cannot be in two classes in a slot, so a slot identifies the
   lesson and the pages never take a class id. **Kelas Aktif** lists the
   classes with lessons on the schedule (a teaching assignment alone is not
-  enough); **Jadwal Hari Ini** shows today's lessons as todos with the
+  enough); **Jadwal Saya** has a tab Hari Ini with today's lessons as todos and the
   range banner ("Jadwal Mengajar Hari Ini! Sebagai Berikut" before the
   first hour, "Pembelajaran Sedang Berlangsung" inside the range,
   "Sudah Selesai Jadwal Mengajar Hari ini" after the last) and a checkbox
   that can only be ticked once the lesson's hour is over — it is also
   written when the attendance is saved (`lesson_checks`); **Absensi Kelas**
   auto-opens the lesson running now and saves it only inside its own hour
-  (`SaveOwnLessonAttendance` with `whileRunning: true`); **Riwayat Absensi**
+  (`SaveOwnLessonAttendance` with `whileRunning: true`); the **Koreksi** tab
   lists a day's lessons with their saved recap and edits any of them at
   any time (`whileRunning: false`, never a future day). A slot not on the
   teacher's timetable, another school's ids and a class that is not theirs
@@ -163,8 +166,10 @@ Never another feature module (Ppdb), not even via its Public surface.
   the same. The teacher's old pages are gone: daily input is
   `attendance.daily.record`'s (admin, staf-tu), the school-wide lesson page
   `attendance.lesson.school`'s (admin), and `Pindai QR` stays open to a
-  teacher, as a Kelas Saya child (`attendance.scan.use`, home shortcut). "Absensi Saya" for a teacher is kept empty
-  (`Attendance/Soon`, "Segera hadir").
+  teacher, as a Kelas Saya child (`attendance.scan.use`, home shortcut).
+  Jadwal Saya's second tab, Minggu Ini, is the whole week from
+  `TeacherSchedule::week()` (Core's `/saya/jadwal` stays reachable but has
+  no menu entry). The teacher's empty "Absensi Saya" placeholder is gone.
 - **Switches** (`/absensi/pengaturan`): `attendance_settings.gate_enabled`
   and `lesson_enabled` (both on by default) let a school turn the gate and
   the lesson attendance off. Routes, sidebar entries and the scanner ask

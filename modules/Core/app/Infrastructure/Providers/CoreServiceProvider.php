@@ -153,14 +153,6 @@ class CoreServiceProvider extends ServiceProvider
                 'order' => 11,
             ],
             [
-                'label' => 'Jadwal Mengajar',
-                'icon' => 'calendar-clock',
-                'route' => 'core.me.timetable',
-                'permission' => 'core.teaching.view',
-                'group' => 'Saya',
-                'order' => 15,
-            ],
-            [
                 'label' => 'Master Data',
                 'icon' => 'database',
                 'route' => 'core.master.school',

@@ -108,7 +108,7 @@ it('refuses to delete a major that a class still uses', function () {
 });
 
 it('forbids a teacher from editing majors', function () {
-    $tenant = schoolAs('major-e', 'guru');
+    $tenant = schoolAs('major-e', 'staf-tu');
 
     post(school($tenant->slug, '/master/jurusan'), ['code' => 'IPA', 'name' => 'IPA', 'kind' => 'Peminatan'])->assertForbidden();
 });
@@ -254,7 +254,7 @@ it('validates subjects', function () {
 });
 
 it('forbids a teacher from editing subjects but lets them read', function () {
-    $tenant = schoolAs('subj-c', 'guru');
+    $tenant = schoolAs('subj-c', 'staf-tu');
 
     get(school($tenant->slug, '/master/mata-pelajaran'))->assertOk();
     post(school($tenant->slug, '/master/mata-pelajaran'), ['code' => 'X', 'name' => 'X', 'group' => 'Umum', 'kkm' => 70])->assertForbidden();

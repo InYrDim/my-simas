@@ -58,7 +58,7 @@ final class ScanWindow
         }
 
         if ($now >= $this->minutes($slot->endsAt)) {
-            throw new AttendanceException("Jam pelajaran {$range} sudah selesai. Koreksi lewat Riwayat Absensi.");
+            throw new AttendanceException("Jam pelajaran {$range} sudah selesai. Koreksi lewat tab Koreksi di Absensi Kelas.");
         }
     }
 

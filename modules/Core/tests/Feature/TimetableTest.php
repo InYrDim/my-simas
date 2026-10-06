@@ -91,8 +91,8 @@ it('refuses a slot that is not a lesson or does not exist', function () {
         ->assertSessionHasErrors('period_slot_id');
 });
 
-it('lets a teacher read the timetable but not change it', function () {
-    [$tenant, $class, $slot, $subject] = timetableSetup('tt-guru', 'guru');
+it('lets office staff read the timetable but not change it', function () {
+    [$tenant, $class, $slot, $subject] = timetableSetup('tt-guru', 'staf-tu');
 
     get(school($tenant->slug, '/akademik/jadwal'))->assertOk();
 

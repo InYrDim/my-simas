@@ -9,6 +9,7 @@ import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
 
 import AttendancePage from '../../Components/AttendancePage';
+import ClassRollTabs from '../../Components/ClassRollTabs';
 import OwnLessonSheet from '../../Components/OwnLessonSheet';
 import type { RollStudent } from '../../Components/LessonRoll';
 import { lessonStateMeta } from '../../Components/status';
@@ -57,6 +58,8 @@ export default function ClassRoll({
             description={date.label}
             width="max-w-3xl"
         >
+            <ClassRollTabs current="fill" />
+
             {lessons.length === 0 ? (
                 <EmptyState>
                     Tidak ada jadwal mengajar hari ini. Absensi jam pelajaran
@@ -121,7 +124,7 @@ export default function ClassRoll({
                                 previous={previous}
                                 editable={editable}
                                 updateUrl={update.url()}
-                                lockedNote="Di luar jam pelajaran, absensi tidak dapat diisi di sini. Ubah data lewat Riwayat Absensi."
+                                lockedNote="Di luar jam pelajaran, absensi tidak dapat diisi di sini. Ubah data lewat tab Koreksi."
                             />
                         </>
                     )}

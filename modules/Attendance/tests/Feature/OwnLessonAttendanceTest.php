@@ -51,7 +51,7 @@ it('opens the lesson running now and saves its roll', function () {
         ->and(attendanceSchool($tenant, fn () => LessonCheck::query()->sole()->class_id))->toBe($class->id);
 
     // The save ticks the lesson off today's todo.
-    get(school($tenant->slug, '/absensi/jadwal-hari-ini'))->assertInertia(fn (Assert $page) => $page
+    get(school($tenant->slug, '/absensi/jadwal-saya'))->assertInertia(fn (Assert $page) => $page
         ->where('lessons.0.checked', true)
         ->where('lessons.0.recorded', true));
 });

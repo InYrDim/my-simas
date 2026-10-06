@@ -11,6 +11,7 @@ import { Input } from '@shared/components/ui/input';
 import { TableCell, TableRow } from '@shared/components/ui/table';
 
 import AttendancePage from '../../Components/AttendancePage';
+import ClassRollTabs from '../../Components/ClassRollTabs';
 import Filter from '../../Components/Filter';
 import OwnLessonSheet from '../../Components/OwnLessonSheet';
 import type { RollStudent } from '../../Components/LessonRoll';
@@ -63,10 +64,12 @@ export default function History({
 }: HistoryProps) {
     return (
         <AttendancePage
-            title="Riwayat Absensi"
+            title="Koreksi Absensi"
             description="Catatan absensi jam pelajaran Anda"
             width="max-w-3xl"
         >
+            <ClassRollTabs current="correct" />
+
             <div className="mb-6 flex flex-col gap-4 sm:flex-row">
                 <Filter label="Tanggal" htmlFor="history-date">
                     <Input

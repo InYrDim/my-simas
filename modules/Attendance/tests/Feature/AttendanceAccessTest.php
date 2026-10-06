@@ -108,21 +108,21 @@ it('shows each role the menu entries it may use', function (string $role, array 
     'staf' => ['staf-tu', ['Rekap Hari Ini', 'Input Absensi', 'Pindai QR', 'Rekap Bulanan']],
 ]);
 
-it('gives a teacher one Kelas Saya menu and an empty Absensi Saya', function () {
+it('gives a teacher Jadwal Saya and one Kelas Mengajar menu', function () {
     $tenant = attendanceTenant(role: 'guru', slug: 'menu-saya-guru');
 
     get(school($tenant->slug, '/beranda'))->assertInertia(function (Assert $page): void {
         $nav = collect($page->toArray()['props']['tenantNav']);
-        $mine = $nav->firstWhere('label', 'Kelas Saya');
-        $empty = $nav->firstWhere('label', 'Absensi Saya');
+        $mine = $nav->firstWhere('label', 'Kelas Mengajar');
+        $schedule = $nav->firstWhere('label', 'Jadwal Saya');
 
-        expect($nav->pluck('label')->contains('Absensi'))->toBeFalse()
+        expect($nav->pluck('label')->all())->toBe(['Beranda', 'Profil Saya', 'Jadwal Saya', 'Kelas Mengajar'])
             ->and($mine['group'])->toBe('Saya')
             ->and($mine['href'])->toBe('/absensi/kelas-saya')
-            ->and(collect($mine['children'])->pluck('label')->all())->toBe(['Kelas Aktif', 'Jadwal Hari Ini', 'Absensi Kelas', 'Pindai QR', 'Riwayat Absensi'])
-            ->and(collect($mine['children'])->pluck('href')->all())->toBe(['/absensi/kelas-saya', '/absensi/jadwal-hari-ini', '/absensi/absen-kelas', '/absensi/pindai', '/absensi/riwayat'])
-            ->and($empty['group'])->toBe('Saya')
-            ->and($empty['href'])->toBe('/absensi/segera-hadir');
+            ->and(collect($mine['children'])->pluck('label')->all())->toBe(['Kelas Aktif', 'Absensi Kelas', 'Pindai QR'])
+            ->and(collect($mine['children'])->pluck('href')->all())->toBe(['/absensi/kelas-saya', '/absensi/absen-kelas', '/absensi/pindai'])
+            ->and($schedule['group'])->toBe('Saya')
+            ->and($schedule['href'])->toBe('/absensi/jadwal-saya');
     });
 });
 
@@ -130,7 +130,13 @@ it('opens the own pages for a teacher', function (string $path) {
     $tenant = attendanceTenant(role: 'guru', slug: 'kelas-guru');
 
     get(school($tenant->slug, $path))->assertOk();
-})->with(['/absensi/kelas-saya', '/absensi/jadwal-hari-ini', '/absensi/absen-kelas', '/absensi/riwayat', '/absensi/segera-hadir']);
+})->with(['/absensi/kelas-saya', '/absensi/jadwal-saya', '/absensi/absen-kelas', '/absensi/riwayat']);
+
+it('no longer has the empty Absensi Saya page for a teacher', function () {
+    $tenant = attendanceTenant(role: 'guru', slug: 'kelas-tanpa-segera');
+
+    get(school($tenant->slug, '/absensi/segera-hadir'))->assertNotFound();
+});
 
 it('keeps the teacher pages from every other role', function (string $role, string $path) {
     $tenant = attendanceTenant(role: $role, slug: "kelas-bukan-{$role}");
@@ -156,7 +162,7 @@ it('closes the lesson pages while the school has lesson attendance off', functio
     get(school($tenant->slug, '/absensi/kelas-saya'))->assertOk();
 
     get(school($tenant->slug, '/beranda'))->assertInertia(fn (Assert $page) => $page
-        ->where('tenantNav', fn ($nav) => collect(collect($nav)->firstWhere('label', 'Kelas Saya')['children'])->pluck('label')->all() === ['Kelas Aktif', 'Jadwal Hari Ini'])
+        ->where('tenantNav', fn ($nav) => collect(collect($nav)->firstWhere('label', 'Kelas Mengajar')['children'])->pluck('label')->all() === ['Kelas Aktif'])
     );
 });
 

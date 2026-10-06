@@ -75,7 +75,7 @@ it('refuses a lesson scan after the lesson is over, however late', function (str
     [$tenant, $response] = scanLessonAt($utc);
 
     $response->assertStatus(422)->assertJsonValidationErrors('scan');
-    expect($response->json('errors.scan.0'))->toContain('sudah selesai')->toContain('Riwayat Absensi')
+    expect($response->json('errors.scan.0'))->toContain('sudah selesai')->toContain('tab Koreksi')
         ->and(lessonScanCount($tenant))->toBe(0);
 })->with(['right at the end' => '01:00:00', 'ten at night' => '15:00:00']);
 

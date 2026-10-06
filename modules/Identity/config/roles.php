@@ -46,8 +46,6 @@ return [
         'permissions' => [
             'core.me.view',
             'core.teaching.view',
-            'core.master.view',
-            'core.academic.view',
             'attendance.class.record',
         ],
     ],

@@ -25,7 +25,13 @@ it('opens the page for every default role', function (string $role, string $path
     $tenant = schoolAs("insight-{$role}", $role);
 
     get(school($tenant->slug, $path))->assertOk();
-})->with(['admin-sekolah', 'guru', 'staf-tu'])->with('insightPages');
+})->with(['admin-sekolah', 'staf-tu'])->with('insightPages');
+
+it('keeps the school-wide statistics and reports from a teacher', function (string $path) {
+    $tenant = schoolAs('insight-guru', 'guru');
+
+    get(school($tenant->slug, $path))->assertForbidden();
+})->with('insightPages');
 
 it('refuses a user who may not view master data', function (string $path) {
     $tenant = TenantFactory::new()->create(['slug' => 'insight-tanpa-peran']);

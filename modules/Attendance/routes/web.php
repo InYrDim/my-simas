@@ -11,12 +11,11 @@ use Modules\Attendance\App\Http\Controllers\MyAttendanceController;
 use Modules\Attendance\App\Http\Controllers\MyClassController;
 use Modules\Attendance\App\Http\Controllers\MyClassesController;
 use Modules\Attendance\App\Http\Controllers\MyClassStudentsController;
+use Modules\Attendance\App\Http\Controllers\MyScheduleController;
 use Modules\Attendance\App\Http\Controllers\OverviewController;
 use Modules\Attendance\App\Http\Controllers\ScanController;
 use Modules\Attendance\App\Http\Controllers\SettingsController;
-use Modules\Attendance\App\Http\Controllers\SoonController;
 use Modules\Attendance\App\Http\Controllers\StudentQrController;
-use Modules\Attendance\App\Http\Controllers\TodayController;
 
 // Module routes are registered via loadRoutesFrom() and do NOT inherit
 // the root web group automatically — always declare the group here.
@@ -53,12 +52,8 @@ Route::middleware('web')->group(function (): void {
                 Route::get('kelas-saya/{classId}', MyClassStudentsController::class)
                     ->whereNumber('classId')
                     ->name('my-classes.students');
-                Route::get('jadwal-hari-ini', TodayController::class)->name('today');
-                Route::put('jadwal-hari-ini/centang', [LessonCheckController::class, 'update'])->name('today.check');
-
-                // Kept on the sidebar while the old attendance workspace
-                // is rebuilt; only "Segera hadir" for now.
-                Route::get('segera-hadir', SoonController::class)->name('soon');
+                Route::get('jadwal-saya', MyScheduleController::class)->name('schedule');
+                Route::put('jadwal-saya/centang', [LessonCheckController::class, 'update'])->name('schedule.check');
             });
 
             Route::middleware('can:attendance.class.lesson.use')->group(function (): void {

@@ -33,7 +33,13 @@ it('lets every default school role view master data', function (string $role) {
     $slug = masterUserWithRole("perm-{$role}", $role);
 
     get(school($slug, '/master/ruangan'))->assertOk();
-})->with(['admin-sekolah', 'guru', 'staf-tu']);
+})->with(['admin-sekolah', 'staf-tu']);
+
+it('keeps master data from a teacher, whose menu is Jadwal Saya and Kelas Mengajar', function () {
+    $slug = masterUserWithRole('perm-guru', 'guru');
+
+    get(school($slug, '/master/ruangan'))->assertForbidden();
+});
 
 it('keeps the school profile form for roles that may manage master data', function (string $role, bool $allowed) {
     $slug = masterUserWithRole("profile-{$role}", $role);

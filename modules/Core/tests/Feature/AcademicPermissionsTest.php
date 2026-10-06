@@ -23,7 +23,13 @@ it('lets every default school role view the academic pages', function (string $r
     $tenant = schoolAs("akademik-{$role}", $role);
 
     get(school($tenant->slug, '/akademik/jam-pelajaran'))->assertOk();
-})->with(['admin-sekolah', 'guru', 'staf-tu']);
+})->with(['admin-sekolah', 'staf-tu']);
+
+it('keeps the academic pages from a teacher', function () {
+    $tenant = schoolAs('akademik-guru', 'guru');
+
+    get(school($tenant->slug, '/akademik/jam-pelajaran'))->assertForbidden();
+});
 
 it('keeps the editor-only academic pages for roles that may manage', function (string $role, string $path, bool $allowed) {
     $tenant = schoolAs("editor-{$role}", $role);
@@ -34,7 +40,7 @@ it('keeps the editor-only academic pages for roles that may manage', function (s
 })->with(function () {
     foreach (['/akademik/penempatan', '/akademik/pengampu', '/akademik/wali-kelas'] as $path) {
         yield "admin {$path}" => ['admin-sekolah', $path, true];
-        yield "teacher {$path}" => ['guru', $path, false];
+        yield "staff {$path}" => ['staf-tu', $path, false];
     }
 });
 

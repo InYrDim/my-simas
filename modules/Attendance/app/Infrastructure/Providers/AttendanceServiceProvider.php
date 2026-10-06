@@ -137,7 +137,7 @@ class AttendanceServiceProvider extends ServiceProvider
                 ],
             ],
             [
-                'label' => 'Kelas Saya',
+                'label' => 'Kelas Mengajar',
                 'icon' => 'school',
                 'route' => 'attendance.my-classes',
                 'permission' => 'attendance.class.record',
@@ -145,16 +145,14 @@ class AttendanceServiceProvider extends ServiceProvider
                 'order' => 14,
                 'children' => [
                     ['label' => 'Kelas Aktif', 'route' => 'attendance.my-classes'],
-                    ['label' => 'Jadwal Hari Ini', 'route' => 'attendance.today'],
                     ['label' => 'Absensi Kelas', 'route' => 'attendance.class-roll', 'permission' => 'attendance.class.lesson.use'],
                     ['label' => 'Pindai QR', 'route' => 'attendance.scan', 'permission' => 'attendance.scan.use', 'shortcut' => true],
-                    ['label' => 'Riwayat Absensi', 'route' => 'attendance.history', 'permission' => 'attendance.class.lesson.use'],
                 ],
             ],
             [
-                'label' => 'Absensi Saya',
-                'icon' => 'clipboard-check',
-                'route' => 'attendance.soon',
+                'label' => 'Jadwal Saya',
+                'icon' => 'calendar-clock',
+                'route' => 'attendance.schedule',
                 'permission' => 'attendance.class.record',
                 'group' => 'Saya',
                 'order' => 13,

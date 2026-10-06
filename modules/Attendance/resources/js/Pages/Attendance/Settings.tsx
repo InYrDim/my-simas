@@ -261,7 +261,7 @@ export default function Settings({
                         <FieldDescription>
                             Absensi jam pelajaran hanya bisa dipindai mulai
                             sekian menit sebelum jam mulai sampai jam
-                            selesai. Di luar itu, ubah lewat Riwayat Absensi.
+                            selesai. Di luar itu, ubah lewat tab Koreksi.
                         </FieldDescription>
                         {form.errors.lesson_scan_early_minutes !==
                             undefined && (

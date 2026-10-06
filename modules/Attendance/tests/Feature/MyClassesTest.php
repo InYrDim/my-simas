@@ -61,8 +61,8 @@ it('follows the teaching range with its banner', function (string $now, string $
 
     $this->travelTo($now);
 
-    get(school($tenant->slug, '/absensi/jadwal-hari-ini'))->assertOk()->assertInertia(fn (Assert $page) => $page
-        ->component('Attendance/Today')
+    get(school($tenant->slug, '/absensi/jadwal-saya'))->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->component('Attendance/MySchedule')
         ->where('banner', $banner)
         ->has('lessons', 2));
 })->with([
@@ -75,10 +75,20 @@ it('follows the teaching range with its banner', function (string $now, string $
 it('has no banner on a day without lessons', function () {
     $tenant = attendanceTenant(role: 'guru', slug: 'jadwal-kosong');
 
-    get(school($tenant->slug, '/absensi/jadwal-hari-ini'))->assertOk()->assertInertia(fn (Assert $page) => $page
-        ->component('Attendance/Today')
+    get(school($tenant->slug, '/absensi/jadwal-saya'))->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->component('Attendance/MySchedule')
         ->where('banner', 'none')
         ->where('lessons', []));
+});
+
+it('adds the whole week to the schedule page', function () {
+    $tenant = attendanceTenant(role: 'guru', slug: 'jadwal-minggu');
+    attendanceOwnLesson($tenant);
+
+    get(school($tenant->slug, '/absensi/jadwal-saya'))->assertInertia(fn (Assert $page) => $page
+        ->has('week', 1)
+        ->has('week.0.lessons', 1)
+        ->where('week.0.lessons.0.subjectName', fn ($name) => is_string($name) && $name !== ''));
 });
 
 it('tells each lesson of today where it stands', function () {
@@ -90,7 +100,7 @@ it('tells each lesson of today where it stands', function () {
     // 08:10: the first lesson is over, the second is running.
     $this->travelTo('2026-10-02 01:10:00');
 
-    get(school($tenant->slug, '/absensi/jadwal-hari-ini'))->assertInertia(fn (Assert $page) => $page
+    get(school($tenant->slug, '/absensi/jadwal-saya'))->assertInertia(fn (Assert $page) => $page
         ->where('lessons.0.state', 'finished')
         ->where('lessons.0.recorded', false)
         ->where('lessons.1.state', 'running'));
@@ -101,7 +111,7 @@ it('ticks a lesson off after its hour and takes it back', function () {
     [$class, $slot] = attendanceOwnLesson($tenant);
 
     // While the lesson runs it cannot be ticked off yet.
-    put(school($tenant->slug, '/absensi/jadwal-hari-ini/centang'), ['period_slot_id' => $slot->id, 'checked' => true])
+    put(school($tenant->slug, '/absensi/jadwal-saya/centang'), ['period_slot_id' => $slot->id, 'checked' => true])
         ->assertSessionHasErrors('period_slot_id');
 
     expect(attendanceSchool($tenant, fn () => LessonCheck::query()->count()))->toBe(0);
@@ -109,16 +119,16 @@ it('ticks a lesson off after its hour and takes it back', function () {
     // After its hour.
     $this->travelTo('2026-10-02 02:00:00');
 
-    put(school($tenant->slug, '/absensi/jadwal-hari-ini/centang'), ['period_slot_id' => $slot->id, 'checked' => true])
+    put(school($tenant->slug, '/absensi/jadwal-saya/centang'), ['period_slot_id' => $slot->id, 'checked' => true])
         ->assertRedirect()->assertSessionHasNoErrors();
 
     expect(attendanceSchool($tenant, fn () => LessonCheck::query()->sole()->class_id))->toBe($class->id);
 
-    get(school($tenant->slug, '/absensi/jadwal-hari-ini'))->assertInertia(fn (Assert $page) => $page
+    get(school($tenant->slug, '/absensi/jadwal-saya'))->assertInertia(fn (Assert $page) => $page
         ->where('banner', 'finished')
         ->where('lessons.0.checked', true));
 
-    put(school($tenant->slug, '/absensi/jadwal-hari-ini/centang'), ['period_slot_id' => $slot->id, 'checked' => false])
+    put(school($tenant->slug, '/absensi/jadwal-saya/centang'), ['period_slot_id' => $slot->id, 'checked' => false])
         ->assertSessionHasNoErrors();
 
     expect(attendanceSchool($tenant, fn () => LessonCheck::query()->count()))->toBe(0);
@@ -129,7 +139,7 @@ it('refuses a slot that is not on the own timetable', function () {
     attendanceOwnLesson($tenant);
     $foreign = attendanceSlot($tenant, ['start_time' => '08:00:00', 'end_time' => '08:45:00']);
 
-    put(school($tenant->slug, '/absensi/jadwal-hari-ini/centang'), ['period_slot_id' => $foreign->id, 'checked' => false])
+    put(school($tenant->slug, '/absensi/jadwal-saya/centang'), ['period_slot_id' => $foreign->id, 'checked' => false])
         ->assertSessionHasErrors('period_slot_id');
 });
 

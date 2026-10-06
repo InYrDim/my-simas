@@ -155,7 +155,7 @@ it('keeps slots of another school out and answers 404 for them', function () {
 });
 
 it('forbids a teacher role from changing the schedule but lets them view', function () {
-    $tenant = schoolAs('pr-guru', 'guru');
+    $tenant = schoolAs('pr-guru', 'staf-tu');
     $slot = slotIn($tenant);
 
     get(school($tenant->slug, '/akademik/jam-pelajaran'))->assertOk();

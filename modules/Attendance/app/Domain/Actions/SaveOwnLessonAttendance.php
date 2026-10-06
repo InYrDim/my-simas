@@ -42,7 +42,7 @@ final class SaveOwnLessonAttendance
 
         if ($whileRunning && ($date !== $this->clock->today() || $lesson['state'] !== LessonState::Running->value)) {
             throw ValidationException::withMessages([
-                'period_slot_id' => 'Absensi hanya dapat diisi saat jam pelajaran berlangsung. Ubah data lewat Riwayat Absensi.',
+                'period_slot_id' => 'Absensi hanya dapat diisi saat jam pelajaran berlangsung. Ubah data lewat tab Koreksi.',
             ]);
         }
 

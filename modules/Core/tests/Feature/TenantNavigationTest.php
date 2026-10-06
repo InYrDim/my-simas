@@ -54,12 +54,12 @@ it('hides entries the user lacks the permission for', function () {
     $tenant = navTenantAs('nav-guru', 'guru');
 
     get(school($tenant->slug, '/beranda'))->assertInertia(fn (Assert $page) => $page
-        ->where('tenantNav', fn ($nav) => collect($nav)->pluck('label')->all() === ['Beranda', 'Profil Saya', 'Jadwal Mengajar', 'Ganti Kata Sandi', 'Master Data', 'Warga Sekolah', 'Akademik', 'Statistik & Laporan'])
+        ->where('tenantNav', fn ($nav) => collect($nav)->pluck('label')->all() === ['Beranda', 'Profil Saya', 'Ganti Kata Sandi'])
     );
 });
 
 it('shares what the signed-in user may do as a permission map', function () {
-    $tenant = navTenantAs('can-guru', 'guru');
+    $tenant = navTenantAs('can-staf', 'staf-tu');
 
     get(school($tenant->slug, '/beranda'))->assertInertia(fn (Assert $page) => $page
         ->where('abilities', fn ($can) => $can['core.master.view'] === true && $can['core.master.manage'] === false)
@@ -105,7 +105,7 @@ it('nests visible children and drops a group with none visible', function () {
     $guru = navTenantAs('nav-group-guru', 'guru');
 
     get(school($guru->slug, '/beranda'))->assertInertia(fn (Assert $page) => $page
-        ->where('tenantNav', fn ($nav) => collect($nav)->pluck('label')->all() === ['Beranda', 'Profil Saya', 'Jadwal Mengajar', 'Ganti Kata Sandi', 'Master Data', 'Warga Sekolah', 'Akademik', 'Statistik & Laporan'])
+        ->where('tenantNav', fn ($nav) => collect($nav)->pluck('label')->all() === ['Beranda', 'Profil Saya', 'Ganti Kata Sandi'])
     );
 });
 
@@ -113,8 +113,8 @@ it('puts the signed-in user\'s own pages in the Saya group', function () {
     $tenant = navTenantAs('nav-saya', 'guru');
 
     get(school($tenant->slug, '/beranda'))->assertInertia(fn (Assert $page) => $page
-        ->where('tenantNav.3.label', 'Ganti Kata Sandi')
-        ->where('tenantNav.3.group', 'Saya')
-        ->where('tenantNav.3.href', '/ganti-kata-sandi')
+        ->where('tenantNav.2.label', 'Ganti Kata Sandi')
+        ->where('tenantNav.2.group', 'Saya')
+        ->where('tenantNav.2.href', '/ganti-kata-sandi')
     );
 });

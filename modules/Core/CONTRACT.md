@@ -32,7 +32,7 @@
   only and takes no id: it shows the student or teacher whose `user_id` is
   the signed-in account (`Domain/Queries/SignedInPerson`), plus the sign-in
   and roles through Identity's `ResolvesUsers`. `core.teaching.view` (guru)
-  gates Jadwal Mengajar (`/saya/jadwal`): the teacher's own weekly lessons
+  gates the teacher's weekly lessons (`/saya/jadwal`, no menu entry since Fase 15: Attendance's Jadwal Saya shows the same week): the teacher's own weekly lessons
   through `Contracts/TeacherSchedule`. The Beranda "Kelas saya" list still
   reads `Domain/Queries/TeacherClasses` (the active year's classes the
   teacher is homeroom of or teaches in). Beranda quick links come from

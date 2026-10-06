@@ -510,3 +510,14 @@ dan Riwayat Absensi tidak terikat jam ini: itu jalur koreksi. Hari libur belum
 dikenali. Setelah rilis: `php artisan migrate`. Rincian:
 modules/Attendance/CONTRACT.md, docs/architecture/modular-monolith.md,
 docs/ai/plan/fase-14/.
+
+## Menu guru (Fase 15)
+
+Menu guru kini: Beranda, Profil Saya, Jadwal Saya (tab Hari Ini dan Minggu
+Ini, milik Attendance, `/absensi/jadwal-saya`), Kelas Mengajar (Kelas Aktif,
+Absensi Kelas dengan tab Isi Absensi / Koreksi, Pindai QR). "Absensi Saya"
+kosong milik guru dan "Jadwal Mengajar" Core dihapus dari menu; menu siswa
+tetap "Kelas Saya". Role `guru` tidak lagi punya `core.master.view` dan
+`core.academic.view` (tanpa Data Induk dan Statistik sekolah). Setelah
+rilis: `php artisan roles:sync`. Rincian: docs/ai/plan/fase-15/,
+docs/architecture/modular-monolith.md.
