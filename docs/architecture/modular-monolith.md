@@ -714,6 +714,34 @@ with Kelas Aktif, Jadwal Hari Ini, Absensi Kelas and Riwayat Absensi.
 - **After the release** run `php artisan migrate` (the `lesson_checks`
   table).
 
+## Attendance scan times (Fase 14)
+
+Scanning is accepted only at its own time, on the tenant's clock. Attendance
+internal (`Domain/Support/ScanWindow`), no contract. Details:
+`modules/Attendance/CONTRACT.md`, plan `docs/ai/plan/fase-14/`.
+
+- **A lesson is scanned from a school-set tolerance before it starts**
+  (`lesson_scan_early_minutes`, default 5) **until it ends**; outside that
+  the scan is refused and the correction goes through Riwayat Absensi.
+  `MarkLessonPresence` asks it, so every caller is bound.
+- **A teacher without `attendance.lesson.school` scans only the own lesson
+  that is running** (the scanner offers just that one; the controller
+  re-asserts it against `TeacherLessons`). The school-wide permission keeps
+  the free choice of class but not the hours.
+- **The gate takes scans between `gate_opens_at` and `gate_closes_at`**
+  (default 05:00–18:00, closing minute included), in and out alike. Leaving
+  before the last lesson of the day ends is stored as
+  `daily_attendances.left_early` and shown as "Pulang awal". The daily input
+  (`/absensi/input`) is not bound by these hours: it is the correction path.
+- **A student recorded as gone home is not scanned into a lesson.** The
+  office (`attendance.daily.record`) can take the going-home record back on
+  Input Absensi, today only (`CancelGateCheckOut`); the arrival and the status
+  stay and nobody is notified.
+- **Not built (on purpose):** school holidays and days without lessons are
+  not refused (needs a Core calendar contract), no automatic absence, no
+  reason for leaving early.
+- **After the release** run `php artisan migrate`.
+
 ## School setup checklist (Fase 12)
 
 The school's Beranda shows "Persiapan sekolah" to whoever holds
@@ -733,3 +761,14 @@ done.
 - **Students count once placed** in a class of the active year; the
   step links to Penempatan Siswa `?kelas=belum` while some are not.
 - Details: `modules/Core/CONTRACT.md` (Surfaces).
+
+
+## Kelas Saya for students
+
+Students get their own **Kelas Saya** (group "Saya"), owned by Attendance like the
+teacher's: Info Kelas (class, homeroom, classmates), Jadwal Pelajaran, Mata Pelajaran
+& Guru and Absensi Saya as a child. One sidebar entry cannot be shared between
+modules and Core must not import Attendance, so Attendance owns the entry and reads
+Core through `ClassDirectory`, `StudentDirectory` and the new `ClassTimetable`
+contract. Permission `attendance.class.view-own` (role `siswa`); after a release run
+`php artisan roles:sync`. Details: `modules/Attendance/CONTRACT.md`, `modules/Core/CONTRACT.md`.

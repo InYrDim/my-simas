@@ -43,6 +43,7 @@ it('registers the attendance permissions', function () {
         'attendance.qr.show',
         'attendance.mine.view',
         'attendance.class.record',
+        'attendance.class.view-own',
     ]);
 });
 
@@ -118,8 +119,8 @@ it('gives a teacher one Kelas Saya menu and an empty Absensi Saya', function () 
         expect($nav->pluck('label')->contains('Absensi'))->toBeFalse()
             ->and($mine['group'])->toBe('Saya')
             ->and($mine['href'])->toBe('/absensi/kelas-saya')
-            ->and(collect($mine['children'])->pluck('label')->all())->toBe(['Kelas Aktif', 'Jadwal Hari Ini', 'Absensi Kelas', 'Riwayat Absensi'])
-            ->and(collect($mine['children'])->pluck('href')->all())->toBe(['/absensi/kelas-saya', '/absensi/jadwal-hari-ini', '/absensi/absen-kelas', '/absensi/riwayat'])
+            ->and(collect($mine['children'])->pluck('label')->all())->toBe(['Kelas Aktif', 'Jadwal Hari Ini', 'Absensi Kelas', 'Pindai QR', 'Riwayat Absensi'])
+            ->and(collect($mine['children'])->pluck('href')->all())->toBe(['/absensi/kelas-saya', '/absensi/jadwal-hari-ini', '/absensi/absen-kelas', '/absensi/pindai', '/absensi/riwayat'])
             ->and($empty['group'])->toBe('Saya')
             ->and($empty['href'])->toBe('/absensi/segera-hadir');
     });
@@ -159,11 +160,12 @@ it('closes the lesson pages while the school has lesson attendance off', functio
     );
 });
 
-it('shows a student only the QR entry', function () {
+it('shows a student the QR entry and Kelas Saya with Absensi Saya inside', function () {
     $tenant = attendanceTenant(role: 'siswa', slug: 'menu-siswa');
 
     get(school($tenant->slug, '/beranda'))->assertInertia(fn (Assert $page) => $page
-        ->where('tenantNav', fn ($nav) => collect($nav)->pluck('label')->all() === ['Beranda', 'Profil Saya', 'QR Absensi', 'Absensi Saya'])
+        ->where('tenantNav', fn ($nav) => collect($nav)->pluck('label')->all() === ['Beranda', 'Profil Saya', 'QR Absensi', 'Kelas Saya'])
+        ->where('tenantNav.3.children', fn ($children) => collect($children)->pluck('label')->all() === ['Info Kelas', 'Jadwal Pelajaran', 'Mata Pelajaran & Guru', 'Absensi Saya'])
     );
 });
 

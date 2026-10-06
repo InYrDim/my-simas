@@ -231,22 +231,24 @@ it('has no lessons on a day without lesson slots', function () {
     );
 });
 
-it('offers a teacher only the own classes on the scanner', function () {
+it('offers a teacher only the own lesson that is running on the scanner', function () {
     $tenant = attendanceTenant(role: 'guru');
     $teacherAccount = auth()->id();
     attendanceClass($tenant, 'X 1');
     $taught = attendanceClass($tenant, 'X 2');
     attendanceClass($tenant, 'X 3');
-    lessonSlot($tenant);
+    $slot = lessonSlot($tenant);
     lessonSubject($tenant, $taught, 'Bahasa Indonesia');
-    lessonSubject($tenant, $taught, 'Matematika', $teacherAccount);
+    attendanceTeach($tenant, $taught, $slot, 'Matematika', $teacherAccount);
 
     get(school($tenant->slug, '/absensi/pindai'))->assertInertia(fn (Assert $page) => $page
         ->component('Attendance/Scan')
+        ->where('ownLessonOnly', true)
         ->where('classes', [
             ['value' => (string) $taught->id, 'label' => 'X 2', 'mine' => true],
         ])
         ->where('classId', (string) $taught->id)
+        ->where('slotId', (string) $slot->id)
     );
 });
 
@@ -279,7 +281,7 @@ it('lets a teacher record the own lesson by scan', function () {
     $teacherAccount = auth()->id();
     $taught = attendanceClass($tenant, 'X 1');
     $slot = lessonSlot($tenant);
-    lessonSubject($tenant, $taught, 'Matematika', $teacherAccount);
+    attendanceTeach($tenant, $taught, $slot, 'Matematika', $teacherAccount);
     $adit = attendanceStudent($tenant, $taught, 'Adit');
 
     postJson(school($tenant->slug, '/absensi/pindai'), [

@@ -24,17 +24,26 @@ export default function Settings({
     lateAfter,
     gateEnabled,
     lessonEnabled,
+    lessonScanEarlyMinutes,
+    gateOpensAt,
+    gateClosesAt,
     can,
 }: {
     lateAfter: string;
     gateEnabled: boolean;
     lessonEnabled: boolean;
+    lessonScanEarlyMinutes: number;
+    gateOpensAt: string;
+    gateClosesAt: string;
     can: { manageNotices: boolean };
 }) {
     const form = useForm({
         late_after: lateAfter,
         gate_enabled: gateEnabled,
         lesson_enabled: lessonEnabled,
+        lesson_scan_early_minutes: lessonScanEarlyMinutes,
+        gate_opens_at: gateOpensAt,
+        gate_closes_at: gateClosesAt,
     });
 
     return (
@@ -148,6 +157,114 @@ export default function Settings({
                         </FieldDescription>
                         {form.errors.late_after !== undefined && (
                             <FieldError>{form.errors.late_after}</FieldError>
+                        )}
+                    </Field>
+                </Panel>
+
+                <Panel title="Jam gerbang" className="mt-6">
+                    <div className="flex flex-col gap-4 sm:flex-row">
+                        <Field
+                            data-invalid={form.errors.gate_opens_at !== undefined}
+                        >
+                            <FieldLabel htmlFor="gate-opens-at">
+                                Gerbang dibuka pukul
+                            </FieldLabel>
+                            <Input
+                                id="gate-opens-at"
+                                type="time"
+                                className="w-40"
+                                value={form.data.gate_opens_at}
+                                onChange={(event) =>
+                                    form.setData(
+                                        'gate_opens_at',
+                                        event.target.value,
+                                    )
+                                }
+                                aria-invalid={
+                                    form.errors.gate_opens_at !== undefined
+                                }
+                            />
+                            {form.errors.gate_opens_at !== undefined && (
+                                <FieldError>
+                                    {form.errors.gate_opens_at}
+                                </FieldError>
+                            )}
+                        </Field>
+                        <Field
+                            data-invalid={
+                                form.errors.gate_closes_at !== undefined
+                            }
+                        >
+                            <FieldLabel htmlFor="gate-closes-at">
+                                Gerbang ditutup pukul
+                            </FieldLabel>
+                            <Input
+                                id="gate-closes-at"
+                                type="time"
+                                className="w-40"
+                                value={form.data.gate_closes_at}
+                                onChange={(event) =>
+                                    form.setData(
+                                        'gate_closes_at',
+                                        event.target.value,
+                                    )
+                                }
+                                aria-invalid={
+                                    form.errors.gate_closes_at !== undefined
+                                }
+                            />
+                            {form.errors.gate_closes_at !== undefined && (
+                                <FieldError>
+                                    {form.errors.gate_closes_at}
+                                </FieldError>
+                            )}
+                        </Field>
+                    </div>
+                    <FieldDescription className="mt-2">
+                        Scan masuk dan pulang hanya diterima di antara dua
+                        jam ini. Pulang sebelum jam pelajaran terakhir selesai
+                        ditandai Pulang awal. Di luar jam gerbang, ubah lewat
+                        Input harian.
+                    </FieldDescription>
+                </Panel>
+
+                <Panel title="Pindai jam pelajaran" className="mt-6">
+                    <Field
+                        data-invalid={
+                            form.errors.lesson_scan_early_minutes !== undefined
+                        }
+                    >
+                        <FieldLabel htmlFor="lesson-scan-early-minutes">
+                            Boleh dipindai sebelum jam mulai (menit)
+                        </FieldLabel>
+                        <Input
+                            id="lesson-scan-early-minutes"
+                            type="number"
+                            min={0}
+                            max={30}
+                            className="w-40"
+                            value={form.data.lesson_scan_early_minutes}
+                            onChange={(event) =>
+                                form.setData(
+                                    'lesson_scan_early_minutes',
+                                    Number(event.target.value),
+                                )
+                            }
+                            aria-invalid={
+                                form.errors.lesson_scan_early_minutes !==
+                                undefined
+                            }
+                        />
+                        <FieldDescription>
+                            Absensi jam pelajaran hanya bisa dipindai mulai
+                            sekian menit sebelum jam mulai sampai jam
+                            selesai. Di luar itu, ubah lewat Riwayat Absensi.
+                        </FieldDescription>
+                        {form.errors.lesson_scan_early_minutes !==
+                            undefined && (
+                            <FieldError>
+                                {form.errors.lesson_scan_early_minutes}
+                            </FieldError>
                         )}
                     </Field>
                 </Panel>

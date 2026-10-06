@@ -67,6 +67,7 @@ class AttendanceServiceProvider extends ServiceProvider
             'attendance.qr.show',
             'attendance.mine.view',
             'attendance.class.record',
+            'attendance.class.view-own',
         ]);
     }
 
@@ -146,6 +147,7 @@ class AttendanceServiceProvider extends ServiceProvider
                     ['label' => 'Kelas Aktif', 'route' => 'attendance.my-classes'],
                     ['label' => 'Jadwal Hari Ini', 'route' => 'attendance.today'],
                     ['label' => 'Absensi Kelas', 'route' => 'attendance.class-roll', 'permission' => 'attendance.class.lesson.use'],
+                    ['label' => 'Pindai QR', 'route' => 'attendance.scan', 'permission' => 'attendance.scan.use', 'shortcut' => true],
                     ['label' => 'Riwayat Absensi', 'route' => 'attendance.history', 'permission' => 'attendance.class.lesson.use'],
                 ],
             ],
@@ -167,12 +169,18 @@ class AttendanceServiceProvider extends ServiceProvider
                 'order' => 12,
             ],
             [
-                'label' => 'Absensi Saya',
-                'icon' => 'calendar-check',
-                'route' => 'attendance.mine',
-                'permission' => 'attendance.mine.view',
+                'label' => 'Kelas Saya',
+                'icon' => 'school',
+                'route' => 'attendance.class-mine',
+                'permission' => 'attendance.class.view-own',
                 'group' => 'Saya',
-                'order' => 13,
+                'order' => 14,
+                'children' => [
+                    ['label' => 'Info Kelas', 'route' => 'attendance.class-mine', 'match' => 'exact'],
+                    ['label' => 'Jadwal Pelajaran', 'route' => 'attendance.class-mine.timetable'],
+                    ['label' => 'Mata Pelajaran & Guru', 'route' => 'attendance.class-mine.subjects'],
+                    ['label' => 'Absensi Saya', 'route' => 'attendance.mine', 'permission' => 'attendance.mine.view'],
+                ],
             ],
         ]);
     }

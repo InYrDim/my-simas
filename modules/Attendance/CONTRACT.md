@@ -4,7 +4,8 @@
 
 - Database tables (all tenant-scoped, no foreign keys except `tenant_id`;
   every other id is a plain indexed column): `attendance_settings` (one
-  row per school: the cut-off for arriving on time), `daily_attendances`
+  row per school: the cut-off for arriving on time, the gate hours and the
+  lesson scan tolerance), `daily_attendances`
   (one row per student and day: the day's status and the gate times in
   and out), `lesson_sessions` (one class in one lesson slot of one day),
   `lesson_attendances` (one row per student of a session) and
@@ -26,7 +27,10 @@
   `attendance.settings.manage` (admin) and `attendance.qr.show` (a student's
   own QR — siswa), `attendance.mine.view`
   (Absensi Saya, `/absensi/saya`: a student's own daily history by month,
-  the student found from the signed-in account, never from the URL — siswa).
+  the student found from the signed-in account, never from the URL — siswa),
+  `attendance.class.view-own` (the student's Kelas Saya: `/absensi/kelasku`
+  Info Kelas, `/jadwal`, `/mapel`; `MyClassController`, class found from the
+  account, reads Core's `ClassDirectory`, `StudentDirectory`, `ClassTimetable`).
   Composite ability `attendance.class.lesson.use` = `attendance.class.record`
   AND the school's lesson switch; Fase 13's Absensi Kelas and Riwayat
   Absensi routes and sidebar children ask it.
@@ -72,7 +76,8 @@ Never another feature module (Ppdb), not even via its Public surface.
   `module:attendance`), its permissions, the sidebar entries (the office's
   "Absensi", the teacher's "Kelas Saya" with its four pages and the kept
   "Absensi Saya" placeholder in group "Saya", the student's "QR Absensi"
-  and "Absensi Saya"; each child with its permission), four notice kinds
+  and "Kelas Saya" (Info Kelas, Jadwal Pelajaran, Mata Pelajaran & Guru,
+  Absensi Saya); each child with its permission), four notice kinds
   with Core's `NoticeRegistry`, and two reports and one statistics
   provider with Core's `ReportRegistry` / `StatisticsRegistry`.
 - **The school's clock.** Days and times of day are the tenant's
@@ -87,6 +92,23 @@ Never another feature module (Ppdb), not even via its Public surface.
   class; saving again updates the rows and never touches the gate times.
   A student without a row is "belum diabsen" — nothing marks absence
   automatically (no scheduler: the app runs on shared hosting).
+- **Scan times** (Fase 14, `Domain/Support/ScanWindow`): the gate (in and
+  out) takes scans only between `attendance_settings.gate_opens_at` and
+  `gate_closes_at` (default 05:00–18:00, the closing minute included); a
+  lesson only from `lesson_scan_early_minutes` (default 5, 0–30) before it
+  starts until it ends (`MarkLessonPresence`). A refusal answers like any
+  scan refusal and points to the correction path (Riwayat Absensi, Input
+  harian — neither is bound by these hours). Leaving before the end of the
+  day's last lesson (`ScanWindow::lastLessonEnd`, none on a day without
+  lessons) sets `daily_attendances.left_early`; the scanner shows "Pulang
+  awal". A teacher without `attendance.lesson.school` scans only the own
+  lesson that is running (`TeacherLessons`; scanner page and controller),
+  and a student already recorded as gone home is refused a lesson scan.
+  The office takes that record back on Input Absensi ("Batalkan pulang",
+  `DELETE /absensi/input/pulang`, `CancelGateCheckOut`, `attendance.daily.record`:
+  admin and staf-tu): today only; clears the time, the method and
+  `left_early`, keeps the arrival and the status, notifies nobody.
+  Holidays are not known here: no refusal on them yet.
 - **The gate** (`RecordGateCheckIn`, `RecordGateCheckOut`): arriving up to
   and including the cut-off minute of `attendance_settings.late_after`
   (default 07:00) is Hadir, later is Terlambat; arriving overrules a
@@ -140,8 +162,8 @@ Never another feature module (Ppdb), not even via its Public surface.
   `SaveLessonAttendance`, so subject, notices and one-session rules are
   the same. The teacher's old pages are gone: daily input is
   `attendance.daily.record`'s (admin, staf-tu), the school-wide lesson page
-  `attendance.lesson.school`'s (admin), and only `Pindai QR` stays open to
-  a teacher. "Absensi Saya" for a teacher is kept empty
+  `attendance.lesson.school`'s (admin), and `Pindai QR` stays open to a
+  teacher, as a Kelas Saya child (`attendance.scan.use`, home shortcut). "Absensi Saya" for a teacher is kept empty
   (`Attendance/Soon`, "Segera hadir").
 - **Switches** (`/absensi/pengaturan`): `attendance_settings.gate_enabled`
   and `lesson_enabled` (both on by default) let a school turn the gate and

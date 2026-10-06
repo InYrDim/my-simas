@@ -23,7 +23,7 @@ it('gives a new school the siswa role with only its own QR permission', function
     $tenant = TenantFactory::new()->create();
 
     expect(rolesOf($tenant->id))->toHaveKey('siswa')
-        ->and(rolesOf($tenant->id)['siswa'])->toBe(['attendance.mine.view', 'attendance.qr.show', 'core.me.view']);
+        ->and(rolesOf($tenant->id)['siswa'])->toBe(['attendance.class.view-own', 'attendance.mine.view', 'attendance.qr.show', 'core.me.view']);
 });
 
 it('adds a role and a permission that came after the school was created', function () {

@@ -1,14 +1,14 @@
-import { router, useHttp } from '@inertiajs/react';
-import { QRCodeSVG } from 'qrcode.react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { router, useHttp } from "@inertiajs/react";
+import { QRCodeSVG } from "qrcode.react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import { token as tokenRoute } from '@/actions/Modules/Attendance/App/Http/Controllers/StudentQrController';
-import { DefinitionList, Panel } from '@shared/components/page-parts';
-import { Alert, AlertDescription } from '@shared/components/ui/alert';
-import { Button } from '@shared/components/ui/button';
-import { Skeleton } from '@shared/components/ui/skeleton';
+import { token as tokenRoute } from "@/actions/Modules/Attendance/App/Http/Controllers/StudentQrController";
+import { DefinitionList, Panel } from "@shared/components/page-parts";
+import { Alert, AlertDescription } from "@shared/components/ui/alert";
+import { Button } from "@shared/components/ui/button";
+import { Skeleton } from "@shared/components/ui/skeleton";
 
-import AttendancePage from '../../Components/AttendancePage';
+import AttendancePage from "../../Components/AttendancePage";
 
 interface MyQrProps {
     student: { name: string; nis: string; class: string | null };
@@ -45,24 +45,24 @@ export default function MyQr({ student, today, refreshEvery }: MyQrProps) {
 
     const refresh = useCallback(() => {
         post.current(tokenRoute.url(), {
-            headers: { Accept: 'application/json' },
+            headers: { Accept: "application/json" },
             onSuccess: (response) => {
                 setCode(response.token);
                 setLeft(refreshEvery);
                 setFailed(null);
                 // What the gate recorded meanwhile.
-                router.reload({ only: ['today'] });
+                router.reload({ only: ["today"] });
             },
             onHttpException: () => {
                 setCode(null);
                 setFailed(
-                    'Kode belum bisa dibuat. Tunggu sebentar lalu coba lagi.',
+                    "Kode belum bisa dibuat. Tunggu sebentar lalu coba lagi.",
                 );
             },
             onNetworkError: () => {
                 setCode(null);
                 setFailed(
-                    'Tidak ada sambungan. Periksa internet lalu coba lagi.',
+                    "Tidak ada sambungan. Periksa internet lalu coba lagi.",
                 );
             },
         }).catch(() => undefined);
@@ -78,24 +78,24 @@ export default function MyQr({ student, today, refreshEvery }: MyQrProps) {
         }
 
         const timer = window.setInterval(() => {
-            setLeft((seconds) => {
-                if (seconds <= 1) {
-                    refresh();
-
-                    return refreshEvery;
-                }
-
-                return seconds - 1;
-            });
+            setLeft((seconds) => Math.max(0, seconds - 1));
         }, 1000);
 
         return () => window.clearInterval(timer);
-    }, [code, refresh, refreshEvery]);
+    }, [code]);
+
+    // Asking for the next code replaces the previous one on the server, so
+    // it must happen exactly once per round — never from inside a state updater.
+    useEffect(() => {
+        if (code !== null && left === 0) {
+            refresh();
+        }
+    }, [code, left, refresh]);
 
     return (
         <AttendancePage
             title="QR Absensi"
-            description={`${student.name} · ${student.class ?? 'belum ada kelas'}`}
+            description={`${student.name} · ${student.class ?? "belum ada kelas"}`}
             width="max-w-md"
         >
             <Panel>
@@ -149,10 +149,10 @@ export default function MyQr({ student, today, refreshEvery }: MyQrProps) {
             <Panel title="Hari ini" className="mt-6">
                 <DefinitionList
                     rows={[
-                        ['Tanggal', today.label],
-                        ['Status', today.status ?? 'Belum tercatat'],
-                        ['Masuk', today.checkedIn ?? '—'],
-                        ['Pulang', today.checkedOut ?? '—'],
+                        ["Tanggal", today.label],
+                        ["Status", today.status ?? "Belum tercatat"],
+                        ["Masuk", today.checkedIn ?? "—"],
+                        ["Pulang", today.checkedOut ?? "—"],
                     ]}
                 />
             </Panel>

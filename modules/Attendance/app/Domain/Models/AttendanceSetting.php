@@ -11,20 +11,32 @@ use Modules\Platform\App\Contracts\Concerns\BelongsToTenant;
  * use. `late_after` is the last time of day (`H:i:s`, on the school's
  * clock) a student still counts as on time at the gate. `gate_enabled` and
  * `lesson_enabled` switch the gate (in and out) and the lesson attendance
- * on or off; both are on by default.
+ * on or off; both are on by default. `lesson_scan_early_minutes` is how
+ * long before a lesson starts a student may already be scanned into it.
+ * `gate_opens_at` and `gate_closes_at` (`H:i:s`, on the school's clock) are
+ * the hours the gate takes scans.
  *
  * @property int $id
  * @property string $tenant_id
  * @property string $late_after
  * @property bool $gate_enabled
  * @property bool $lesson_enabled
+ * @property int $lesson_scan_early_minutes
+ * @property string $gate_opens_at
+ * @property string $gate_closes_at
  */
-#[Fillable(['late_after', 'gate_enabled', 'lesson_enabled'])]
+#[Fillable(['late_after', 'gate_enabled', 'lesson_enabled', 'lesson_scan_early_minutes', 'gate_opens_at', 'gate_closes_at'])]
 class AttendanceSetting extends Model
 {
     use BelongsToTenant;
 
     public const DEFAULT_LATE_AFTER = '07:00:00';
+
+    public const DEFAULT_LESSON_SCAN_EARLY_MINUTES = 5;
+
+    public const DEFAULT_GATE_OPENS_AT = '05:00:00';
+
+    public const DEFAULT_GATE_CLOSES_AT = '18:00:00';
 
     /**
      * The current tenant's settings, created with defaults when missing.
@@ -35,6 +47,9 @@ class AttendanceSetting extends Model
             'late_after' => self::DEFAULT_LATE_AFTER,
             'gate_enabled' => true,
             'lesson_enabled' => true,
+            'lesson_scan_early_minutes' => self::DEFAULT_LESSON_SCAN_EARLY_MINUTES,
+            'gate_opens_at' => self::DEFAULT_GATE_OPENS_AT,
+            'gate_closes_at' => self::DEFAULT_GATE_CLOSES_AT,
         ]);
     }
 
@@ -63,10 +78,26 @@ class AttendanceSetting extends Model
     }
 
     /**
+     * The first minute the gate takes scans, as `H:i`.
+     */
+    public function gateOpensAt(): string
+    {
+        return substr($this->gate_opens_at, 0, 5);
+    }
+
+    /**
+     * The last minute the gate takes scans, as `H:i`.
+     */
+    public function gateClosesAt(): string
+    {
+        return substr($this->gate_closes_at, 0, 5);
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
     {
-        return ['gate_enabled' => 'boolean', 'lesson_enabled' => 'boolean'];
+        return ['gate_enabled' => 'boolean', 'lesson_enabled' => 'boolean', 'lesson_scan_early_minutes' => 'integer'];
     }
 }

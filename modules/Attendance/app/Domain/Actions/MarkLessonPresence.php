@@ -2,14 +2,17 @@
 
 namespace Modules\Attendance\App\Domain\Actions;
 
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\Attendance\App\Domain\Enums\AttendanceStatus;
 use Modules\Attendance\App\Domain\Enums\RecordMethod;
 use Modules\Attendance\App\Domain\Exceptions\AttendanceException;
+use Modules\Attendance\App\Domain\Models\DailyAttendance;
 use Modules\Attendance\App\Domain\Models\LessonAttendance;
 use Modules\Attendance\App\Domain\Models\LessonSession;
 use Modules\Attendance\App\Domain\Support\LessonSlots;
+use Modules\Attendance\App\Domain\Support\ScanWindow;
 use Modules\Attendance\App\Domain\Support\SchoolClock;
 use Modules\Core\App\Contracts\StudentDirectory;
 
@@ -19,10 +22,12 @@ final class MarkLessonPresence
         private readonly LessonSlots $slots,
         private readonly StudentDirectory $students,
         private readonly SchoolClock $clock,
+        private readonly ScanWindow $window,
     ) {}
 
     /**
-     * One student present in a lesson of today, by scan or by hand. The
+     * One student present in a lesson of today, by scan or by hand, only
+     * while the lesson is open to scanning (see `ScanWindow`). The
      * student must sit in that class; the session is opened when nobody
      * has yet. Marking a student who is already present is refused, so a
      * second scan is noticed.
@@ -35,6 +40,8 @@ final class MarkLessonPresence
         $today = $this->clock->today();
         [$class, $slot] = $this->slots->resolve($classId, $today, $slotId);
 
+        $this->window->assertLessonOpen($slot);
+
         $student = $this->students->find($studentId);
 
         if ($student === null || ! $student->active) {
@@ -43,6 +50,12 @@ final class MarkLessonPresence
 
         if ($student->classId !== $classId) {
             throw new AttendanceException("{$student->name} bukan siswa kelas {$class->name}.");
+        }
+
+        $checkedOutAt = DailyAttendance::query()->where('student_id', $student->id)->where('date', $today)->value('checked_out_at');
+
+        if ($checkedOutAt !== null) {
+            throw new AttendanceException("{$student->name} sudah tercatat pulang pukul ".$this->clock->local(Carbon::parse($checkedOutAt))->format('H.i').', jadi tidak bisa dipindai ke pelajaran. Minta admin atau staf TU membatalkan catatan pulang di Input Absensi bila keliru.');
         }
 
         return DB::transaction(function () use ($classId, $today, $slot, $student, $method, $recordedBy): LessonAttendance {
