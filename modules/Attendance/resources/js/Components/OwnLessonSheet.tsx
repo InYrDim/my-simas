@@ -1,5 +1,7 @@
 import { useForm } from '@inertiajs/react';
 
+import { Button } from '@shared/components/ui/button';
+
 import LessonRoll from './LessonRoll';
 import type { RollStudent } from './LessonRoll';
 import type { AttendanceStatus } from './status';
@@ -17,6 +19,7 @@ export default function OwnLessonSheet({
     editable,
     updateUrl,
     lockedNote,
+    previous = null,
 }: {
     date: string;
     slotId: string;
@@ -25,6 +28,11 @@ export default function OwnLessonSheet({
     editable: boolean;
     updateUrl: string;
     lockedNote?: string;
+    /** The class's earlier lesson of the day, offered for copying. */
+    previous?: {
+        label: string;
+        marks: Record<number, AttendanceStatus>;
+    } | null;
 }) {
     const form = useForm<{
         date: string;
@@ -80,6 +88,28 @@ export default function OwnLessonSheet({
                 form.errors.date
             }
             lockedNote={lockedNote}
+            header={
+                editable && previous !== null ? (
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() =>
+                            form.setData(
+                                'marks',
+                                Object.fromEntries(
+                                    students.map((student) => [
+                                        student.id,
+                                        previous.marks[student.id] ??
+                                            marks[student.id],
+                                    ]),
+                                ),
+                            )
+                        }
+                    >
+                        Salin dari jam sebelumnya ({previous.label})
+                    </Button>
+                ) : undefined
+            }
         />
     );
 }

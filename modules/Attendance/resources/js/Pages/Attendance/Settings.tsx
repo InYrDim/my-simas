@@ -25,6 +25,7 @@ export default function Settings({
     gateEnabled,
     lessonEnabled,
     lessonScanEarlyMinutes,
+    lessonCopyPreviousEnabled,
     gateOpensAt,
     gateClosesAt,
     can,
@@ -33,6 +34,7 @@ export default function Settings({
     gateEnabled: boolean;
     lessonEnabled: boolean;
     lessonScanEarlyMinutes: number;
+    lessonCopyPreviousEnabled: boolean;
     gateOpensAt: string;
     gateClosesAt: string;
     can: { manageNotices: boolean };
@@ -42,6 +44,7 @@ export default function Settings({
         gate_enabled: gateEnabled,
         lesson_enabled: lessonEnabled,
         lesson_scan_early_minutes: lessonScanEarlyMinutes,
+        lesson_copy_previous_enabled: lessonCopyPreviousEnabled,
         gate_opens_at: gateOpensAt,
         gate_closes_at: gateClosesAt,
     });
@@ -228,7 +231,7 @@ export default function Settings({
                     </FieldDescription>
                 </Panel>
 
-                <Panel title="Pindai jam pelajaran" className="mt-6">
+                <Panel title="Jam pelajaran" className="mt-6">
                     <Field
                         data-invalid={
                             form.errors.lesson_scan_early_minutes !== undefined
@@ -266,6 +269,29 @@ export default function Settings({
                                 {form.errors.lesson_scan_early_minutes}
                             </FieldError>
                         )}
+                    </Field>
+                    <Field orientation="horizontal" className="mt-4">
+                        <Checkbox
+                            id="lesson-copy-previous-enabled"
+                            checked={form.data.lesson_copy_previous_enabled}
+                            onCheckedChange={(checked) =>
+                                form.setData(
+                                    'lesson_copy_previous_enabled',
+                                    checked === true,
+                                )
+                            }
+                        />
+                        <FieldContent>
+                            <FieldLabel htmlFor="lesson-copy-previous-enabled">
+                                Guru boleh menyalin absensi jam sebelumnya
+                            </FieldLabel>
+                            <FieldDescription>
+                                Di Absensi Kelas muncul tombol untuk mengisi
+                                jam ini sama dengan jam sebelumnya pada hari
+                                yang sama; guru tinggal mengubah yang
+                                berbeda.
+                            </FieldDescription>
+                        </FieldContent>
                     </Field>
                 </Panel>
 

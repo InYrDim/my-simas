@@ -3,6 +3,7 @@
 namespace Modules\Attendance\Tests\Feature;
 
 use Inertia\Testing\AssertableInertia as Assert;
+use Modules\Attendance\App\Domain\Models\AttendanceSetting;
 use Modules\Attendance\App\Domain\Models\LessonCheck;
 use Modules\Core\App\Domain\Models\Subject;
 use Modules\Core\App\Domain\Models\TeachingAssignment;
@@ -152,4 +153,34 @@ it('does not show the students of a class outside the own timetable', function (
     attendanceStudent($tenant, $foreign, 'Rahasia');
 
     get(school($tenant->slug, "/absensi/kelas-saya/{$foreign->id}"))->assertNotFound();
+});
+
+it('offers the roll of the class\'s previous lesson for copying', function () {
+    $tenant = attendanceTenant(role: 'guru', slug: 'salin-absen');
+    $class = attendanceClass($tenant);
+    $first = attendanceSlot($tenant);
+    $second = attendanceSlot($tenant, ['start_time' => '08:00:00', 'end_time' => '08:45:00']);
+    attendanceTeach($tenant, $class, $first, 'Matematika', auth()->id());
+    attendanceTeach($tenant, $class, $second, 'Matematika', auth()->id());
+    $budi = attendanceStudent($tenant, $class, 'Budi');
+
+    // 07:30, first hour: record Budi as sick.
+    put(school($tenant->slug, '/absensi/absen-kelas'), [
+        'date' => '2026-10-02',
+        'period_slot_id' => $first->id,
+        'marks' => [['student_id' => $budi->id, 'status' => 'sick']],
+    ])->assertSessionHasNoErrors();
+
+    // The first hour has nothing before it; the second offers the first.
+    get(school($tenant->slug, "/absensi/absen-kelas?jam={$first->id}"))->assertInertia(fn (Assert $page) => $page
+        ->where('previous', null));
+
+    get(school($tenant->slug, "/absensi/absen-kelas?jam={$second->id}"))->assertInertia(fn (Assert $page) => $page
+        ->where('previous.label', '07:15–08:00')
+        ->where("previous.marks.{$budi->id}", 'sick'));
+
+    attendanceSchool($tenant, fn () => AttendanceSetting::current()->update(['lesson_copy_previous_enabled' => false]));
+
+    get(school($tenant->slug, "/absensi/absen-kelas?jam={$second->id}"))->assertInertia(fn (Assert $page) => $page
+        ->where('previous', null));
 });

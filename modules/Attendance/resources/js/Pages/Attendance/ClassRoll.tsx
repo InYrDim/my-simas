@@ -12,7 +12,7 @@ import AttendancePage from '../../Components/AttendancePage';
 import OwnLessonSheet from '../../Components/OwnLessonSheet';
 import type { RollStudent } from '../../Components/LessonRoll';
 import { lessonStateMeta } from '../../Components/status';
-import type { LessonState } from '../../Components/status';
+import type { AttendanceStatus, LessonState } from '../../Components/status';
 
 interface Lesson {
     slotId: number;
@@ -32,6 +32,7 @@ interface ClassRollProps {
     selected: Lesson | null;
     editable: boolean;
     recorded: boolean;
+    previous: { label: string; marks: Record<number, AttendanceStatus> } | null;
     students: RollStudent[];
 }
 
@@ -47,6 +48,7 @@ export default function ClassRoll({
     selected,
     editable,
     recorded,
+    previous,
     students,
 }: ClassRollProps) {
     return (
@@ -116,6 +118,7 @@ export default function ClassRoll({
                                 slotId={String(selected.slotId)}
                                 students={students}
                                 recorded={recorded}
+                                previous={previous}
                                 editable={editable}
                                 updateUrl={update.url()}
                                 lockedNote="Di luar jam pelajaran, absensi tidak dapat diisi di sini. Ubah data lewat Riwayat Absensi."

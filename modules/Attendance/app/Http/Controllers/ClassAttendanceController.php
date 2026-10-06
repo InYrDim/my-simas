@@ -8,6 +8,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Attendance\App\Domain\Actions\SaveOwnLessonAttendance;
 use Modules\Attendance\App\Domain\Enums\LessonState;
+use Modules\Attendance\App\Domain\Models\AttendanceSetting;
 use Modules\Attendance\App\Domain\Models\LessonSession;
 use Modules\Attendance\App\Domain\Queries\LessonRoll;
 use Modules\Attendance\App\Domain\Queries\TeacherLessons;
@@ -45,6 +46,7 @@ final class ClassAttendanceController
             'selected' => $selected,
             'editable' => ($selected['state'] ?? null) === LessonState::Running->value,
             'recorded' => $session !== null,
+            'previous' => $selected === null || ! AttendanceSetting::copyPreviousEnabled() ? null : $this->previousRoll($selected, $today),
             'students' => $selected === null ? [] : $roll->forClass($selected['classId'], $today, $session),
         ]);
     }
@@ -58,6 +60,40 @@ final class ClassAttendanceController
         }
 
         return back()->with('status', 'Absensi kelas disimpan.');
+    }
+
+    /**
+     * The roll of the class's closest earlier lesson of the day, for the
+     * teacher to copy; null when the class has none or it has no marks.
+     *
+     * @param  array{slotId: int, classId: int, startsAt: string}  $selected
+     * @return array{label: string, marks: array<int, string>}|null
+     */
+    private function previousRoll(array $selected, string $today): ?array
+    {
+        $session = LessonSession::query()
+            ->where('class_id', $selected['classId'])
+            ->where('date', $today)
+            ->where('start_time', '<', "{$selected['startsAt']}:00")
+            ->orderByDesc('start_time')
+            ->first();
+
+        if ($session === null) {
+            return null;
+        }
+
+        $marks = $session->attendances()->get()
+            ->mapWithKeys(fn ($mark): array => [$mark->student_id => $mark->status->value])
+            ->all();
+
+        if ($marks === []) {
+            return null;
+        }
+
+        return [
+            'label' => substr($session->start_time, 0, 5).'–'.substr($session->end_time, 0, 5),
+            'marks' => $marks,
+        ];
     }
 
     /**
