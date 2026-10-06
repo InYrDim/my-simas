@@ -43,6 +43,7 @@ it('registers the attendance permissions', function () {
         'attendance.qr.show',
         'attendance.mine.view',
         'attendance.class.record',
+        'attendance.class.view-own',
     ]);
 });
 
@@ -159,11 +160,12 @@ it('closes the lesson pages while the school has lesson attendance off', functio
     );
 });
 
-it('shows a student only the QR entry', function () {
+it('shows a student the QR entry and Kelas Saya with Absensi Saya inside', function () {
     $tenant = attendanceTenant(role: 'siswa', slug: 'menu-siswa');
 
     get(school($tenant->slug, '/beranda'))->assertInertia(fn (Assert $page) => $page
-        ->where('tenantNav', fn ($nav) => collect($nav)->pluck('label')->all() === ['Beranda', 'Profil Saya', 'QR Absensi', 'Absensi Saya'])
+        ->where('tenantNav', fn ($nav) => collect($nav)->pluck('label')->all() === ['Beranda', 'Profil Saya', 'QR Absensi', 'Kelas Saya'])
+        ->where('tenantNav.3.children', fn ($children) => collect($children)->pluck('label')->all() === ['Info Kelas', 'Jadwal Pelajaran', 'Mata Pelajaran & Guru', 'Absensi Saya'])
     );
 });
 

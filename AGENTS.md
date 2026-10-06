@@ -487,3 +487,11 @@ jam lewat Riwayat Absensi. Halaman sekolah (Input harian, Jam Pelajaran
 sekolah) kini milik admin/staf-tu; guru tetap bisa Pindai QR. Setelah
 rilis: `php artisan migrate`. Rincian: modules/Attendance/CONTRACT.md,
 modules/Core/CONTRACT.md, docs/architecture/modular-monolith.md.
+
+## Kelas Saya siswa
+
+Siswa kini punya menu "Kelas Saya" (grup "Saya", dimiliki Attendance): Info
+Kelas, Jadwal Pelajaran, Mata Pelajaran & Guru, dan Absensi Saya sebagai anak
+menu. Izin baru `attendance.class.view-own` (role `siswa`); kontrak Core baru
+`ClassTimetable`. Setelah rilis: `php artisan roles:sync`. Rincian:
+modules/Attendance/CONTRACT.md, modules/Core/CONTRACT.md.

@@ -733,3 +733,14 @@ done.
 - **Students count once placed** in a class of the active year; the
   step links to Penempatan Siswa `?kelas=belum` while some are not.
 - Details: `modules/Core/CONTRACT.md` (Surfaces).
+
+
+## Kelas Saya for students
+
+Students get their own **Kelas Saya** (group "Saya"), owned by Attendance like the
+teacher's: Info Kelas (class, homeroom, classmates), Jadwal Pelajaran, Mata Pelajaran
+& Guru and Absensi Saya as a child. One sidebar entry cannot be shared between
+modules and Core must not import Attendance, so Attendance owns the entry and reads
+Core through `ClassDirectory`, `StudentDirectory` and the new `ClassTimetable`
+contract. Permission `attendance.class.view-own` (role `siswa`); after a release run
+`php artisan roles:sync`. Details: `modules/Attendance/CONTRACT.md`, `modules/Core/CONTRACT.md`.

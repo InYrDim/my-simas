@@ -8,6 +8,7 @@ use Modules\Attendance\App\Http\Controllers\LessonAttendanceController;
 use Modules\Attendance\App\Http\Controllers\LessonCheckController;
 use Modules\Attendance\App\Http\Controllers\MonthlyRecapController;
 use Modules\Attendance\App\Http\Controllers\MyAttendanceController;
+use Modules\Attendance\App\Http\Controllers\MyClassController;
 use Modules\Attendance\App\Http\Controllers\MyClassesController;
 use Modules\Attendance\App\Http\Controllers\OverviewController;
 use Modules\Attendance\App\Http\Controllers\ScanController;
@@ -79,6 +80,14 @@ Route::middleware('web')->group(function (): void {
             Route::get('saya', MyAttendanceController::class)
                 ->middleware('can:attendance.mine.view')
                 ->name('mine');
+
+            // A student's own class: info, timetable, subjects with their
+            // teachers. The controller finds the class from the account.
+            Route::middleware('can:attendance.class.view-own')->prefix('kelasku')->group(function (): void {
+                Route::get('/', [MyClassController::class, 'info'])->name('class-mine');
+                Route::get('jadwal', [MyClassController::class, 'timetable'])->name('class-mine.timetable');
+                Route::get('mapel', [MyClassController::class, 'subjects'])->name('class-mine.subjects');
+            });
 
             // A student's own QR; the controller also asks for an account
             // linked to an active student.

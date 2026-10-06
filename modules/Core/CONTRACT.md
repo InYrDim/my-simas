@@ -72,6 +72,10 @@ DTOs.
   a slot identifies the lesson: `SaveTimetableEntry` refuses a teacher in
   two classes at once. Attendance reads this for the teacher's Kelas Saya
   pages; Core's own Jadwal Mengajar reads it too.
+- `ClassTimetable` — `week(classId)`: one class's whole week in the same
+  `ScheduleDay`/`ScheduleLesson` shape, each lesson with the `teacherName`
+  its class teaching assignment gives the subject (null for a teacher's own
+  `TeacherSchedule`). Attendance reads it for the student's Kelas Saya.
 - `DTOs/StudentRecord` (id, name, NIS, class id and name, active — no
   guardian details), `DTOs/ClassRecord` (id, name, academic year id,
   homeroom teacher's name, number of active students),

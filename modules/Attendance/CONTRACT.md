@@ -26,7 +26,10 @@
   `attendance.settings.manage` (admin) and `attendance.qr.show` (a student's
   own QR — siswa), `attendance.mine.view`
   (Absensi Saya, `/absensi/saya`: a student's own daily history by month,
-  the student found from the signed-in account, never from the URL — siswa).
+  the student found from the signed-in account, never from the URL — siswa),
+  `attendance.class.view-own` (the student's Kelas Saya: `/absensi/kelasku`
+  Info Kelas, `/jadwal`, `/mapel`; `MyClassController`, class found from the
+  account, reads Core's `ClassDirectory`, `StudentDirectory`, `ClassTimetable`).
   Composite ability `attendance.class.lesson.use` = `attendance.class.record`
   AND the school's lesson switch; Fase 13's Absensi Kelas and Riwayat
   Absensi routes and sidebar children ask it.
@@ -72,7 +75,8 @@ Never another feature module (Ppdb), not even via its Public surface.
   `module:attendance`), its permissions, the sidebar entries (the office's
   "Absensi", the teacher's "Kelas Saya" with its four pages and the kept
   "Absensi Saya" placeholder in group "Saya", the student's "QR Absensi"
-  and "Absensi Saya"; each child with its permission), four notice kinds
+  and "Kelas Saya" (Info Kelas, Jadwal Pelajaran, Mata Pelajaran & Guru,
+  Absensi Saya); each child with its permission), four notice kinds
   with Core's `NoticeRegistry`, and two reports and one statistics
   provider with Core's `ReportRegistry` / `StatisticsRegistry`.
 - **The school's clock.** Days and times of day are the tenant's

@@ -5,6 +5,7 @@ namespace Modules\Core\App\Infrastructure\Providers;
 use Illuminate\Support\ServiceProvider;
 use Modules\Core\App\Contracts\BellSchedule;
 use Modules\Core\App\Contracts\ClassDirectory;
+use Modules\Core\App\Contracts\ClassTimetable;
 use Modules\Core\App\Contracts\ContactNotifier;
 use Modules\Core\App\Contracts\GuardianNotifier;
 use Modules\Core\App\Contracts\NoticeRegistry;
@@ -20,6 +21,7 @@ use Modules\Core\App\Domain\Statistics\SchoolStatistics;
 use Modules\Core\App\Infrastructure\Admission\DefaultStudentAdmission;
 use Modules\Core\App\Infrastructure\Directory\EloquentBellSchedule;
 use Modules\Core\App\Infrastructure\Directory\EloquentClassDirectory;
+use Modules\Core\App\Infrastructure\Directory\EloquentClassTimetable;
 use Modules\Core\App\Infrastructure\Directory\EloquentStudentDirectory;
 use Modules\Core\App\Infrastructure\Directory\EloquentTeacherSchedule;
 use Modules\Core\App\Infrastructure\Insight\DefaultReportRegistry;
@@ -65,6 +67,7 @@ class CoreServiceProvider extends ServiceProvider
         $this->app->bind(ClassDirectory::class, EloquentClassDirectory::class);
         $this->app->bind(BellSchedule::class, EloquentBellSchedule::class);
         $this->app->bind(TeacherSchedule::class, EloquentTeacherSchedule::class);
+        $this->app->bind(ClassTimetable::class, EloquentClassTimetable::class);
 
         // Admitting a new student on behalf of a feature module (PPDB).
         $this->app->bind(StudentAdmission::class, DefaultStudentAdmission::class);
