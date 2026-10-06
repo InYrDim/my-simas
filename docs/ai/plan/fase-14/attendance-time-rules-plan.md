@@ -1,6 +1,6 @@
 # Absensi hanya bisa dipindai pada waktunya: jam pelajaran, jendela gerbang, dan pulang awal
 
-> **Status dokumen:** Berjalan
+> **Status dokumen:** Selesai
 > **Dibuat:** 2026-10-06 · **Diperbarui:** 2026-10-06 · **Branch:** `feat/attendance-time-rules`
 
 ## Context
@@ -83,7 +83,7 @@ Legenda: ⬜ belum · 🟡 berjalan · ✅ selesai. Berhenti di antara tahap dan
 | --- | --- | --- | --- |
 | 1 | Scan pelajaran hanya dalam jamnya + scanner guru terkunci ke pelajaran miliknya | ✅ | `ScanWindow::assertLessonOpen()` dipakai `MarkLessonPresence`; scanner guru hanya memuat pelajaran yang sedang berjalan; 208 tes Attendance hijau |
 | 2 | Jendela gerbang + penanda pulang awal | ✅ | `ScanWindow::assertGateOpen()` / `lastLessonEnd()`; `left_early` diisi saat scan pulang, respons "Pulang awal"; 221 tes Attendance hijau |
-| 3 | Konsistensi gerbang–kelas (tolak scan pelajaran setelah pulang) + dokumentasi | ⬜ | |
+| 3 | Konsistensi gerbang–kelas (tolak scan pelajaran setelah pulang) + dokumentasi | ✅ | `MarkLessonPresence` menolak siswa yang sudah pulang; CONTRACT, docs arsitektur dan AGENTS.md diperbarui; 222 tes hijau |
 
 ## Tasks
 
@@ -111,10 +111,10 @@ Legenda: ⬜ belum · 🟡 berjalan · ✅ selesai. Berhenti di antara tahap dan
 **Selesai bila:** scan masuk 22.00 ditolak, pulang 10.00 tercatat `left_early`, pulang setelah jam terakhir tidak. Bukti: `php artisan test --compact modules/Attendance/tests/Feature/GateAttendanceTest.php` → hijau.
 
 ### Tahap 3 — Konsistensi gerbang–kelas dan dokumentasi
-- [ ] Tolak scan pelajaran bila siswa sudah tercatat pulang hari ini — `modules/Attendance/app/Domain/Actions/MarkLessonPresence.php`
-- [ ] Tes: scan pelajaran setelah pulang ditolak, siswa tanpa baris harian tetap boleh dipindai (perilaku lama) — `modules/Attendance/tests/Feature/LessonAttendanceTest.php`
-- [ ] Perbarui `modules/Attendance/CONTRACT.md` (Switches/Settings, The gate, Lessons, scanner) dan `docs/architecture/modular-monolith.md`; ringkasan singkat di `AGENTS.md` (salinan lokal yang di-gitignore, jaga tetap sinkron)
-- [ ] Format: `vendor/bin/pint --dirty --format agent`
+- [x] Tolak scan pelajaran bila siswa sudah tercatat pulang hari ini — `modules/Attendance/app/Domain/Actions/MarkLessonPresence.php`
+- [x] Tes: scan pelajaran setelah pulang ditolak, siswa tanpa baris harian tetap boleh dipindai (perilaku lama) — `modules/Attendance/tests/Feature/LessonAttendanceTest.php`
+- [x] Perbarui `modules/Attendance/CONTRACT.md` (Switches/Settings, The gate, Lessons, scanner) dan `docs/architecture/modular-monolith.md`; ringkasan singkat di `AGENTS.md` (salinan lokal yang di-gitignore, jaga tetap sinkron)
+- [x] Format: `vendor/bin/pint --dirty --format agent`
 
 **Selesai bila:** CONTRACT dan docs menjelaskan aturan waktu; scan pelajaran setelah pulang ditolak. Bukti: `php artisan test --compact modules/Attendance` → hijau; `vendor/bin/deptrac` → tanpa pelanggaran baru.
 
@@ -159,8 +159,11 @@ Diisi selama eksekusi; dokumen ini hidup.
 - 2026-10-06 — Tahap 2: jam gerbang divalidasi `required_with` satu sama lain + `after:gate_opens_at`; keduanya opsional bila tidak dikirim (nilai sekarang dipertahankan). Batas tutup inklusif (`<= gate_closes_at` pada menit `H:i`), seperti `late_after`. Scan pulang juga terikat jendela gerbang.
 
 ### Temuan
+- `vendor/bin/deptrac analyse` melaporkan 1 pelanggaran, `App\Console\Commands\DemoSeedCommand` → `Database\Seeders\DemoSchoolSeeder`; sudah ada sebelum fase ini (sama pada pohon bersih), bukan dari perubahan Attendance.
 - Guru yang memindai kelas yang tidak ia ampu tetap ditolak lebih dulu oleh `recordableClassRule()` (kunci `class_id`), bukan oleh pemeriksaan jadwal; pesan "bukan jadwal mengajar Anda" hanya muncul untuk kelas miliknya di slot yang bukan miliknya.
 - Absensi Kelas (`SaveOwnLessonAttendance`) sudah terikat jam, tetapi scan (`MarkLessonPresence`) tidak: dua jalur untuk hal yang sama dengan aturan berbeda.
 
 ### Hasil akhir
-Diisi saat semua tahap selesai.
+Selesai 2026-10-06 (3 tahap, 3 commit di `feat/attendance-time-rules`). Pindai pelajaran hanya di dalam jamnya (toleransi per sekolah), scanner guru terkunci ke pelajaran miliknya yang berjalan, gerbang punya jendela buka–tutup, pulang sebelum jam pelajaran terakhir ditandai `left_early` ("Pulang awal"), dan siswa yang sudah pulang tidak bisa dipindai ke pelajaran. 222 tes Attendance hijau.
+
+Tersisa / tindak lanjut (di luar cakupan fase ini): kontrak kalender Core (`SchoolCalendar`) agar hari libur ditolak, alpa otomatis dan penyebut persentase hari efektif, alasan wajib dan notifikasi WA untuk pulang awal, tampilan `left_early` di rekap dan laporan, batas hari koreksi dan jejak audit, status terlambat di pelajaran. Setelah rilis: `php artisan migrate`.

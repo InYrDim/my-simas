@@ -254,3 +254,25 @@ it('refuses gate hours that close before they open', function () {
 
     expect(attendanceSchool($tenant, fn () => AttendanceSetting::current()->gateOpensAt()))->toBe('05:00');
 });
+
+it('refuses a lesson scan for a student already recorded as gone home', function () {
+    test()->travelTo('2026-10-02 00:30:00');
+    $tenant = attendanceTenant();
+    $class = attendanceClass($tenant);
+    $slot = attendanceSlot($tenant);
+    $adit = attendanceStudent($tenant, $class, 'Adit');
+    $bima = attendanceStudent($tenant, $class, 'Bima');
+    attendanceSchool($tenant, fn () => DailyAttendance::factory()->checkedIn('2026-10-01 23:50:00')->create([
+        'student_id' => $adit->id, 'class_id' => $class->id, 'date' => '2026-10-02', 'checked_out_at' => '2026-10-02 00:20:00',
+    ]));
+
+    $scan = fn (int $studentId) => postJson(school($tenant->slug, '/absensi/pindai'), [
+        'mode' => 'lesson', 'student_id' => $studentId, 'class_id' => $class->id, 'period_slot_id' => $slot->id,
+    ]);
+
+    $scan($adit->id)->assertStatus(422)->assertJsonPath('errors.scan.0', 'Adit sudah tercatat pulang pukul 07.20.');
+    // A student without any gate record is still scanned in, as before.
+    $scan($bima->id)->assertOk();
+
+    expect(lessonScanCount($tenant))->toBe(1);
+});

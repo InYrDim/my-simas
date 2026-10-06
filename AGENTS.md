@@ -495,3 +495,17 @@ Kelas, Jadwal Pelajaran, Mata Pelajaran & Guru, dan Absensi Saya sebagai anak
 menu. Izin baru `attendance.class.view-own` (role `siswa`); kontrak Core baru
 `ClassTimetable`. Setelah rilis: `php artisan roles:sync`. Rincian:
 modules/Attendance/CONTRACT.md, modules/Core/CONTRACT.md.
+
+## Waktu pindai absensi (Fase 14)
+
+Pindai hanya diterima pada waktunya, menurut jam sekolah (`Domain/Support/ScanWindow`,
+internal Attendance, tanpa kontrak). Pelajaran: dari `lesson_scan_early_minutes`
+(bawaan 5) sebelum mulai sampai selesai; guru tanpa `attendance.lesson.school`
+hanya memindai pelajarannya sendiri yang sedang berjalan. Gerbang (masuk dan
+pulang): antara `gate_opens_at` dan `gate_closes_at` (bawaan 05:00-18:00);
+pulang sebelum jam pelajaran terakhir selesai = `left_early` ("Pulang awal").
+Siswa yang sudah tercatat pulang tidak bisa dipindai ke pelajaran. Input harian
+dan Riwayat Absensi tidak terikat jam ini: itu jalur koreksi. Hari libur belum
+dikenali. Setelah rilis: `php artisan migrate`. Rincian:
+modules/Attendance/CONTRACT.md, docs/architecture/modular-monolith.md,
+docs/ai/plan/fase-14/.

@@ -4,7 +4,8 @@
 
 - Database tables (all tenant-scoped, no foreign keys except `tenant_id`;
   every other id is a plain indexed column): `attendance_settings` (one
-  row per school: the cut-off for arriving on time), `daily_attendances`
+  row per school: the cut-off for arriving on time, the gate hours and the
+  lesson scan tolerance), `daily_attendances`
   (one row per student and day: the day's status and the gate times in
   and out), `lesson_sessions` (one class in one lesson slot of one day),
   `lesson_attendances` (one row per student of a session) and
@@ -91,6 +92,19 @@ Never another feature module (Ppdb), not even via its Public surface.
   class; saving again updates the rows and never touches the gate times.
   A student without a row is "belum diabsen" — nothing marks absence
   automatically (no scheduler: the app runs on shared hosting).
+- **Scan times** (Fase 14, `Domain/Support/ScanWindow`): the gate (in and
+  out) takes scans only between `attendance_settings.gate_opens_at` and
+  `gate_closes_at` (default 05:00–18:00, the closing minute included); a
+  lesson only from `lesson_scan_early_minutes` (default 5, 0–30) before it
+  starts until it ends (`MarkLessonPresence`). A refusal answers like any
+  scan refusal and points to the correction path (Riwayat Absensi, Input
+  harian — neither is bound by these hours). Leaving before the end of the
+  day's last lesson (`ScanWindow::lastLessonEnd`, none on a day without
+  lessons) sets `daily_attendances.left_early`; the scanner shows "Pulang
+  awal". A teacher without `attendance.lesson.school` scans only the own
+  lesson that is running (`TeacherLessons`; scanner page and controller),
+  and a student already recorded as gone home is refused a lesson scan.
+  Holidays are not known here: no refusal on them yet.
 - **The gate** (`RecordGateCheckIn`, `RecordGateCheckOut`): arriving up to
   and including the cut-off minute of `attendance_settings.late_after`
   (default 07:00) is Hadir, later is Terlambat; arriving overrules a

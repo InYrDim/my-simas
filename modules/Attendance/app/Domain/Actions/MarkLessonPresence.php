@@ -2,11 +2,13 @@
 
 namespace Modules\Attendance\App\Domain\Actions;
 
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\Attendance\App\Domain\Enums\AttendanceStatus;
 use Modules\Attendance\App\Domain\Enums\RecordMethod;
 use Modules\Attendance\App\Domain\Exceptions\AttendanceException;
+use Modules\Attendance\App\Domain\Models\DailyAttendance;
 use Modules\Attendance\App\Domain\Models\LessonAttendance;
 use Modules\Attendance\App\Domain\Models\LessonSession;
 use Modules\Attendance\App\Domain\Support\LessonSlots;
@@ -48,6 +50,12 @@ final class MarkLessonPresence
 
         if ($student->classId !== $classId) {
             throw new AttendanceException("{$student->name} bukan siswa kelas {$class->name}.");
+        }
+
+        $checkedOutAt = DailyAttendance::query()->where('student_id', $student->id)->where('date', $today)->value('checked_out_at');
+
+        if ($checkedOutAt !== null) {
+            throw new AttendanceException("{$student->name} sudah tercatat pulang pukul ".$this->clock->local(Carbon::parse($checkedOutAt))->format('H.i').'.');
         }
 
         return DB::transaction(function () use ($classId, $today, $slot, $student, $method, $recordedBy): LessonAttendance {
