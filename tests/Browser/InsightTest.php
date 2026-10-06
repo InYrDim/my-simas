@@ -16,7 +16,7 @@ require_once __DIR__.'/Support/school.php';
  * isolation are covered by the Core feature tests.
  */
 it('shows the schools own figures instead of sample data', function () {
-    [$page, $tenant] = schoolMemberSignsIn('guru');
+    [$page, $tenant] = schoolMemberSignsIn('staf-tu');
 
     inTenant($tenant, function (): void {
         $year = AcademicYear::factory()->active()->create(['name' => '2026/2027']);

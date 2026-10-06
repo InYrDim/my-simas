@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import {
+    openGateAllDay,
     schoolCode,
     seedDemoSchoolData,
     studentRecord,
@@ -81,12 +82,16 @@ test('a student shows a one-time QR code and the gate records it once', async ({
     await expect(page).toHaveURL(`${centralUrl}/beranda`, { timeout: slow });
 
     // --- The student's menu holds the QR page and nothing else of Absensi
-    await expect(page.getByRole('link', { name: 'QR Absensi' })).toBeVisible();
+    // The Beranda repeats the link in its own section; the menu is the sidebar one.
+    const qrMenuLink = page
+        .locator('[data-sidebar="menu-button"]')
+        .filter({ hasText: 'QR Absensi' });
+    await expect(qrMenuLink).toBeVisible();
     await expect(
         page.getByRole('link', { name: 'Rekap Hari Ini' }),
     ).toHaveCount(0);
 
-    await page.getByRole('link', { name: 'QR Absensi' }).click();
+    await qrMenuLink.click();
     await expect(page).toHaveURL(`${centralUrl}/absensi/qr-saya`, {
         timeout: slow,
     });
@@ -108,25 +113,30 @@ test('a student shows a one-time QR code and the gate records it once', async ({
 
     // --- The gate: the replaced code is refused, the live one records once
     await admin.goto(`${centralUrl}/absensi/pindai`);
+    openGateAllDay(accounts.schoolAdmin.schoolSlug);
+    await admin.reload();
     const codeField = admin.getByLabel('Kode', { exact: true });
     const record = admin.getByRole('button', { name: 'Catat', exact: true });
 
+    // The scanner announces each result twice (a live region and the list);
+    // count only the list entries.
+    const refusals = admin.locator('p:not([role="status"] p)', {
+        hasText: 'Kode QR tidak dikenal atau sudah kedaluwarsa',
+    });
+
     await codeField.fill(firstCode as string);
     await record.click();
-    await expect(
-        admin.getByText('Kode QR tidak dikenal atau sudah kedaluwarsa'),
-    ).toBeVisible();
+    await expect(refusals).toHaveCount(1);
 
     await codeField.fill(liveCode as string);
     await record.click();
-    await expect(admin.getByText(student.name)).toBeVisible();
-    await expect(admin.getByText('Tercatat', { exact: true })).toBeVisible();
+    const latest = admin.getByRole('status');
+    await expect(latest.getByText(student.name)).toBeVisible();
+    await expect(latest.getByText('Tercatat', { exact: true })).toBeVisible();
 
     await codeField.fill(liveCode as string);
     await record.click();
-    await expect(
-        admin.getByText('Kode QR tidak dikenal atau sudah kedaluwarsa'),
-    ).toHaveCount(2);
+    await expect(refusals).toHaveCount(2);
 
     // --- The student sees the arrival on the QR page
     await page.reload();

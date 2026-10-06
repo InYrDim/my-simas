@@ -119,6 +119,9 @@ it('lets an admin take the roll call of a class and see it in the recap', functi
 });
 
 it('records a student at the gate from a one-time code and another by name', function () {
+    // The gate only takes scans between gate_opens_at and gate_closes_at (school time).
+    $this->travelTo('2026-10-07 03:00:00');
+
     [$page, $tenant] = attendanceMemberSignsIn('staf-tu');
     [, , $students] = attendanceClasses($tenant, ['Aditya Pratama', 'Bima Sakti']);
 

@@ -103,6 +103,35 @@ export function verifyPpdbAccount(email: string): void {
 }
 
 /**
+ * Widens a school's gate window to the whole day. The real server cannot
+ * have its clock frozen, and the default window (05:00-18:00 school time)
+ * would refuse a scan whenever the suite runs outside it. The settings row
+ * is created on first use, so it is inserted here with the model's own
+ * defaults when it does not exist yet.
+ */
+export function openGateAllDay(slug: string): void {
+    execFileSync(
+        'php',
+        [
+            '-r',
+            [
+                '$pdo = new PDO("sqlite:".$argv[1]);',
+                '$tenant = $pdo->query("select id from tenants where slug = ".$pdo->quote($argv[2]))->fetchColumn();',
+                'if ($tenant === false) { fwrite(STDERR, "No school ".$argv[2]); exit(1); }',
+                '$update = $pdo->prepare("update attendance_settings set gate_opens_at = ?, gate_closes_at = ? where tenant_id = ?");',
+                '$update->execute(["00:00:00", "23:59:00", $tenant]);',
+                'if ($update->rowCount() > 0) { exit(0); }',
+                '$now = date("Y-m-d H:i:s");',
+                '$pdo->prepare("insert into attendance_settings (tenant_id, late_after, gate_enabled, lesson_enabled, lesson_scan_early_minutes, lesson_copy_previous_enabled, gate_opens_at, gate_closes_at, created_at, updated_at) values (?, ?, 1, 1, 5, 1, ?, ?, ?, ?)")->execute([$tenant, "07:00:00", "00:00:00", "23:59:00", $now, $now]);',
+            ].join(' '),
+            databasePath,
+            slug,
+        ],
+        { stdio: 'inherit' },
+    );
+}
+
+/**
  * A seeded student of a school: the class to open, the name to look for
  * and the first password of the account (the birth date as ddmmyyyy).
  */
