@@ -32,7 +32,9 @@
 - `TenantCache` + `PartitionedTenantCache` (Stage 4): cache partitioned
   per tenant — every key is prefixed `tenant:{id}:` (central: `central:`).
   API: `repository()`, `key()`, `get()`, `put()`, `forget()`,
-  `rememberForever()`. Backed by the default cache store, resolved lazily.
+  `rememberForever()`, `lock()` (atomic lock named per tenant; throws
+  when the store cannot lock). Backed by the default cache store,
+  resolved lazily.
 - `TenantStorage` + `PartitionedTenantStorage` (Stage 4): file storage
   partitioned per tenant on the `local` disk — `path(module, relative)`
   is rooted at `tenants/{id}/{module}/…` (central: `central/{module}/…`).

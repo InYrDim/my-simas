@@ -3,6 +3,7 @@
 namespace Modules\Attendance\App\Domain\Actions;
 
 use Carbon\Carbon;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\Attendance\App\Domain\Enums\AttendanceStatus;
@@ -58,26 +59,31 @@ final class MarkLessonPresence
             throw new AttendanceException("{$student->name} sudah tercatat pulang pukul ".$this->clock->local(Carbon::parse($checkedOutAt))->format('H.i').', jadi tidak bisa dipindai ke pelajaran. Minta admin atau staf TU membatalkan catatan pulang di Input Absensi bila keliru.');
         }
 
-        return DB::transaction(function () use ($classId, $today, $slot, $student, $method, $recordedBy): LessonAttendance {
-            $session = LessonSession::query()->firstOrCreate(
-                ['class_id' => $classId, 'date' => $today, 'period_slot_id' => $slot->id],
-                ['start_time' => "{$slot->startsAt}:00", 'end_time' => "{$slot->endsAt}:00", 'recorded_by' => $recordedBy],
-            );
+        try {
+            return DB::transaction(function () use ($classId, $today, $slot, $student, $method, $recordedBy): LessonAttendance {
+                $session = LessonSession::query()->firstOrCreate(
+                    ['class_id' => $classId, 'date' => $today, 'period_slot_id' => $slot->id],
+                    ['start_time' => "{$slot->startsAt}:00", 'end_time' => "{$slot->endsAt}:00", 'recorded_by' => $recordedBy],
+                );
 
-            $row = $session->attendances()->where('student_id', $student->id)->first();
+                $row = $session->attendances()->where('student_id', $student->id)->first();
 
-            if ($row?->status === AttendanceStatus::Present) {
-                throw new AttendanceException("{$student->name} sudah tercatat hadir di jam ini.");
-            }
+                if ($row?->status === AttendanceStatus::Present) {
+                    throw new AttendanceException("{$student->name} sudah tercatat hadir di jam ini.");
+                }
 
-            $row ??= new LessonAttendance(['lesson_session_id' => $session->id, 'student_id' => $student->id]);
-            $row->fill([
-                'status' => AttendanceStatus::Present,
-                'method' => $method,
-                'scanned_at' => $this->clock->stored($this->clock->now()),
-            ])->save();
+                $row ??= new LessonAttendance(['lesson_session_id' => $session->id, 'student_id' => $student->id]);
+                $row->fill([
+                    'status' => AttendanceStatus::Present,
+                    'method' => $method,
+                    'scanned_at' => $this->clock->stored($this->clock->now()),
+                ])->save();
 
-            return $row;
-        });
+                return $row;
+            });
+        } catch (UniqueConstraintViolationException) {
+            // Two scanners marked the same student at the same moment.
+            throw new AttendanceException("{$student->name} sudah tercatat hadir di jam ini.");
+        }
     }
 }

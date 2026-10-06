@@ -2,6 +2,7 @@
 
 namespace Modules\Platform\App\Contracts;
 
+use Illuminate\Contracts\Cache\Lock;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 
 /**
@@ -30,6 +31,15 @@ interface TenantCache
     public function put(string $key, mixed $value, \DateInterval|int|\DateTimeInterface|null $ttl = null): bool;
 
     public function forget(string $key): bool;
+
+    /**
+     * An atomic lock whose name is partitioned like a cache key, so two
+     * requests of the same school cannot run the same critical section at
+     * once. Fails loudly when the cache store cannot lock.
+     *
+     * @throws \LogicException
+     */
+    public function lock(string $name, int $seconds = 10): Lock;
 
     /**
      * Remember forever (until explicitly invalidated).

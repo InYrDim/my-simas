@@ -4,7 +4,10 @@ namespace Modules\Platform\App\Infrastructure\Tenancy;
 
 use DateInterval;
 use DateTimeInterface;
+use Illuminate\Contracts\Cache\Lock;
+use Illuminate\Contracts\Cache\LockProvider;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
+use LogicException;
 use Modules\Platform\App\Contracts\TenantCache;
 use Modules\Platform\App\Contracts\TenantContext;
 
@@ -46,6 +49,17 @@ final class PartitionedTenantCache implements TenantCache
     public function forget(string $key): bool
     {
         return $this->repository()->forget($this->key($key));
+    }
+
+    public function lock(string $name, int $seconds = 10): Lock
+    {
+        $store = $this->repository()->getStore();
+
+        if (! $store instanceof LockProvider) {
+            throw new LogicException('The default cache store does not support atomic locks.');
+        }
+
+        return $store->lock($this->key('lock:'.$name), $seconds);
     }
 
     /**

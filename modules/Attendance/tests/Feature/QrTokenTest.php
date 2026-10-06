@@ -3,6 +3,7 @@
 namespace Modules\Attendance\Tests\Feature;
 
 use Modules\Attendance\App\Domain\Qr\QrTokens;
+use Modules\Platform\App\Contracts\TenantCache;
 use Modules\Platform\Database\Factories\TenantFactory;
 
 require_once __DIR__.'/Support/helpers.php';
@@ -51,6 +52,26 @@ it('kills the previous code when the student asks for a new one', function () {
         ->and(attendanceSchool($tenant, fn () => $tokens->consume($second['token'])))->toBe(41)
         // One student's new code leaves another student's alone.
         ->and(attendanceSchool($tenant, fn () => $tokens->consume($neighbour['token'])))->toBe(42);
+});
+
+it('refuses a code while another scan of it holds the lock', function () {
+    $tenant = TenantFactory::new()->create();
+    $tokens = app(QrTokens::class);
+    $issued = attendanceSchool($tenant, fn () => $tokens->issue(41));
+
+    $held = attendanceSchool($tenant, function () use ($issued) {
+        $lock = app(TenantCache::class)->lock('attendance:qr:consume:'.hash('sha256', $issued['token']), 30);
+        $lock->get();
+
+        return $lock;
+    });
+
+    expect(attendanceSchool($tenant, fn () => $tokens->consume($issued['token'])))->toBeNull();
+
+    $held->release();
+
+    // The refused scan did not use the code up.
+    expect(attendanceSchool($tenant, fn () => $tokens->consume($issued['token'])))->toBe(41);
 });
 
 it('does not know a code of another school or a made-up one', function () {

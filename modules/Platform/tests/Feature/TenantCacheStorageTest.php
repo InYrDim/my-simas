@@ -48,6 +48,20 @@ it('does not share central cache entries with tenants', function () {
     $context->runWithoutTenant(fn () => expect($cache->get('shared-key'))->toBe('from-central'));
 });
 
+it('locks per tenant so one school never blocks another', function () {
+    $a = tenantForQueues('sekolah-a');
+    $b = tenantForQueues('sekolah-b');
+    $context = app(TenantContext::class);
+    $cache = app(TenantCache::class);
+
+    $held = $context->run($a, fn () => tap($cache->lock('job', 30), fn ($lock) => $lock->get()));
+
+    expect($context->run($a, fn (): bool => (bool) $cache->lock('job', 30)->get()))->toBeFalse()
+        ->and($context->run($b, fn (): bool => (bool) $cache->lock('job', 30)->get()))->toBeTrue();
+
+    $held->release();
+});
+
 it('exposes the underlying cache repository', function () {
     $cache = app(TenantCache::class);
 

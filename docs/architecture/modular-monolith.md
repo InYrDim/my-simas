@@ -223,7 +223,10 @@ Every business table is tenant-scoped. The playbook:
    purpose, review accordingly. Also: an explicit-`tenant_id` Eloquent
    query still needs context unless wrapped in `runWithoutTenant()`.
 5. **Cache/storage/jobs**: use `TenantCache` / `TenantStorage`
-   contracts (auto-partitioned per tenant). Jobs need nothing special —
+   contracts (auto-partitioned per tenant). `TenantCache::lock()` gives
+   an atomic lock named per tenant for check-then-act sections; it throws
+   `LogicException` when the default store cannot lock (`null` driver).
+   Jobs need nothing special —
    `TenantQueueContext` stamps payloads on dispatch and restores on
    run (sync-safe).
 6. **Casing**: hosts are lowercased, but slugs/emails in the DB are
@@ -607,7 +610,12 @@ The first feature module with real data. Details:
   linked to an active student) asks for a random code kept in
   `TenantCache` for 60 seconds; staff scan it (camera, handheld scanner,
   or a manual pick by name/NIS). No table, nothing about the student in
-  the code, one live code per student, used up by the scan.
+  the code, one live code per student, used up by the scan. Reading and
+  using up a code runs under `TenantCache::lock()` (per code), so two
+  scans of one code at the same moment cannot both win; a lock not had
+  within 2 seconds refuses the code without using it up. Marking a
+  student present in a lesson turns a unique-constraint race into the
+  normal "sudah tercatat" refusal.
 - **The school's clock, on every database.** Days are stored as the
   school's own `Y-m-d` (never cast to a date object), times of day are
   compared on the tenant timezone, timestamps are converted to the
