@@ -104,6 +104,10 @@ Never another feature module (Ppdb), not even via its Public surface.
   awal". A teacher without `attendance.lesson.school` scans only the own
   lesson that is running (`TeacherLessons`; scanner page and controller),
   and a student already recorded as gone home is refused a lesson scan.
+  The office takes that record back on Input Absensi ("Batalkan pulang",
+  `DELETE /absensi/input/pulang`, `CancelGateCheckOut`, `attendance.daily.record`:
+  admin and staf-tu): today only; clears the time, the method and
+  `left_early`, keeps the arrival and the status, notifies nobody.
   Holidays are not known here: no refusal on them yet.
 - **The gate** (`RecordGateCheckIn`, `RecordGateCheckOut`): arriving up to
   and including the cut-off minute of `attendance_settings.late_after`

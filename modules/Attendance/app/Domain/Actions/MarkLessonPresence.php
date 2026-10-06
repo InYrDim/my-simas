@@ -55,7 +55,7 @@ final class MarkLessonPresence
         $checkedOutAt = DailyAttendance::query()->where('student_id', $student->id)->where('date', $today)->value('checked_out_at');
 
         if ($checkedOutAt !== null) {
-            throw new AttendanceException("{$student->name} sudah tercatat pulang pukul ".$this->clock->local(Carbon::parse($checkedOutAt))->format('H.i').'.');
+            throw new AttendanceException("{$student->name} sudah tercatat pulang pukul ".$this->clock->local(Carbon::parse($checkedOutAt))->format('H.i').', jadi tidak bisa dipindai ke pelajaran. Minta admin atau staf TU membatalkan catatan pulang di Input Absensi bila keliru.');
         }
 
         return DB::transaction(function () use ($classId, $today, $slot, $student, $method, $recordedBy): LessonAttendance {

@@ -733,7 +733,10 @@ internal (`Domain/Support/ScanWindow`), no contract. Details:
   before the last lesson of the day ends is stored as
   `daily_attendances.left_early` and shown as "Pulang awal". The daily input
   (`/absensi/input`) is not bound by these hours: it is the correction path.
-- **A student recorded as gone home is not scanned into a lesson.**
+- **A student recorded as gone home is not scanned into a lesson.** The
+  office (`attendance.daily.record`) can take the going-home record back on
+  Input Absensi, today only (`CancelGateCheckOut`); the arrival and the status
+  stay and nobody is notified.
 - **Not built (on purpose):** school holidays and days without lessons are
   not refused (needs a Core calendar contract), no automatic absence, no
   reason for leaving early.

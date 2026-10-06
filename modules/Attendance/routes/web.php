@@ -34,6 +34,7 @@ Route::middleware('web')->group(function (): void {
             Route::middleware('can:attendance.daily.record')->group(function (): void {
                 Route::get('input', [DailyInputController::class, 'index'])->name('input');
                 Route::put('input', [DailyInputController::class, 'update'])->name('input.update');
+                Route::delete('input/pulang', [DailyInputController::class, 'cancelCheckOut'])->name('input.cancel-check-out');
             });
 
             // The school-wide lesson page (any class) stays with the

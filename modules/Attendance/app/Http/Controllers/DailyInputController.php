@@ -6,12 +6,15 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Attendance\App\Domain\Actions\CancelGateCheckOut;
 use Modules\Attendance\App\Domain\Actions\SaveDailyAttendance;
+use Modules\Attendance\App\Domain\Exceptions\AttendanceException;
 use Modules\Attendance\App\Domain\Models\DailyAttendance;
 use Modules\Attendance\App\Domain\Queries\ClassChoices;
 use Modules\Attendance\App\Domain\Support\SchoolClock;
 use Modules\Attendance\App\Http\Concerns\KnowsSignedInUser;
 use Modules\Attendance\App\Http\Concerns\ReadsAttendanceFilters;
+use Modules\Attendance\App\Http\Requests\CancelCheckOutRequest;
 use Modules\Attendance\App\Http\Requests\DailyAttendanceRequest;
 use Modules\Core\App\Contracts\StudentDirectory;
 
@@ -68,5 +71,20 @@ final class DailyInputController
         );
 
         return back()->with('status', 'Absensi disimpan.');
+    }
+
+    /**
+     * Takes back a student's going-home record of today, e.g. one scanned
+     * by mistake.
+     */
+    public function cancelCheckOut(CancelCheckOutRequest $request, CancelGateCheckOut $cancel): RedirectResponse
+    {
+        try {
+            $cancel->handle((int) $request->validated('student_id'), $this->signedInUserId());
+        } catch (AttendanceException $exception) {
+            return back()->withErrors(['marks' => $exception->getMessage()]);
+        }
+
+        return back()->with('status', 'Catatan pulang dibatalkan.');
     }
 }

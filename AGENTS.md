@@ -504,7 +504,8 @@ internal Attendance, tanpa kontrak). Pelajaran: dari `lesson_scan_early_minutes`
 hanya memindai pelajarannya sendiri yang sedang berjalan. Gerbang (masuk dan
 pulang): antara `gate_opens_at` dan `gate_closes_at` (bawaan 05:00-18:00);
 pulang sebelum jam pelajaran terakhir selesai = `left_early` ("Pulang awal").
-Siswa yang sudah tercatat pulang tidak bisa dipindai ke pelajaran. Input harian
+Siswa yang sudah tercatat pulang tidak bisa dipindai ke pelajaran; admin/staf-tu
+membatalkan catatan pulang (hari ini saja) di Input Absensi. Input harian
 dan Riwayat Absensi tidak terikat jam ini: itu jalur koreksi. Hari libur belum
 dikenali. Setelah rilis: `php artisan migrate`. Rincian:
 modules/Attendance/CONTRACT.md, docs/architecture/modular-monolith.md,
