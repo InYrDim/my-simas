@@ -131,3 +131,25 @@ it('refuses a slot that is not on the own timetable', function () {
     put(school($tenant->slug, '/absensi/jadwal-hari-ini/centang'), ['period_slot_id' => $foreign->id, 'checked' => false])
         ->assertSessionHasErrors('period_slot_id');
 });
+
+it('lists the active students of a class the teacher has lessons for', function () {
+    $tenant = attendanceTenant(role: 'guru', slug: 'siswa-kelas');
+    [$class] = attendanceOwnLesson($tenant);
+    attendanceStudent($tenant, $class, 'Budi');
+    attendanceStudent($tenant, $class, 'Sari', ['status' => 'left']);
+
+    get(school($tenant->slug, "/absensi/kelas-saya/{$class->id}"))->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->component('Attendance/MyClassStudents')
+        ->where('class.name', 'X 1')
+        ->has('students', 1)
+        ->where('students.0.name', 'Budi'));
+});
+
+it('does not show the students of a class outside the own timetable', function () {
+    $tenant = attendanceTenant(role: 'guru', slug: 'kelas-orang');
+    attendanceOwnLesson($tenant);
+    $foreign = attendanceClass($tenant, 'X 2');
+    attendanceStudent($tenant, $foreign, 'Rahasia');
+
+    get(school($tenant->slug, "/absensi/kelas-saya/{$foreign->id}"))->assertNotFound();
+});

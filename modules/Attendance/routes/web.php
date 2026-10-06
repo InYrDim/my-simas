@@ -10,6 +10,7 @@ use Modules\Attendance\App\Http\Controllers\MonthlyRecapController;
 use Modules\Attendance\App\Http\Controllers\MyAttendanceController;
 use Modules\Attendance\App\Http\Controllers\MyClassController;
 use Modules\Attendance\App\Http\Controllers\MyClassesController;
+use Modules\Attendance\App\Http\Controllers\MyClassStudentsController;
 use Modules\Attendance\App\Http\Controllers\OverviewController;
 use Modules\Attendance\App\Http\Controllers\ScanController;
 use Modules\Attendance\App\Http\Controllers\SettingsController;
@@ -49,6 +50,9 @@ Route::middleware('web')->group(function (): void {
             // and the history where a record is corrected later.
             Route::middleware('can:attendance.class.record')->group(function (): void {
                 Route::get('kelas-saya', MyClassesController::class)->name('my-classes');
+                Route::get('kelas-saya/{classId}', MyClassStudentsController::class)
+                    ->whereNumber('classId')
+                    ->name('my-classes.students');
                 Route::get('jadwal-hari-ini', TodayController::class)->name('today');
                 Route::put('jadwal-hari-ini/centang', [LessonCheckController::class, 'update'])->name('today.check');
 
