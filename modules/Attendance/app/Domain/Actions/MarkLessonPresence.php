@@ -10,6 +10,7 @@ use Modules\Attendance\App\Domain\Exceptions\AttendanceException;
 use Modules\Attendance\App\Domain\Models\LessonAttendance;
 use Modules\Attendance\App\Domain\Models\LessonSession;
 use Modules\Attendance\App\Domain\Support\LessonSlots;
+use Modules\Attendance\App\Domain\Support\ScanWindow;
 use Modules\Attendance\App\Domain\Support\SchoolClock;
 use Modules\Core\App\Contracts\StudentDirectory;
 
@@ -19,10 +20,12 @@ final class MarkLessonPresence
         private readonly LessonSlots $slots,
         private readonly StudentDirectory $students,
         private readonly SchoolClock $clock,
+        private readonly ScanWindow $window,
     ) {}
 
     /**
-     * One student present in a lesson of today, by scan or by hand. The
+     * One student present in a lesson of today, by scan or by hand, only
+     * while the lesson is open to scanning (see `ScanWindow`). The
      * student must sit in that class; the session is opened when nobody
      * has yet. Marking a student who is already present is refused, so a
      * second scan is noticed.
@@ -34,6 +37,8 @@ final class MarkLessonPresence
     {
         $today = $this->clock->today();
         [$class, $slot] = $this->slots->resolve($classId, $today, $slotId);
+
+        $this->window->assertLessonOpen($slot);
 
         $student = $this->students->find($studentId);
 

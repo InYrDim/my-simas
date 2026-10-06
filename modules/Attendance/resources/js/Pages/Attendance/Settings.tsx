@@ -24,17 +24,20 @@ export default function Settings({
     lateAfter,
     gateEnabled,
     lessonEnabled,
+    lessonScanEarlyMinutes,
     can,
 }: {
     lateAfter: string;
     gateEnabled: boolean;
     lessonEnabled: boolean;
+    lessonScanEarlyMinutes: number;
     can: { manageNotices: boolean };
 }) {
     const form = useForm({
         late_after: lateAfter,
         gate_enabled: gateEnabled,
         lesson_enabled: lessonEnabled,
+        lesson_scan_early_minutes: lessonScanEarlyMinutes,
     });
 
     return (
@@ -148,6 +151,47 @@ export default function Settings({
                         </FieldDescription>
                         {form.errors.late_after !== undefined && (
                             <FieldError>{form.errors.late_after}</FieldError>
+                        )}
+                    </Field>
+                </Panel>
+
+                <Panel title="Pindai jam pelajaran" className="mt-6">
+                    <Field
+                        data-invalid={
+                            form.errors.lesson_scan_early_minutes !== undefined
+                        }
+                    >
+                        <FieldLabel htmlFor="lesson-scan-early-minutes">
+                            Boleh dipindai sebelum jam mulai (menit)
+                        </FieldLabel>
+                        <Input
+                            id="lesson-scan-early-minutes"
+                            type="number"
+                            min={0}
+                            max={30}
+                            className="w-40"
+                            value={form.data.lesson_scan_early_minutes}
+                            onChange={(event) =>
+                                form.setData(
+                                    'lesson_scan_early_minutes',
+                                    Number(event.target.value),
+                                )
+                            }
+                            aria-invalid={
+                                form.errors.lesson_scan_early_minutes !==
+                                undefined
+                            }
+                        />
+                        <FieldDescription>
+                            Absensi jam pelajaran hanya bisa dipindai mulai
+                            sekian menit sebelum jam mulai sampai jam
+                            selesai. Di luar itu, ubah lewat Riwayat Absensi.
+                        </FieldDescription>
+                        {form.errors.lesson_scan_early_minutes !==
+                            undefined && (
+                            <FieldError>
+                                {form.errors.lesson_scan_early_minutes}
+                            </FieldError>
                         )}
                     </Field>
                 </Panel>

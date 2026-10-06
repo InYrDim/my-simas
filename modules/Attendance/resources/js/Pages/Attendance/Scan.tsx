@@ -48,6 +48,7 @@ interface Entry {
 interface ScanProps {
     date: { iso: string; label: string };
     can: { gate: boolean; lesson: boolean };
+    ownLessonOnly: boolean;
     classes: ClassOption[];
     classId: string;
     slots: { value: string; label: string }[];
@@ -79,6 +80,7 @@ const REPEAT_GUARD_MS = 4000;
 export default function Scan({
     date,
     can,
+    ownLessonOnly,
     classes,
     classId,
     slots,
@@ -326,9 +328,11 @@ export default function Scan({
 
             {!lessonReady ? (
                 <EmptyState>
-                    {slots.length === 0
-                        ? "Tidak ada jam pelajaran hari ini. Atur jam pelajaran di Akademik › Jam Pelajaran."
-                        : "Pilih kelas dan jam pelajaran lebih dulu."}
+                    {ownLessonOnly
+                        ? "Tidak ada pelajaran Anda yang sedang berlangsung. Pemindaian hanya bisa dilakukan pada jam mengajar Anda."
+                        : slots.length === 0
+                          ? "Tidak ada jam pelajaran hari ini. Atur jam pelajaran di Akademik › Jam Pelajaran."
+                          : "Pilih kelas dan jam pelajaran lebih dulu."}
                 </EmptyState>
             ) : (
                 <div className="flex flex-col gap-6">

@@ -25,6 +25,7 @@ final class SettingsController
             'lateAfter' => $settings->lateAfter(),
             'gateEnabled' => $settings->gate_enabled,
             'lessonEnabled' => $settings->lesson_enabled,
+            'lessonScanEarlyMinutes' => $settings->lesson_scan_early_minutes,
             'can' => ['manageNotices' => Gate::allows('core.integration.manage')],
         ]);
     }
@@ -36,9 +37,21 @@ final class SettingsController
                 'late_after' => ['required', 'date_format:H:i'],
                 'gate_enabled' => ['sometimes', 'boolean'],
                 'lesson_enabled' => ['sometimes', 'boolean'],
+                'lesson_scan_early_minutes' => ['sometimes', 'integer', 'between:0,30'],
             ],
-            ['required' => ':attribute wajib diisi.', 'date_format' => ':attribute harus berformat jj:mm.', 'boolean' => ':attribute harus berupa ya atau tidak.'],
-            ['late_after' => 'Batas jam masuk', 'gate_enabled' => 'Absensi gerbang', 'lesson_enabled' => 'Absensi jam pelajaran'],
+            [
+                'required' => ':attribute wajib diisi.',
+                'date_format' => ':attribute harus berformat jj:mm.',
+                'boolean' => ':attribute harus berupa ya atau tidak.',
+                'integer' => ':attribute harus berupa angka bulat.',
+                'between' => ':attribute harus antara :min dan :max menit.',
+            ],
+            [
+                'late_after' => 'Batas jam masuk',
+                'gate_enabled' => 'Absensi gerbang',
+                'lesson_enabled' => 'Absensi jam pelajaran',
+                'lesson_scan_early_minutes' => 'Toleransi pindai sebelum jam mulai',
+            ],
         );
 
         $current = AttendanceSetting::current();
@@ -47,6 +60,7 @@ final class SettingsController
             $validated['late_after'],
             $request->boolean('gate_enabled', $current->gate_enabled),
             $request->boolean('lesson_enabled', $current->lesson_enabled),
+            $request->integer('lesson_scan_early_minutes', $current->lesson_scan_early_minutes),
         );
 
         return back()->with('status', 'Pengaturan absensi disimpan.');
