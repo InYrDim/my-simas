@@ -1,10 +1,10 @@
-import { Link } from "@inertiajs/react";
+import { Link } from '@inertiajs/react';
 
-import MyClassStudentsController from "@/actions/Modules/Attendance/App/Http/Controllers/MyClassStudentsController";
-import { EmptyState, Panel } from "@shared/components/page-parts";
-import { Badge } from "@shared/components/ui/badge";
+import MyClassStudentsController from '@/actions/Modules/Attendance/App/Http/Controllers/MyClassStudentsController';
+import { EmptyState, Panel } from '@shared/components/page-parts';
+import { Badge } from '@shared/components/ui/badge';
 
-import AttendancePage from "../../Components/AttendancePage";
+import AttendancePage from '../../Components/AttendancePage';
 
 interface MyClassesProps {
     classes: {
@@ -50,7 +50,7 @@ export default function MyClasses({ classes }: MyClassesProps) {
                                         {classGroup.name}
                                     </Link>
                                     <p className="mt-0.5 text-xs text-muted-foreground">
-                                        {classGroup.subjects.join(" · ")}
+                                        {classGroup.subjects.join(' · ')}
                                     </p>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
@@ -58,7 +58,7 @@ export default function MyClasses({ classes }: MyClassesProps) {
                                         {classGroup.lessons} jam/minggu
                                     </Badge>
                                     <span className="text-xs text-muted-foreground">
-                                        {classGroup.days.join(", ")}
+                                        {classGroup.days.join(', ')}
                                     </span>
                                 </div>
                             </li>

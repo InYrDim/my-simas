@@ -1,23 +1,23 @@
-import { Link, router } from "@inertiajs/react";
+import { Link, router } from '@inertiajs/react';
 
-import { index as classRoll } from "@/actions/Modules/Attendance/App/Http/Controllers/ClassAttendanceController";
-import { index as history } from "@/actions/Modules/Attendance/App/Http/Controllers/HistoryController";
-import { update as check } from "@/actions/Modules/Attendance/App/Http/Controllers/LessonCheckController";
-import { EmptyState, Panel } from "@shared/components/page-parts";
-import { Alert, AlertDescription } from "@shared/components/ui/alert";
-import { Badge } from "@shared/components/ui/badge";
-import { Button } from "@shared/components/ui/button";
-import { Checkbox } from "@shared/components/ui/checkbox";
+import { index as classRoll } from '@/actions/Modules/Attendance/App/Http/Controllers/ClassAttendanceController';
+import { index as history } from '@/actions/Modules/Attendance/App/Http/Controllers/HistoryController';
+import { update as check } from '@/actions/Modules/Attendance/App/Http/Controllers/LessonCheckController';
+import { EmptyState, Panel } from '@shared/components/page-parts';
+import { Alert, AlertDescription } from '@shared/components/ui/alert';
+import { Badge } from '@shared/components/ui/badge';
+import { Button } from '@shared/components/ui/button';
+import { Checkbox } from '@shared/components/ui/checkbox';
 import {
     Tabs,
     TabsContent,
     TabsList,
     TabsTrigger,
-} from "@shared/components/ui/tabs";
+} from '@shared/components/ui/tabs';
 
-import AttendancePage from "../../Components/AttendancePage";
-import { lessonStateMeta } from "../../Components/status";
-import type { LessonState } from "../../Components/status";
+import AttendancePage from '../../Components/AttendancePage';
+import { lessonStateMeta } from '../../Components/status';
+import type { LessonState } from '../../Components/status';
 
 interface Lesson {
     slotId: number;
@@ -45,16 +45,16 @@ interface WeekDay {
 
 interface MyScheduleProps {
     date: { iso: string; label: string };
-    banner: "none" | LessonState;
+    banner: 'none' | LessonState;
     lessons: Lesson[];
     week: WeekDay[];
 }
 
 /** The banner that follows the teaching range of the day. */
 const banners: Record<LessonState, string> = {
-    upcoming: "Jadwal Mengajar Hari Ini! Sebagai Berikut",
-    running: "Pembelajaran Sedang Berlangsung",
-    finished: "Sudah Selesai Jadwal Mengajar Hari ini",
+    upcoming: 'Jadwal Mengajar Hari Ini! Sebagai Berikut',
+    running: 'Pembelajaran Sedang Berlangsung',
+    finished: 'Sudah Selesai Jadwal Mengajar Hari ini',
 };
 
 /**
@@ -82,7 +82,7 @@ export default function MySchedule({
                 </TabsList>
 
                 <TabsContent value="today">
-                    {banner === "none" ? (
+                    {banner === 'none' ? (
                         <EmptyState>
                             Tidak ada jadwal mengajar hari ini. Lihat tab Minggu
                             Ini untuk jadwal sepekan.
@@ -108,7 +108,7 @@ export default function MySchedule({
                                                 checked={lesson.checked}
                                                 disabled={
                                                     !lesson.checked &&
-                                                    lesson.state !== "finished"
+                                                    lesson.state !== 'finished'
                                                 }
                                                 onCheckedChange={(checked) =>
                                                     router.put(
@@ -128,11 +128,11 @@ export default function MySchedule({
                                             />
                                             <div className="min-w-0 flex-1">
                                                 <p className="text-sm font-medium text-foreground">
-                                                    {lesson.subjectName} · Kelas{" "}
+                                                    {lesson.subjectName} · Kelas{' '}
                                                     {lesson.className}
                                                 </p>
                                                 <p className="mt-0.5 text-xs text-muted-foreground">
-                                                    Jam ke-{lesson.order} ·{" "}
+                                                    Jam ke-{lesson.order} ·{' '}
                                                     {lesson.startsAt}–
                                                     {lesson.endsAt}
                                                 </p>
@@ -157,7 +157,7 @@ export default function MySchedule({
                                                     )}
                                                 </div>
                                             </div>
-                                            {lesson.state === "running" && (
+                                            {lesson.state === 'running' && (
                                                 <Button
                                                     asChild
                                                     size="sm"
@@ -176,7 +176,7 @@ export default function MySchedule({
                                                     </Link>
                                                 </Button>
                                             )}
-                                            {lesson.state === "finished" && (
+                                            {lesson.state === 'finished' && (
                                                 <Button
                                                     asChild
                                                     size="sm"

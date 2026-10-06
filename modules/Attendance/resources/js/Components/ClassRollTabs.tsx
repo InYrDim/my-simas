@@ -1,8 +1,8 @@
-import { Link } from "@inertiajs/react";
+import { Link } from '@inertiajs/react';
 
-import { index as classRoll } from "@/actions/Modules/Attendance/App/Http/Controllers/ClassAttendanceController";
-import { index as history } from "@/actions/Modules/Attendance/App/Http/Controllers/HistoryController";
-import { Tabs, TabsList, TabsTrigger } from "@shared/components/ui/tabs";
+import { index as classRoll } from '@/actions/Modules/Attendance/App/Http/Controllers/ClassAttendanceController';
+import { index as history } from '@/actions/Modules/Attendance/App/Http/Controllers/HistoryController';
+import { Tabs, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
 
 /**
  * Absensi Kelas has two doors: fill the lesson that is running now, or
@@ -11,7 +11,7 @@ import { Tabs, TabsList, TabsTrigger } from "@shared/components/ui/tabs";
 export default function ClassRollTabs({
     current,
 }: {
-    current: "fill" | "correct";
+    current: 'fill' | 'correct';
 }) {
     return (
         <Tabs value={current} className="mb-6">

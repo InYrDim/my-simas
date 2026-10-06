@@ -167,7 +167,9 @@ export default function Settings({
                 <Panel title="Jam gerbang" className="mt-6">
                     <div className="flex flex-col gap-4 sm:flex-row">
                         <Field
-                            data-invalid={form.errors.gate_opens_at !== undefined}
+                            data-invalid={
+                                form.errors.gate_opens_at !== undefined
+                            }
                         >
                             <FieldLabel htmlFor="gate-opens-at">
                                 Gerbang dibuka pukul
@@ -224,8 +226,8 @@ export default function Settings({
                         </Field>
                     </div>
                     <FieldDescription className="mt-2">
-                        Scan masuk dan pulang hanya diterima di antara dua
-                        jam ini. Pulang sebelum jam pelajaran terakhir selesai
+                        Scan masuk dan pulang hanya diterima di antara dua jam
+                        ini. Pulang sebelum jam pelajaran terakhir selesai
                         ditandai Pulang awal. Di luar jam gerbang, ubah lewat
                         Input harian.
                     </FieldDescription>
@@ -260,8 +262,8 @@ export default function Settings({
                         />
                         <FieldDescription>
                             Absensi jam pelajaran hanya bisa dipindai mulai
-                            sekian menit sebelum jam mulai sampai jam
-                            selesai. Di luar itu, ubah lewat tab Koreksi.
+                            sekian menit sebelum jam mulai sampai jam selesai.
+                            Di luar itu, ubah lewat tab Koreksi.
                         </FieldDescription>
                         {form.errors.lesson_scan_early_minutes !==
                             undefined && (
@@ -286,10 +288,9 @@ export default function Settings({
                                 Guru boleh menyalin absensi jam sebelumnya
                             </FieldLabel>
                             <FieldDescription>
-                                Di Absensi Kelas muncul tombol untuk mengisi
-                                jam ini sama dengan jam sebelumnya pada hari
-                                yang sama; guru tinggal mengubah yang
-                                berbeda.
+                                Di Absensi Kelas muncul tombol untuk mengisi jam
+                                ini sama dengan jam sebelumnya pada hari yang
+                                sama; guru tinggal mengubah yang berbeda.
                             </FieldDescription>
                         </FieldContent>
                     </Field>

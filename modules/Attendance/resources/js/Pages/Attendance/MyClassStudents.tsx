@@ -1,12 +1,12 @@
-import { Link } from "@inertiajs/react";
-import { ChevronLeftIcon } from "lucide-react";
+import { Link } from '@inertiajs/react';
+import { ChevronLeftIcon } from 'lucide-react';
 
-import MyClassesController from "@/actions/Modules/Attendance/App/Http/Controllers/MyClassesController";
-import { DataTable, EmptyState } from "@shared/components/page-parts";
-import { Button } from "@shared/components/ui/button";
-import { TableCell, TableRow } from "@shared/components/ui/table";
+import MyClassesController from '@/actions/Modules/Attendance/App/Http/Controllers/MyClassesController';
+import { DataTable, EmptyState } from '@shared/components/page-parts';
+import { Button } from '@shared/components/ui/button';
+import { TableCell, TableRow } from '@shared/components/ui/table';
 
-import AttendancePage from "../../Components/AttendancePage";
+import AttendancePage from '../../Components/AttendancePage';
 
 interface MyClassStudentsProps {
     class: { id: number; name: string };
@@ -37,7 +37,7 @@ export default function MyClassStudents({
             {students.length === 0 ? (
                 <EmptyState>Belum ada siswa di kelas ini.</EmptyState>
             ) : (
-                <DataTable head={["No", "Nama", "NIS"]}>
+                <DataTable head={['No', 'Nama', 'NIS']}>
                     {students.map((student, index) => (
                         <TableRow key={student.id}>
                             <TableCell className="w-12 text-muted-foreground">

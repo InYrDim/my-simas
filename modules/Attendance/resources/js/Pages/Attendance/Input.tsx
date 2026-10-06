@@ -1,12 +1,12 @@
-import { router, useForm, usePage } from "@inertiajs/react";
+import { router, useForm, usePage } from '@inertiajs/react';
 
 import {
     cancelCheckOut,
     index,
     update,
-} from "@/actions/Modules/Attendance/App/Http/Controllers/DailyInputController";
-import { EmptyState, Panel } from "@shared/components/page-parts";
-import { Alert, AlertDescription } from "@shared/components/ui/alert";
+} from '@/actions/Modules/Attendance/App/Http/Controllers/DailyInputController';
+import { EmptyState, Panel } from '@shared/components/page-parts';
+import { Alert, AlertDescription } from '@shared/components/ui/alert';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -17,21 +17,21 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
-} from "@shared/components/ui/alert-dialog";
-import { Badge } from "@shared/components/ui/badge";
-import { Button } from "@shared/components/ui/button";
-import { Input as TextInput } from "@shared/components/ui/input";
-import { cn } from "@shared/lib/utils";
+} from '@shared/components/ui/alert-dialog';
+import { Badge } from '@shared/components/ui/badge';
+import { Button } from '@shared/components/ui/button';
+import { Input as TextInput } from '@shared/components/ui/input';
+import { cn } from '@shared/lib/utils';
 
-import AttendancePage from "../../Components/AttendancePage";
-import ClassSelect from "../../Components/ClassSelect";
-import Filter from "../../Components/Filter";
+import AttendancePage from '../../Components/AttendancePage';
+import ClassSelect from '../../Components/ClassSelect';
+import Filter from '../../Components/Filter';
 import {
     dailyStatuses,
     pressedClass,
     statusMeta,
-} from "../../Components/status";
-import type { AttendanceStatus, ClassOption } from "../../Components/status";
+} from '../../Components/status';
+import type { AttendanceStatus, ClassOption } from '../../Components/status';
 
 interface Student {
     id: number;
@@ -92,14 +92,14 @@ export default function Input({
                         value={date.iso}
                         max={today}
                         onChange={(event) =>
-                            event.target.value !== "" &&
+                            event.target.value !== '' &&
                             open(classId, event.target.value)
                         }
                     />
                 </Filter>
             </div>
 
-            {classId === "" ? (
+            {classId === '' ? (
                 <EmptyState>
                     Belum ada kelas pada tahun ajaran aktif. Aktifkan tahun
                     ajaran dan buat kelas di Master Data lebih dulu.
@@ -136,8 +136,8 @@ function RollCall({
         date,
         marks: students.map((student) => ({
             student_id: student.id,
-            status: student.status ?? "present",
-            note: student.note ?? "",
+            status: student.status ?? 'present',
+            note: student.note ?? '',
         })),
     });
     const marks = form.data.marks;
@@ -147,7 +147,7 @@ function RollCall({
 
     const change = (index: number, patch: Partial<Mark>) =>
         form.setData(
-            "marks",
+            'marks',
             marks.map((mark, position) =>
                 position === index ? { ...mark, ...patch } : mark,
             ),
@@ -182,7 +182,7 @@ function RollCall({
                     {students.map((student, index) => {
                         const mark = marks[index];
                         const away =
-                            mark.status !== "present" && mark.status !== "late";
+                            mark.status !== 'present' && mark.status !== 'late';
 
                         return (
                             <li
@@ -221,12 +221,12 @@ function RollCall({
                                                                 pulang?
                                                             </AlertDialogTitle>
                                                             <AlertDialogDescription>
-                                                                Catatan pulang{" "}
-                                                                {student.name}{" "}
-                                                                pukul{" "}
+                                                                Catatan pulang{' '}
+                                                                {student.name}{' '}
+                                                                pukul{' '}
                                                                 {
                                                                     student.checkedOut
-                                                                }{" "}
+                                                                }{' '}
                                                                 dihapus. Jam
                                                                 masuk dan status
                                                                 hari ini tetap.
@@ -273,8 +273,8 @@ function RollCall({
                                                     size="sm"
                                                     variant={
                                                         active
-                                                            ? "default"
-                                                            : "outline"
+                                                            ? 'default'
+                                                            : 'outline'
                                                     }
                                                     aria-pressed={active}
                                                     onClick={() =>
@@ -283,7 +283,7 @@ function RollCall({
                                                         })
                                                     }
                                                     className={cn(
-                                                        "flex-1 sm:flex-none",
+                                                        'flex-1 sm:flex-none',
                                                         active &&
                                                             pressedClass[
                                                                 status
@@ -322,7 +322,7 @@ function RollCall({
                             key={status}
                             variant={statusMeta[status].variant}
                         >
-                            {statusMeta[status].label}{" "}
+                            {statusMeta[status].label}{' '}
                             {
                                 marks.filter((mark) => mark.status === status)
                                     .length
