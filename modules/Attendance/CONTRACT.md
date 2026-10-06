@@ -140,8 +140,8 @@ Never another feature module (Ppdb), not even via its Public surface.
   `SaveLessonAttendance`, so subject, notices and one-session rules are
   the same. The teacher's old pages are gone: daily input is
   `attendance.daily.record`'s (admin, staf-tu), the school-wide lesson page
-  `attendance.lesson.school`'s (admin), and only `Pindai QR` stays open to
-  a teacher. "Absensi Saya" for a teacher is kept empty
+  `attendance.lesson.school`'s (admin), and `Pindai QR` stays open to a
+  teacher, as a Kelas Saya child (`attendance.scan.use`, home shortcut). "Absensi Saya" for a teacher is kept empty
   (`Attendance/Soon`, "Segera hadir").
 - **Switches** (`/absensi/pengaturan`): `attendance_settings.gate_enabled`
   and `lesson_enabled` (both on by default) let a school turn the gate and

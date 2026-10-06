@@ -118,8 +118,8 @@ it('gives a teacher one Kelas Saya menu and an empty Absensi Saya', function () 
         expect($nav->pluck('label')->contains('Absensi'))->toBeFalse()
             ->and($mine['group'])->toBe('Saya')
             ->and($mine['href'])->toBe('/absensi/kelas-saya')
-            ->and(collect($mine['children'])->pluck('label')->all())->toBe(['Kelas Aktif', 'Jadwal Hari Ini', 'Absensi Kelas', 'Riwayat Absensi'])
-            ->and(collect($mine['children'])->pluck('href')->all())->toBe(['/absensi/kelas-saya', '/absensi/jadwal-hari-ini', '/absensi/absen-kelas', '/absensi/riwayat'])
+            ->and(collect($mine['children'])->pluck('label')->all())->toBe(['Kelas Aktif', 'Jadwal Hari Ini', 'Absensi Kelas', 'Pindai QR', 'Riwayat Absensi'])
+            ->and(collect($mine['children'])->pluck('href')->all())->toBe(['/absensi/kelas-saya', '/absensi/jadwal-hari-ini', '/absensi/absen-kelas', '/absensi/pindai', '/absensi/riwayat'])
             ->and($empty['group'])->toBe('Saya')
             ->and($empty['href'])->toBe('/absensi/segera-hadir');
     });

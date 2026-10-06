@@ -146,6 +146,7 @@ class AttendanceServiceProvider extends ServiceProvider
                     ['label' => 'Kelas Aktif', 'route' => 'attendance.my-classes'],
                     ['label' => 'Jadwal Hari Ini', 'route' => 'attendance.today'],
                     ['label' => 'Absensi Kelas', 'route' => 'attendance.class-roll', 'permission' => 'attendance.class.lesson.use'],
+                    ['label' => 'Pindai QR', 'route' => 'attendance.scan', 'permission' => 'attendance.scan.use', 'shortcut' => true],
                     ['label' => 'Riwayat Absensi', 'route' => 'attendance.history', 'permission' => 'attendance.class.lesson.use'],
                 ],
             ],
