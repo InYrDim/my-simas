@@ -28,11 +28,12 @@ use Modules\Platform\App\Contracts\Concerns\BelongsToTenant;
  * @property CarbonInterface|null $checked_out_at
  * @property RecordMethod|null $check_in_method
  * @property RecordMethod|null $check_out_method
+ * @property bool $left_early went home before the last lesson of the day was over
  * @property string|null $note
  * @property int|null $recorded_by account id of whoever wrote the record last
  */
 #[UseFactory(DailyAttendanceFactory::class)]
-#[Fillable(['student_id', 'class_id', 'date', 'status', 'checked_in_at', 'checked_out_at', 'check_in_method', 'check_out_method', 'note', 'recorded_by'])]
+#[Fillable(['student_id', 'class_id', 'date', 'status', 'checked_in_at', 'checked_out_at', 'check_in_method', 'check_out_method', 'left_early', 'note', 'recorded_by'])]
 class DailyAttendance extends Model
 {
     /** @use HasFactory<DailyAttendanceFactory> */
@@ -49,6 +50,7 @@ class DailyAttendance extends Model
             'checked_out_at' => 'datetime',
             'check_in_method' => RecordMethod::class,
             'check_out_method' => RecordMethod::class,
+            'left_early' => 'boolean',
         ];
     }
 

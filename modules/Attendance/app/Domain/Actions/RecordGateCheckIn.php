@@ -9,6 +9,7 @@ use Modules\Attendance\App\Domain\Exceptions\AttendanceException;
 use Modules\Attendance\App\Domain\Models\AttendanceSetting;
 use Modules\Attendance\App\Domain\Models\DailyAttendance;
 use Modules\Attendance\App\Domain\Notifications\AttendanceNotices;
+use Modules\Attendance\App\Domain\Support\ScanWindow;
 use Modules\Attendance\App\Domain\Support\SchoolClock;
 use Modules\Core\App\Contracts\StudentDirectory;
 
@@ -18,10 +19,12 @@ final class RecordGateCheckIn
         private readonly StudentDirectory $students,
         private readonly SchoolClock $clock,
         private readonly AttendanceNotices $notices,
+        private readonly ScanWindow $window,
     ) {}
 
     /**
-     * A student arriving at the gate, now. On time up to and including the
+     * A student arriving at the gate, now, while the gate takes scans
+     * (see `ScanWindow`). On time up to and including the
      * school's cut-off minute, late after it. Arriving overrules a status
      * of sick, excused or absent given earlier that day; arriving twice is
      * refused.
@@ -35,6 +38,8 @@ final class RecordGateCheckIn
         if ($student === null || ! $student->active || $student->classId === null) {
             throw new AttendanceException('Siswa tidak ditemukan atau tidak aktif.');
         }
+
+        $this->window->assertGateOpen();
 
         $now = $this->clock->now();
         $row = DailyAttendance::query()->where('student_id', $studentId)->where('date', $now->toDateString())->first();

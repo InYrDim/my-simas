@@ -26,6 +26,8 @@ final class SettingsController
             'gateEnabled' => $settings->gate_enabled,
             'lessonEnabled' => $settings->lesson_enabled,
             'lessonScanEarlyMinutes' => $settings->lesson_scan_early_minutes,
+            'gateOpensAt' => $settings->gateOpensAt(),
+            'gateClosesAt' => $settings->gateClosesAt(),
             'can' => ['manageNotices' => Gate::allows('core.integration.manage')],
         ]);
     }
@@ -38,6 +40,8 @@ final class SettingsController
                 'gate_enabled' => ['sometimes', 'boolean'],
                 'lesson_enabled' => ['sometimes', 'boolean'],
                 'lesson_scan_early_minutes' => ['sometimes', 'integer', 'between:0,30'],
+                'gate_opens_at' => ['sometimes', 'required_with:gate_closes_at', 'date_format:H:i'],
+                'gate_closes_at' => ['sometimes', 'required_with:gate_opens_at', 'date_format:H:i', 'after:gate_opens_at'],
             ],
             [
                 'required' => ':attribute wajib diisi.',
@@ -45,12 +49,15 @@ final class SettingsController
                 'boolean' => ':attribute harus berupa ya atau tidak.',
                 'integer' => ':attribute harus berupa angka bulat.',
                 'between' => ':attribute harus antara :min dan :max menit.',
+                'after' => ':attribute harus setelah jam buka gerbang.',
             ],
             [
                 'late_after' => 'Batas jam masuk',
                 'gate_enabled' => 'Absensi gerbang',
                 'lesson_enabled' => 'Absensi jam pelajaran',
                 'lesson_scan_early_minutes' => 'Toleransi pindai sebelum jam mulai',
+                'gate_opens_at' => 'Gerbang dibuka',
+                'gate_closes_at' => 'Gerbang ditutup',
             ],
         );
 
@@ -61,6 +68,8 @@ final class SettingsController
             $request->boolean('gate_enabled', $current->gate_enabled),
             $request->boolean('lesson_enabled', $current->lesson_enabled),
             $request->integer('lesson_scan_early_minutes', $current->lesson_scan_early_minutes),
+            $validated['gate_opens_at'] ?? $current->gateOpensAt(),
+            $validated['gate_closes_at'] ?? $current->gateClosesAt(),
         );
 
         return back()->with('status', 'Pengaturan absensi disimpan.');

@@ -115,7 +115,7 @@ final class ScanController
 
             $outcome = match ($request->mode()) {
                 ScanRequest::GATE_IN => $this->gateIn($checkIn->handle($studentId, $method, $this->signedInUserId()), $clock),
-                ScanRequest::GATE_OUT => ['time' => $clock->time($checkOut->handle($studentId, $method, $this->signedInUserId())->checked_out_at), 'status' => 'Pulang'],
+                ScanRequest::GATE_OUT => $this->gateOut($checkOut->handle($studentId, $method, $this->signedInUserId()), $clock),
                 default => $this->lesson($markLesson->handle(
                     (int) $request->validated('class_id'),
                     (int) $request->validated('period_slot_id'),
@@ -151,6 +151,14 @@ final class ScanController
     private function gateIn(DailyAttendance $row, SchoolClock $clock): array
     {
         return ['time' => $clock->time($row->checked_in_at), 'status' => $row->status->label()];
+    }
+
+    /**
+     * @return array{time: ?string, status: string}
+     */
+    private function gateOut(DailyAttendance $row, SchoolClock $clock): array
+    {
+        return ['time' => $clock->time($row->checked_out_at), 'status' => $row->left_early ? 'Pulang awal' : 'Pulang'];
     }
 
     /**

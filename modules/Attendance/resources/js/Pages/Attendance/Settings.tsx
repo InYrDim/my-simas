@@ -25,12 +25,16 @@ export default function Settings({
     gateEnabled,
     lessonEnabled,
     lessonScanEarlyMinutes,
+    gateOpensAt,
+    gateClosesAt,
     can,
 }: {
     lateAfter: string;
     gateEnabled: boolean;
     lessonEnabled: boolean;
     lessonScanEarlyMinutes: number;
+    gateOpensAt: string;
+    gateClosesAt: string;
     can: { manageNotices: boolean };
 }) {
     const form = useForm({
@@ -38,6 +42,8 @@ export default function Settings({
         gate_enabled: gateEnabled,
         lesson_enabled: lessonEnabled,
         lesson_scan_early_minutes: lessonScanEarlyMinutes,
+        gate_opens_at: gateOpensAt,
+        gate_closes_at: gateClosesAt,
     });
 
     return (
@@ -153,6 +159,73 @@ export default function Settings({
                             <FieldError>{form.errors.late_after}</FieldError>
                         )}
                     </Field>
+                </Panel>
+
+                <Panel title="Jam gerbang" className="mt-6">
+                    <div className="flex flex-col gap-4 sm:flex-row">
+                        <Field
+                            data-invalid={form.errors.gate_opens_at !== undefined}
+                        >
+                            <FieldLabel htmlFor="gate-opens-at">
+                                Gerbang dibuka pukul
+                            </FieldLabel>
+                            <Input
+                                id="gate-opens-at"
+                                type="time"
+                                className="w-40"
+                                value={form.data.gate_opens_at}
+                                onChange={(event) =>
+                                    form.setData(
+                                        'gate_opens_at',
+                                        event.target.value,
+                                    )
+                                }
+                                aria-invalid={
+                                    form.errors.gate_opens_at !== undefined
+                                }
+                            />
+                            {form.errors.gate_opens_at !== undefined && (
+                                <FieldError>
+                                    {form.errors.gate_opens_at}
+                                </FieldError>
+                            )}
+                        </Field>
+                        <Field
+                            data-invalid={
+                                form.errors.gate_closes_at !== undefined
+                            }
+                        >
+                            <FieldLabel htmlFor="gate-closes-at">
+                                Gerbang ditutup pukul
+                            </FieldLabel>
+                            <Input
+                                id="gate-closes-at"
+                                type="time"
+                                className="w-40"
+                                value={form.data.gate_closes_at}
+                                onChange={(event) =>
+                                    form.setData(
+                                        'gate_closes_at',
+                                        event.target.value,
+                                    )
+                                }
+                                aria-invalid={
+                                    form.errors.gate_closes_at !== undefined
+                                }
+                            />
+                            {form.errors.gate_closes_at !== undefined && (
+                                <FieldError>
+                                    {form.errors.gate_closes_at}
+                                </FieldError>
+                            )}
+                        </Field>
+                    </div>
+                    <FieldDescription className="mt-2">
+                        Scan masuk dan pulang hanya diterima di antara dua
+                        jam ini. Pulang sebelum jam pelajaran terakhir selesai
+                        ditandai Pulang awal. Di luar jam gerbang, ubah lewat
+                        Input harian.
+                    </FieldDescription>
                 </Panel>
 
                 <Panel title="Pindai jam pelajaran" className="mt-6">

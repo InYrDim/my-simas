@@ -9,13 +9,40 @@ use Modules\Core\App\Contracts\DTOs\BellSlot;
 /**
  * The times a scan is accepted, on the school's clock. A lesson is open
  * from a few minutes before it starts (the school's setting) until it
- * ends; corrections outside that go through Riwayat Absensi.
+ * ends; the gate takes scans between the school's opening and closing
+ * time. Corrections outside that go through Riwayat Absensi or the daily
+ * input.
  */
 final class ScanWindow
 {
     public function __construct(
         private readonly SchoolClock $clock,
+        private readonly LessonSlots $slots,
     ) {}
+
+    /**
+     * @throws AttendanceException
+     */
+    public function assertGateOpen(): void
+    {
+        $settings = AttendanceSetting::current();
+        $now = $this->clock->now()->format('H:i');
+
+        if ($now < $settings->gateOpensAt() || $now > $settings->gateClosesAt()) {
+            throw new AttendanceException('Gerbang menerima pemindaian pukul '.str_replace(':', '.', $settings->gateOpensAt()).'–'.str_replace(':', '.', $settings->gateClosesAt()).'. Koreksi lewat Input harian.');
+        }
+    }
+
+    /**
+     * When the last lesson of today ends (`H:i`); null on a day without
+     * lessons.
+     */
+    public function lastLessonEnd(): ?string
+    {
+        $ends = array_map(fn ($slot): string => $slot->endsAt, $this->slots->on($this->clock->today()));
+
+        return $ends === [] ? null : max($ends);
+    }
 
     /**
      * @throws AttendanceException

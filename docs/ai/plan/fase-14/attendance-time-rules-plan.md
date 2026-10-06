@@ -82,7 +82,7 @@ Legenda: ⬜ belum · 🟡 berjalan · ✅ selesai. Berhenti di antara tahap dan
 | Tahap | Cakupan | Status | Catatan |
 | --- | --- | --- | --- |
 | 1 | Scan pelajaran hanya dalam jamnya + scanner guru terkunci ke pelajaran miliknya | ✅ | `ScanWindow::assertLessonOpen()` dipakai `MarkLessonPresence`; scanner guru hanya memuat pelajaran yang sedang berjalan; 208 tes Attendance hijau |
-| 2 | Jendela gerbang + penanda pulang awal | ⬜ | |
+| 2 | Jendela gerbang + penanda pulang awal | ✅ | `ScanWindow::assertGateOpen()` / `lastLessonEnd()`; `left_early` diisi saat scan pulang, respons "Pulang awal"; 221 tes Attendance hijau |
 | 3 | Konsistensi gerbang–kelas (tolak scan pelajaran setelah pulang) + dokumentasi | ⬜ | |
 
 ## Tasks
@@ -100,13 +100,13 @@ Legenda: ⬜ belum · 🟡 berjalan · ✅ selesai. Berhenti di antara tahap dan
 **Selesai bila:** scan pelajaran 08.00–09.00 pada pukul 22.00 ditolak dengan pesan jam, pada pukul 08.30 diterima; guru tidak bisa memindai pelajaran guru lain. Bukti: `php artisan test --compact modules/Attendance` → hijau.
 
 ### Tahap 2 — Jendela gerbang dan pulang awal
-- [ ] Migrasi: `gate_opens_at`, `gate_closes_at` di `attendance_settings`, `left_early` di `daily_attendances` — `modules/Attendance/database/migrations/0007_01_01_000005_add_gate_window_and_left_early.php` (baru)
-- [ ] Model: `AttendanceSetting` (pembaca jam), `DailyAttendance` (`left_early` cast boolean) — `modules/Attendance/app/Domain/Models/AttendanceSetting.php`, `modules/Attendance/app/Domain/Models/DailyAttendance.php`
-- [ ] `ScanWindow::assertGateOpen()` dan `lastLessonEnd()` — `modules/Attendance/app/Domain/Support/ScanWindow.php`
-- [ ] Pakai di `RecordGateCheckIn` dan `RecordGateCheckOut` (isi `left_early`) — `modules/Attendance/app/Domain/Actions/RecordGateCheckIn.php`, `RecordGateCheckOut.php`
-- [ ] Status `Pulang awal` di respons scan — `modules/Attendance/app/Http/Controllers/ScanController.php`
-- [ ] Field pengaturan jendela gerbang — `SaveAttendanceSettings.php`, `SettingsController.php`, `Settings.tsx`
-- [ ] Tes: masuk/pulang di dalam dan di luar jendela, pulang sebelum dan sesudah jam pelajaran terakhir, hari tanpa jam pelajaran (tidak ditandai awal), isolasi tenant — `modules/Attendance/tests/Feature/GateAttendanceTest.php` (perbarui) dan `ScanWindowTest.php`
+- [x] Migrasi: `gate_opens_at`, `gate_closes_at` di `attendance_settings`, `left_early` di `daily_attendances` — `modules/Attendance/database/migrations/0007_01_01_000005_add_gate_window_and_left_early.php` (baru)
+- [x] Model: `AttendanceSetting` (pembaca jam), `DailyAttendance` (`left_early` cast boolean) — `modules/Attendance/app/Domain/Models/AttendanceSetting.php`, `modules/Attendance/app/Domain/Models/DailyAttendance.php`
+- [x] `ScanWindow::assertGateOpen()` dan `lastLessonEnd()` — `modules/Attendance/app/Domain/Support/ScanWindow.php`
+- [x] Pakai di `RecordGateCheckIn` dan `RecordGateCheckOut` (isi `left_early`) — `modules/Attendance/app/Domain/Actions/RecordGateCheckIn.php`, `RecordGateCheckOut.php`
+- [x] Status `Pulang awal` di respons scan — `modules/Attendance/app/Http/Controllers/ScanController.php`
+- [x] Field pengaturan jendela gerbang — `SaveAttendanceSettings.php`, `SettingsController.php`, `Settings.tsx`
+- [x] Tes: masuk/pulang di dalam dan di luar jendela, pulang sebelum dan sesudah jam pelajaran terakhir, hari tanpa jam pelajaran (tidak ditandai awal), isolasi tenant — `modules/Attendance/tests/Feature/GateAttendanceTest.php` (perbarui) dan `ScanWindowTest.php`
 
 **Selesai bila:** scan masuk 22.00 ditolak, pulang 10.00 tercatat `left_early`, pulang setelah jam terakhir tidak. Bukti: `php artisan test --compact modules/Attendance/tests/Feature/GateAttendanceTest.php` → hijau.
 
@@ -156,6 +156,7 @@ Diisi selama eksekusi; dokumen ini hidup.
 - 2026-10-06 — Tahap 1: `lesson_scan_early_minutes` dibuat opsional (`sometimes`) di validasi pengaturan, bukan wajib — klien/tes lama yang tidak mengirimnya tetap menyimpan nilai sekarang. `SaveAttendanceSettings::handle()` mendapat parameter ke-4.
 - 2026-10-06 — Tahap 1: pemeriksaan "jadwal milik guru" (`assertOwnLesson`) ada di `ScanController`, bukan di aksi domain, karena itu soal izin peran; aturan waktu tetap di `ScanWindow`/`MarkLessonPresence`.
 - 2026-10-06 — Tahap 1: dua tes lama guru (`LessonAttendanceTest`) diperbarui: pelajaran guru kini harus ada di jadwal (`attendanceTeach`), bukan sekadar mengampu mapel.
+- 2026-10-06 — Tahap 2: jam gerbang divalidasi `required_with` satu sama lain + `after:gate_opens_at`; keduanya opsional bila tidak dikirim (nilai sekarang dipertahankan). Batas tutup inklusif (`<= gate_closes_at` pada menit `H:i`), seperti `late_after`. Scan pulang juga terikat jendela gerbang.
 
 ### Temuan
 - Guru yang memindai kelas yang tidak ia ampu tetap ditolak lebih dulu oleh `recordableClassRule()` (kunci `class_id`), bukan oleh pemeriksaan jadwal; pesan "bukan jadwal mengajar Anda" hanya muncul untuk kelas miliknya di slot yang bukan miliknya.
