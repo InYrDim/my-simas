@@ -256,8 +256,8 @@ it('points an approved applicant at the school reset instead', function () {
     Mail::assertQueued(
         ApplicantSchoolResetMail::class,
         fn (ApplicantSchoolResetMail $mail) => $mail->hasTo('admin@nusantara.test')
-            && $mail->schoolCode === $tenant->id
+            && $mail->schoolCode === $tenant->slug
             && str_contains($mail->schoolResetUrl, '/forgot-password')
-            && str_contains($mail->schoolResetUrl, "school={$tenant->id}"),
+            && str_contains($mail->schoolResetUrl, "school={$tenant->slug}"),
     );
 });

@@ -49,9 +49,11 @@ final class AuthenticatedSessionController
     /**
      * Display the login view (tenant context already resolved).
      */
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        return Inertia::render('Identity/Auth/Login');
+        return Inertia::render('Identity/Auth/Login', [
+            'schoolLinked' => $request->route('school') !== null && $this->context->id() !== null,
+        ]);
     }
 
     /**
@@ -60,7 +62,7 @@ final class AuthenticatedSessionController
     public function store(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
-            'school' => ['required', 'string'],
+            'school' => ['nullable', 'string'],
             'login' => ['required', 'string', 'max:255'],
             'password' => ['required', 'string'],
         ]);

@@ -12,6 +12,7 @@ import {
     suspend as suspendTenant,
     syncModules,
     update as updateTenant,
+    updateCode as updateTenantCode,
 } from '@/actions/Modules/Platform/App/Http/Controllers/TenantConsoleController';
 import {
     activate as activateSubscription,
@@ -122,7 +123,7 @@ export default function TenantShow({
 
             <PageHeader
                 title={tenant.name}
-                description={`/${tenant.slug} · kode sekolah ${tenant.id}`}
+                description={`Kode sekolah ${tenant.slug}`}
                 actions={<StatusChip status={tenant.status} />}
             />
 
@@ -132,6 +133,7 @@ export default function TenantShow({
                     <TabsTrigger value="modul">Modul</TabsTrigger>
                     <TabsTrigger value="izin">Peran & izin</TabsTrigger>
                     <TabsTrigger value="langganan">Langganan</TabsTrigger>
+                    <TabsTrigger value="pengaturan">Pengaturan</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="ringkasan" className="mt-6">
@@ -156,8 +158,62 @@ export default function TenantShow({
                         route={route}
                     />
                 </TabsContent>
+                <TabsContent value="pengaturan" className="mt-6">
+                    <SettingsTab tenant={tenant} route={route} />
+                </TabsContent>
             </Tabs>
         </ProviderLayout>
+    );
+}
+
+function SettingsTab({
+    tenant,
+    route,
+}: {
+    tenant: TenantDetail;
+    route: Route;
+}) {
+    const form = useForm({ code: tenant.slug });
+
+    return (
+        <Panel title="Kode sekolah">
+            <p className="mb-4 text-sm text-muted-foreground">
+                Kode yang diketik pengguna saat masuk, dan yang dipakai pada
+                tautan masuk, tautan PPDB, dan email sekolah ini.
+            </p>
+            <Field data-invalid={!!form.errors.code} className="max-w-sm">
+                <FieldLabel htmlFor="tenant-code">Kode sekolah</FieldLabel>
+                <Input
+                    id="tenant-code"
+                    value={form.data.code}
+                    onChange={(event) =>
+                        form.setData('code', event.target.value)
+                    }
+                    className="font-mono"
+                    aria-invalid={!!form.errors.code}
+                />
+                <FieldDescription>
+                    Huruf kecil, angka, dan tanda hubung. Alamat masuk:{' '}
+                    <span className="font-mono">
+                        /{form.data.code || 'kode'}/login
+                    </span>
+                </FieldDescription>
+                <FieldError>{form.errors.code}</FieldError>
+            </Field>
+            <div className="mt-4">
+                <Confirm
+                    trigger="Simpan kode sekolah"
+                    title="Ubah kode sekolah?"
+                    description="Kode lama langsung tidak berlaku. Tautan masuk, tautan PPDB, dan QR yang sudah dibagikan dengan kode lama berhenti bekerja, dan pengguna harus memakai kode baru."
+                    action="Ya, ubah kode"
+                    onConfirm={() =>
+                        form.put(consolePath(updateTenantCode.url(route)), {
+                            preserveScroll: true,
+                        })
+                    }
+                />
+            </div>
+        </Panel>
     );
 }
 

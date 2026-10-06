@@ -167,6 +167,32 @@ final class TenantConsoleController
         return back()->with('status', 'Data tenant diperbarui.');
     }
 
+    /**
+     * Change the school code people type at sign-in. The old code stops
+     * working straight away (printed links and QR codes included).
+     */
+    public function updateCode(Request $request, Tenant $tenant): RedirectResponse
+    {
+        $request->merge(['code' => mb_strtolower(trim((string) $request->input('code')))]);
+
+        $data = $request->validate([
+            'code' => [
+                'required', 'string', 'min:3', 'max:60',
+                'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+                Rule::notIn((array) config('tenancy.reserved_slugs', [])),
+                Rule::unique('tenants', 'slug')->ignore($tenant->id, 'id'),
+            ],
+        ], [
+            'code.regex' => 'Kode sekolah hanya boleh huruf kecil, angka, dan tanda hubung.',
+            'code.not_in' => 'Kode sekolah ini dicadangkan untuk sistem.',
+            'code.unique' => 'Kode sekolah ini sudah dipakai sekolah lain.',
+        ], ['code' => 'kode sekolah']);
+
+        $this->lifecycle->changeCode($tenant, $data['code']);
+
+        return back()->with('status', 'Kode sekolah diperbarui.');
+    }
+
     public function suspend(Tenant $tenant): RedirectResponse
     {
         $this->lifecycle->suspend($tenant);

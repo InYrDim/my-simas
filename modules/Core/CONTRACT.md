@@ -32,20 +32,20 @@
   only and takes no id: it shows the student or teacher whose `user_id` is
   the signed-in account (`Domain/Queries/SignedInPerson`), plus the sign-in
   and roles through Identity's `ResolvesUsers`. `core.teaching.view` (guru)
-  gates Kelas Saya (`/saya/kelas`): the classes of the active year the
-  teacher is homeroom of or teaches in (`Domain/Queries/TeacherClasses`,
-  also behind the Beranda "Kelas saya" list). Beranda quick links come from
+  gates the teacher's weekly lessons (`/saya/jadwal`, no menu entry since Fase 15: Attendance's Jadwal Saya shows the same week): the teacher's own weekly lessons
+  through `Contracts/TeacherSchedule`. The Beranda "Kelas saya" list still
+  reads `Domain/Queries/TeacherClasses` (the active year's classes the
+  teacher is homeroom of or teaches in). Beranda quick links come from
   sidebar entries a module marks `shortcut: true` in `TenantNavigation`.
   The lesson timetable (`timetable_entries`: lesson slot + class + subject;
   the teacher is the one the class's teaching assignment names, so it is
   not stored) is edited on Akademik › Jadwal Pelajaran (`core.academic.manage`;
   read-only with `core.academic.view`; `SaveTimetableEntry` refuses a subject
-  without a teacher in that class and a teacher in two classes at once) and
-  read by a teacher on Jadwal Mengajar (`/saya/jadwal`, `core.teaching.view`,
-  `Domain/Queries/TeacherTimetable`). Deleting a slot or a class's subject
-  assignment removes its lessons. Nothing outside Core reads the timetable
-  yet; Attendance still has none. Other modules add their own
-  entries to the same group from their providers.
+  without a teacher in that class and a teacher in two classes at once),
+  read by a teacher on Jadwal Mengajar, and read by Attendance through
+  `TeacherSchedule` for the teacher's Kelas Saya pages (Fase 13). Deleting a
+  slot or a class's subject assignment removes its lessons. Other modules
+  add their own entries to the same group from their providers.
 
 ## Public interface (Contracts/)
 
@@ -62,14 +62,29 @@ DTOs.
   `teaching_assignments`) and `idsTaughtBy(userId)` (classes of the active
   year the teacher behind that account teaches or leads; empty when the
   account is no teacher's).
-- `BellSchedule` — `slotsOn(day)` (1 = Senin ... 6 = Sabtu, by start time)
+- `BellSchedule` — `slotsOn(day)` (1 = Senin ... 7 = Minggu, by start time)
   and `find(slotId)`.
+- `TeacherSchedule` (Fase 13) — `week(userId)` (the teacher's whole week,
+  only days with lessons, ordered by weekday and bell order) and
+  `onDay(userId, day)` (that weekday's lessons in bell order); empty when
+  the account is no teacher's or has no lesson in the active academic
+  year. The teacher is the one the class's teaching assignment names, so
+  a slot identifies the lesson: `SaveTimetableEntry` refuses a teacher in
+  two classes at once. Attendance reads this for the teacher's Kelas Saya
+  pages; Core's own Jadwal Mengajar reads it too.
+- `ClassTimetable` — `week(classId)`: one class's whole week in the same
+  `ScheduleDay`/`ScheduleLesson` shape, each lesson with the `teacherName`
+  its class teaching assignment gives the subject (null for a teacher's own
+  `TeacherSchedule`). Attendance reads it for the student's Kelas Saya.
 - `DTOs/StudentRecord` (id, name, NIS, class id and name, active — no
   guardian details), `DTOs/ClassRecord` (id, name, academic year id,
   homeroom teacher's name, number of active students),
   `DTOs/ClassSubject` (subject, teacher, and the teacher's account id
   when there is one), `DTOs/BellSlot` (id, day, start and end as `H:i`,
-  type, `isLesson`).
+  type, `isLesson`), `DTOs/ScheduleDay` (weekday number and name with its
+  lessons), `DTOs/ScheduleLesson` (slot id, its order among the day's
+  lesson slots, start and end as `H:i`, class id and name, subject id and
+  name).
 
 Admitting a new student (Fase 11) — a feature module asks Core to make a
 student; Core makes it the way every other path does (`SaveStudent`).

@@ -136,7 +136,7 @@ it('refuses to delete a homeroom teacher or a coach', function () {
 });
 
 it('forbids a teacher account from changing teachers', function () {
-    $tenant = schoolAs('teach-h', 'guru');
+    $tenant = schoolAs('teach-h', 'staf-tu');
 
     get(school($tenant->slug, '/master/guru'))->assertOk();
     post(school($tenant->slug, '/master/guru'), ['name' => 'X', 'employment' => 'PNS', 'duty' => 'Guru Mapel'])->assertForbidden();
@@ -287,7 +287,7 @@ it('refuses to delete a class that still has students', function () {
 });
 
 it('forbids a teacher account from changing students', function () {
-    $tenant = schoolAs('stud-l', 'guru');
+    $tenant = schoolAs('stud-l', 'staf-tu');
 
     get(school($tenant->slug, '/master/siswa'))->assertOk();
     post(school($tenant->slug, '/master/siswa'), studentPayload())->assertForbidden();
@@ -377,7 +377,7 @@ it('keeps another school\'s extracurricular out', function () {
 });
 
 it('forbids a teacher account from changing extracurriculars', function () {
-    $tenant = schoolAs('xtra-f', 'guru');
+    $tenant = schoolAs('xtra-f', 'staf-tu');
     $activity = inSchool($tenant, fn () => Extracurricular::factory()->create());
 
     get(school($tenant->slug, '/master/ekstrakurikuler'))->assertOk();

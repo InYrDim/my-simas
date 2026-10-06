@@ -38,6 +38,22 @@ export const lessonStatuses: AttendanceStatus[] = [
     'absent',
 ];
 
+/** Where one lesson stands on the school's clock. */
+export type LessonState = 'upcoming' | 'running' | 'finished';
+
+/** Word and badge for a lesson's state; the word carries the meaning. */
+export const lessonStateMeta: Record<
+    LessonState,
+    {
+        label: string;
+        variant: 'default' | 'outline' | 'secondary';
+    }
+> = {
+    upcoming: { label: 'Belum dimulai', variant: 'outline' },
+    running: { label: 'Sedang berlangsung', variant: 'default' },
+    finished: { label: 'Selesai', variant: 'secondary' },
+};
+
 /** The colour of a pressed status button, beyond the default for "Hadir". */
 export const pressedClass: Partial<Record<AttendanceStatus, string>> = {
     absent: 'bg-destructive hover:bg-destructive/90',

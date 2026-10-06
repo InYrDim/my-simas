@@ -73,7 +73,7 @@ it('queues a set-password mail with a school-coded link', function () {
     dispatchApproved($tenant->id);
 
     Mail::assertQueued(SetPasswordMail::class, function (SetPasswordMail $mail) use ($tenant): bool {
-        return str_contains($mail->setPasswordUrl, 'school='.$tenant->id)
+        return str_contains($mail->setPasswordUrl, 'school='.$tenant->slug)
             && str_contains($mail->setPasswordUrl, '/set-password?token=');
     });
 });

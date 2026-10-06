@@ -46,8 +46,6 @@ return [
         'permissions' => [
             'core.me.view',
             'core.teaching.view',
-            'core.master.view',
-            'core.academic.view',
             'attendance.class.record',
         ],
     ],
@@ -69,6 +67,6 @@ return [
     'siswa' => [
         'label' => 'Siswa',
         'description' => 'Peserta didik: masuk dengan NIS untuk layanan siswa.',
-        'permissions' => ['core.me.view', 'attendance.qr.show', 'attendance.mine.view'],
+        'permissions' => ['core.me.view', 'attendance.qr.show', 'attendance.mine.view', 'attendance.class.view-own'],
     ],
 ];

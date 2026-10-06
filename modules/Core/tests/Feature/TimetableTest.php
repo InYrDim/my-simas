@@ -43,6 +43,7 @@ it('lists a class lesson slots with the subject and its teacher', function () {
         ->component('Core/Academic/Timetable/Index')
         ->where('classId', $class->id)
         ->where('subjects.0.label', 'Matematika · Pak Budi')
+        ->where('days.6.day', 'Minggu')
         ->where('days.0.slots.0', ['id' => $slot->id, 'order' => 1, 'start' => '07:15', 'end' => '08:00', 'subjectId' => $subject->id, 'subject' => 'Matematika', 'teacher' => 'Pak Budi']));
 });
 
@@ -90,8 +91,8 @@ it('refuses a slot that is not a lesson or does not exist', function () {
         ->assertSessionHasErrors('period_slot_id');
 });
 
-it('lets a teacher read the timetable but not change it', function () {
-    [$tenant, $class, $slot, $subject] = timetableSetup('tt-guru', 'guru');
+it('lets office staff read the timetable but not change it', function () {
+    [$tenant, $class, $slot, $subject] = timetableSetup('tt-guru', 'staf-tu');
 
     get(school($tenant->slug, '/akademik/jadwal'))->assertOk();
 

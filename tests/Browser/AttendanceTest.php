@@ -13,6 +13,7 @@ use Modules\Core\App\Domain\Models\Student;
 use Modules\Core\App\Domain\Models\Subject;
 use Modules\Core\App\Domain\Models\Teacher;
 use Modules\Core\App\Domain\Models\TeachingAssignment;
+use Modules\Core\App\Domain\Models\TimetableEntry;
 use Modules\Identity\App\Domain\Models\User;
 use Modules\Identity\Database\Factories\UserFactory;
 use Modules\Platform\App\Domain\Models\Tenant;
@@ -118,6 +119,9 @@ it('lets an admin take the roll call of a class and see it in the recap', functi
 });
 
 it('records a student at the gate from a one-time code and another by name', function () {
+    // The gate only takes scans between gate_opens_at and gate_closes_at (school time).
+    $this->travelTo('2026-10-07 03:00:00');
+
     [$page, $tenant] = attendanceMemberSignsIn('staf-tu');
     [, , $students] = attendanceClasses($tenant, ['Aditya Pratama', 'Bima Sakti']);
 
@@ -160,30 +164,37 @@ it('opens a teachers lesson on the own class with the own subject', function () 
     inTenant($tenant, function () use ($tenant, $taught, $user): void {
         $teacher = Teacher::factory()->create(['name' => 'Pak Budi']);
         $teacher->forceFill(['user_id' => $user->id])->save();
+        $subject = Subject::factory()->create(['name' => 'Matematika']);
 
         TeachingAssignment::factory()->create([
             'class_id' => $taught->id,
-            'subject_id' => Subject::factory()->create(['name' => 'Matematika'])->id,
+            'subject_id' => $subject->id,
             'teacher_id' => $teacher->id,
         ]);
 
-        // One lesson covering the whole of today at the school.
-        PeriodSlot::factory()->create([
+        // One lesson covering the whole of today at the school, so it is
+        // always the lesson running now.
+        $slot = PeriodSlot::factory()->create([
             'day' => now($tenant->timezone)->dayOfWeekIso,
             'start_time' => '00:00:00',
             'end_time' => '23:59:00',
         ]);
+
+        TimetableEntry::factory()->create([
+            'period_slot_id' => $slot->id,
+            'class_id' => $taught->id,
+            'subject_id' => $subject->id,
+        ]);
     });
 
-    $page->navigate('/absensi/jam-pelajaran')
-        // X 1 comes first by name; the teacher's own class is the one opened.
-        ->assertSeeIn('internal:role=combobox[name="Kelas"i]', 'X 2')
-        ->assertSeeIn('internal:role=combobox[name="Mata pelajaran"i]', 'Matematika')
+    // Kelas Saya › Absensi Kelas opens the lesson that is running now.
+    $page->navigate('/absensi/absen-kelas')
+        ->assertSee('Matematika · Kelas X 2')
         ->assertSee('Belum ditandai 2')
         ->click('internal:role=group[name="Status Bima Sakti"i] >> internal:role=button[name="Alpa"i]')
         ->press('Tandai sisanya hadir')
         ->press('Simpan absensi')
-        ->assertSee('Absensi jam pelajaran disimpan.')
+        ->assertSee('Absensi kelas disimpan.')
         ->assertSee('Sudah pernah disimpan')
         ->assertNoJavaScriptErrors();
 

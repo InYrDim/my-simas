@@ -1,11 +1,23 @@
-import { router, useForm } from '@inertiajs/react';
+import { router, useForm, usePage } from '@inertiajs/react';
 
 import {
+    cancelCheckOut,
     index,
     update,
 } from '@/actions/Modules/Attendance/App/Http/Controllers/DailyInputController';
 import { EmptyState, Panel } from '@shared/components/page-parts';
 import { Alert, AlertDescription } from '@shared/components/ui/alert';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@shared/components/ui/alert-dialog';
 import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
 import { Input as TextInput } from '@shared/components/ui/input';
@@ -100,6 +112,7 @@ export default function Input({
                     key={`${classId}-${date.iso}`}
                     classId={classId}
                     date={date.iso}
+                    isToday={date.isToday}
                     students={students}
                 />
             )}
@@ -110,10 +123,12 @@ export default function Input({
 function RollCall({
     classId,
     date,
+    isToday,
     students,
 }: {
     classId: string;
     date: string;
+    isToday: boolean;
     students: Student[];
 }) {
     const form = useForm<{ class_id: string; date: string; marks: Mark[] }>({
@@ -138,7 +153,14 @@ function RollCall({
             ),
         );
 
-    const error = form.errors.marks ?? form.errors.date ?? form.errors.class_id;
+    // A refused "Batalkan pulang" comes back as a page error, not a form error.
+    const { errors: pageErrors } = usePage<{ errors: Record<string, string> }>()
+        .props;
+    const error =
+        form.errors.marks ??
+        form.errors.date ??
+        form.errors.class_id ??
+        pageErrors.marks;
 
     return (
         <>
@@ -179,6 +201,61 @@ function RollCall({
                                             {student.checkedOut !== null &&
                                                 ` · pulang ${student.checkedOut}`}
                                         </p>
+                                        {isToday &&
+                                            student.checkedOut !== null && (
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button
+                                                            type="button"
+                                                            variant="link"
+                                                            size="sm"
+                                                            className="h-auto p-0 text-xs"
+                                                        >
+                                                            Batalkan pulang
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>
+                                                                Batalkan catatan
+                                                                pulang?
+                                                            </AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                Catatan pulang{' '}
+                                                                {student.name}{' '}
+                                                                pukul{' '}
+                                                                {
+                                                                    student.checkedOut
+                                                                }{' '}
+                                                                dihapus. Jam
+                                                                masuk dan status
+                                                                hari ini tetap.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>
+                                                                Batal
+                                                            </AlertDialogCancel>
+                                                            <AlertDialogAction
+                                                                onClick={() =>
+                                                                    router.delete(
+                                                                        cancelCheckOut.url(),
+                                                                        {
+                                                                            data: {
+                                                                                student_id:
+                                                                                    student.id,
+                                                                            },
+                                                                            preserveScroll: true,
+                                                                        },
+                                                                    )
+                                                                }
+                                                            >
+                                                                Batalkan pulang
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            )}
                                     </div>
                                     <div
                                         role="group"

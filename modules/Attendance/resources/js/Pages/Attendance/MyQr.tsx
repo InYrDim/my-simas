@@ -78,19 +78,19 @@ export default function MyQr({ student, today, refreshEvery }: MyQrProps) {
         }
 
         const timer = window.setInterval(() => {
-            setLeft((seconds) => {
-                if (seconds <= 1) {
-                    refresh();
-
-                    return refreshEvery;
-                }
-
-                return seconds - 1;
-            });
+            setLeft((seconds) => Math.max(0, seconds - 1));
         }, 1000);
 
         return () => window.clearInterval(timer);
-    }, [code, refresh, refreshEvery]);
+    }, [code]);
+
+    // Asking for the next code replaces the previous one on the server, so
+    // it must happen exactly once per round — never from inside a state updater.
+    useEffect(() => {
+        if (code !== null && left === 0) {
+            refresh();
+        }
+    }, [code, left, refresh]);
 
     return (
         <AttendancePage

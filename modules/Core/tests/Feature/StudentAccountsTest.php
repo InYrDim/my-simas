@@ -223,7 +223,7 @@ it('shows the account on the student page and on the class page', function () {
 });
 
 it('forbids a teacher from making or resetting accounts', function () {
-    $tenant = schoolAs('akun-k', 'guru');
+    $tenant = schoolAs('akun-k', 'staf-tu');
     $class = classIn($tenant);
     $student = studentIn($tenant, $class);
 

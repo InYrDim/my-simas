@@ -48,6 +48,7 @@ interface Entry {
 interface ScanProps {
     date: { iso: string; label: string };
     can: { gate: boolean; lesson: boolean };
+    ownLessonOnly: boolean;
     classes: ClassOption[];
     classId: string;
     slots: { value: string; label: string }[];
@@ -79,6 +80,7 @@ const REPEAT_GUARD_MS = 4000;
 export default function Scan({
     date,
     can,
+    ownLessonOnly,
     classes,
     classId,
     slots,
@@ -98,6 +100,7 @@ export default function Scan({
     const [found, setFound] = useState<Student[] | null>(null);
     const [camera, setCamera] = useState(false);
     const [cameraError, setCameraError] = useState<string | null>(null);
+    const [latest, setLatest] = useState<Entry | null>(null);
 
     const scan = useHttp<Payload, Recorded>({ mode: modes[0] });
     const search = useHttp<Record<string, never>, { students: Student[] }>({});
@@ -110,13 +113,12 @@ export default function Scan({
     const lessonReady =
         mode !== 'lesson' || (lessonClass !== '' && lessonSlot !== '');
 
-    const add = (ok: boolean, title: string, detail: string) =>
-        setLog((entries) =>
-            [{ key: ++entryKey.current, ok, title, detail }, ...entries].slice(
-                0,
-                30,
-            ),
-        );
+    const add = (ok: boolean, title: string, detail: string) => {
+        const entry = { key: ++entryKey.current, ok, title, detail };
+
+        setLog((entries) => [entry, ...entries].slice(0, 30));
+        setLatest(entry);
+    };
 
     const record = (target: { token: string } | { student_id: number }) => {
         if (busy.current || !lessonReady) {
@@ -165,6 +167,16 @@ export default function Scan({
         }).catch(() => undefined);
     };
 
+    useEffect(() => {
+        if (latest === null) {
+            return;
+        }
+
+        const timer = setTimeout(() => setLatest(null), 4000);
+
+        return () => clearTimeout(timer);
+    }, [latest]);
+
     // The camera callback outlives a render: it always calls the latest `record`.
     const recordRef = useRef(record);
 
@@ -206,17 +218,26 @@ export default function Scan({
                 },
                 {
                     preferredCamera: 'environment',
+                    returnDetailedScanResult: true,
                     highlightScanRegion: true,
                     maxScansPerSecond: 5,
                 },
             );
 
-            scanner.start().catch(() => {
-                setCameraError(
-                    'Kamera tidak bisa dibuka. Izinkan akses kamera, atau pakai kolom kode dan pencarian di bawah.',
-                );
-                setCamera(false);
-            });
+            scanner
+                .start()
+                .then(() => {
+                    // The wrapper mirrors the view; drop the library's own flip.
+                    if (video.current !== null) {
+                        video.current.style.transform = 'none';
+                    }
+                })
+                .catch(() => {
+                    setCameraError(
+                        'Kamera tidak bisa dibuka. Izinkan akses kamera, atau pakai kolom kode dan pencarian di bawah.',
+                    );
+                    setCamera(false);
+                });
         });
 
         return () => {
@@ -307,9 +328,11 @@ export default function Scan({
 
             {!lessonReady ? (
                 <EmptyState>
-                    {slots.length === 0
-                        ? 'Tidak ada jam pelajaran hari ini. Atur jam pelajaran di Akademik › Jam Pelajaran.'
-                        : 'Pilih kelas dan jam pelajaran lebih dulu.'}
+                    {ownLessonOnly
+                        ? 'Tidak ada pelajaran Anda yang sedang berlangsung. Pemindaian hanya bisa dilakukan pada jam mengajar Anda.'
+                        : slots.length === 0
+                          ? 'Tidak ada jam pelajaran hari ini. Atur jam pelajaran di Akademik › Jam Pelajaran.'
+                          : 'Pilih kelas dan jam pelajaran lebih dulu.'}
                 </EmptyState>
             ) : (
                 <div className="flex flex-col gap-6">
@@ -336,15 +359,47 @@ export default function Scan({
                                 </AlertDescription>
                             </Alert>
                         )}
-                        <video
-                            ref={video}
-                            muted
-                            playsInline
+                        <div
                             className={cn(
-                                'aspect-video w-full bg-muted object-cover',
+                                'relative scale-x-100 overflow-hidden',
                                 !camera && 'hidden',
                             )}
-                        />
+                        >
+                            <video
+                                ref={video}
+                                muted
+                                playsInline
+                                className="aspect-video w-full bg-muted object-cover"
+                            />
+                        </div>
+                        {latest !== null && (
+                            <div
+                                role="status"
+                                aria-live="assertive"
+                                className={cn(
+                                    'mt-4 flex items-center justify-between gap-3 rounded-lg border-2 p-4',
+                                    latest.ok
+                                        ? 'border-primary bg-primary/10'
+                                        : 'border-destructive bg-destructive/10',
+                                )}
+                            >
+                                <div className="min-w-0">
+                                    <p className="truncate text-lg font-semibold">
+                                        {latest.title}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground">
+                                        {latest.detail}
+                                    </p>
+                                </div>
+                                <Badge
+                                    variant={
+                                        latest.ok ? 'default' : 'destructive'
+                                    }
+                                >
+                                    {latest.ok ? 'Tercatat' : 'Ditolak'}
+                                </Badge>
+                            </div>
+                        )}
                         {!camera && (
                             <p className="text-sm text-muted-foreground">
                                 Nyalakan kamera lalu arahkan ke QR di HP siswa.

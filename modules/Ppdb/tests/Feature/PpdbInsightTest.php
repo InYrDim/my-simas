@@ -143,6 +143,14 @@ it('keeps the reports for holders of ppdb.view', function (string $role, bool $a
     [$tenant] = admissionsSchool("laporan-ppdb-izin-{$role}", $role);
 
     get(school($tenant->slug, '/statistik-laporan/laporan/ppdb-applicants/unduh'))->assertStatus($allowed ? 200 : 403);
+
+    // A teacher has no access to the reports page at all (Fase 15).
+    if ($role === 'guru') {
+        get(school($tenant->slug, '/statistik-laporan/laporan'))->assertForbidden();
+
+        return;
+    }
+
     get(school($tenant->slug, '/statistik-laporan/laporan'))->assertInertia(fn (Assert $page) => $page
         ->where('groups', fn ($groups) => (collect($groups)->firstWhere('title', 'Penerimaan (PPDB)') !== null) === $allowed)
     );

@@ -24,9 +24,9 @@ it('shows the school code and the link applicants join with', function () {
 
     get(school($tenant->slug, '/ppdb/pengaturan'))->assertOk()->assertInertia(fn (Assert $page) => $page
         ->component('Ppdb/Settings')
-        ->where('school.code', $tenant->id)
+        ->where('school.code', $tenant->slug)
         ->where('school.name', $tenant->name)
-        ->where('school.joinUrl', fn (string $url) => str_contains($url, '/calon-siswa/gabung?school='.$tenant->id))
+        ->where('school.joinUrl', fn (string $url) => str_contains($url, '/calon-siswa/gabung?school='.$tenant->slug))
         ->where('selected', null)
         ->where('periods', [])
     );

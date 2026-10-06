@@ -231,26 +231,28 @@ it('has no lessons on a day without lesson slots', function () {
     );
 });
 
-it('offers a teacher only the own classes, with the own subject chosen', function () {
+it('offers a teacher only the own lesson that is running on the scanner', function () {
     $tenant = attendanceTenant(role: 'guru');
     $teacherAccount = auth()->id();
     attendanceClass($tenant, 'X 1');
     $taught = attendanceClass($tenant, 'X 2');
     attendanceClass($tenant, 'X 3');
-    lessonSlot($tenant);
+    $slot = lessonSlot($tenant);
     lessonSubject($tenant, $taught, 'Bahasa Indonesia');
-    $own = lessonSubject($tenant, $taught, 'Matematika', $teacherAccount);
+    attendanceTeach($tenant, $taught, $slot, 'Matematika', $teacherAccount);
 
-    get(school($tenant->slug, '/absensi/jam-pelajaran'))->assertInertia(fn (Assert $page) => $page
+    get(school($tenant->slug, '/absensi/pindai'))->assertInertia(fn (Assert $page) => $page
+        ->component('Attendance/Scan')
+        ->where('ownLessonOnly', true)
         ->where('classes', [
             ['value' => (string) $taught->id, 'label' => 'X 2', 'mine' => true],
         ])
         ->where('classId', (string) $taught->id)
-        ->where('subjectId', (string) $own->id)
+        ->where('slotId', (string) $slot->id)
     );
 });
 
-it('refuses a teacher a class that is not the own, on every recording page', function () {
+it('refuses a teacher a class that is not the own', function () {
     $tenant = attendanceTenant(role: 'guru');
     $teacherAccount = auth()->id();
     $taught = attendanceClass($tenant, 'X 1');
@@ -259,43 +261,34 @@ it('refuses a teacher a class that is not the own, on every recording page', fun
     lessonSubject($tenant, $taught, 'Matematika', $teacherAccount);
     $citra = attendanceStudent($tenant, $other, 'Citra');
 
-    // Asking for another class falls back to the own one.
-    get(school($tenant->slug, "/absensi/jam-pelajaran?kelas={$other->id}"))->assertInertia(fn (Assert $page) => $page
-        ->where('classId', (string) $taught->id)
-    );
-
-    saveLesson($tenant, [
-        'class_id' => $other->id, 'period_slot_id' => $slot->id,
-        'marks' => [['student_id' => $citra->id, 'status' => 'present']],
-    ])->assertSessionHasErrors('class_id');
-
-    saveDaily($tenant, $other->id, [['student_id' => $citra->id, 'status' => 'sick']])->assertSessionHasErrors('class_id');
-
+    // A scanned student of another class is refused.
     postJson(school($tenant->slug, '/absensi/pindai'), [
         'mode' => 'lesson', 'student_id' => $citra->id, 'class_id' => $other->id, 'period_slot_id' => $slot->id,
     ])->assertStatus(422)->assertJsonValidationErrors('class_id');
 
-    expect(lessonMarks($tenant))->toBe([])
-        ->and(dailyRow($tenant, $citra))->toBeNull();
+    // The school-wide pages are the office's now.
+    get(school($tenant->slug, "/absensi/jam-pelajaran?kelas={$other->id}"))->assertForbidden();
+    saveLesson($tenant, [
+        'class_id' => $other->id, 'period_slot_id' => $slot->id,
+        'marks' => [['student_id' => $citra->id, 'status' => 'present']],
+    ])->assertForbidden();
+
+    expect(lessonMarks($tenant))->toBe([]);
 });
 
-it('lets a teacher record the own class, daily and per lesson', function () {
+it('lets a teacher record the own lesson by scan', function () {
     $tenant = attendanceTenant(role: 'guru');
     $teacherAccount = auth()->id();
     $taught = attendanceClass($tenant, 'X 1');
     $slot = lessonSlot($tenant);
-    lessonSubject($tenant, $taught, 'Matematika', $teacherAccount);
+    attendanceTeach($tenant, $taught, $slot, 'Matematika', $teacherAccount);
     $adit = attendanceStudent($tenant, $taught, 'Adit');
 
-    saveLesson($tenant, [
-        'class_id' => $taught->id, 'period_slot_id' => $slot->id,
-        'marks' => [['student_id' => $adit->id, 'status' => 'present']],
-    ])->assertSessionHasNoErrors();
+    postJson(school($tenant->slug, '/absensi/pindai'), [
+        'mode' => 'lesson', 'student_id' => $adit->id, 'class_id' => $taught->id, 'period_slot_id' => $slot->id,
+    ])->assertOk();
 
-    saveDaily($tenant, $taught->id, [['student_id' => $adit->id, 'status' => 'sick']])->assertSessionHasNoErrors();
-
-    expect(lessonMarks($tenant))->toBe([$adit->id => 'present'])
-        ->and(dailyRow($tenant, $adit)?->status->value)->toBe('sick');
+    expect(lessonMarks($tenant))->toBe([$adit->id => 'present']);
 });
 
 it('has no own classes for an account that is not a teachers', function () {

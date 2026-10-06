@@ -63,7 +63,7 @@ Vendor/Laravel  ←  Shared  ←  Platform (Fase 1)  ←  Identity  ←  Core  �
 | Shared   | `Shared`   | Generic technical utilities           | Everything (by definition)                                       |
 | Platform | `Platform` | Tenancy, module registry, permissions | `Modules\Platform\App\Contracts`                                 |
 | Identity | `Identity` | Tenant-scoped users, auth lifecycle, user management | `Modules\Identity\App\Contracts` (`ResolvesUsers`, `UserRecord`, `AccountProvisioner`, `NewAccount`) |
-| Core     | `Core`     | Master data, academic management, CSV import, statistics and reports, WhatsApp notices | `Modules\Core\App\Contracts` (`StudentDirectory`, `ClassDirectory`, `BellSchedule`, `ReportRegistry`, `Report`, `StatisticsRegistry`, `StatisticsProvider`, `NoticeRegistry`, `GuardianNotifier`, `StudentAdmission`, DTOs) |
+| Core     | `Core`     | Master data, academic management, CSV import, statistics and reports, WhatsApp notices | `Modules\Core\App\Contracts` (`StudentDirectory`, `ClassDirectory`, `BellSchedule`, `TeacherSchedule`, `ReportRegistry`, `Report`, `StatisticsRegistry`, `StatisticsProvider`, `NoticeRegistry`, `GuardianNotifier`, `StudentAdmission`, DTOs) |
 | Attendance | `Attendance` | Student attendance (Absensi): gate, daily, per lesson, QR | `Modules\Attendance\App\Contracts` (none — nothing uses it)   |
 | Ppdb     | `Ppdb`     | Admissions (PPDB): applicants' accounts, registration, selection, announcement, re-registration | `Modules\Ppdb\App\Contracts` (none — nothing uses it) |
 
@@ -319,8 +319,8 @@ boot.
   logged out on mismatch.
 - Queue worker + scheduler run centrally; jobs carry their tenant in
   the payload (Stage 4 propagation) — no per-tenant workers needed.
-- Dev: `localhost:8000/login` for schools (school code = tenant id,
-  printed by `db:seed`), `console.localhost:8000/login` for the provider
+- Dev: `localhost:8000/login` for schools (school code = tenant slug,
+  printed by `db:seed`; a school's own address is `/<code>/login`), `console.localhost:8000/login` for the provider
   (`*.localhost` resolves without /etc/hosts entries); seed demo
   tenants with `php artisan db:seed` (local only).
 
@@ -684,6 +684,64 @@ The last module that was a mockup, and the first feature module with a
 - **After the release** run `php artisan migrate` and
   `php artisan roles:sync` (new permissions for admin-sekolah and staf-tu).
 
+## Kelas Saya for teachers (Fase 13)
+
+The teacher's workspace merges what used to be two sidebar entries —
+Core's Kelas Saya and Attendance's Absensi Saya — into one: **Kelas Saya**
+with Kelas Aktif, Jadwal Hari Ini, Absensi Kelas and Riwayat Absensi.
+"Absensi Saya" stays on the sidebar as a "Segera hadir" placeholder.
+
+- **The new public surface is Core's `TeacherSchedule`** (`week`, `onDay`,
+  `ScheduleDay` / `ScheduleLesson`): a feature module reads the lesson
+  timetable without Core's models. Core's own Jadwal Mengajar reads it
+  too; the old internal query is gone.
+- **Attendance owns the pages.** Three of the four pages are attendance
+  data, and Core may not depend on Attendance, so the merged menu is
+  registered by Attendance (`attendance.class.record`; Absensi Kelas and
+  Riwayat Absensi additionally need the school's lesson switch through the
+  new composite `attendance.class.lesson.use`). Core's `/saya/kelas` page,
+  its route and its sidebar entry are removed; `/saya/jadwal` (Jadwal
+  Mengajar, all lessons) stays Core's.
+- **The school's clock decides.** A lesson is `upcoming`, `running` or
+  `finished` on the tenant's timezone; only a running lesson may be filled
+  on Absensi Kelas (a future day is refused; the place to correct a record
+  is Riwayat Absensi), and the todo checkbox can only be ticked after the
+  lesson's hour. `lesson_checks` stores the teacher's own done mark and is
+  also written when the teacher saves the attendance.
+- **The school-wide pages stay the office's**: `/absensi/input` needs
+  `attendance.daily.record`, `/absensi/jam-pelajaran` needs
+  `attendance.lesson.school`; a teacher keeps only `Pindai QR`.
+- **After the release** run `php artisan migrate` (the `lesson_checks`
+  table).
+
+## Attendance scan times (Fase 14)
+
+Scanning is accepted only at its own time, on the tenant's clock. Attendance
+internal (`Domain/Support/ScanWindow`), no contract. Details:
+`modules/Attendance/CONTRACT.md`, plan `docs/ai/plan/fase-14/`.
+
+- **A lesson is scanned from a school-set tolerance before it starts**
+  (`lesson_scan_early_minutes`, default 5) **until it ends**; outside that
+  the scan is refused and the correction goes through Riwayat Absensi.
+  `MarkLessonPresence` asks it, so every caller is bound.
+- **A teacher without `attendance.lesson.school` scans only the own lesson
+  that is running** (the scanner offers just that one; the controller
+  re-asserts it against `TeacherLessons`). The school-wide permission keeps
+  the free choice of class but not the hours.
+- **The gate takes scans between `gate_opens_at` and `gate_closes_at`**
+  (default 05:00–18:00, closing minute included), in and out alike. Leaving
+  before the last lesson of the day ends is stored as
+  `daily_attendances.left_early` and shown as "Pulang awal". The daily input
+  (`/absensi/input`) is not bound by these hours: it is the correction path.
+- **A student recorded as gone home is not scanned into a lesson.** The
+  office (`attendance.daily.record`) can take the going-home record back on
+  Input Absensi, today only (`CancelGateCheckOut`); the arrival and the status
+  stay and nobody is notified.
+- **Not built (on purpose):** school holidays and days without lessons are
+  not refused (needs a Core calendar contract), no automatic absence, no
+  reason for leaving early.
+- **After the release** run `php artisan migrate`.
+
 ## School setup checklist (Fase 12)
 
 The school's Beranda shows "Persiapan sekolah" to whoever holds
@@ -703,3 +761,35 @@ done.
 - **Students count once placed** in a class of the active year; the
   step links to Penempatan Siswa `?kelas=belum` while some are not.
 - Details: `modules/Core/CONTRACT.md` (Surfaces).
+
+
+## Kelas Saya for students
+
+Students get their own **Kelas Saya** (group "Saya"), owned by Attendance like the
+teacher's: Info Kelas (class, homeroom, classmates), Jadwal Pelajaran, Mata Pelajaran
+& Guru and Absensi Saya as a child. One sidebar entry cannot be shared between
+modules and Core must not import Attendance, so Attendance owns the entry and reads
+Core through `ClassDirectory`, `StudentDirectory` and the new `ClassTimetable`
+contract. Permission `attendance.class.view-own` (role `siswa`); after a release run
+`php artisan roles:sync`. Details: `modules/Attendance/CONTRACT.md`, `modules/Core/CONTRACT.md`.
+
+## Menu guru (Fase 15)
+
+The teacher's sidebar is cut to what a teacher does: Beranda, Profil Saya,
+**Jadwal Saya**, **Kelas Mengajar**, Ganti Kata Sandi. Plan:
+`docs/ai/plan/fase-15/menu-guru-plan.md`.
+
+- **One schedule.** Attendance's Jadwal Saya (`/absensi/jadwal-saya`) has the
+  tabs Hari Ini (todo list, range banner) and Minggu Ini
+  (`TeacherSchedule::week()`). Core's Jadwal Mengajar menu entry is gone; its
+  `/saya/jadwal` page stays reachable.
+- **One door for lesson attendance.** Kelas Mengajar = Kelas Aktif, Absensi
+  Kelas (tabs Isi Absensi / Koreksi; Koreksi is the old Riwayat Absensi,
+  URLs unchanged) and Pindai QR. The empty teacher "Absensi Saya" and its
+  `/absensi/segera-hadir` route are removed. Students still have Kelas Saya.
+- **No school-wide admin pages for a teacher.** Role `guru` lost
+  `core.master.view` and `core.academic.view`, so Data Induk and Statistik
+  & Laporan are not on a teacher's menu (Kelas Aktif already lists the
+  students of the teacher's classes).
+- **After a release:** `php artisan roles:sync` (it replaces a role's
+  permissions, so existing schools lose the two from `guru`).

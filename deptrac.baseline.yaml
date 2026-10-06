@@ -43,6 +43,8 @@ deptrac:
             - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
         Modules\Core\App\Domain\Models\PeriodSlot:
             - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Core\App\Domain\Models\TimetableEntry:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
         Modules\Core\App\Domain\Models\Student:
             - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
         Modules\Core\App\Domain\Models\StudentClassHistory:
@@ -62,6 +64,8 @@ deptrac:
         Modules\Attendance\App\Domain\Models\LessonSession:
             - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
         Modules\Attendance\App\Domain\Models\LessonAttendance:
+            - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
+        Modules\Attendance\App\Domain\Models\LessonCheck:
             - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'
         Modules\Ppdb\App\Domain\Models\AdmissionPeriod:
             - 'Modules\Platform\App\Infrastructure\Tenancy\TenantScope'

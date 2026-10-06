@@ -7,10 +7,9 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Attendance\App\Domain\Actions\SaveLessonAttendance;
-use Modules\Attendance\App\Domain\Enums\AttendanceStatus;
-use Modules\Attendance\App\Domain\Models\DailyAttendance;
 use Modules\Attendance\App\Domain\Models\LessonSession;
 use Modules\Attendance\App\Domain\Queries\ClassChoices;
+use Modules\Attendance\App\Domain\Queries\LessonRoll;
 use Modules\Attendance\App\Domain\Support\LessonSlots;
 use Modules\Attendance\App\Domain\Support\SchoolClock;
 use Modules\Attendance\App\Http\Concerns\KnowsSignedInUser;
@@ -19,7 +18,6 @@ use Modules\Attendance\App\Http\Requests\LessonAttendanceRequest;
 use Modules\Core\App\Contracts\ClassDirectory;
 use Modules\Core\App\Contracts\DTOs\BellSlot;
 use Modules\Core\App\Contracts\DTOs\ClassSubject;
-use Modules\Core\App\Contracts\StudentDirectory;
 
 /**
  * Absensi Jam Pelajaran: one class in one lesson slot of one day.
@@ -32,7 +30,7 @@ final class LessonAttendanceController
         Request $request,
         ClassChoices $choices,
         ClassDirectory $directory,
-        StudentDirectory $students,
+        LessonRoll $roll,
         LessonSlots $lessonSlots,
         SchoolClock $clock,
     ): Response {
@@ -68,7 +66,7 @@ final class LessonAttendanceController
             ], $subjects),
             'subjectId' => $subjectId === null ? '' : (string) $subjectId,
             'recorded' => $session !== null,
-            'students' => $classId === null ? [] : $this->students($students, $classId, $date, $session),
+            'students' => $classId === null ? [] : $roll->forClass($classId, $date, $session),
         ]);
     }
 
@@ -129,39 +127,5 @@ final class LessonAttendanceController
         }
 
         return $options;
-    }
-
-    /**
-     * The class list with each student's status in the session. Before the
-     * session is saved, a student who is sick, excused or absent for the
-     * day starts with that status; everyone else is not marked yet.
-     *
-     * @return list<array{id: int, name: string, nis: string, status: ?string, scanned: bool, daily: ?string}>
-     */
-    private function students(StudentDirectory $students, int $classId, string $date, ?LessonSession $session): array
-    {
-        $members = $students->ofClass($classId);
-        $ids = array_column($members, 'id');
-
-        $daily = DailyAttendance::query()->where('date', $date)->whereIn('student_id', $ids)->get()->keyBy('student_id');
-        $marks = $session === null ? collect() : $session->attendances()->get()->keyBy('student_id');
-
-        return array_map(function ($student) use ($daily, $marks): array {
-            /** @var AttendanceStatus|null $day */
-            $day = $daily->get($student->id)?->status;
-            $mark = $marks->get($student->id);
-
-            $status = $mark->status
-                ?? ($day !== null && ! $day->countsAsPresent() ? $day : null);
-
-            return [
-                'id' => $student->id,
-                'name' => $student->name,
-                'nis' => $student->nis,
-                'status' => $status?->value,
-                'scanned' => $mark?->scanned_at !== null,
-                'daily' => $day?->value,
-            ];
-        }, $members);
     }
 }

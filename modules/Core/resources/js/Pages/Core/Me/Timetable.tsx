@@ -32,8 +32,9 @@ export default function Timetable({ school, days }: TimetableProps) {
 
             {days.length === 0 ? (
                 <p className="mt-8 text-sm text-muted-foreground">
-                    Belum ada jadwal mengajar untuk Anda. Admin sekolah mengisinya
-                    di Akademik › Jadwal Pelajaran, setelah pengampu mapel diatur.
+                    Belum ada jadwal mengajar untuk Anda. Admin sekolah
+                    mengisinya di Akademik › Jadwal Pelajaran, setelah pengampu
+                    mapel diatur.
                 </p>
             ) : (
                 days.map((day) => (

@@ -72,7 +72,7 @@ class TenantCreateCommand extends Command
             $flags->enable($tenant->id, $module);
         }
 
-        $this->info("Tenant [{$tenant->name}] created. School code (login): {$tenant->id}");
+        $this->info("Tenant [{$tenant->name}] created. School code (login): {$tenant->slug}");
 
         return self::SUCCESS;
     }

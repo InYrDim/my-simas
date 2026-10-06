@@ -23,7 +23,7 @@ require_once __DIR__.'/Support/insight.php';
 beforeEach(fn () => $this->travelTo('2026-10-02 05:00:00'));
 
 it('lists the reports by group with the academic years to choose from', function () {
-    $tenant = schoolAs('laporan-katalog', 'guru');
+    $tenant = schoolAs('laporan-katalog', 'staf-tu');
     $past = yearWithSemesters($tenant, 'archived', '2025-07-14');
     $current = yearWithSemesters($tenant, 'active');
 
@@ -41,7 +41,7 @@ it('lists the reports by group with the academic years to choose from', function
 });
 
 it('downloads the students of every class of the active year', function () {
-    $tenant = schoolAs('laporan-siswa', 'guru');
+    $tenant = schoolAs('laporan-siswa', 'staf-tu');
     yearWithSemesters($tenant, 'active');
     $x2 = classIn($tenant, ['name' => 'X 2']);
     $x1 = classIn($tenant, ['name' => 'X 1']);
@@ -106,7 +106,7 @@ it('lists the students who changed class or left, not those who stayed', functio
 });
 
 it('sums the classes, subjects and weekly hours of each teacher', function () {
-    $tenant = schoolAs('laporan-beban', 'guru');
+    $tenant = schoolAs('laporan-beban', 'staf-tu');
     $past = yearWithSemesters($tenant, 'archived', '2025-07-14');
     $current = yearWithSemesters($tenant, 'active');
     $old = classIn($tenant, ['name' => 'IX 1', 'academic_year_id' => $past->id]);
@@ -141,7 +141,7 @@ it('sums the classes, subjects and weekly hours of each teacher', function () {
 });
 
 it('shows the same table in the print view', function () {
-    $tenant = schoolAs('laporan-cetak', 'guru');
+    $tenant = schoolAs('laporan-cetak', 'staf-tu');
     yearWithSemesters($tenant, 'active');
     placedStudent($tenant, 'Budi Santoso', '0071', classIn($tenant, ['name' => 'X 1']));
 
@@ -164,7 +164,7 @@ it('answers 404 for a report that is unknown or only announced', function (strin
 })->with(['tidak-ada', 'schedule', 'attendance-monthly'])->with(['unduh', 'cetak']);
 
 it('refuses a report the user lacks the permission for', function (string $action) {
-    $tenant = schoolAs('laporan-403', 'guru');
+    $tenant = schoolAs('laporan-403', 'staf-tu');
     yearWithSemesters($tenant, 'active');
     app(ReportRegistry::class)->register('core', ManagersOnlyReport::class);
 

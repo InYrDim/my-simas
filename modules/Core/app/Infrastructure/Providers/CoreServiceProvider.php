@@ -5,6 +5,7 @@ namespace Modules\Core\App\Infrastructure\Providers;
 use Illuminate\Support\ServiceProvider;
 use Modules\Core\App\Contracts\BellSchedule;
 use Modules\Core\App\Contracts\ClassDirectory;
+use Modules\Core\App\Contracts\ClassTimetable;
 use Modules\Core\App\Contracts\ContactNotifier;
 use Modules\Core\App\Contracts\GuardianNotifier;
 use Modules\Core\App\Contracts\NoticeRegistry;
@@ -12,6 +13,7 @@ use Modules\Core\App\Contracts\ReportRegistry;
 use Modules\Core\App\Contracts\StatisticsRegistry;
 use Modules\Core\App\Contracts\StudentAdmission;
 use Modules\Core\App\Contracts\StudentDirectory;
+use Modules\Core\App\Contracts\TeacherSchedule;
 use Modules\Core\App\Domain\Reports\StudentListReport;
 use Modules\Core\App\Domain\Reports\StudentMutationReport;
 use Modules\Core\App\Domain\Reports\TeachingLoadReport;
@@ -19,7 +21,9 @@ use Modules\Core\App\Domain\Statistics\SchoolStatistics;
 use Modules\Core\App\Infrastructure\Admission\DefaultStudentAdmission;
 use Modules\Core\App\Infrastructure\Directory\EloquentBellSchedule;
 use Modules\Core\App\Infrastructure\Directory\EloquentClassDirectory;
+use Modules\Core\App\Infrastructure\Directory\EloquentClassTimetable;
 use Modules\Core\App\Infrastructure\Directory\EloquentStudentDirectory;
+use Modules\Core\App\Infrastructure\Directory\EloquentTeacherSchedule;
 use Modules\Core\App\Infrastructure\Insight\DefaultReportRegistry;
 use Modules\Core\App\Infrastructure\Insight\DefaultStatisticsRegistry;
 use Modules\Core\App\Infrastructure\Whatsapp\DefaultContactNotifier;
@@ -62,6 +66,8 @@ class CoreServiceProvider extends ServiceProvider
         $this->app->bind(StudentDirectory::class, EloquentStudentDirectory::class);
         $this->app->bind(ClassDirectory::class, EloquentClassDirectory::class);
         $this->app->bind(BellSchedule::class, EloquentBellSchedule::class);
+        $this->app->bind(TeacherSchedule::class, EloquentTeacherSchedule::class);
+        $this->app->bind(ClassTimetable::class, EloquentClassTimetable::class);
 
         // Admitting a new student on behalf of a feature module (PPDB).
         $this->app->bind(StudentAdmission::class, DefaultStudentAdmission::class);
@@ -145,22 +151,6 @@ class CoreServiceProvider extends ServiceProvider
                 'permission' => 'core.me.view',
                 'group' => 'Saya',
                 'order' => 11,
-            ],
-            [
-                'label' => 'Kelas Saya',
-                'icon' => 'school',
-                'route' => 'core.me.classes',
-                'permission' => 'core.teaching.view',
-                'group' => 'Saya',
-                'order' => 14,
-            ],
-            [
-                'label' => 'Jadwal Mengajar',
-                'icon' => 'calendar-clock',
-                'route' => 'core.me.timetable',
-                'permission' => 'core.teaching.view',
-                'group' => 'Saya',
-                'order' => 15,
             ],
             [
                 'label' => 'Master Data',

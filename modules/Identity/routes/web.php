@@ -37,6 +37,13 @@ Route::middleware('web')->group(function (): void {
         Route::get('login', [AuthenticatedSessionController::class, 'create'])
             ->name('login');
 
+        // The school's own login address: the code in the path is adopted
+        // by ResolveTenant, so the form needs no school code field. The
+        // code may be the school's slug or its id.
+        Route::get('{school}/login', [AuthenticatedSessionController::class, 'create'])
+            ->where('school', '[0-9A-Za-z]+(-[0-9A-Za-z]+)*')
+            ->name('login.school');
+
         // No throttle: middleware — the controller enforces TENANT-keyed
         // rate limiting itself (middleware ordering cannot guarantee
         // the tenant context is set inside a limiter closure).

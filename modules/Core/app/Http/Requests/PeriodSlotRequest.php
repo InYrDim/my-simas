@@ -13,7 +13,7 @@ final class PeriodSlotRequest extends AcademicFormRequest
     public function rules(): array
     {
         return [
-            'day' => ['required', 'integer', 'between:1,6'],
+            'day' => ['required', 'integer', 'between:1,7'],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
             'type' => ['required', Rule::in(PeriodSlot::TYPES)],

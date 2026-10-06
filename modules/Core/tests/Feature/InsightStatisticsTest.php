@@ -52,7 +52,7 @@ function schoolWithStudents(Tenant $tenant): void
 }
 
 it('counts the active students, the teachers and the classes of the active year', function () {
-    $tenant = schoolAs('statistik-angka', 'guru');
+    $tenant = schoolAs('statistik-angka', 'staf-tu');
     schoolWithStudents($tenant);
 
     get(school($tenant->slug, '/statistik-laporan/statistik'))->assertOk()->assertInertia(fn (Assert $page) => $page

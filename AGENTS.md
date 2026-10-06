@@ -289,33 +289,22 @@ ProviderUser stays in Platform (not Identity).
 ## Identity (Fase 1 + Fase 2 done)
 
 Other modules never import the User model: store user_id as a plain
-column (no FK, no Eloquent relation) and use Identity's Contracts for
-user data; for the logged-in user just use Auth/Gate. users is
-tenant-scoped: tenant_id + unique(tenant_id, email); User uses
-BelongsToTenant + HasTenantRoles from PlatformPublic and never imports
-Spatie directly. Auth surface (Fase 2): login/logout, forgot/reset
-password, set-password activation, school-admin user management
-(/users + invite) behind UserPolicy — NO public registration.
-password_reset_tokens is tenant-scoped (tenant_id + composite PK,
-Stage 4): token minting via the ambient-context repository (fail
-closed), TTL 60 min, ONE shared table for reset + provisioning +
-invitations (the page decides the effect; cross-consumption accepted
-and recorded). Rate limiting lives in controllers keyed
-{flow}:{tenant_id}:{email}:{ip} — throttle: middleware cannot rely on
-tenant context. Mails are queued Mailables with URLs from TenantUrl
-(queue-safe); views via the Identity:: namespace (dot-path into
-modules/ does NOT work); no Notification machinery (locked decision).
-Anti-enumeration: generic responses on login/forgot/set-password
-regardless of account state. Roles: machine names from
-modules/Identity/config/roles.php (labels config-only); permissions
-identity.users.* registered via PermissionRegistry; UserPolicy =
-permission gate + same-tenant re-assert + deactivated-actor deny;
-invitations reuse identity.users.create (no separate invite
-permission). Deactivation: deactivated_at nullable, rows+roles kept,
-anti-lockout invariants in DeactivateUser (no self, last ACTIVE admin
-protected). Events consumed: TenantCreated → SeedDefaultRoles,
-TenantApproved → ProvisionFirstAdmin (both idempotent, listeners in
-IdentityServiceProvider).
+column (no FK, no Eloquent relation); use Identity's Contracts for user
+data, Auth/Gate for the logged-in user. users is tenant-scoped (tenant_id
++ unique(tenant_id, email)); User uses BelongsToTenant + HasTenantRoles
+from PlatformPublic, never Spatie directly. NO public registration.
+password_reset_tokens is tenant-scoped, ONE shared table for reset +
+provisioning + invitations; tokens are minted via the ambient-context
+repository (fail closed). Rate limiting lives in controllers keyed
+{flow}:{tenant_id}:{email}:{ip} (throttle: middleware has no tenant
+context). Mails are queued Mailables with URLs from TenantUrl; views via
+the Identity:: namespace (dot-path into modules/ does NOT work); no
+Notification machinery (locked). Anti-enumeration: generic responses on
+login/forgot/set-password. Roles are machine names from
+modules/Identity/config/roles.php; UserPolicy = permission gate +
+same-tenant re-assert + deactivated-actor deny. Deactivation keeps rows
+and roles; DeactivateUser guards anti-lockout (no self, last ACTIVE admin).
+Details: modules/Identity/CONTRACT.md.
 
 ## Tenancy traps (all bit during Fase 1 — full list in docs/architecture)
 
@@ -358,116 +347,44 @@ docs/architecture/modular-monolith.md — update it whenever the surface
 or rules change (this AGENTS.md copy is intentionally gitignored; keep
 them in sync).
 
-## Billing and provider-console users (Fase 3)
+## Feature modules — pointers (details live in CONTRACT.md + docs)
 
-Subscription billing (plans/subscriptions/invoices, trial vs subscribed) is
-Platform-internal; payment is the always-true stub `PaymentGateway`. School
-admins across tenants are managed by Identity's `Console/SchoolAdminController`
-on the console host. New Platform contracts: `TenantDirectory`,
-`TenantRoles::rolePermissions()`. Details: modules/Platform/CONTRACT.md and
-docs/architecture/modular-monolith.md.
+Read the module's CONTRACT.md and docs/architecture/modular-monolith.md
+before touching these areas; only the traps are kept here.
 
-## Statistik & Laporan (Fase 7)
+- **Billing / provider console (Fase 3)**: Platform-internal; payment is
+  the always-true stub `PaymentGateway`. Contracts `TenantDirectory`,
+  `TenantRoles::rolePermissions()`. School admins across tenants:
+  Identity `Console/SchoolAdminController`.
+- **Statistik & Laporan (Fase 7)**: Core owns the pages and
+  `ReportRegistry`/`StatisticsRegistry`; every module registers from its
+  own provider, Core never imports a feature module. Reports return a
+  `ReportTable`; placeholders in `modules/Core/config/insight.php`.
+- **Accounts for students/teachers (Fase 8)**: made via Identity's
+  `AccountProvisioner`, Core keeps only `user_id`; login field `login`
+  (`@` = email, else username); `RequirePasswordChange` forces a change
+  at first login. A leaving student is deactivated, never deleted.
+- **WhatsApp (Fase 9)**: Platform owns the gateway (`WhatsappChannel`),
+  Core owns the school page, `NoticeRegistry`, `GuardianNotifier`. The
+  per-school session key (encrypted with `OPENWA_CREDENTIALS_KEY`) never
+  reaches a DTO, page, log or error message. Env `OPENWA_*` only in `.env`.
+  Tests: `Http::fake` + `Http::preventStrayRequests`, never the real gateway.
+- **Attendance (Fase 10, 13–15)**: reads Core only via `StudentDirectory`,
+  `ClassDirectory`, `BellSchedule`, `TeacherSchedule`, `ClassTimetable`
+  (DTOs, plain ids); exposes nothing; never checks the WhatsApp switch.
+  Days are `Y-m-d` strings, timestamps via `SchoolClock::stored()`. No
+  scheduler: nothing marks absence automatically. Scan times:
+  `Domain/Support/ScanWindow` (internal); manual input and history are the
+  correction path. Menus: teacher "Jadwal Saya" + "Kelas Mengajar",
+  student "Kelas Saya".
+- **PPDB (Fase 11)**: applicants have a central `ppdb_accounts` table (no
+  tenant scope, guard `ppdb`, only FK is `tenant_id`); account pages run in
+  `TenantContext::run($account->tenant_id)`; refusals to join always give
+  the same message. Core's `StudentAdmission::admit()` creates the student;
+  results go through `ContactNotifier` (kind `ppdb.result`, off by default).
+  `ppdb` is in no plan yet.
+- **School setup checklist (Fase 12)**: Core-internal `SetupChecklist`,
+  computed per visit, no table, no contract.
 
-Core owns the pages (`/statistik-laporan/*`, behind `core.master.view`) and
-Core's first contracts: `ReportRegistry` + `Report` and `StatisticsRegistry`
-+ `StatisticsProvider` (DTOs in `Contracts/DTOs`). Every module, Core
-included, registers its reports and figures from its own provider; a
-feature module never gets imported by Core. Reports return a `ReportTable`
-— Core renders CSV and the print view, nothing is stored. "Segera hadir"
-placeholders are labels in `modules/Core/config/insight.php`; registering
-the same key replaces one. Details: modules/Core/CONTRACT.md.
-
-## Accounts for students and teachers (Fase 8)
-
-`users` has an optional email and a `username` (unique per tenant); login
-takes one field `login` (`@` = email, else username: NIS, NIP). Core makes
-the accounts through Identity's `AccountProvisioner` and keeps only
-`user_id`: students get NIS + birth date (`ddmmyyyy`), teachers NIP + a
-random password shown once; both must change it at first login
-(`RequirePasswordChange` middleware, `/ganti-kata-sandi`). A student who
-leaves has the account deactivated; nothing is deleted. Role `siswa` has
-no permissions yet. `php artisan roles:sync` brings existing schools in
-line with `modules/Identity/config/roles.php`. Details:
-modules/Identity/CONTRACT.md, modules/Core/CONTRACT.md,
-docs/architecture/modular-monolith.md.
-
-## WhatsApp per school (Fase 9)
-
-Schools send WhatsApp through the provider's OpenWA gateway. Platform owns
-the gateway side (`whatsapp_instances`, console page `/whatsapp`, contract
-`WhatsappChannel`: `state`, `request`, `connect`, `disconnect`,
-`sendText`); Core owns the school page Integrasi › WhatsApp (behind
-`core.integration.manage`), the log `whatsapp_messages`, and the contracts
-`NoticeRegistry` + `GuardianNotifier` a feature module uses to notify
-guardians (kinds are off until the school switches them on). Flow: school
-asks → provider approves (or provider setting `whatsapp.auto_approve`) →
-school links by QR → messages go out through the queue. The per-school
-session key is encrypted with `OPENWA_CREDENTIALS_KEY` and never reaches
-a DTO, a page, a log or an error message; every gateway call is made by
-the server. Env: `OPENWA_API_BASE_URL`, `OPENWA_ADMIN_API_KEY`,
-`OPENWA_CREDENTIALS_KEY` (values in `.env` only). Tests fake the gateway
-(`Http::fake` + `Http::preventStrayRequests`) and never call the real
-one. Details: modules/Platform/CONTRACT.md, modules/Core/CONTRACT.md,
-docs/architecture/modular-monolith.md.
-
-## Attendance (Fase 10)
-
-The first feature module with real data: gate in/out, daily status
-(hadir, terlambat, sakit, izin, alpa) and attendance per lesson, by a
-student's one-time QR or by hand. It reads Core only through
-`StudentDirectory`, `ClassDirectory` and `BellSchedule` (DTOs; plain ids in
-its own tables) and exposes nothing. It registers permissions
-`attendance.*`, sidebar entries, four notice kinds (`attendance.gate-in`,
-`.gate-out`, `.absent`, `.lesson-absent`), two reports and the attendance
-figures through the registries; it never checks the WhatsApp switch. The
-QR is a 60-second code in `TenantCache` (no table); the page needs
-`attendance.qr.show` and an account linked to an active student. Days are
-the school's own `Y-m-d` strings, timestamps go through
-`SchoolClock::stored()`, months are grouped in PHP. No timetable (any
-teacher may record any class; own classes are offered first) and no
-scheduler (nothing marks absence automatically). After a release:
-`php artisan migrate` and `php artisan roles:sync`. Details:
-modules/Attendance/CONTRACT.md, modules/Core/CONTRACT.md,
-docs/architecture/modular-monolith.md.
-
-## PPDB (Fase 11)
-
-Applicants have their own account, separate from every school user: a
-central table `ppdb_accounts` (no tenant scope; guard `ppdb`; pages under
-`/calon-siswa/*`) owned by Ppdb, with only name, email, password and the
-one school joined (`tenant_id`, the sole FK). It is the second public
-registration after Platform's school applicants; school users still have
-none. An applicant joins a school with the school code (the one typed at
-sign-in; link `/calon-siswa/gabung?school=<code>`), every refusal gives
-the same message, and after the form is sent the account is locked there
-(only the committee's `CancelApplication` frees it). Account pages never
-rely on `ResolveTenant`: they run in `TenantContext::run($account->tenant_id)`
-and read only the registration with the account's id. Tables
-`ppdb_periods`, `ppdb_waves`, `ppdb_paths`, `ppdb_applicants` are tenant-scoped.
-Core's `StudentAdmission::admit()` makes the student at re-registration
-(no class, no account); permissions `ppdb.view`, `ppdb.applicants.manage`,
-`ppdb.selection.manage`, `ppdb.settings.manage`. The decision stays hidden
-on the applicant's page until the results are announced; document check
-is an always-true stand-in (`DocumentCheck`); results go to the guardian
-on WhatsApp through Core's `ContactNotifier` (kind `ppdb.result`, off until
-the school switches it on); each period's registration form is built by the school
-on PPDB › Formulir (`ppdb_form_fields`: the ten built-in fields, path/name/
-gender locked, plus custom text, paragraph, number, date, select,
-checkboxes, file and section fields; answers in `ppdb_applicant_answers`;
-archiving keeps answers, delete only without answers; a new period copies
-the latest; uploads live in `TenantStorage` and download as attachments);
-`ppdb` is in no plan yet. After a release: `php artisan migrate` and
-`php artisan roles:sync`. Details: modules/Ppdb/CONTRACT.md,
-modules/Core/CONTRACT.md, docs/architecture/modular-monolith.md.
-
-## Checklist persiapan sekolah (Fase 12)
-
-Beranda admin sekolah (`core.master.manage`) menampilkan "Persiapan
-sekolah": langkah Master Data menurut urutan dependensinya, satu ditandai
-berikutnya. Internal Core (`Domain/Queries/SetupChecklist`), tanpa
-kontrak dan tanpa tabel: status dihitung dari data sekolah tiap kunjungan
-dan kartu hilang setelah semua langkah wajib selesai. Profil dianggap
-selesai bila Tingkat sudah ada (di-seed saat profil disimpan); jurusan
-wajib hanya untuk jenjang yang memakainya. Rincian:
-modules/Core/CONTRACT.md, docs/architecture/modular-monolith.md.
+After a release run `php artisan migrate` and `php artisan roles:sync`
+(roles/permissions changed in Fase 10, 11, 13, 15 and "Kelas Saya siswa").

@@ -10,7 +10,7 @@ use Modules\Core\App\Contracts\DTOs\BellSlot;
 interface BellSchedule
 {
     /**
-     * The slots of a weekday (1 = Senin ... 6 = Sabtu), by start time.
+     * The slots of a weekday (1 = Senin ... 7 = Minggu), by start time.
      *
      * @return list<BellSlot>
      */

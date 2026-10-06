@@ -23,4 +23,10 @@ interface TenantDirectory
      * @return array<string, TenantData>
      */
     public function findMany(array $ids): array;
+
+    /**
+     * The tenant a school code names (what people type at sign-in), or
+     * null when no tenant carries it.
+     */
+    public function findByCode(string $code): ?TenantData;
 }

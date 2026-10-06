@@ -111,7 +111,7 @@ it('keeps events of another school out and answers 404 for them', function () {
 });
 
 it('forbids a teacher role from changing the calendar but lets them view', function () {
-    $tenant = schoolAs('cal-guru', 'guru');
+    $tenant = schoolAs('cal-guru', 'staf-tu');
     $event = eventIn($tenant);
 
     get(school($tenant->slug, '/akademik/kalender'))->assertOk();

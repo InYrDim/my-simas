@@ -133,6 +133,9 @@ Route::domain((string) config('tenancy.console_domain'))->middleware('web')->nam
         Route::put('tenants/{tenant}', [TenantConsoleController::class, 'update'])
             ->name('tenants.update');
 
+        Route::put('tenants/{tenant}/code', [TenantConsoleController::class, 'updateCode'])
+            ->name('tenants.code');
+
         Route::post('tenants/{tenant}/suspend', [TenantConsoleController::class, 'suspend'])
             ->name('tenants.suspend');
 

@@ -114,3 +114,21 @@ it('keeps the setting of each school', function () {
 
     expect(attendanceSchool($other, fn () => AttendanceSetting::current()->late_after))->toBe('08:00:00');
 });
+
+it('has copying the previous lesson on until the admin switches it off', function () {
+    $tenant = attendanceTenant(slug: 'salin-jam');
+
+    get(school($tenant->slug, '/absensi/pengaturan'))->assertInertia(fn (Assert $page) => $page
+        ->where('lessonCopyPreviousEnabled', true)
+    );
+
+    put(school($tenant->slug, '/absensi/pengaturan'), ['late_after' => '07:00', 'lesson_copy_previous_enabled' => false])
+        ->assertSessionHasNoErrors();
+
+    expect(attendanceSchool($tenant, fn () => AttendanceSetting::copyPreviousEnabled()))->toBeFalse();
+
+    // Leaving it out keeps it as it is.
+    put(school($tenant->slug, '/absensi/pengaturan'), ['late_after' => '07:30'])->assertSessionHasNoErrors();
+
+    expect(attendanceSchool($tenant, fn () => AttendanceSetting::copyPreviousEnabled()))->toBeFalse();
+});

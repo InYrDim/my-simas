@@ -67,6 +67,7 @@ class AttendanceServiceProvider extends ServiceProvider
             'attendance.qr.show',
             'attendance.mine.view',
             'attendance.class.record',
+            'attendance.class.view-own',
         ]);
     }
 
@@ -80,6 +81,7 @@ class AttendanceServiceProvider extends ServiceProvider
         Gate::define('attendance.daily.use', fn (Authenticatable $user): bool => Gate::forUser($user)->any(['attendance.daily.record', 'attendance.class.record']));
         Gate::define('attendance.gate.use', fn (Authenticatable $user): bool => Gate::forUser($user)->allows('attendance.daily.record') && AttendanceSetting::gateEnabled());
         Gate::define('attendance.lesson.use', fn (Authenticatable $user): bool => Gate::forUser($user)->any(['attendance.lesson.record', 'attendance.class.record']) && AttendanceSetting::lessonEnabled());
+        Gate::define('attendance.class.lesson.use', fn (Authenticatable $user): bool => Gate::forUser($user)->allows('attendance.class.record') && AttendanceSetting::lessonEnabled());
         Gate::define('attendance.lesson.school', fn (Authenticatable $user): bool => Gate::forUser($user)->allows('attendance.lesson.record') && AttendanceSetting::lessonEnabled());
         Gate::define('attendance.scan.use', fn (Authenticatable $user): bool => Gate::forUser($user)->any(['attendance.gate.use', 'attendance.lesson.use']));
         Gate::define('attendance.scan.school', fn (Authenticatable $user): bool => Gate::forUser($user)->any(['attendance.gate.use', 'attendance.lesson.school']));
@@ -135,17 +137,25 @@ class AttendanceServiceProvider extends ServiceProvider
                 ],
             ],
             [
-                'label' => 'Absensi Saya',
-                'icon' => 'clipboard-check',
-                'route' => 'attendance.input',
+                'label' => 'Kelas Mengajar',
+                'icon' => 'school',
+                'route' => 'attendance.my-classes',
+                'permission' => 'attendance.class.record',
+                'group' => 'Saya',
+                'order' => 14,
+                'children' => [
+                    ['label' => 'Kelas Aktif', 'route' => 'attendance.my-classes'],
+                    ['label' => 'Absensi Kelas', 'route' => 'attendance.class-roll', 'permission' => 'attendance.class.lesson.use'],
+                    ['label' => 'Pindai QR', 'route' => 'attendance.scan', 'permission' => 'attendance.scan.use', 'shortcut' => true],
+                ],
+            ],
+            [
+                'label' => 'Jadwal Saya',
+                'icon' => 'calendar-clock',
+                'route' => 'attendance.schedule',
                 'permission' => 'attendance.class.record',
                 'group' => 'Saya',
                 'order' => 13,
-                'children' => [
-                    ['label' => 'Input Absensi', 'route' => 'attendance.input', 'permission' => 'attendance.daily.use', 'shortcut' => true],
-                    ['label' => 'Jam Pelajaran', 'route' => 'attendance.lessons', 'permission' => 'attendance.lesson.use'],
-                    ['label' => 'Pindai QR', 'route' => 'attendance.scan', 'permission' => 'attendance.scan.use', 'shortcut' => true],
-                ],
             ],
             [
                 'label' => 'QR Absensi',
@@ -157,12 +167,18 @@ class AttendanceServiceProvider extends ServiceProvider
                 'order' => 12,
             ],
             [
-                'label' => 'Absensi Saya',
-                'icon' => 'calendar-check',
-                'route' => 'attendance.mine',
-                'permission' => 'attendance.mine.view',
+                'label' => 'Kelas Saya',
+                'icon' => 'school',
+                'route' => 'attendance.class-mine',
+                'permission' => 'attendance.class.view-own',
                 'group' => 'Saya',
-                'order' => 13,
+                'order' => 14,
+                'children' => [
+                    ['label' => 'Info Kelas', 'route' => 'attendance.class-mine', 'match' => 'exact'],
+                    ['label' => 'Jadwal Pelajaran', 'route' => 'attendance.class-mine.timetable'],
+                    ['label' => 'Mata Pelajaran & Guru', 'route' => 'attendance.class-mine.subjects'],
+                    ['label' => 'Absensi Saya', 'route' => 'attendance.mine', 'permission' => 'attendance.mine.view'],
+                ],
             ],
         ]);
     }

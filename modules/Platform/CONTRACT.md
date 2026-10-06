@@ -144,8 +144,11 @@ tenancy only through contracts/DTOs — never the Tenant model.
 ## Tenant resolution (the one strategy)
 
 Tenants are NOT resolved from the host. A school is identified by its
-**school code** (the tenant id today; NPSN later — `SchoolCodeTenantResolver`
-is the only place that mapping lives):
+**school code** (the tenant's slug, which the provider can change on the
+console tenant page › Pengaturan; the id still resolves for sessions —
+`SchoolCodeTenantResolver` is the only place that mapping lives; the school's
+own login address is `/<code>/login`; `TenantDirectory::findByCode` for
+other modules):
 
 - Console host (`config('tenancy.console_domain')`, default
   `console.localhost`) → never a tenant; hosts the provider console

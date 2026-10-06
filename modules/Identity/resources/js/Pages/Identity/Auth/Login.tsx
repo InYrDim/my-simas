@@ -11,11 +11,16 @@ import { create as registerSchool } from '@/actions/Modules/Platform/App/Http/Co
 
 /**
  * Tenant login (school portal). The school is identified by the school
- * code typed here (tenant id today, NPSN later) and remembered in the
- * session server-side; there is no per-school host. An account signs in
+ * code typed here (tenant id today, NPSN later) or carried by the school's
+ * own address `/{code}/login` (then the field is hidden), and remembered
+ * in the session server-side; there is no per-school host. An account signs in
  * with its email, or with its username when it has none (NIS, NIP).
  */
-export default function Login() {
+export default function Login({
+    schoolLinked = false,
+}: {
+    schoolLinked?: boolean;
+}) {
     const tenant = useTenant();
 
     const form = useForm({
@@ -42,20 +47,22 @@ export default function Login() {
             footer="SIMAS untuk sekolah"
         >
             <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
-                <AuthInput
-                    label="Kode sekolah"
-                    id="school"
-                    name="school"
-                    type="text"
-                    autoComplete="organization"
-                    autoFocus
-                    required
-                    value={form.data.school}
-                    error={form.errors.school}
-                    onChange={(event) =>
-                        form.setData('school', event.target.value)
-                    }
-                />
+                {!schoolLinked && (
+                    <AuthInput
+                        label="Kode sekolah"
+                        id="school"
+                        name="school"
+                        type="text"
+                        autoComplete="organization"
+                        autoFocus
+                        required
+                        value={form.data.school}
+                        error={form.errors.school}
+                        onChange={(event) =>
+                            form.setData('school', event.target.value)
+                        }
+                    />
+                )}
 
                 <AuthInput
                     label="Email atau NIS/NIP"
@@ -63,6 +70,7 @@ export default function Login() {
                     name="login"
                     type="text"
                     autoComplete="username"
+                    autoFocus={schoolLinked}
                     required
                     value={form.data.login}
                     error={form.errors.login}

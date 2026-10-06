@@ -115,14 +115,14 @@ it('does not authenticate a tenant A session cookie on tenant B host', function 
     expect($probe->getContent())->not->toContain('budi@example.com');
 });
 
-it('requires a school code to log in', function () {
+it('refuses a login that names no school with the generic error', function () {
     tenantUser('sekolah-a', 'budi@example.com');
 
     from('http://localhost/login')
         ->post('http://localhost/login', [
             'login' => 'budi@example.com',
             'password' => 'password123',
-        ])->assertSessionHasErrors('school');
+        ])->assertSessionHasErrors(['login' => __('auth.failed')]);
 
     expect(auth()->user())->toBeNull();
 });
@@ -130,7 +130,7 @@ it('requires a school code to log in', function () {
 it('refuses an unknown school code with the same generic error as a wrong password', function () {
     tenantUser('sekolah-a', 'budi@example.com');
 
-    foreach (['01ARZ3NDEKTSV4RRFFQ69G5FAV', 'sekolah-a', 'nonsense'] as $code) {
+    foreach (['01ARZ3NDEKTSV4RRFFQ69G5FAV', 'sekolah-z', 'nonsense'] as $code) {
         from('http://localhost/login')
             ->post('http://localhost/login', [
                 'school' => $code,

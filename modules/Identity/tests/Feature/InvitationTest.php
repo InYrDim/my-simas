@@ -105,7 +105,7 @@ it('invites a new user: password-null row, token, tenant-host mail', function ()
         ->and($row->email_verified_at)->toBeNull()
         ->and(invTokenRow($tenant->id, 'sari@inv-a.test'))->not->toBeNull();
 
-    Mail::assertQueued(SetPasswordMail::class, fn (SetPasswordMail $mail): bool => str_contains($mail->setPasswordUrl, 'school='.$tenant->id)
+    Mail::assertQueued(SetPasswordMail::class, fn (SetPasswordMail $mail): bool => str_contains($mail->setPasswordUrl, 'school='.$tenant->slug)
         && str_contains($mail->setPasswordUrl, '/set-password?token='));
 });
 

@@ -61,7 +61,7 @@ final class SettingsController
             ),
             'school' => [
                 'name' => $tenant->name,
-                'code' => $tenant->id,
+                'code' => $tenant->slug,
                 'joinUrl' => $urls->url($tenant->id, '/calon-siswa/gabung'),
             ],
         ]);

@@ -8,7 +8,7 @@ return new class extends Migration
 {
     /**
      * The bell schedule template of a school: one row per slot of a
-     * weekday (1 = Senin ... 6 = Sabtu). Not tied to an academic year.
+     * weekday (1 = Senin ... 7 = Minggu). Not tied to an academic year.
      */
     public function up(): void
     {

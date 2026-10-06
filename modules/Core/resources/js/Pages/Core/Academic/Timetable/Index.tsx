@@ -174,7 +174,8 @@ export default function TimetableIndex({
                                                                     subjects
                                                                 }
                                                                 defaultValue={
-                                                                    slot.subjectId === null
+                                                                    slot.subjectId ===
+                                                                    null
                                                                         ? undefined
                                                                         : String(
                                                                               slot.subjectId,

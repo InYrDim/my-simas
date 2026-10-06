@@ -9,6 +9,7 @@ use Modules\Platform\App\Domain\Models\Subscription;
 use Modules\Platform\App\Domain\Models\TenantApplication;
 use Modules\Platform\App\Infrastructure\Mail\ApplicationApprovedMail;
 use Modules\Platform\App\Infrastructure\Mail\ApplicationRejectedMail;
+use Modules\Platform\App\Infrastructure\Tenancy\TenantHydrator;
 
 /**
  * Tells an applicant what the provider decided. Only applications that
@@ -40,7 +41,7 @@ final class ApplicantDecisionNotifier
         Mail::to($application->applicant_email)->queue(new ApplicationApprovedMail(
             recipientName: $application->applicant_name,
             schoolName: $application->school_name,
-            schoolCode: $tenantId,
+            schoolCode: (string) (TenantHydrator::find($tenantId)?->slug ?? $tenantId),
             planName: $plan?->name,
             trialEndsOn: $subscription?->trial_ends_at?->toDateString(),
             loginUrl: $this->urls->root().'/pemohon/masuk',

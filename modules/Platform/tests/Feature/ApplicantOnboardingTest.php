@@ -101,7 +101,7 @@ it('starts the trial on the chosen plan when the application is approved', funct
         ApplicationApprovedMail::class,
         fn (ApplicationApprovedMail $mail) => $mail->hasTo('budi@nusantara.test')
             && $mail->schoolName === 'SMA Nusantara'
-            && $mail->schoolCode === $subscription->tenant_id
+            && $mail->schoolCode === $subscription->tenant->slug
             && $mail->planName === 'Standard'
             && $mail->trialEndsOn === '2026-10-15'
             && str_ends_with($mail->loginUrl, '/pemohon/masuk')
