@@ -19,6 +19,7 @@ final class DefaultContactNotifier implements ContactNotifier
     public function __construct(
         private readonly DefaultNoticeRegistry $registry,
         private readonly QueueWhatsappMessage $queue,
+        private readonly VariationPicker $variation,
         private readonly TenantContext $context,
     ) {}
 
@@ -35,7 +36,7 @@ final class DefaultContactNotifier implements ContactNotifier
             $kind->key,
             $notice->recipientName,
             $notice->phone,
-            NoticeTemplate::fill($setting->template ?? $kind->template, [
+            $this->variation->fill($setting->wording($kind), [
                 ...$notice->variables,
                 'nama_siswa' => $notice->subjectName,
                 'nama_wali' => $notice->recipientName,

@@ -15,6 +15,7 @@ Ringkasan fase yang dulu ada di `AGENTS.md` dipindahkan ke sini supaya `AGENTS.m
 | — | Kelas Saya siswa | (tanpa folder) | Attendance + Core CONTRACT |
 | 14 | Waktu pindai absensi | `fase-14/` | Attendance CONTRACT |
 | 15 | Menu guru | `fase-15/` | docs/architecture |
+| 16 | Pengiriman WhatsApp aman (pacing, variasi, pengaman) | `fase-16/` | Platform + Core + Attendance CONTRACT |
 
 ## Arsip: teks asli dari AGENTS.md
 

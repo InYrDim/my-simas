@@ -4,6 +4,7 @@ use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Modules\Core\App\Domain\Enums\WhatsappMessageStatus;
 use Modules\Core\App\Domain\Models\WhatsappMessage;
+use Modules\Core\App\Domain\Models\WhatsappNoticeSetting;
 use Modules\Platform\App\Domain\Models\WhatsappInstance;
 use Modules\Platform\App\Domain\Models\WhatsappInstanceStatus;
 
@@ -85,6 +86,8 @@ it('takes a school from asking for WhatsApp to a sent test message', function ()
     $page->navigate('/integrasi/whatsapp')
         ->assertSee('Disetujui')
         ->press('Hubungkan')
+        ->assertSee('Baca dulu sebelum menghubungkan WhatsApp')
+        ->click('internal:role=button[name="Saya mengerti dan setuju"s]')
         ->assertSee('Pindai kode QR')
         ->assertVisible('img[alt="Kode QR untuk menautkan WhatsApp"]');
 
@@ -114,4 +117,89 @@ it('takes a school from asking for WhatsApp to a sent test message', function ()
     Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/sessions/session-uji/messages/send-text')
         && $request->header('X-API-Key') === ['owa_k1_school-key-for-tests']
         && $request['chatId'] === '6281234567890@c.us');
+});
+
+it('asks the school to accept the risks before it links a number, and leaves it unlinked on cancel', function () {
+    Http::preventStrayRequests();
+    Http::fake();
+
+    config(['services.openwa.credentials_key' => str_repeat('ab', 32)]);
+
+    [$page, $tenant] = schoolMemberSignsIn();
+
+    $instance = WhatsappInstance::factory()->forTenant($tenant->id)->active()->create();
+
+    $page->navigate('/integrasi/whatsapp')
+        ->press('Hubungkan')
+        ->assertSee('Baca dulu sebelum menghubungkan WhatsApp')
+        ->assertSee('nomor khusus sekolah')
+        ->assertSee('Sekolah bertanggung jawab')
+        ->click('internal:role=button[name="Batal"s]')
+        ->assertDontSee('Baca dulu sebelum menghubungkan WhatsApp')
+        ->assertNoJavaScriptErrors();
+
+    expect($instance->refresh()->risk_acknowledged_at)->toBeNull();
+
+    Http::assertNotSent(fn (Request $request): bool => str_ends_with($request->url(), '/start'));
+});
+
+it('asks for confirmation before switching on a notice that sends many messages', function () {
+    Http::preventStrayRequests();
+    Http::fake(fn () => Http::response(['status' => 'ready', 'phone' => '628111000111', 'pushName' => 'TU Sekolah Uji']));
+
+    config(['services.openwa.credentials_key' => str_repeat('ab', 32)]);
+
+    [$page, $tenant] = schoolMemberSignsIn(modules: ['attendance']);
+
+    WhatsappInstance::factory()->forTenant($tenant->id)->connected()->create();
+
+    $enabled = fn (): bool => inTenant($tenant, fn () => WhatsappNoticeSetting::query()
+        ->where('kind', 'attendance.gate-in')
+        ->where('enabled', true)
+        ->exists());
+
+    // Cancelling leaves it off.
+    $page->navigate('/integrasi/whatsapp')
+        ->assertSee('Siswa masuk sekolah')
+        ->click('internal:role=checkbox[name="Siswa masuk sekolah"i]')
+        ->assertSee('Nyalakan Siswa masuk sekolah?')
+        ->click('internal:role=button[name="Batal"s]')
+        ->assertDontSee('Nyalakan Siswa masuk sekolah?');
+
+    expect($enabled())->toBeFalse();
+
+    // Confirming switches it on.
+    $page->click('internal:role=checkbox[name="Siswa masuk sekolah"i]')
+        ->click('internal:role=button[name="Ya, nyalakan"s]')
+        ->assertDontSee('Nyalakan Siswa masuk sekolah?')
+        ->assertNoJavaScriptErrors();
+
+    expect($enabled())->toBeTrue();
+});
+
+it('saves a reply footer with the school\'s own wording', function () {
+    Http::preventStrayRequests();
+    Http::fake(fn () => Http::response(['status' => 'ready', 'phone' => '628111000111', 'pushName' => 'TU Sekolah Uji']));
+
+    config(['services.openwa.credentials_key' => str_repeat('ab', 32)]);
+
+    [$page, $tenant] = schoolMemberSignsIn(modules: ['attendance']);
+
+    WhatsappInstance::factory()->forTenant($tenant->id)->connected()->create();
+
+    $page->navigate('/integrasi/whatsapp')
+        ->click('internal:role=button[name="Ubah isi pesan"i] >> nth=0')
+        ->assertSee('Isi pesan:')
+        ->click('internal:role=checkbox[name="Tambahkan ajakan agar penerima membalas pesan ini"i]')
+        ->assertSee('Teks bawaan')
+        ->click('internal:role=radio[name="Teks sendiri"i]')
+        ->fill('internal:role=textbox[name="Teks ajakan membalas"i]', 'Silakan balas pesan ini, ya.')
+        ->click('internal:role=button[name="Simpan"s]')
+        ->assertDontSee('Isi pesan:')
+        ->assertNoJavaScriptErrors();
+
+    $setting = inTenant($tenant, fn () => WhatsappNoticeSetting::query()->sole());
+
+    expect($setting->reply_footer)->toBeTrue()
+        ->and($setting->reply_footer_text)->toBe('Silakan balas pesan ini, ya.');
 });

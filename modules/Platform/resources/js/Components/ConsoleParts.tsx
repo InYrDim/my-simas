@@ -9,6 +9,7 @@ import {
 } from '@shared/components/ui/pagination';
 
 export {
+    BarList,
     DataTable,
     DefinitionList,
     EmptyState,
@@ -56,37 +57,6 @@ export function StatusChip({ status }: { status: string }) {
     const [variant, label] = statusBadge[status] ?? ['secondary', status];
 
     return <Badge variant={variant}>{label}</Badge>;
-}
-
-/** Single-series bar list: label, bar, value as text. */
-export function BarList({
-    rows,
-}: {
-    rows: { label: string; value: number; display: string }[];
-}) {
-    const max = Math.max(...rows.map((row) => row.value), 1);
-
-    return (
-        <ul className="flex flex-col gap-3">
-            {rows.map((row) => (
-                <li
-                    key={row.label}
-                    className="grid grid-cols-[2.5rem_1fr_6.5rem] items-center gap-3 text-xs"
-                >
-                    <span className="text-muted-foreground">{row.label}</span>
-                    <span className="h-2 bg-muted">
-                        <span
-                            className="block h-2 bg-chart-1"
-                            style={{ width: `${(row.value / max) * 100}%` }}
-                        />
-                    </span>
-                    <span className="text-right text-foreground">
-                        {row.display}
-                    </span>
-                </li>
-            ))}
-        </ul>
-    );
 }
 
 /** Laravel paginator links as shared Pagination + Button, via Inertia. */

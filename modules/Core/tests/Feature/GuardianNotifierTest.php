@@ -349,3 +349,46 @@ it('names a notice by its title in the message log', function () {
         ->where('history.0.status', 'pending')
     );
 });
+
+it('ends the message with the default reply line when the school asks for it', function () {
+    registerAbsenceNotice();
+    $tenant = schoolAs('notice-footer-default');
+    $student = studentWithGuardian($tenant);
+    switchNotice($tenant, 'uji.absent', true, 'Info: {nama_siswa}.');
+    inSchool($tenant, fn () => WhatsappNoticeSetting::query()->update(['reply_footer' => true]));
+
+    notifyGuardian($tenant, $student->id);
+
+    $body = inSchool($tenant, fn () => WhatsappMessage::query()->sole()->body);
+
+    expect($body)->toStartWith("Info: Budi Santoso.\n\n")
+        ->toMatch('/\n\n(Mohon|Silakan) balas pesan ini dengan "OK" (jika|bila) pesan sudah diterima\.$/');
+});
+
+it('ends the message with the schools own reply line, variables included', function () {
+    registerAbsenceNotice();
+    $tenant = schoolAs('notice-footer-own');
+    $student = studentWithGuardian($tenant);
+    switchNotice($tenant, 'uji.absent', true, 'Info: {nama_siswa}.');
+    inSchool($tenant, fn () => WhatsappNoticeSetting::query()->update([
+        'reply_footer' => true,
+        'reply_footer_text' => 'Balas ya, {nama_wali}.',
+    ]));
+
+    notifyGuardian($tenant, $student->id);
+
+    expect(inSchool($tenant, fn () => WhatsappMessage::query()->sole()->body))
+        ->toBe("Info: Budi Santoso.\n\nBalas ya, Ibu Santoso.");
+});
+
+it('adds no reply line while the school did not ask for one', function () {
+    registerAbsenceNotice();
+    $tenant = schoolAs('notice-footer-off');
+    $student = studentWithGuardian($tenant);
+    switchNotice($tenant, 'uji.absent', true, 'Info: {nama_siswa}.');
+    inSchool($tenant, fn () => WhatsappNoticeSetting::query()->update(['reply_footer_text' => 'Balas ya.']));
+
+    notifyGuardian($tenant, $student->id);
+
+    expect(inSchool($tenant, fn () => WhatsappMessage::query()->sole()->body))->toBe('Info: Budi Santoso.');
+});

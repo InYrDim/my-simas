@@ -2,10 +2,16 @@ import { Head, Link } from '@inertiajs/react';
 import { ChevronRightIcon } from 'lucide-react';
 
 import TenantShell from '@shared/components/TenantShell';
-import { Button } from '@shared/components/ui/button';
+import { useCan } from '@shared/hooks/useCan';
 
 import { invite as usersInvite } from '@/actions/Modules/Identity/App/Http/Controllers/UsersManagementController';
 
+import DashboardWidgets, {
+    actionHrefs,
+    DashboardActions,
+    type DashboardSlots,
+} from '../../Components/DashboardWidgets';
+import QuickActions, { type QuickAction } from '../../Components/QuickActions';
 import SetupChecklist, {
     type SetupChecklistData,
 } from '../../Components/SetupChecklist';
@@ -42,6 +48,8 @@ interface BerandaProps {
         homeroom: boolean;
         subjects: string[];
     }[];
+    /** Deferred: undefined until the modules' blocks have loaded. */
+    widgets?: DashboardSlots;
 }
 
 /** One sentence, one emphasised phrase — the single thing waiting here. */
@@ -138,8 +146,28 @@ export default function Beranda({
     setup,
     shortcuts,
     classes,
+    widgets,
 }: BerandaProps) {
     const line = accounts === null ? personLine(me) : dayLine(accounts);
+
+    // The list holds the invite and every action the modules offer.
+    const canDo = useCan();
+    const quickActions: QuickAction[] = [
+        ...(canDo('identity.users.create')
+            ? [{ label: 'Undang staf', href: usersInvite.url() }]
+            : []),
+        ...(widgets?.action ?? []).flatMap((widget) =>
+            widget.kind === 'action' && widget.href !== null
+                ? [{ label: widget.payload.label, href: widget.href }]
+                : [],
+        ),
+    ];
+
+    // A shortcut to the place an action button already leads to is noise.
+    const taken = accounts === null ? actionHrefs(widgets) : [];
+    const visibleShortcuts = shortcuts.filter(
+        (shortcut) => !taken.includes(shortcut.href),
+    );
 
     const accountSummary =
         accounts === null
@@ -153,7 +181,7 @@ export default function Beranda({
               ].join(' · ');
 
     return (
-        <TenantShell width="max-w-xl">
+        <TenantShell width={accounts === null ? 'max-w-xl' : 'max-w-4xl'}>
             <Head title={school.name} />
 
             <div>
@@ -190,20 +218,26 @@ export default function Beranda({
                         {line.tail}
                     </p>
 
-                    {can.invite && (
-                        <Button asChild className="mt-5 w-full">
-                            <Link href={usersInvite.url()}>Undang staf</Link>
-                        </Button>
+                    {accounts !== null && (
+                        <QuickActions actions={quickActions} />
                     )}
                 </div>
 
-                {shortcuts.length > 0 && (
+                {/* Whoever manages accounts has the Aksi cepat list above;
+                    everyone else gets the one action their role is for. */}
+                {accounts === null && <DashboardActions widgets={widgets} />}
+
+                {setup !== null && <SetupChecklist setup={setup} />}
+
+                <DashboardWidgets widgets={widgets} wide={accounts !== null} />
+
+                {visibleShortcuts.length > 0 && (
                     <section className="mt-8">
                         <h2 className="text-xs font-medium text-muted-foreground">
                             Pintasan
                         </h2>
                         <ul className="mt-2 border-t border-border">
-                            {shortcuts.map((shortcut) => (
+                            {visibleShortcuts.map((shortcut) => (
                                 <li
                                     key={shortcut.href}
                                     className="border-b border-border"
@@ -248,8 +282,6 @@ export default function Beranda({
                         </ul>
                     </section>
                 )}
-
-                {setup !== null && <SetupChecklist setup={setup} />}
 
                 {/* The rest of the record: quiet, ruled, 12px. Numbers
                     never replace the day's sentence; they only back it. */}

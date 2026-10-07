@@ -39,6 +39,8 @@ use Modules\Platform\Database\Factories\WhatsappInstanceFactory;
  * @property Carbon|null $connected_at
  * @property Carbon|null $last_checked_at
  * @property string|null $last_error
+ * @property int|null $risk_acknowledged_by school user id who accepted the risk warning
+ * @property Carbon|null $risk_acknowledged_at
  * @property-read Tenant|null $tenant
  */
 #[UseFactory(WhatsappInstanceFactory::class)]
@@ -46,6 +48,7 @@ use Modules\Platform\Database\Factories\WhatsappInstanceFactory;
     'tenant_id', 'status', 'requested_by', 'requested_at', 'decided_by', 'decided_at', 'note',
     'session_id', 'session_name', 'api_key', 'api_key_id',
     'connection_status', 'phone', 'push_name', 'connected_at', 'last_checked_at', 'last_error',
+    'risk_acknowledged_by', 'risk_acknowledged_at',
 ])]
 #[Hidden(['api_key', 'api_key_id'])]
 class WhatsappInstance extends Model
@@ -67,6 +70,7 @@ class WhatsappInstance extends Model
             'decided_at' => 'datetime',
             'connected_at' => 'datetime',
             'last_checked_at' => 'datetime',
+            'risk_acknowledged_at' => 'datetime',
         ];
     }
 

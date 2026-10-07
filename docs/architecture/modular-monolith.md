@@ -63,7 +63,7 @@ Vendor/Laravel  ←  Shared  ←  Platform (Fase 1)  ←  Identity  ←  Core  �
 | Shared   | `Shared`   | Generic technical utilities           | Everything (by definition)                                       |
 | Platform | `Platform` | Tenancy, module registry, permissions | `Modules\Platform\App\Contracts`                                 |
 | Identity | `Identity` | Tenant-scoped users, auth lifecycle, user management | `Modules\Identity\App\Contracts` (`ResolvesUsers`, `UserRecord`, `AccountProvisioner`, `NewAccount`) |
-| Core     | `Core`     | Master data, academic management, CSV import, statistics and reports, WhatsApp notices | `Modules\Core\App\Contracts` (`StudentDirectory`, `ClassDirectory`, `BellSchedule`, `TeacherSchedule`, `ReportRegistry`, `Report`, `StatisticsRegistry`, `StatisticsProvider`, `NoticeRegistry`, `GuardianNotifier`, `StudentAdmission`, DTOs) |
+| Core     | `Core`     | Master data, academic management, CSV import, statistics and reports, WhatsApp notices | `Modules\Core\App\Contracts` (`StudentDirectory`, `ClassDirectory`, `BellSchedule`, `TeacherSchedule`, `ReportRegistry`, `Report`, `StatisticsRegistry`, `StatisticsProvider`, `DashboardRegistry`, `DashboardWidgetProvider`, `NoticeRegistry`, `GuardianNotifier`, `StudentAdmission`, DTOs) |
 | Attendance | `Attendance` | Student attendance (Absensi): gate, daily, per lesson, QR | `Modules\Attendance\App\Contracts` (none — nothing uses it)   |
 | Ppdb     | `Ppdb`     | Admissions (PPDB): applicants' accounts, registration, selection, announcement, re-registration | `Modules\Ppdb\App\Contracts` (none — nothing uses it) |
 
@@ -561,7 +561,7 @@ surface minimal) — fixed in Fase 2 Stage 4.
   `queue:restart` after each deploy. **On shared hosting (Hostinger)** no
   long-running process is possible, so one cron job runs a short-lived
   worker every minute:
-  `* * * * * cd /path/to/simas && php artisan queue:work --stop-when-empty --max-time=50 >> /dev/null 2>&1`
+  `* * * * * cd /path/to/simas && php artisan queue:work --sleep=2 --max-time=50 >> /dev/null 2>&1`
   — it never overlaps the next run, needs no `queue:restart`, and does
   not go through `schedule:run` (which needs `proc_open`, often disabled
   there). The database cache store never removes an expired row until its
@@ -574,6 +574,15 @@ surface minimal) — fixed in Fase 2 Stage 4.
   daemon, no Horizon/Redis. `QUEUE_CONNECTION=sync` is for trying things
   out only (no retries; many notices at once can hit the execution time
   limit).
+- **Safe sending (Fase 16).** The number is the school's own and WhatsApp
+  may restrict it. Platform's `SendGuard` paces messages with a random
+  pause, caps them per day and pauses a school after repeated gateway
+  failures; the answer is `WhatsappSendResult::throttled`, which Core
+  re-queues without counting a failure. Wording varies through `{a|b|c}`
+  groups in `NoticeTemplate`; kinds with `highVolume` need confirmation;
+  `connect()` needs the school's accepted risk warning
+  (`acknowledgeRisk`). Details: modules/Platform/CONTRACT.md and
+  modules/Core/CONTRACT.md.
 - **No webhooks.** The link status is read by polling and a sent message
   is only known to be accepted by WhatsApp, not delivered or read.
 - **Trap: `Http::fake([...])` with a URL map calls every stub for every

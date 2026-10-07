@@ -5,11 +5,13 @@ namespace Modules\Attendance\App\Infrastructure\Providers;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Modules\Attendance\App\Domain\Dashboard\AttendanceDashboard;
 use Modules\Attendance\App\Domain\Models\AttendanceSetting;
 use Modules\Attendance\App\Domain\Notifications\AttendanceNotices;
 use Modules\Attendance\App\Domain\Reports\ClassAttendanceReport;
 use Modules\Attendance\App\Domain\Reports\MonthlyAttendanceReport;
 use Modules\Attendance\App\Domain\Statistics\AttendanceStatistics;
+use Modules\Core\App\Contracts\DashboardRegistry;
 use Modules\Core\App\Contracts\NoticeRegistry;
 use Modules\Core\App\Contracts\ReportRegistry;
 use Modules\Core\App\Contracts\StatisticsRegistry;
@@ -113,6 +115,7 @@ class AttendanceServiceProvider extends ServiceProvider
         $reports->register('attendance', ClassAttendanceReport::class);
 
         $this->app->make(StatisticsRegistry::class)->register('attendance', AttendanceStatistics::class);
+        $this->app->make(DashboardRegistry::class)->register('attendance', AttendanceDashboard::class);
     }
 
     /**

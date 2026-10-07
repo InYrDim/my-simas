@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Queue;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Attendance\App\Domain\Enums\AttendanceStatus;
 use Modules\Attendance\App\Domain\Models\DailyAttendance;
+use Modules\Attendance\App\Domain\Notifications\AttendanceNotices;
 use Modules\Core\App\Domain\Enums\WhatsappMessageStatus;
 use Modules\Core\App\Domain\Models\ClassGroup;
 use Modules\Core\App\Domain\Models\PeriodSlot;
@@ -119,9 +120,9 @@ it('tells the guardian when the student comes in and goes home', function () {
         ->and($in->recipient_name)->toBe('Ibu Sari')
         ->and($in->phone)->toBe('6281255501234')
         ->and($in->status)->toBe(WhatsappMessageStatus::Pending)
-        ->and($in->body)->toBe("Yth. Ibu Sari, Aditya Pratama tercatat masuk sekolah pada Jumat, 2 Oktober 2026 pukul 06.50 (Hadir). - {$tenant->name}")
+        ->and($in->body)->toContain('Ibu Sari', 'Aditya Pratama', 'pada Jumat, 2 Oktober 2026 pukul 06.50 (Hadir).', ' - '.$tenant->name)
         ->and($out->kind)->toBe('attendance.gate-out')
-        ->and($out->body)->toBe("Yth. Ibu Sari, Aditya Pratama tercatat pulang dari sekolah pada Jumat, 2 Oktober 2026 pukul 14.05. - {$tenant->name}");
+        ->and($out->body)->toContain('Ibu Sari', 'Aditya Pratama', 'pada Jumat, 2 Oktober 2026 pukul 14.05.', ' - '.$tenant->name);
 
     Queue::assertPushed(DeliverWhatsappMessage::class, 2);
 });
@@ -152,14 +153,14 @@ it('tells the guardian once when the student is marked away today', function () 
 
     expect(sentNotices($tenant))->toHaveCount(1)
         ->and(sentNotices($tenant)[0]->kind)->toBe('attendance.absent')
-        ->and(sentNotices($tenant)[0]->body)->toBe("Yth. Ibu Sari, Aditya Pratama tercatat Sakit pada Jumat, 2 Oktober 2026. Keterangan: Demam. - {$tenant->name}");
+        ->and(sentNotices($tenant)[0]->body)->toContain('Ibu Sari', 'Aditya Pratama', 'Sakit pada Jumat, 2 Oktober 2026.', ': Demam.', ' - '.$tenant->name);
 
     // A different kind of absence is news again; being present is not.
     $save('absent');
     $save('present');
 
     expect(sentNotices($tenant))->toHaveCount(2)
-        ->and(sentNotices($tenant)[1]->body)->toContain('tercatat Alpa')->toContain('Keterangan: -.');
+        ->and(sentNotices($tenant)[1]->body)->toContain('Aditya Pratama', 'Alpa pada', ': -.');
 });
 
 it('tells nobody about a day filled in afterwards', function () {
@@ -204,7 +205,7 @@ it('tells the guardian about an absence in a lesson, unless the day already says
     expect($messages)->toHaveCount(1)
         ->and($messages[0]->kind)->toBe('attendance.lesson-absent')
         ->and($messages[0]->student_id)->toBe($adit->id)
-        ->and($messages[0]->body)->toBe("Yth. Ibu Sari, Aditya Pratama tidak mengikuti pelajaran Matematika pada Jumat, 2 Oktober 2026, pukul 07.15-08.00, tanpa keterangan. - {$tenant->name}");
+        ->and($messages[0]->body)->toContain('Ibu Sari', 'Aditya Pratama', 'pelajaran Matematika pada Jumat, 2 Oktober 2026, pukul 07.15-08.00,', ' - '.$tenant->name);
 });
 
 it('sends nothing for a kind the school left off', function () {
@@ -257,4 +258,64 @@ it('keeps the notices of two schools apart', function () {
 
     expect(sentNotices($tenant))->toBe([])
         ->and(sentNotices($other))->toBe([]);
+});
+
+/**
+ * Every wording a default template can read as: each `{a|b|c}` group
+ * settled on each of its options, so the test does not depend on the
+ * random pick of the real filler.
+ *
+ * @return list<string>
+ */
+function templateWordings(string $template): array
+{
+    $wordings = [$template];
+
+    while (preg_match('/\{([^{}|]+(?:\|[^{}|]+)+)\}/', $wordings[0], $group) === 1) {
+        $next = [];
+
+        foreach ($wordings as $wording) {
+            foreach (explode('|', $group[1]) as $option) {
+                $next[] = preg_replace('/'.preg_quote($group[0], '/').'/', $option, $wording, 1);
+            }
+        }
+
+        $wordings = array_values(array_unique($next));
+    }
+
+    return $wordings;
+}
+
+it('keeps the student and the status in every wording of the default templates', function () {
+    $required = [
+        'attendance.gate-in' => ['{nama_wali}', '{nama_siswa}', '{status}', '{tanggal}', '{jam}', '{nama_sekolah}'],
+        'attendance.gate-out' => ['{nama_wali}', '{nama_siswa}', '{tanggal}', '{jam}', '{nama_sekolah}'],
+        'attendance.absent' => ['{nama_wali}', '{nama_siswa}', '{status}', '{tanggal}', '{keterangan}', '{nama_sekolah}'],
+        'attendance.lesson-absent' => ['{nama_wali}', '{nama_siswa}', '{mapel}', '{tanggal}', '{jam_pelajaran}', '{nama_sekolah}'],
+    ];
+
+    $kinds = collect(AttendanceNotices::kinds())->keyBy('key');
+
+    expect($kinds->keys()->all())->toBe(array_keys($required));
+
+    foreach ($required as $key => $variables) {
+        $wordings = templateWordings($kinds[$key]->template);
+
+        expect(count($wordings))->toBeGreaterThan(1);
+
+        foreach ($wordings as $wording) {
+            expect($wording)->not->toContain('|')->toContain(...$variables);
+        }
+    }
+});
+
+it('marks the notices sent for many students at once as high volume', function () {
+    $highVolume = collect(AttendanceNotices::kinds())->mapWithKeys(fn ($kind) => [$kind->key => $kind->highVolume])->all();
+
+    expect($highVolume)->toBe([
+        'attendance.gate-in' => true,
+        'attendance.gate-out' => true,
+        'attendance.absent' => false,
+        'attendance.lesson-absent' => true,
+    ]);
 });

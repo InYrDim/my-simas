@@ -16,6 +16,7 @@ final readonly class NoticeKind
      * @param  string  $recipient  who receives it, as a label (`Wali murid`)
      * @param  string  $template  default wording; `{name}` marks a variable
      * @param  array<string, string>  $variables  the kind's own variables: name => sample value for the preview. Core adds `nama_siswa`, `nama_wali` and `nama_sekolah` to every kind
+     * @param  bool  $highVolume  sent for many students at once (every scan at the gate): the school is warned before switching it on
      */
     public function __construct(
         public string $key,
@@ -24,5 +25,6 @@ final readonly class NoticeKind
         public string $recipient,
         public string $template,
         public array $variables = [],
+        public bool $highVolume = false,
     ) {}
 }

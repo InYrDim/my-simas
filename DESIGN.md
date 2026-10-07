@@ -493,6 +493,18 @@ below are invariants rather than a component library.
 - **No breadcrumbs exist in the system, and tabs appear only inside a single record
   (tenant detail).** The portal keeps its top bar and "Kembali" link.
 
+### Beranda blocks (deviation, decided with the dashboard)
+The school Beranda is the one portal surface that shows live figures per role, and it
+deliberately steps outside the ledger rules above: **figures are cards** (shared `Card`
+with its `shadow-sm`), **panels are cards** holding ruled lists, and there is **one bar
+list** (shared `BarList`, `chart-1`). Everything else holds: no icons, one primary
+filled button per screen, words beside colour, 14px body and 12px meta, 8px corners, no
+gradients. A count is plain text, never a badge (a badge is a state word; the amber
+outline means pending). Order of a page: the day, the one action, setup, figures, what
+needs attention, the rest, then the quiet record. Rows and the action are at least 44px
+tall; the figures grid is two columns on a phone and four only on the wide admin
+column (`sm`). Blocks load deferred behind a skeleton of the same bands.
+
 ### Flash banners
 - A 1px-bordered, 8px-cornered strip at 12px × 16px padding, 24px below the page
   title. Success: Stamp Wash ground, Stamp Wash Line border, Stamp Ink Deep text.

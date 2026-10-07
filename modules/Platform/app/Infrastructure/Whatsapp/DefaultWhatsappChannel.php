@@ -2,8 +2,10 @@
 
 namespace Modules\Platform\App\Infrastructure\Whatsapp;
 
+use Illuminate\Support\Carbon;
 use Modules\Platform\App\Contracts\DTOs\WhatsappSendResult;
 use Modules\Platform\App\Contracts\DTOs\WhatsappState;
+use Modules\Platform\App\Contracts\Exceptions\WhatsappRiskNotAcknowledgedException;
 use Modules\Platform\App\Contracts\Exceptions\WhatsappUnavailableException;
 use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Contracts\WhatsappChannel;
@@ -26,6 +28,7 @@ final class DefaultWhatsappChannel implements WhatsappChannel
         private readonly RequestWhatsappInstance $request,
         private readonly OpenWaClient $gateway,
         private readonly SyncWhatsappSession $sync,
+        private readonly SendGuard $guard,
     ) {}
 
     public function state(bool $refresh = false): WhatsappState
@@ -46,6 +49,11 @@ final class DefaultWhatsappChannel implements WhatsappChannel
     public function connect(): WhatsappState
     {
         $instance = $this->usableInstance();
+
+        if ($instance->risk_acknowledged_at === null) {
+            throw new WhatsappRiskNotAcknowledgedException;
+        }
+
         $sessionId = (string) $instance->session_id;
 
         try {
@@ -63,6 +71,19 @@ final class DefaultWhatsappChannel implements WhatsappChannel
         }
 
         return $this->describe($instance);
+    }
+
+    public function acknowledgeRisk(int $userId): WhatsappState
+    {
+        $instance = $this->usableInstance();
+
+        // The first acceptance wins: the guarded update leaves a recorded one alone.
+        WhatsappInstance::query()
+            ->whereKey($instance->getKey())
+            ->whereNull('risk_acknowledged_at')
+            ->update(['risk_acknowledged_by' => $userId, 'risk_acknowledged_at' => now()]);
+
+        return $this->describe($instance->refresh());
     }
 
     public function disconnect(): WhatsappState
@@ -107,11 +128,23 @@ final class DefaultWhatsappChannel implements WhatsappChannel
             return WhatsappSendResult::failed('Nomor tujuan tidak sah.', false);
         }
 
+        $held = $this->guard->hold();
+
+        if ($held !== null) {
+            return $held;
+        }
+
         try {
             $sent = $this->gateway->sendText((string) $instance->session_id, (string) $instance->api_key, "{$phone}@c.us", $text);
         } catch (OpenWaException $exception) {
+            if ($exception->retryable()) {
+                $this->guard->recordFailure();
+            }
+
             return WhatsappSendResult::failed($exception->forSchool(), $exception->retryable());
         }
+
+        $this->guard->recordSent();
 
         return WhatsappSendResult::sent($sent['messageId']);
     }
@@ -177,6 +210,7 @@ final class DefaultWhatsappChannel implements WhatsappChannel
         }
 
         $active = $instance->status === WhatsappInstanceStatus::Active;
+        $pause = $active ? $this->guard->pause() : null;
         $decidedAgainst = in_array($instance->status, [WhatsappInstanceStatus::Rejected, WhatsappInstanceStatus::Disabled], true);
 
         return new WhatsappState(
@@ -190,6 +224,9 @@ final class DefaultWhatsappChannel implements WhatsappChannel
             // failed stop is the provider's to read, not the school's.
             lastError: $active ? $instance->last_error : null,
             requestedAt: $instance->requested_at?->toIso8601String(),
+            pausedUntil: $pause === null ? null : Carbon::createFromTimestamp($pause['until'])->toIso8601String(),
+            pauseReason: $pause['reason'] ?? null,
+            riskAcknowledged: $instance->risk_acknowledged_at !== null,
         );
     }
 }

@@ -121,6 +121,22 @@ renders them. Core registers its own the same way.
   Core), `DTOs/ReportTable` (title, columns, rows of scalars),
   `DTOs/StatFigure`, `DTOs/StatPanel` (`bars` or `share`).
 
+Beranda — a module adds blocks to each person's landing page from its
+service provider. Core asks the providers of the modules active for the
+tenant (deferred, after the page shell), keeps the widgets the signed-in
+user may see and groups them by slot; it names no role and no feature
+module. A provider that throws is reported and skipped.
+
+- `DashboardRegistry::register(string $module, class-string<DashboardWidgetProvider> $provider)`
+  — blocks for the Beranda.
+- `DashboardWidgetProvider` — `widgets()`, run for the signed-in user inside
+  the tenant context; it returns what it could show and names the
+  permission each widget needs.
+- `DTOs/DashboardWidget` — `key`, `kind` (`stat`, `list`, `bars`, `status`,
+  `action`), `slot` (`action`, `figures`, `attention`, `main`), `title`,
+  `payload` of scalars (shape per kind is documented on the DTO), `order`,
+  `href` and `permission` (a Gate ability; null means everyone signed in).
+
 Reports and providers are resolved from the container and run inside the
 tenant context of the request. Registering a report or figure under the
 key of an announced entry (`config/insight.php`, e.g. `ppdb-applicants`)
@@ -372,7 +388,31 @@ school's choice on Integrasi › WhatsApp.
     `no_recipient` (no usable number; never queued). A gateway that is
     down or busy gets the message again (3 attempts, 30 then 120
     seconds; the `sync` queue driver has no later, so it fails at once);
-    a job that runs twice sends once.
+    a job that runs twice sends once. A message Platform holds back on
+    purpose (`throttled`: pacing, daily limit, paused) is put back in the
+    queue for the seconds it names without using up an attempt
+    (`$tries = 0`, `retryUntil()` 12 hours from `queuedAt`); past that it
+    ends `unsent` ("Pengiriman tertunda terlalu lama."). Gateway failures
+    are counted in `whatsapp_messages.error_attempts` (3, then `failed`).
+  - **Wording variants (Fase 16).** `NoticeTemplate::fill` picks one
+    option at random from each `{a|b|c}` group, then fills the
+    `{variables}`, so a value containing `|` or `{` is never parsed.
+    Groups cannot nest and need two or more non-empty options
+    (`groupError`, enforced by `SaveNoticeSetting`). `preview()` always
+    takes the first option. Names and status stay variables, never part of
+    a group. `VariationPicker` (used by both notifiers) also keeps a group
+    from showing the choice of the school's previous message of the same
+    wording: one short string per wording in `TenantCache`.
+  - **Reply line.** Per kind, `whatsapp_notice_settings.reply_footer` +
+    `reply_footer_text` (null = `WhatsappNoticeSetting::DEFAULT_FOOTER`,
+    asking the guardian to answer "OK"): `wording()` appends it after a
+    blank line. A guardian who replies makes the school's number look like
+    a person. The text may use `{a|b|c}` and the variables.
+  - **High volume and the risk warning (Fase 16).** `NoticeKind::$highVolume`
+    marks kinds sent for many students at once; `PUT pemberitahuan/{kind}`
+    refuses to switch one on without `confirm_volume`. `POST
+    setujui-risiko` records the school's acceptance of the unofficial
+    WhatsApp warning; the page asks for it before the QR.
   - **Test message.** `POST uji` (`SendTestMessage`) sends one short
     message to a number the admin types; limited to 5 per minute per
     admin (`whatsapp-test:{tenant}:{user}:{ip}`).

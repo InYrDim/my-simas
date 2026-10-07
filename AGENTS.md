@@ -360,6 +360,11 @@ before touching these areas; only the traps are kept here.
   `ReportRegistry`/`StatisticsRegistry`; every module registers from its
   own provider, Core never imports a feature module. Reports return a
   `ReportTable`; placeholders in `modules/Core/config/insight.php`.
+- **Beranda per role (Fase 13+)**: Core owns the page and
+  `DashboardRegistry`/`DashboardWidgetProvider`; modules register widgets
+  (scalar payloads, `slot`, `kind`, a Gate `permission`) from their own
+  provider and Core filters per signed-in user. Core names no role. Widgets
+  are a deferred Inertia prop; a provider that throws is skipped.
 - **Accounts for students/teachers (Fase 8)**: made via Identity's
   `AccountProvisioner`, Core keeps only `user_id`; login field `login`
   (`@` = email, else username); `RequirePasswordChange` forces a change

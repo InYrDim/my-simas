@@ -17,6 +17,7 @@ use Modules\Core\App\Infrastructure\Whatsapp\DefaultNoticeRegistry;
 use Modules\Core\App\Infrastructure\Whatsapp\NoticeTemplate;
 use Modules\Core\App\Infrastructure\Whatsapp\PhoneNumber;
 use Modules\Platform\App\Contracts\DTOs\WhatsappState;
+use Modules\Platform\App\Contracts\Exceptions\WhatsappRiskNotAcknowledgedException;
 use Modules\Platform\App\Contracts\Exceptions\WhatsappUnavailableException;
 use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Contracts\WhatsappChannel;
@@ -68,11 +69,26 @@ final class WhatsappController
             : 'Pengajuan WhatsApp dikirim. Menunggu persetujuan.');
     }
 
+    /**
+     * The admin accepts the warning about unofficial WhatsApp; Platform
+     * records who and when. Linking the number needs it.
+     */
+    public function acknowledge(Request $request): RedirectResponse
+    {
+        try {
+            $this->whatsapp->acknowledgeRisk((int) $request->user()->getAuthIdentifier());
+        } catch (WhatsappUnavailableException $exception) {
+            return back()->withErrors(['status' => $exception->getMessage()]);
+        }
+
+        return back()->with('status', 'Peringatan risiko disetujui.');
+    }
+
     public function connect(): RedirectResponse
     {
         try {
             $state = $this->whatsapp->connect();
-        } catch (WhatsappUnavailableException $exception) {
+        } catch (WhatsappRiskNotAcknowledgedException|WhatsappUnavailableException $exception) {
             return back()->withErrors(['status' => $exception->getMessage()]);
         }
 
@@ -134,9 +150,24 @@ final class WhatsappController
         $validated = $request->validate([
             'enabled' => ['required', 'boolean'],
             'template' => ['nullable', 'string', 'max:1000'],
+            'reply_footer' => ['sometimes', 'boolean'],
+            'reply_footer_text' => ['nullable', 'string', 'max:300'],
+            'confirm_volume' => ['sometimes', 'boolean'],
         ]);
 
-        $setting = $save->handle($notice, (bool) $validated['enabled'], $validated['template'] ?? null);
+        if ($notice->highVolume && (bool) $validated['enabled'] && ! $this->alreadyEnabled($kind) && ! $request->boolean('confirm_volume')) {
+            throw ValidationException::withMessages([
+                'confirm_volume' => 'Pemberitahuan ini dikirim untuk banyak siswa sekaligus dan menambah risiko nomor WhatsApp sekolah diblokir. Konfirmasi dulu untuk menyalakannya.',
+            ]);
+        }
+
+        $setting = $save->handle(
+            $notice,
+            (bool) $validated['enabled'],
+            $validated['template'] ?? null,
+            (bool) ($validated['reply_footer'] ?? false),
+            $validated['reply_footer_text'] ?? null,
+        );
 
         return back()->with('status', $setting->enabled
             ? "Pemberitahuan \"{$notice->title}\" aktif."
@@ -144,10 +175,19 @@ final class WhatsappController
     }
 
     /**
+     * Whether the school already has this kind switched on: saving new
+     * wording for it later does not ask for the confirmation again.
+     */
+    private function alreadyEnabled(string $kind): bool
+    {
+        return WhatsappNoticeSetting::query()->where('kind', $kind)->where('enabled', true)->exists();
+    }
+
+    /**
      * The notices of this school: the kinds its modules registered, with
      * the school's switch and wording, then the announced ones.
      *
-     * @return list<array<string, mixed>>
+     * @return list<array<string, mixed>> each kind with `key`, `title`, `description`, `recipient`, `highVolume`, `available`, `enabled`, `template`, `defaultTemplate` and `sample`
      */
     private function kinds(): array
     {
@@ -161,20 +201,28 @@ final class WhatsappController
                 'title' => $kind->title,
                 'description' => $kind->description,
                 'recipient' => $kind->recipient,
+                'highVolume' => $kind->highVolume,
                 'available' => true,
                 'enabled' => $setting !== null && $setting->enabled,
                 'template' => $setting === null ? $kind->template : ($setting->template ?? $kind->template),
                 'defaultTemplate' => $kind->template,
+                'replyFooter' => $setting !== null && $setting->reply_footer,
+                'replyFooterText' => $setting?->reply_footer_text,
+                'defaultFooter' => WhatsappNoticeSetting::DEFAULT_FOOTER,
                 'sample' => [...$kind->variables, ...NoticeTemplate::COMMON],
             ];
         }, $this->notices->available());
 
         $upcoming = array_map(fn (array $kind): array => [
             ...$kind,
+            'highVolume' => false,
             'available' => false,
             'enabled' => false,
             'template' => '',
             'defaultTemplate' => '',
+            'replyFooter' => false,
+            'replyFooterText' => null,
+            'defaultFooter' => '',
             'sample' => [],
         ], $this->notices->upcoming());
 
@@ -203,7 +251,7 @@ final class WhatsappController
     }
 
     /**
-     * @return array{stage: string, connection: string|null, phone: string|null, pushName: string|null, note: string|null, qrCode: string|null, lastError: string|null, requestedAt: string|null}
+     * @return array{stage: string, connection: string|null, phone: string|null, pushName: string|null, note: string|null, qrCode: string|null, lastError: string|null, requestedAt: string|null, pausedUntil: string|null, pauseReason: string|null, riskAcknowledged: bool}
      */
     private function stateProps(WhatsappState $state): array
     {
@@ -216,6 +264,9 @@ final class WhatsappController
             'qrCode' => $state->qrCode,
             'lastError' => $state->lastError,
             'requestedAt' => $state->requestedAt,
+            'pausedUntil' => $state->pausedUntil,
+            'pauseReason' => $state->pauseReason,
+            'riskAcknowledged' => $state->riskAcknowledged,
         ];
     }
 }

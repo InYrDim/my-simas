@@ -79,7 +79,11 @@ Never another feature module (Ppdb), not even via its Public surface.
   and "Kelas Saya" (Info Kelas, Jadwal Pelajaran, Mata Pelajaran & Guru,
   Absensi Saya); each child with its permission), four notice kinds
   with Core's `NoticeRegistry`, and two reports and one statistics
-  provider with Core's `ReportRegistry` / `StatisticsRegistry`.
+  provider with Core's `ReportRegistry` / `StatisticsRegistry`, and one
+  dashboard provider (`Domain/Dashboard/AttendanceDashboard`) with Core's
+  `DashboardRegistry`: the office's day and the classes still waiting, a
+  teacher's lessons of the day, a student's own day and month. Each widget
+  names its Gate ability; Core keeps what the signed-in person may see.
 - **The school's clock.** Days and times of day are the tenant's
   (`Domain/Support/SchoolClock` over `TenantContext::timezone()`). `date`
   columns hold the school's day as a plain `Y-m-d` string, so they compare
@@ -187,6 +191,10 @@ Never another feature module (Ppdb), not even via its Public surface.
   Core's. Only today is announced; a daily or lesson absence only when the
   status just became that; a lesson absence not when the day already says
   sakit, izin or alpa. Notices are sent after the database transaction.
+  Default wording varies with `{a|b|c}` groups (greeting and verb phrase
+  only; names and status are never in a group), and `gate-in`,
+  `gate-out` and `lesson-absent` are `highVolume` (the school confirms
+  before switching them on).
 - **Recap and insight**: `Domain/Queries` (`DailyRecap`, `MonthlyRecap`,
   `AttendanceTally`); the rate is hadir + terlambat over all recorded
   days. Reports `attendance-monthly` and `attendance-class` and the figure

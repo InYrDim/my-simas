@@ -7,6 +7,7 @@ use Modules\Core\App\Contracts\BellSchedule;
 use Modules\Core\App\Contracts\ClassDirectory;
 use Modules\Core\App\Contracts\ClassTimetable;
 use Modules\Core\App\Contracts\ContactNotifier;
+use Modules\Core\App\Contracts\DashboardRegistry;
 use Modules\Core\App\Contracts\GuardianNotifier;
 use Modules\Core\App\Contracts\NoticeRegistry;
 use Modules\Core\App\Contracts\ReportRegistry;
@@ -14,11 +15,13 @@ use Modules\Core\App\Contracts\StatisticsRegistry;
 use Modules\Core\App\Contracts\StudentAdmission;
 use Modules\Core\App\Contracts\StudentDirectory;
 use Modules\Core\App\Contracts\TeacherSchedule;
+use Modules\Core\App\Domain\Dashboard\SchoolDashboard;
 use Modules\Core\App\Domain\Reports\StudentListReport;
 use Modules\Core\App\Domain\Reports\StudentMutationReport;
 use Modules\Core\App\Domain\Reports\TeachingLoadReport;
 use Modules\Core\App\Domain\Statistics\SchoolStatistics;
 use Modules\Core\App\Infrastructure\Admission\DefaultStudentAdmission;
+use Modules\Core\App\Infrastructure\Dashboard\DefaultDashboardRegistry;
 use Modules\Core\App\Infrastructure\Directory\EloquentBellSchedule;
 use Modules\Core\App\Infrastructure\Directory\EloquentClassDirectory;
 use Modules\Core\App\Infrastructure\Directory\EloquentClassTimetable;
@@ -52,6 +55,11 @@ class CoreServiceProvider extends ServiceProvider
 
         $this->app->singleton(DefaultStatisticsRegistry::class);
         $this->app->alias(DefaultStatisticsRegistry::class, StatisticsRegistry::class);
+
+        // Beranda blocks: same aliasing, so modules register through the
+        // contract and Core's controller reads the concrete.
+        $this->app->singleton(DefaultDashboardRegistry::class);
+        $this->app->alias(DefaultDashboardRegistry::class, DashboardRegistry::class);
 
         // WhatsApp notices to guardians: modules register their kinds and
         // send through the notifier; same aliasing as the registries above.
@@ -130,6 +138,7 @@ class CoreServiceProvider extends ServiceProvider
         $reports->register('core', TeachingLoadReport::class);
 
         $this->app->make(StatisticsRegistry::class)->register('core', SchoolStatistics::class);
+        $this->app->make(DashboardRegistry::class)->register('core', SchoolDashboard::class);
     }
 
     /**

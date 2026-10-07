@@ -25,11 +25,12 @@ use Modules\Platform\App\Contracts\Concerns\BelongsToTenant;
  * @property WhatsappMessageStatus $status
  * @property string|null $gateway_message_id
  * @property string|null $error
+ * @property int $error_attempts gateway failures worth a retry so far; waiting for a turn is not counted
  * @property Carbon|null $sent_at
  * @property Carbon $created_at
  */
 #[UseFactory(WhatsappMessageFactory::class)]
-#[Fillable(['student_id', 'recipient_name', 'phone', 'kind', 'body', 'status', 'gateway_message_id', 'error', 'sent_at'])]
+#[Fillable(['student_id', 'recipient_name', 'phone', 'kind', 'body', 'status', 'gateway_message_id', 'error', 'error_attempts', 'sent_at'])]
 class WhatsappMessage extends Model
 {
     /** @use HasFactory<WhatsappMessageFactory> */

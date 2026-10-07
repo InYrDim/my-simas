@@ -10,6 +10,7 @@ use Modules\Core\App\Domain\Models\Student;
 use Modules\Core\App\Domain\Models\Teacher;
 use Modules\Core\App\Domain\Queries\SetupChecklist;
 use Modules\Core\App\Domain\Queries\TeacherClasses;
+use Modules\Core\App\Infrastructure\Dashboard\DefaultDashboardRegistry;
 use Modules\Identity\App\Contracts\ResolvesUsers;
 use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Contracts\TenantNavigation;
@@ -33,6 +34,10 @@ use Modules\Platform\App\Contracts\TenantRoles;
  * `setup` is the school's setup checklist, for whoever manages master data
  * and only while a required step is still open; null for everyone else
  * and once the school is set up.
+ *
+ * `widgets` are the blocks the active modules register for this person,
+ * grouped by slot. They are deferred: the page shell paints first and the
+ * blocks follow, which matters on a slow connection.
  */
 final class BerandaController
 {
@@ -43,6 +48,7 @@ final class BerandaController
         SetupChecklist $setup,
         TenantNavigation $navigation,
         TeacherClasses $teacherClasses,
+        DefaultDashboardRegistry $dashboard,
     ): Response {
         $tenant = $context->currentOrFail();
 
@@ -77,6 +83,7 @@ final class BerandaController
             'setup' => Gate::allows('core.master.manage') ? $setup->forCurrentSchool() : null,
             'shortcuts' => $summary === null ? $this->shortcuts($navigation) : [],
             'classes' => $summary === null ? $teacherClasses->forUser(Auth::id()) : [],
+            'widgets' => Inertia::defer(fn (): array => $dashboard->widgetsForCurrentUser()),
         ]);
     }
 

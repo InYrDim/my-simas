@@ -175,7 +175,9 @@ deciding which plans keep Absensi (today every plan includes it).
 - **Per-tenant modules:** feature modules are flagged per tenant with enable/disable
   and optional expiry; `core` is always active. A disabled module returns 403, not 404.
   Built so far: Core (master data, academics, import, statistics and reports, student
-  and teacher accounts, the school's WhatsApp page, the Beranda landing), Absensi
+  and teacher accounts, the school's WhatsApp page, the Beranda landing, which shows
+  each role its own blocks: the office the day's attendance and applicants waiting,
+  a teacher the lessons of the day, a student their own day and month), Absensi
   (gate and per-lesson attendance by the student's one-time QR or by hand) and PPDB
   (admissions, above). Roles and permissions have a page for the school admin.
 - **Public surface:** two groups of unauthenticated pages — the school application form
@@ -190,8 +192,7 @@ deciding which plans keep Absensi (today every plan includes it).
   email — is Bahasa Indonesia. Internal docs and code comments are written in
   Indonesian or English and are not user-facing.
 - **Undecided product facts:** no accessibility target has been set; no success metric
-  is defined; the provider company has no name, logo, or color identity to display; the
-  timing of the school-admin dashboard is undecided.
+  is defined; the provider company has no name, logo, or color identity to display.
 
 ## Brand Commitments
 
