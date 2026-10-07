@@ -49,7 +49,7 @@ interface LessonsProps {
 }
 
 /**
- * Absensi Jam Pelajaran: one class in one lesson of one day. Students who
+ * Absensi Pelajaran: one class in one lesson of one day. Students who
  * are sick, excused or absent for the day start that way; the rest wait to
  * be marked.
  */
@@ -70,8 +70,8 @@ export default function Lessons({
 
     return (
         <AttendancePage
-            title="Absensi Jam Pelajaran"
-            description={date.label}
+            title="Absensi Pelajaran"
+            description={`Per jam pelajaran di kelas · ${date.label}`}
             width="max-w-3xl"
         >
             <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap">

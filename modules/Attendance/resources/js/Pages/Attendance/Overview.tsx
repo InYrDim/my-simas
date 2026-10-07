@@ -63,7 +63,7 @@ export default function Overview({
                                 query: { tanggal: date.iso },
                             })}
                         >
-                            Input absensi
+                            Absensi gerbang
                         </Link>
                     </Button>
                 ) : undefined

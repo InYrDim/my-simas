@@ -129,8 +129,8 @@ class AttendanceServiceProvider extends ServiceProvider
                 'order' => 50,
                 'children' => [
                     ['label' => 'Rekap Hari Ini', 'route' => 'attendance.overview', 'permission' => 'attendance.view', 'match' => 'exact'],
-                    ['label' => 'Input Absensi', 'route' => 'attendance.input', 'permission' => 'attendance.daily.record', 'shortcut' => true],
-                    ['label' => 'Jam Pelajaran', 'route' => 'attendance.lessons', 'permission' => 'attendance.lesson.school'],
+                    ['label' => 'Absensi Gerbang', 'route' => 'attendance.input', 'permission' => 'attendance.daily.record', 'shortcut' => true],
+                    ['label' => 'Absensi Pelajaran', 'route' => 'attendance.lessons', 'permission' => 'attendance.lesson.school'],
                     ['label' => 'Pindai QR', 'route' => 'attendance.scan', 'permission' => 'attendance.scan.school', 'shortcut' => true],
                     ['label' => 'Rekap Bulanan', 'route' => 'attendance.monthly', 'permission' => 'attendance.view'],
                     ['label' => 'Pengaturan', 'route' => 'attendance.settings', 'permission' => 'attendance.settings.manage'],

@@ -64,9 +64,9 @@ type Payload = {
 };
 
 const modeLabels: Record<Mode, string> = {
-    'gate-in': 'Masuk',
-    'gate-out': 'Pulang',
-    lesson: 'Jam pelajaran',
+    'gate-in': 'Gerbang · Masuk',
+    'gate-out': 'Gerbang · Pulang',
+    lesson: 'Kelas · Jam pelajaran',
 };
 
 /** A camera keeps reading the code it sees: the same code is sent once. */

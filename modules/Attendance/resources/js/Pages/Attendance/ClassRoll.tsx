@@ -55,7 +55,7 @@ export default function ClassRoll({
     return (
         <AttendancePage
             title="Absensi Kelas"
-            description={date.label}
+            description={`Per jam pelajaran · ${date.label}`}
             width="max-w-3xl"
         >
             <ClassRollTabs current="fill" />

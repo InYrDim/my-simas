@@ -19,7 +19,7 @@ use Modules\Attendance\App\Http\Requests\DailyAttendanceRequest;
 use Modules\Core\App\Contracts\StudentDirectory;
 
 /**
- * Input Absensi: the day's status of one class, entered by hand.
+ * Absensi Gerbang: the day's status of one class, entered by hand.
  */
 final class DailyInputController
 {

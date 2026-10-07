@@ -103,9 +103,9 @@ it('shows each role the menu entries it may use', function (string $role, array 
 
     expect(attendanceMenu($tenant->slug))->toBe($labels);
 })->with([
-    'admin' => ['admin-sekolah', ['Rekap Hari Ini', 'Input Absensi', 'Jam Pelajaran', 'Pindai QR', 'Rekap Bulanan', 'Pengaturan']],
+    'admin' => ['admin-sekolah', ['Rekap Hari Ini', 'Absensi Gerbang', 'Absensi Pelajaran', 'Pindai QR', 'Rekap Bulanan', 'Pengaturan']],
     'guru' => ['guru', []],
-    'staf' => ['staf-tu', ['Rekap Hari Ini', 'Input Absensi', 'Pindai QR', 'Rekap Bulanan']],
+    'staf' => ['staf-tu', ['Rekap Hari Ini', 'Absensi Gerbang', 'Pindai QR', 'Rekap Bulanan']],
 ]);
 
 it('gives a teacher Jadwal Saya and one Kelas Mengajar menu', function () {

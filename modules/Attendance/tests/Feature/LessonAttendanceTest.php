@@ -25,7 +25,7 @@ use function Pest\Laravel\put;
 require_once __DIR__.'/Support/helpers.php';
 
 /*
- * Absensi Jam Pelajaran: one class in one lesson slot of one day.
+ * Absensi Pelajaran: one class in one lesson slot of one day.
  * Friday (weekday 5) 2 October 2026, 07:30 at the school (Asia/Jakarta).
  */
 beforeEach(function () {

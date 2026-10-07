@@ -270,7 +270,7 @@ it('refuses a lesson scan for a student already recorded as gone home', function
         'mode' => 'lesson', 'student_id' => $studentId, 'class_id' => $class->id, 'period_slot_id' => $slot->id,
     ]);
 
-    $scan($adit->id)->assertStatus(422)->assertJsonPath('errors.scan.0', 'Adit sudah tercatat pulang pukul 07.20, jadi tidak bisa dipindai ke pelajaran. Minta admin atau staf TU membatalkan catatan pulang di Input Absensi bila keliru.');
+    $scan($adit->id)->assertStatus(422)->assertJsonPath('errors.scan.0', 'Adit sudah tercatat pulang pukul 07.20, jadi tidak bisa dipindai ke pelajaran. Minta admin atau staf TU membatalkan catatan pulang di Absensi Gerbang bila keliru.');
     // A student without any gate record is still scanned in, as before.
     $scan($bima->id)->assertOk();
 

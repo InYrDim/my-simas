@@ -20,7 +20,7 @@ use Modules\Core\App\Contracts\DTOs\BellSlot;
 use Modules\Core\App\Contracts\DTOs\ClassSubject;
 
 /**
- * Absensi Jam Pelajaran: one class in one lesson slot of one day.
+ * Absensi Pelajaran: one class in one lesson slot of one day.
  */
 final class LessonAttendanceController
 {

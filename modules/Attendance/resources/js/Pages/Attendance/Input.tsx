@@ -58,7 +58,7 @@ interface Mark {
 }
 
 /**
- * Input Absensi: one class, one day. A student without a record starts as
+ * Absensi Gerbang: one class, one day. A student without a record starts as
  * present, so the teacher only touches the exceptions.
  */
 export default function Input({
@@ -73,8 +73,8 @@ export default function Input({
 
     return (
         <AttendancePage
-            title="Input Absensi"
-            description={date.label}
+            title="Absensi Gerbang"
+            description={`Masuk dan pulang di gerbang · ${date.label}`}
             width="max-w-3xl"
         >
             <div className="mb-6 flex flex-col gap-4 sm:flex-row">

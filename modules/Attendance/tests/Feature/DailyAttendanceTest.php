@@ -15,7 +15,7 @@ use function Pest\Laravel\put;
 require_once __DIR__.'/Support/helpers.php';
 
 /*
- * Input Absensi and Rekap Hari Ini: the day's status of a class, entered
+ * Absensi Gerbang and Rekap Hari Ini: the day's status of a class, entered
  * by hand. Friday 2 October 2026, 08:00 at the school (Asia/Jakarta).
  */
 beforeEach(function () {
