@@ -121,6 +121,22 @@ renders them. Core registers its own the same way.
   Core), `DTOs/ReportTable` (title, columns, rows of scalars),
   `DTOs/StatFigure`, `DTOs/StatPanel` (`bars` or `share`).
 
+Beranda — a module adds blocks to each person's landing page from its
+service provider. Core asks the providers of the modules active for the
+tenant (deferred, after the page shell), keeps the widgets the signed-in
+user may see and groups them by slot; it names no role and no feature
+module. A provider that throws is reported and skipped.
+
+- `DashboardRegistry::register(string $module, class-string<DashboardWidgetProvider> $provider)`
+  — blocks for the Beranda.
+- `DashboardWidgetProvider` — `widgets()`, run for the signed-in user inside
+  the tenant context; it returns what it could show and names the
+  permission each widget needs.
+- `DTOs/DashboardWidget` — `key`, `kind` (`stat`, `list`, `bars`, `status`,
+  `action`), `slot` (`action`, `figures`, `attention`, `main`), `title`,
+  `payload` of scalars (shape per kind is documented on the DTO), `order`,
+  `href` and `permission` (a Gate ability; null means everyone signed in).
+
 Reports and providers are resolved from the container and run inside the
 tenant context of the request. Registering a report or figure under the
 key of an announced entry (`config/insight.php`, e.g. `ppdb-applicants`)

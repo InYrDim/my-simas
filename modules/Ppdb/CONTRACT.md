@@ -60,7 +60,10 @@ Never another feature module (Attendance), not even via its Public surface.
   (enabled per tenant), its permissions, the sidebar entries (the whole
   group needs `ppdb.view`, "Pengaturan" needs `ppdb.settings.manage`), two
   reports (`ppdb-applicants` with a column per custom field, `ppdb-result`) and one statistics provider with
-  Core's `ReportRegistry` / `StatisticsRegistry`, the `Ppdb::` mail views
+  Core's `ReportRegistry` / `StatisticsRegistry`, a dashboard provider
+  (`Domain/Dashboard/AdmissionDashboard`: applicants of the running period
+  and who waits for verification) with Core's `DashboardRegistry`, the
+  `Ppdb::` mail views
   (`modules/Ppdb/mail`) and the stand-in below. It reads Core only
   through `StudentAdmission` and `ContactNotifier`; it never imports Core's models.
 - **The applicant's account is central.** Guard `ppdb`

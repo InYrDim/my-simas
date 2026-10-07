@@ -79,7 +79,11 @@ Never another feature module (Ppdb), not even via its Public surface.
   and "Kelas Saya" (Info Kelas, Jadwal Pelajaran, Mata Pelajaran & Guru,
   Absensi Saya); each child with its permission), four notice kinds
   with Core's `NoticeRegistry`, and two reports and one statistics
-  provider with Core's `ReportRegistry` / `StatisticsRegistry`.
+  provider with Core's `ReportRegistry` / `StatisticsRegistry`, and one
+  dashboard provider (`Domain/Dashboard/AttendanceDashboard`) with Core's
+  `DashboardRegistry`: the office's day and the classes still waiting, a
+  teacher's lessons of the day, a student's own day and month. Each widget
+  names its Gate ability; Core keeps what the signed-in person may see.
 - **The school's clock.** Days and times of day are the tenant's
   (`Domain/Support/SchoolClock` over `TenantContext::timezone()`). `date`
   columns hold the school's day as a plain `Y-m-d` string, so they compare

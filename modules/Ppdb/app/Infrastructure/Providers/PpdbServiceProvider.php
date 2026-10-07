@@ -3,12 +3,14 @@
 namespace Modules\Ppdb\App\Infrastructure\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Modules\Core\App\Contracts\DashboardRegistry;
 use Modules\Core\App\Contracts\NoticeRegistry;
 use Modules\Core\App\Contracts\ReportRegistry;
 use Modules\Core\App\Contracts\StatisticsRegistry;
 use Modules\Platform\App\Contracts\ModuleRegistry;
 use Modules\Platform\App\Contracts\PermissionRegistry;
 use Modules\Platform\App\Contracts\TenantNavigation;
+use Modules\Ppdb\App\Domain\Dashboard\AdmissionDashboard;
 use Modules\Ppdb\App\Domain\Notifications\ResultNotices;
 use Modules\Ppdb\App\Domain\Reports\ApplicantListReport;
 use Modules\Ppdb\App\Domain\Reports\SelectionResultReport;
@@ -100,6 +102,7 @@ class PpdbServiceProvider extends ServiceProvider
         $reports->register('ppdb', SelectionResultReport::class);
 
         $this->app->make(StatisticsRegistry::class)->register('ppdb', AdmissionStatistics::class);
+        $this->app->make(DashboardRegistry::class)->register('ppdb', AdmissionDashboard::class);
     }
 
     /**
