@@ -20,6 +20,7 @@ final class DefaultGuardianNotifier implements GuardianNotifier
     public function __construct(
         private readonly DefaultNoticeRegistry $registry,
         private readonly QueueWhatsappMessage $queue,
+        private readonly VariationPicker $variation,
         private readonly TenantContext $context,
     ) {}
 
@@ -45,7 +46,7 @@ final class DefaultGuardianNotifier implements GuardianNotifier
             $kind->key,
             $guardian,
             $student->guardian_phone,
-            NoticeTemplate::fill($setting->template ?? $kind->template, [
+            $this->variation->fill($setting->wording($kind), [
                 ...$notice->variables,
                 'nama_siswa' => $student->name,
                 'nama_wali' => $guardian,

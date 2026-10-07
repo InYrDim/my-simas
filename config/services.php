@@ -43,6 +43,16 @@ return [
         'admin_api_key' => env('OPENWA_ADMIN_API_KEY'),
         'credentials_key' => env('OPENWA_CREDENTIALS_KEY'),
         'timeout' => (int) env('OPENWA_TIMEOUT', 15),
+
+        // Safe sending: one school's number must not look like a bot.
+        // Seconds between two messages (random in the range), messages
+        // per school per day, and the circuit breaker: consecutive gateway
+        // failures that pause the school, and for how many seconds.
+        'pace_min' => (int) env('OPENWA_PACE_MIN', 3),
+        'pace_max' => (int) env('OPENWA_PACE_MAX', 10),
+        'daily_limit' => (int) env('OPENWA_DAILY_LIMIT', 500),
+        'breaker_threshold' => (int) env('OPENWA_BREAKER_THRESHOLD', 3),
+        'breaker_pause' => (int) env('OPENWA_BREAKER_PAUSE', 300),
     ],
 
 ];

@@ -4,6 +4,7 @@ namespace Modules\Core\Tests\Feature;
 
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
+use Illuminate\Queue\MaxAttemptsExceededException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
@@ -12,6 +13,8 @@ use Modules\Core\App\Domain\Enums\WhatsappMessageStatus;
 use Modules\Core\App\Domain\Models\WhatsappMessage;
 use Modules\Core\App\Infrastructure\Whatsapp\DeliverWhatsappMessage;
 use Modules\Core\App\Infrastructure\Whatsapp\QueueWhatsappMessage;
+use Modules\Platform\App\Contracts\DTOs\WhatsappSendResult;
+use Modules\Platform\App\Contracts\DTOs\WhatsappState;
 use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Contracts\WhatsappChannel;
 use Modules\Platform\App\Domain\Models\Tenant;
@@ -45,6 +48,9 @@ beforeEach(function () {
         'services.openwa.base_url' => 'https://wa.test',
         'services.openwa.admin_api_key' => 'owa_k1_admin-key-for-tests',
         'services.openwa.credentials_key' => str_repeat('ab', 32),
+        // Pacing is Platform's and has its own tests: here every turn is free.
+        'services.openwa.pace_min' => 0,
+        'services.openwa.pace_max' => 0,
     ]);
 
     // flushState() clears the queue payload hooks between tests.
@@ -389,4 +395,162 @@ it('closes the log entry when the job itself breaks', function () {
     expect($pending->refresh()->status)->toBe(WhatsappMessageStatus::Failed)
         ->and($pending->error)->not->toContain('boom')
         ->and($sent->refresh()->status)->toBe(WhatsappMessageStatus::Sent);
+});
+
+/**
+ * A channel that answers `sendText` from a script, for the paths the real
+ * gateway cannot be told to take.
+ *
+ * @param  list<WhatsappSendResult>  $answers  one per call; the last one repeats
+ */
+function scriptedChannel(array $answers): void
+{
+    app()->instance(WhatsappChannel::class, new class($answers) implements WhatsappChannel
+    {
+        public int $calls = 0;
+
+        /** @param list<WhatsappSendResult> $answers */
+        public function __construct(private array $answers) {}
+
+        public function state(bool $refresh = false): WhatsappState
+        {
+            return new WhatsappState(stage: WhatsappState::STAGE_ACTIVE, connection: 'ready');
+        }
+
+        public function request(int $requestedBy): WhatsappState
+        {
+            return $this->state();
+        }
+
+        public function connect(): WhatsappState
+        {
+            return $this->state();
+        }
+
+        public function acknowledgeRisk(int $userId): WhatsappState
+        {
+            return $this->state();
+        }
+
+        public function disconnect(): WhatsappState
+        {
+            return $this->state();
+        }
+
+        public function sendText(string $phone, string $text): WhatsappSendResult
+        {
+            $this->calls++;
+
+            return count($this->answers) > 1 ? array_shift($this->answers) : $this->answers[0];
+        }
+    });
+}
+
+function runDelivery(Tenant $tenant, WhatsappMessage $message, int $attempt = 1, ?DeliverWhatsappMessage $job = null): DeliverWhatsappMessage
+{
+    $job ??= new DeliverWhatsappMessage($message->id);
+    $job->withFakeQueueInteractions();
+    $job->job->attempts = $attempt;
+
+    inSchool($tenant, fn () => $job->handle(app(WhatsappChannel::class)));
+
+    return $job;
+}
+
+it('puts a message back in the queue when it is the schools turn to wait, without counting a failure', function () {
+    scriptedChannel([WhatsappSendResult::throttled(45, 'Menunggu giliran kirim.')]);
+    $tenant = linkedSchool('wa-throttled');
+    $message = inSchool($tenant, fn () => WhatsappMessage::factory()->create());
+
+    // Far more waits than the old three tries allowed.
+    foreach (range(1, 6) as $attempt) {
+        runDelivery($tenant, $message, $attempt)->assertReleased(delay: 45);
+    }
+
+    $message->refresh();
+
+    expect($message->status)->toBe(WhatsappMessageStatus::Pending)
+        ->and($message->error_attempts)->toBe(0)
+        ->and($message->error)->toBeNull();
+
+    Http::assertNothingSent();
+});
+
+it('has no try limit and a deadline of twelve hours from when it was queued', function () {
+    $job = new DeliverWhatsappMessage(1);
+
+    expect($job->tries)->toBe(0)
+        ->and($job->retryUntil()->getTimestamp())->toBe($job->queuedAt + 12 * 3600);
+
+    $this->travel(5)->hours();
+
+    // Asked again later, the deadline stays where it was.
+    expect($job->retryUntil()->getTimestamp())->toBe($job->queuedAt + 12 * 3600);
+});
+
+it('closes a message as not sent when the wait would run past the deadline', function () {
+    scriptedChannel([WhatsappSendResult::throttled(60, 'Menunggu giliran kirim.')]);
+    $tenant = linkedSchool('wa-too-late');
+    $message = inSchool($tenant, fn () => WhatsappMessage::factory()->create());
+    $job = new DeliverWhatsappMessage($message->id);
+
+    $this->travel(12)->hours();
+
+    runDelivery($tenant, $message, 4, $job)->assertNotReleased();
+
+    expect($message->refresh()->status)->toBe(WhatsappMessageStatus::Unsent)
+        ->and($message->error)->toBe('Pengiriman tertunda terlalu lama.');
+});
+
+it('closes a message as not sent when the worker finds the deadline passed', function () {
+    $tenant = linkedSchool('wa-worker-late');
+    $message = inSchool($tenant, fn () => WhatsappMessage::factory()->create());
+    $sent = inSchool($tenant, fn () => WhatsappMessage::factory()->sent()->create());
+
+    inSchool($tenant, function () use ($message, $sent): void {
+        (new DeliverWhatsappMessage($message->id))->failed(new MaxAttemptsExceededException('too long'));
+        (new DeliverWhatsappMessage($sent->id))->failed(new MaxAttemptsExceededException('too long'));
+    });
+
+    expect($message->refresh()->status)->toBe(WhatsappMessageStatus::Unsent)
+        ->and($message->error)->toBe('Pengiriman tertunda terlalu lama.')
+        ->and($sent->refresh()->status)->toBe(WhatsappMessageStatus::Sent);
+});
+
+it('counts gateway failures on the message, between turns spent waiting', function () {
+    scriptedChannel([
+        WhatsappSendResult::failed('Gateway WhatsApp menjawab galat 502.', retryable: true),
+        WhatsappSendResult::throttled(10, 'Menunggu giliran kirim.'),
+        WhatsappSendResult::failed('Gateway WhatsApp menjawab galat 502.', retryable: true),
+        WhatsappSendResult::throttled(10, 'Menunggu giliran kirim.'),
+        WhatsappSendResult::failed('Gateway WhatsApp menjawab galat 502.', retryable: true),
+    ]);
+    $tenant = linkedSchool('wa-mixed');
+    $message = inSchool($tenant, fn () => WhatsappMessage::factory()->create());
+
+    runDelivery($tenant, $message, 1)->assertReleased(delay: 30);
+    expect($message->refresh()->error_attempts)->toBe(1);
+
+    runDelivery($tenant, $message, 2)->assertReleased(delay: 10);
+    expect($message->refresh()->error_attempts)->toBe(1);
+
+    runDelivery($tenant, $message, 3)->assertReleased(delay: 120);
+    expect($message->refresh()->error_attempts)->toBe(2);
+
+    runDelivery($tenant, $message, 4)->assertReleased(delay: 10);
+
+    runDelivery($tenant, $message, 5)->assertNotReleased();
+    expect($message->refresh()->status)->toBe(WhatsappMessageStatus::Failed)
+        ->and($message->error_attempts)->toBe(3);
+});
+
+it('does not hang a message on the sync driver when it has to wait', function () {
+    scriptedChannel([WhatsappSendResult::throttled(45, 'Menunggu giliran kirim.')]);
+    $tenant = linkedSchool('wa-sync-wait');
+    $message = inSchool($tenant, fn () => WhatsappMessage::factory()->create());
+
+    inSchool($tenant, fn () => DeliverWhatsappMessage::dispatchSync($message->id));
+
+    expect($message->refresh()->status)->toBe(WhatsappMessageStatus::Unsent)
+        ->and($message->error)->toBe('Menunggu giliran kirim.');
 });

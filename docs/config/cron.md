@@ -15,13 +15,24 @@ Replace `/path/to/simas` with the app's directory on the server.
 ## Queue worker
 
 ```
-* * * * * cd /path/to/simas && php artisan queue:work --stop-when-empty --max-time=50 >> /dev/null 2>&1
+* * * * * cd /path/to/simas && php artisan queue:work --sleep=2 --max-time=50 >> /dev/null 2>&1
 ```
 
 - `QUEUE_CONNECTION=database`. Without this job, messages stay in
   "Dalam antrean".
 - A short-lived worker per minute never overlaps the next run and needs
   no `queue:restart` after a deploy.
+- WhatsApp messages are paced per school (random pause of
+  `OPENWA_PACE_MIN`–`OPENWA_PACE_MAX` seconds, `OPENWA_DAILY_LIMIT` a
+  day), so a burst such as the morning gate can take tens of minutes to
+  leave; a held-back message is put back in the queue and a job lives for
+  up to 12 hours. A held-back job is a delayed job, which
+  `--stop-when-empty` does not wait for: with it the worker would exit at
+  once and send only about one message per school per minute. So the
+  worker has no `--stop-when-empty`: it idles with `--sleep=2` and picks
+  the delayed jobs up as they come due, until `--max-time=50` ends it. At
+  about 6.5 s per message that is 7 to 8 messages per school per run, so
+  500 gate messages take about an hour.
 - Messages leave up to about a minute late. Design queued work so it
   survives that: no sub-minute delivery, no daemon, no Horizon/Redis.
 - `QUEUE_CONNECTION=sync` is for trying things out only (no retries; many

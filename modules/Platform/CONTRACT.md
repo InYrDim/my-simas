@@ -453,6 +453,22 @@ the gateway side; Core owns the school page and the message log.
 - **Models are plain** (`WhatsappInstance`, `ProviderSetting`; pattern of
   `Subscription`): read across schools from the console and always
   filtered by an explicit `tenant_id`.
+- **Safe sending (Fase 16).** OpenWA is unofficial: WhatsApp can
+  restrict or ban a school's number, and the risk is never zero. Platform
+  protects the number in `SendGuard`, called by `sendText` before the
+  gateway: a random pause between messages per school
+  (`OPENWA_PACE_MIN`/`OPENWA_PACE_MAX`, seconds), a daily limit
+  (`OPENWA_DAILY_LIMIT`, counted per school day, only for messages sent),
+  and a circuit breaker that pauses the school after
+  `OPENWA_BREAKER_THRESHOLD` retryable failures in a row for
+  `OPENWA_BREAKER_PAUSE` seconds (4xx answers do not count). A held-back
+  message comes back `WhatsappSendResult::throttled` with `retryAfter`:
+  waiting is not a failure. All state is integers in `TenantCache`.
+  `WhatsappState` carries `pausedUntil`, `pauseReason` and
+  `riskAcknowledged`. `acknowledgeRisk(userId)` records who accepted the
+  warning (first acceptance wins; `whatsapp_instances.risk_acknowledged_*`,
+  no FK) and `connect()` throws `WhatsappRiskNotAcknowledgedException`
+  until then.
 - **Tests fake the gateway** (`Http::fake()` + `Http::preventStrayRequests()`);
   the real gateway is never called from a test. With a URL map,
   `Http::fake` invokes every stub for every request, so a

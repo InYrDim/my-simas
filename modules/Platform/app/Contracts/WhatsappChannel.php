@@ -5,6 +5,7 @@ namespace Modules\Platform\App\Contracts;
 use Modules\Platform\App\Contracts\DTOs\WhatsappSendResult;
 use Modules\Platform\App\Contracts\DTOs\WhatsappState;
 use Modules\Platform\App\Contracts\Exceptions\TenantNotSetException;
+use Modules\Platform\App\Contracts\Exceptions\WhatsappRiskNotAcknowledgedException;
 use Modules\Platform\App\Contracts\Exceptions\WhatsappUnavailableException;
 
 /**
@@ -46,8 +47,21 @@ interface WhatsappChannel
      *
      * @throws TenantNotSetException
      * @throws WhatsappUnavailableException not approved, or disabled
+     * @throws WhatsappRiskNotAcknowledgedException the school has not accepted the risk warning yet
      */
     public function connect(): WhatsappState;
+
+    /**
+     * Record that the school accepted the warning about unofficial
+     * WhatsApp (a number can be restricted or banned). Asked again, it
+     * keeps the first acceptance.
+     *
+     * @param  int  $userId  school user id
+     *
+     * @throws TenantNotSetException
+     * @throws WhatsappUnavailableException not approved, or disabled
+     */
+    public function acknowledgeRisk(int $userId): WhatsappState;
 
     /**
      * Unlink the number. Linking again needs a new QR.
@@ -60,7 +74,9 @@ interface WhatsappChannel
     /**
      * Send one text message from the school's number. Never throws for
      * the gateway or for a school without linked WhatsApp: the result
-     * says what happened.
+     * says what happened. A message held back on purpose (pacing, daily
+     * limit, paused after failures) comes back `throttled` with the
+     * seconds to wait; that is not a failure.
      *
      * @param  string  $phone  digits only, international format without `+` (`62812…`)
      *

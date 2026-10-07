@@ -4,6 +4,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Modules\Platform\App\Contracts\DTOs\WhatsappState;
+use Modules\Platform\App\Contracts\Exceptions\WhatsappRiskNotAcknowledgedException;
 use Modules\Platform\App\Contracts\Exceptions\WhatsappUnavailableException;
 use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Contracts\WhatsappChannel;
@@ -37,13 +38,19 @@ beforeEach(function () {
 });
 
 /**
- * An approved school with a session that is not linked yet.
+ * An approved school that accepted the risk warning, with a session that
+ * is not linked yet.
  *
  * @param  array<string, mixed>  $attributes
  */
 function waApproved(array $attributes = []): WhatsappInstance
 {
-    return WhatsappInstanceFactory::new()->active()->create(['api_key' => WA_LINK_KEY, ...$attributes]);
+    return WhatsappInstanceFactory::new()->active()->create([
+        'api_key' => WA_LINK_KEY,
+        'risk_acknowledged_by' => 7,
+        'risk_acknowledged_at' => now(),
+        ...$attributes,
+    ]);
 }
 
 /**
@@ -429,3 +436,38 @@ it('says whether a refused message is worth another try', function (int $status,
         ->and($result->error)->toContain((string) $status)
         ->and($result->error)->not->toContain($instance->session_id);
 })->with([[422, false], [429, true], [503, true]]);
+
+it('refuses to link before the school accepted the risk warning', function () {
+    waGatewaySays([]);
+    $instance = waApproved(['risk_acknowledged_by' => null, 'risk_acknowledged_at' => null]);
+
+    expect(fn () => waLink($instance, fn (WhatsappChannel $channel) => $channel->connect()))
+        ->toThrow(WhatsappRiskNotAcknowledgedException::class);
+
+    Http::assertNothingSent();
+});
+
+it('records who accepted the risk warning, and keeps the first acceptance', function () {
+    waGatewaySays([['status' => 'created']]);
+    $instance = waApproved(['risk_acknowledged_by' => null, 'risk_acknowledged_at' => null]);
+
+    $first = waLink($instance, fn (WhatsappChannel $channel) => $channel->acknowledgeRisk(11));
+
+    expect($first->riskAcknowledged)->toBeTrue()
+        ->and($instance->refresh()->risk_acknowledged_by)->toBe(11);
+
+    $this->travel(5)->minutes();
+    $again = waLink($instance, fn (WhatsappChannel $channel) => $channel->acknowledgeRisk(12));
+    $acknowledgedAt = $instance->refresh()->risk_acknowledged_at;
+
+    expect($again->riskAcknowledged)->toBeTrue()
+        ->and($instance->risk_acknowledged_by)->toBe(11)
+        ->and($acknowledgedAt->lt(now()->subMinutes(4)))->toBeTrue()
+        ->and(waLink($instance, fn (WhatsappChannel $channel) => $channel->connect())->lastError)->toBeNull();
+});
+
+it('does not take the risk warning from a school without usable WhatsApp', function (string $factoryState) {
+    $instance = WhatsappInstanceFactory::new()->{$factoryState}()->create();
+
+    waLink($instance, fn (WhatsappChannel $channel) => $channel->acknowledgeRisk(11));
+})->with(['pending', 'rejected', 'disabled'])->throws(WhatsappUnavailableException::class);

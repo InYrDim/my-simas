@@ -25,6 +25,9 @@ final readonly class WhatsappState
      * @param  string|null  $note  why the provider rejected or disabled it
      * @param  string|null  $qrCode  PNG data URL to scan, only while the gateway shows one
      * @param  string|null  $requestedAt  ISO 8601
+     * @param  string|null  $pausedUntil  ISO 8601: sending is held back until then (failures, daily limit)
+     * @param  string|null  $pauseReason  why sending is held back, in words a school may read
+     * @param  bool  $riskAcknowledged  the school accepted the warning about unofficial WhatsApp
      */
     public function __construct(
         public string $stage,
@@ -35,6 +38,9 @@ final readonly class WhatsappState
         public ?string $qrCode = null,
         public ?string $lastError = null,
         public ?string $requestedAt = null,
+        public ?string $pausedUntil = null,
+        public ?string $pauseReason = null,
+        public bool $riskAcknowledged = false,
     ) {}
 
     /**

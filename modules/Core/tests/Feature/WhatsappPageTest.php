@@ -5,6 +5,13 @@ namespace Modules\Core\Tests\Feature;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Inertia\Testing\AssertableInertia as Assert;
+use Modules\Core\App\Contracts\DTOs\NoticeKind;
+use Modules\Core\App\Contracts\NoticeRegistry;
+use Modules\Core\App\Domain\Models\WhatsappNoticeSetting;
+use Modules\Platform\App\Contracts\DTOs\WhatsappSendResult;
+use Modules\Platform\App\Contracts\DTOs\WhatsappState;
+use Modules\Platform\App\Contracts\Exceptions\WhatsappRiskNotAcknowledgedException;
+use Modules\Platform\App\Contracts\WhatsappChannel;
 use Modules\Platform\App\Domain\Models\ProviderSetting;
 use Modules\Platform\App\Domain\Models\WhatsappInstance;
 use Modules\Platform\App\Domain\Models\WhatsappInstanceStatus;
@@ -15,6 +22,7 @@ use function Pest\Laravel\get;
 use function Pest\Laravel\post;
 
 require_once __DIR__.'/Support/helpers.php';
+require_once __DIR__.'/Support/notices.php';
 
 /*
  * Integrasi › WhatsApp on the school side (fase 9, stage 1): who may open
@@ -147,7 +155,7 @@ it('never hands the session key, its id or the session id to the page', function
         ->where('state.connection', 'ready')
         ->where('state.phone', '628111000111')
         ->where('state', fn ($state) => collect($state)->keys()->sort()->values()->all() === [
-            'connection', 'lastError', 'note', 'phone', 'pushName', 'qrCode', 'requestedAt', 'stage',
+            'connection', 'lastError', 'note', 'pauseReason', 'pausedUntil', 'phone', 'pushName', 'qrCode', 'requestedAt', 'riskAcknowledged', 'stage',
         ])
     );
 
@@ -218,7 +226,7 @@ it('links the number: connect, the QR, then the linked number', function () {
     ]);
 
     $tenant = schoolAs('wa-link');
-    $instance = WhatsappInstanceFactory::new()->forTenant($tenant->id)->active()->create(['api_key' => WHATSAPP_PAGE_KEY]);
+    $instance = WhatsappInstanceFactory::new()->forTenant($tenant->id)->active()->create(['api_key' => WHATSAPP_PAGE_KEY, 'risk_acknowledged_by' => 1, 'risk_acknowledged_at' => now()]);
 
     post(school($tenant->slug, '/integrasi/whatsapp/hubungkan'))->assertRedirect()->assertSessionHasNoErrors();
 
@@ -302,7 +310,7 @@ it('tells the admin when the gateway cannot be reached, without gateway details'
     Http::fake(['wa.test/*' => Http::response(null, 502)]);
 
     $tenant = schoolAs('wa-down');
-    $instance = WhatsappInstanceFactory::new()->forTenant($tenant->id)->active()->create();
+    $instance = WhatsappInstanceFactory::new()->forTenant($tenant->id)->active()->create(['risk_acknowledged_by' => 1, 'risk_acknowledged_at' => now()]);
 
     post(school($tenant->slug, '/integrasi/whatsapp/hubungkan'))
         ->assertRedirect()
@@ -327,4 +335,210 @@ it('shows why the provider switched WhatsApp off', function () {
     );
 
     Http::assertNothingSent();
+});
+
+/**
+ * A channel that records who accepted the risk and can refuse to link
+ * until then, so these tests do not depend on Platform's gateway code.
+ */
+function riskChannel(?WhatsappState $state = null): object
+{
+    $channel = new class($state ?? new WhatsappState(stage: WhatsappState::STAGE_ACTIVE)) implements WhatsappChannel
+    {
+        /** @var list<int> */
+        public array $acknowledgedBy = [];
+
+        public bool $refuseConnect = false;
+
+        public function __construct(public WhatsappState $state) {}
+
+        public function state(bool $refresh = false): WhatsappState
+        {
+            return $this->state;
+        }
+
+        public function request(int $requestedBy): WhatsappState
+        {
+            return $this->state;
+        }
+
+        public function connect(): WhatsappState
+        {
+            if ($this->refuseConnect) {
+                throw new WhatsappRiskNotAcknowledgedException;
+            }
+
+            return $this->state;
+        }
+
+        public function acknowledgeRisk(int $userId): WhatsappState
+        {
+            $this->acknowledgedBy[] = $userId;
+
+            return $this->state;
+        }
+
+        public function disconnect(): WhatsappState
+        {
+            return $this->state;
+        }
+
+        public function sendText(string $phone, string $text): WhatsappSendResult
+        {
+            return WhatsappSendResult::unavailable();
+        }
+    };
+
+    app()->instance(WhatsappChannel::class, $channel);
+
+    return $channel;
+}
+
+function registerBulkNotice(string $key = 'uji.bulk'): void
+{
+    app(NoticeRegistry::class)->register('core', new NoticeKind(
+        key: $key,
+        title: 'Siswa masuk sekolah',
+        description: 'Dikirim untuk setiap scan gerbang.',
+        recipient: 'Wali murid',
+        template: '{Halo|Hai} {nama_wali}, {nama_siswa} sudah masuk.',
+        highVolume: true,
+    ));
+}
+
+it('hands the page the pause and the risk acknowledgement, and marks high volume kinds', function () {
+    riskChannel(new WhatsappState(
+        stage: WhatsappState::STAGE_ACTIVE,
+        connection: 'ready',
+        pausedUntil: '2026-10-07T10:30:00+00:00',
+        pauseReason: 'Pengiriman dijeda setelah beberapa kegagalan.',
+        riskAcknowledged: true,
+    ));
+    $tenant = schoolAs('wa-state');
+    registerBulkNotice();
+    registerAbsenceNotice();
+
+    get(school($tenant->slug, '/integrasi/whatsapp'))->assertInertia(fn (Assert $page) => $page
+        ->where('state.pausedUntil', '2026-10-07T10:30:00+00:00')
+        ->where('state.pauseReason', 'Pengiriman dijeda setelah beberapa kegagalan.')
+        ->where('state.riskAcknowledged', true)
+        ->where('kinds', fn ($kinds) => collect($kinds)->firstWhere('key', 'uji.bulk')['highVolume'] === true
+            && collect($kinds)->firstWhere('key', 'uji.absent')['highVolume'] === false)
+    );
+});
+
+it('records the admin who accepted the risk through the channel', function () {
+    $channel = riskChannel();
+    $tenant = schoolAs('wa-ack');
+
+    post(school($tenant->slug, '/integrasi/whatsapp/setujui-risiko'))
+        ->assertRedirect()
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('status');
+
+    expect($channel->acknowledgedBy)->toBe([auth()->id()]);
+});
+
+it('keeps the risk acknowledgement away from other roles and guests', function (string $role) {
+    $channel = riskChannel();
+    $tenant = schoolAs("wa-ack-{$role}", $role);
+
+    post(school($tenant->slug, '/integrasi/whatsapp/setujui-risiko'))->assertForbidden();
+
+    signOutOfSchool();
+
+    post(school($tenant->slug, '/integrasi/whatsapp/setujui-risiko'))->assertRedirect();
+
+    expect($channel->acknowledgedBy)->toBe([]);
+})->with(['guru', 'staf-tu', 'siswa']);
+
+it('tells the admin to accept the risk first when linking is refused for it', function () {
+    $channel = riskChannel();
+    $channel->refuseConnect = true;
+    $tenant = schoolAs('wa-ack-first');
+
+    post(school($tenant->slug, '/integrasi/whatsapp/hubungkan'))
+        ->assertRedirect()
+        ->assertSessionHasErrors(['status' => 'Setujui peringatan risiko WhatsApp lebih dulu sebelum menghubungkan nomor.']);
+});
+
+it('switches a high volume notice on only with the volume confirmed', function () {
+    $tenant = schoolAs('wa-volume');
+    registerBulkNotice();
+    $url = school($tenant->slug, '/integrasi/whatsapp/pemberitahuan/uji.bulk');
+
+    $this->put($url, ['enabled' => true])->assertSessionHasErrors('confirm_volume');
+    $this->put($url, ['enabled' => true, 'confirm_volume' => false])->assertSessionHasErrors('confirm_volume');
+
+    expect(inSchool($tenant, fn () => WhatsappNoticeSetting::query()->count()))->toBe(0);
+
+    $this->put($url, ['enabled' => true, 'confirm_volume' => true])->assertSessionHasNoErrors();
+
+    expect(inSchool($tenant, fn () => WhatsappNoticeSetting::query()->where('kind', 'uji.bulk')->sole()->enabled))->toBeTrue();
+
+    // Already on: new wording does not ask again; switching off never does.
+    $this->put($url, ['enabled' => true, 'template' => 'Halo {nama_siswa}'])->assertSessionHasNoErrors();
+    $this->put($url, ['enabled' => false])->assertSessionHasNoErrors();
+
+    expect(inSchool($tenant, fn () => WhatsappNoticeSetting::query()->where('kind', 'uji.bulk')->sole()->enabled))->toBeFalse();
+});
+
+it('does not ask for the volume of an ordinary notice', function () {
+    $tenant = schoolAs('wa-ordinary');
+    registerAbsenceNotice();
+
+    $this->put(school($tenant->slug, '/integrasi/whatsapp/pemberitahuan/uji.absent'), ['enabled' => true])
+        ->assertSessionHasNoErrors();
+
+    expect(inSchool($tenant, fn () => WhatsappNoticeSetting::query()->sole()->enabled))->toBeTrue();
+});
+
+it('refuses wording with a malformed variation group and stores nothing', function (string $template) {
+    $tenant = schoolAs('wa-groups');
+    registerAbsenceNotice();
+
+    $this->put(school($tenant->slug, '/integrasi/whatsapp/pemberitahuan/uji.absent'), ['enabled' => true, 'template' => $template])
+        ->assertSessionHasErrors('template');
+
+    expect(inSchool($tenant, fn () => WhatsappNoticeSetting::query()->count()))->toBe(0);
+})->with([
+    'one empty choice' => ['Halo {a|} {nama_siswa}'],
+    'nested' => ['{a|{b|c}} {nama_siswa}'],
+]);
+
+it('keeps wording with variation groups', function () {
+    $tenant = schoolAs('wa-groups-ok');
+    registerAbsenceNotice();
+
+    $this->put(school($tenant->slug, '/integrasi/whatsapp/pemberitahuan/uji.absent'), ['enabled' => true, 'template' => '{Halo|Hai} {nama_siswa}'])
+        ->assertSessionHasNoErrors();
+
+    expect(inSchool($tenant, fn () => WhatsappNoticeSetting::query()->sole()->template))->toBe('{Halo|Hai} {nama_siswa}');
+});
+
+it('keeps the reply line choice: default stays null, own wording is stored', function () {
+    $tenant = schoolAs('wa-footer');
+    registerAbsenceNotice();
+    $url = school($tenant->slug, '/integrasi/whatsapp/pemberitahuan/uji.absent');
+
+    $this->put($url, ['enabled' => true, 'reply_footer' => true, 'reply_footer_text' => null])->assertSessionHasNoErrors();
+
+    $setting = inSchool($tenant, fn () => WhatsappNoticeSetting::query()->sole());
+    expect($setting->reply_footer)->toBeTrue()->and($setting->reply_footer_text)->toBeNull();
+
+    $this->put($url, ['enabled' => true, 'reply_footer' => true, 'reply_footer_text' => 'Balas ya, {nama_wali}.'])->assertSessionHasNoErrors();
+    expect(inSchool($tenant, fn () => WhatsappNoticeSetting::query()->sole()->reply_footer_text))->toBe('Balas ya, {nama_wali}.');
+
+    $this->put($url, ['enabled' => true])->assertSessionHasNoErrors();
+    expect(inSchool($tenant, fn () => WhatsappNoticeSetting::query()->sole()->reply_footer))->toBeFalse();
+});
+
+it('refuses a malformed variation group in the reply line', function () {
+    $tenant = schoolAs('wa-footer-bad');
+    registerAbsenceNotice();
+
+    $this->put(school($tenant->slug, '/integrasi/whatsapp/pemberitahuan/uji.absent'), ['enabled' => true, 'reply_footer' => true, 'reply_footer_text' => 'Balas {a|}'])
+        ->assertSessionHasErrors('reply_footer_text');
+
+    expect(inSchool($tenant, fn () => WhatsappNoticeSetting::query()->count()))->toBe(0);
 });

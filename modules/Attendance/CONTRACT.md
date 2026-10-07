@@ -191,6 +191,10 @@ Never another feature module (Ppdb), not even via its Public surface.
   Core's. Only today is announced; a daily or lesson absence only when the
   status just became that; a lesson absence not when the day already says
   sakit, izin or alpa. Notices are sent after the database transaction.
+  Default wording varies with `{a|b|c}` groups (greeting and verb phrase
+  only; names and status are never in a group), and `gate-in`,
+  `gate-out` and `lesson-absent` are `highVolume` (the school confirms
+  before switching them on).
 - **Recap and insight**: `Domain/Queries` (`DailyRecap`, `MonthlyRecap`,
   `AttendanceTally`); the rate is hadir + terlambat over all recorded
   days. Reports `attendance-monthly` and `attendance-class` and the figure

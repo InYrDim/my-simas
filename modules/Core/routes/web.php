@@ -164,6 +164,7 @@ Route::middleware('web')->group(function (): void {
         Route::prefix('integrasi/whatsapp')->middleware('can:core.integration.manage')->group(function (): void {
             Route::get('/', [WhatsappController::class, 'index'])->name('core.integration.whatsapp');
             Route::post('ajukan', [WhatsappController::class, 'request'])->name('core.integration.whatsapp.request');
+            Route::post('setujui-risiko', [WhatsappController::class, 'acknowledge'])->name('core.integration.whatsapp.acknowledge');
             Route::post('hubungkan', [WhatsappController::class, 'connect'])->name('core.integration.whatsapp.connect');
             Route::post('putuskan', [WhatsappController::class, 'disconnect'])->name('core.integration.whatsapp.disconnect');
             Route::post('uji', [WhatsappController::class, 'test'])->name('core.integration.whatsapp.test');
