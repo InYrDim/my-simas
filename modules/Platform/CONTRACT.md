@@ -299,7 +299,9 @@ published and owned here). Design decisions (user-approved):
 `tenant:activate`), `tenant:modules`, `tenant:run` (runs a command
 inside a tenant's context; relays inner output via BufferedOutput),
 `permissions:sync` (idempotent; runs in `runWithoutTenant`),
-`provider:create-user` (`--password=` option, prompt fallback). Status
+`provider:create-user` (`--password=` option, prompt fallback),
+`cache:prune-expired` (deletes expired rows of the `database` cache
+table; for a daily cron, no-op on other stores). Status
 changes flush the `TenantHydrator` cache entry for the tenant.
 
 Dev seeding: `PlatformDevSeeder` (local only, called from

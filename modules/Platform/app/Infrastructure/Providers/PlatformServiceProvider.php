@@ -25,6 +25,7 @@ use Modules\Platform\App\Infrastructure\Billing\BillingSummary;
 use Modules\Platform\App\Infrastructure\Billing\InvoiceIssuer;
 use Modules\Platform\App\Infrastructure\Billing\PaymentGateway;
 use Modules\Platform\App\Infrastructure\Billing\SubscriptionManager;
+use Modules\Platform\App\Infrastructure\Commands\CachePruneExpiredCommand;
 use Modules\Platform\App\Infrastructure\Commands\PermissionsSyncCommand;
 use Modules\Platform\App\Infrastructure\Commands\ProviderCreateUserCommand;
 use Modules\Platform\App\Infrastructure\Commands\TenantActivateCommand;
@@ -163,6 +164,7 @@ class PlatformServiceProvider extends ServiceProvider
             TenantRunCommand::class,
             PermissionsSyncCommand::class,
             ProviderCreateUserCommand::class,
+            CachePruneExpiredCommand::class,
         ]);
     }
 

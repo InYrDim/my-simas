@@ -564,7 +564,12 @@ surface minimal) — fixed in Fase 2 Stage 4.
   `* * * * * cd /path/to/simas && php artisan queue:work --stop-when-empty --max-time=50 >> /dev/null 2>&1`
   — it never overlaps the next run, needs no `queue:restart`, and does
   not go through `schedule:run` (which needs `proc_open`, often disabled
-  there). Messages then leave up to about a minute late. Design queued
+  there). The database cache store never removes an expired row until its
+  key is read again, so add a second cron job once a day:
+  `0 3 * * * cd /path/to/simas && php artisan cache:prune-expired >> /dev/null 2>&1`
+  (Platform; does nothing when the store is not `database`). All cron
+  jobs are kept in `docs/config/cron.md`.
+  Messages then leave up to about a minute late. Design queued
   and scheduled work so it survives that: no sub-minute delivery, no
   daemon, no Horizon/Redis. `QUEUE_CONNECTION=sync` is for trying things
   out only (no retries; many notices at once can hit the execution time
