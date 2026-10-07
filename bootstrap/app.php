@@ -10,6 +10,7 @@ use Illuminate\Session\Middleware\StartSession;
 use Modules\Identity\App\Http\Middleware\RequirePasswordChange;
 use Modules\Platform\App\Http\Middleware\EnsureSessionTenant;
 use Modules\Platform\App\Http\Middleware\ResolveTenant;
+use Modules\Platform\App\Http\Middleware\SecurityHeaders;
 use Modules\Platform\App\Http\Middleware\ShareTenantContext;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -25,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
 
         $middleware->web(append: [
+            SecurityHeaders::class,
             // Tenant resolution reads the session (school code / logged-in
             // school), so it runs after StartSession — see the priority
             // list below. ShareTenantContext follows it.
