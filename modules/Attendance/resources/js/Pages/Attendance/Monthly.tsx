@@ -1,9 +1,10 @@
-import { router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 
 import monthly from '@/actions/Modules/Attendance/App/Http/Controllers/MonthlyRecapController';
 import { DataTable, EmptyState } from '@shared/components/page-parts';
 import { Badge } from '@shared/components/ui/badge';
 import { Input } from '@shared/components/ui/input';
+import { Tabs, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
 import { TableCell, TableRow } from '@shared/components/ui/table';
 
 import AttendancePage from '../../Components/AttendancePage';
@@ -24,7 +25,10 @@ interface Row {
     percent: number | null;
 }
 
+type Source = 'semua' | 'gerbang' | 'pelajaran';
+
 interface MonthlyProps {
+    source: Source;
     month: { iso: string; label: string };
     currentMonth: string;
     classes: ClassOption[];
@@ -34,6 +38,7 @@ interface MonthlyProps {
 
 /** Rekap Bulanan: each student's month as counts and a presence rate. */
 export default function Monthly({
+    source,
     month,
     currentMonth,
     classes,
@@ -41,7 +46,10 @@ export default function Monthly({
     rows,
 }: MonthlyProps) {
     const open = (kelas: string, bulan: string) =>
-        router.get(monthly.url({ query: { kelas, bulan } }));
+        router.get(monthly.url({ query: { kelas, bulan, jenis: source } }));
+
+    const tabUrl = (jenis: Source) =>
+        monthly.url({ query: { kelas: classId, bulan: month.iso, jenis } });
 
     return (
         <AttendancePage
@@ -49,6 +57,22 @@ export default function Monthly({
             description={month.label}
             width="max-w-5xl"
         >
+            <Tabs value={source} className="mb-6">
+                <TabsList>
+                    <TabsTrigger value="semua" asChild>
+                        <Link href={tabUrl('semua')}>Semua</Link>
+                    </TabsTrigger>
+                    <TabsTrigger value="gerbang" asChild>
+                        <Link href={tabUrl('gerbang')}>Rekap Gerbang</Link>
+                    </TabsTrigger>
+                    <TabsTrigger value="pelajaran" asChild>
+                        <Link href={tabUrl('pelajaran')}>
+                            Rekap Jam Pelajaran
+                        </Link>
+                    </TabsTrigger>
+                </TabsList>
+            </Tabs>
+
             <div className="mb-6 flex flex-col gap-4 sm:flex-row">
                 <Filter label="Kelas">
                     <ClassSelect
@@ -128,9 +152,13 @@ export default function Monthly({
                         ))}
                     </DataTable>
                     <p className="mt-3 text-sm text-muted-foreground">
-                        Kehadiran dihitung dari hari yang sudah diabsen: hadir
-                        dan terlambat dibagi seluruh catatan siswa pada bulan
-                        ini. Unduhan ada di Statistik &amp; Laporan.
+                        {source === 'gerbang'
+                            ? 'Kehadiran dihitung dari hari yang sudah diabsen di gerbang'
+                            : source === 'pelajaran'
+                              ? 'Kehadiran dihitung dari jam pelajaran yang sudah diabsen'
+                              : 'Kehadiran dihitung dari absensi gerbang dan jam pelajaran yang sudah diabsen'}
+                        : hadir dan terlambat dibagi seluruh catatan siswa pada
+                        bulan ini. Unduhan ada di Statistik &amp; Laporan.
                     </p>
                 </>
             )}

@@ -12,7 +12,8 @@ use Modules\Attendance\App\Http\Concerns\KnowsSignedInUser;
 use Modules\Attendance\App\Http\Concerns\ReadsAttendanceFilters;
 
 /**
- * Rekap Bulanan: each student of one class over one month.
+ * Rekap Bulanan: each student of one class over one month, from the gate's
+ * records, the lesson records, or both (default; `jenis=gerbang|pelajaran`).
  */
 final class MonthlyRecapController
 {
@@ -24,7 +25,12 @@ final class MonthlyRecapController
         $classes = $choices->for($this->signedInUserId());
         $classId = $choices->pick($classes, $this->requestedClass($request));
 
+        $source = in_array($request->query('jenis'), [MonthlyRecap::GATE, MonthlyRecap::LESSONS], true)
+            ? $request->query('jenis')
+            : MonthlyRecap::ALL;
+
         return Inertia::render('Attendance/Monthly', [
+            'source' => $source,
             'month' => [
                 'iso' => $month,
                 'label' => $clock->monthLabel($month),
@@ -32,7 +38,7 @@ final class MonthlyRecapController
             'currentMonth' => substr($clock->today(), 0, 7),
             'classes' => $classes,
             'classId' => $classId === null ? '' : (string) $classId,
-            'rows' => $classId === null ? [] : $recap->forClass($classId, $month),
+            'rows' => $classId === null ? [] : $recap->forClass($classId, $month, $source),
         ]);
     }
 }

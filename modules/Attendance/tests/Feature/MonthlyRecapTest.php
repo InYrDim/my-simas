@@ -4,7 +4,10 @@ namespace Modules\Attendance\Tests\Feature;
 
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Attendance\App\Domain\Enums\AttendanceStatus;
+use Modules\Attendance\App\Domain\Enums\RecordMethod;
 use Modules\Attendance\App\Domain\Models\DailyAttendance;
+use Modules\Attendance\App\Domain\Models\LessonAttendance;
+use Modules\Attendance\App\Domain\Models\LessonSession;
 use Modules\Core\App\Domain\Models\ClassGroup;
 use Modules\Core\App\Domain\Models\Student;
 use Modules\Platform\App\Domain\Models\Tenant;
@@ -117,5 +120,44 @@ it('never counts another school', function () {
         ->has('rows', 1)
         ->where('rows.0.name', 'Adit')
         ->where('rows.0.absent', 0)
+    );
+});
+
+it('counts lesson records per tab: lessons only, gate only, or both', function () {
+    $tenant = attendanceTenant();
+    $class = attendanceClass($tenant, 'X 1');
+    $adit = attendanceStudent($tenant, $class, 'Adit', ['nis' => '5001']);
+
+    attendanceSchool($tenant, function () use ($class, $adit): void {
+        foreach (['2026-09-01' => AttendanceStatus::Present, '2026-10-01' => AttendanceStatus::Absent] as $date => $status) {
+            $session = LessonSession::factory()->create(['class_id' => $class->id, 'period_slot_id' => 1, 'date' => $date]);
+            LessonAttendance::query()->create([
+                'lesson_session_id' => $session->id, 'student_id' => $adit->id,
+                'status' => $status, 'method' => RecordMethod::Manual,
+            ]);
+        }
+    });
+    recordDays($tenant, $class, $adit, ['2026-09-02' => AttendanceStatus::Absent]);
+
+    get(school($tenant->slug, "/absensi/rekap?kelas={$class->id}&bulan=2026-09&jenis=pelajaran"))->assertInertia(fn (Assert $page) => $page
+        ->where('source', 'pelajaran')
+        ->where('rows.0.present', 1)
+        ->where('rows.0.absent', 0)
+        ->where('rows.0.percent', 100)
+    );
+
+    get(school($tenant->slug, "/absensi/rekap?kelas={$class->id}&bulan=2026-09&jenis=gerbang"))->assertInertia(fn (Assert $page) => $page
+        ->where('source', 'gerbang')
+        ->where('rows.0.present', 0)
+        ->where('rows.0.absent', 1)
+    );
+
+    // No tab chosen: gate and lesson records added together.
+    get(school($tenant->slug, "/absensi/rekap?kelas={$class->id}&bulan=2026-09"))->assertInertia(fn (Assert $page) => $page
+        ->where('source', 'semua')
+        ->where('rows.0.present', 1)
+        ->where('rows.0.absent', 1)
+        ->where('rows.0.days', 2)
+        ->where('rows.0.percent', 50)
     );
 });
