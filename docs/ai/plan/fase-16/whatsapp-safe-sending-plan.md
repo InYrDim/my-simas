@@ -1,6 +1,6 @@
 # Pengiriman WhatsApp yang aman untuk nomor sekolah: variasi pesan, pacing, pengaman
 
-> **Status dokumen:** Selesai (menunggu keputusan perintah cron)
+> **Status dokumen:** Selesai
 > **Dibuat:** 2026-10-07 · **Diperbarui:** 2026-10-07 · **Branch:** `feat/whatsapp-safe-sending`
 
 ## Context
@@ -223,7 +223,7 @@ Diisi selama eksekusi; dokumen ini hidup.
 - 2026-10-07 — Aliran 1A–1D berjalan di satu working tree tanpa worktree/commit (berkas milik tidak tumpang tindih; tes memakai sqlite `:memory:` sehingga aman paralel). Plan melarang commit tanpa diminta.
 - 2026-10-07 — Tahap 0: `DefaultWhatsappChannel::acknowledgeRisk()` dan `WhatsappController::acknowledge()` hanya stub sampai 1A/1B; migrasi dijalankan di DB dev.
 
-- 2026-10-07 — Perintah worker cron berubah dari `--stop-when-empty --max-time=50` menjadi `--sleep=2 --max-time=50` (di `docs/config/cron.md`, `docs/architecture/modular-monolith.md`) — job `throttled` adalah job tertunda; `--stop-when-empty` membuat worker keluar seketika sehingga hanya ~1 pesan per sekolah per menit yang keluar. Masih tanpa daemon dan tanpa tumpang tindih (maks 50 detik). Menunggu konfirmasi user karena menyentuh batasan hosting yang ditandai penting.
+- 2026-10-07 — Perintah worker cron berubah dari `--stop-when-empty --max-time=50` menjadi `--sleep=2 --max-time=50` (di `docs/config/cron.md`, `docs/architecture/modular-monolith.md`) — job `throttled` adalah job tertunda; `--stop-when-empty` membuat worker keluar seketika sehingga hanya ~1 pesan per sekolah per menit yang keluar. Masih tanpa daemon dan tanpa tumpang tindih (maks 50 detik). Disetujui user 2026-10-08. Hostinger tidak mendokumentasikan batas waktu cron (PHP `max_execution_time` 360 dtk), jadi perlu diuji di paket nyata (±20 pesan uji ke satu sekolah dalam 2–3 menit); bila worker terpotong, turunkan `--max-time`.
 
 - 2026-10-07 — Tambahan atas permintaan user setelah tahap 2: templat bawaan Absensi diperluas (4 grup × 3–4 pilihan), `VariationPicker` mencegah pilihan grup yang sama dengan pesan sekolah sebelumnya, dan opsi "ajakan membalas" per jenis pemberitahuan (`reply_footer`, `reply_footer_text`; bawaan atau teks sendiri). Per jenis, bukan satu pengaturan sekolah, agar tanpa tabel baru; bisa dipindah ke tingkat sekolah bila diminta.
 

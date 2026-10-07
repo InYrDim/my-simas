@@ -33,6 +33,11 @@ Replace `/path/to/simas` with the app's directory on the server.
   the delayed jobs up as they come due, until `--max-time=50` ends it. At
   about 6.5 s per message that is 7 to 8 messages per school per run, so
   500 gate messages take about an hour.
+- Hostinger documents no cron time limit (PHP `max_execution_time` is 360 s
+  on Web plans; a plan may be throttled when CPU or memory limits are
+  reached), so test on the real plan before relying on it: send about 20
+  test messages to one school and check they leave within 2 to 3 minutes. If
+  the worker is cut off, lower `--max-time` (for example 30).
 - Messages leave up to about a minute late. Design queued work so it
   survives that: no sub-minute delivery, no daemon, no Horizon/Redis.
 - `QUEUE_CONNECTION=sync` is for trying things out only (no retries; many

@@ -11,7 +11,7 @@ Keputusan terkunci (spec + jawaban user):
 - Pencarian tenant dibungkus interface internal `TenantResolver` di Platform (bukan Contracts); middleware hanya memanggil resolver. Satu strategi saja.
 - Fail closed; Spatie teams (`team_foreign_key = tenant_id`) dibungkus kontrak Platform; hanya Platform boleh import `Spatie\`.
 - Guard `provider` terpisah (`provider_users`); tanpa `Gate::before` super-admin.
-- Deployment target: shared hosting/VPS + wildcard subdomain + Cloudflare; tanpa Octane/Supervisor; queue database via cron (`queue:work --stop-when-empty`); konteks tenant dibersihkan tiap akhir request.
+- Deployment target: shared hosting/VPS + wildcard subdomain + Cloudflare; tanpa Octane/Supervisor; queue database via cron (`queue:work --sleep=2 --max-time=50`, lihat fase-16); konteks tenant dibersihkan tiap akhir request.
 
 ## Fakta repo yang sudah diverifikasi
 
