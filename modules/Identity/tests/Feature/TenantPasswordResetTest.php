@@ -81,7 +81,7 @@ it('builds links on the shared host carrying the school code via TenantUrl', fun
     expect($urls->root())->toBe('http://localhost')
         ->and($urls->host())->toBe('localhost')
         ->and($urls->url($tenant->id, '/set-password', ['token' => 'abc', 'email' => 'a+b@x.test']))
-        ->toBe('http://localhost/set-password?token=abc&email=a%2Bb%40x.test&school='.$tenant->id);
+        ->toBe('http://localhost/set-password?token=abc&email=a%2Bb%40x.test&school='.$tenant->slug);
 });
 
 it('rejects a tenant A token on the tenant B host (same email)', function () {
