@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Platform\App\Domain\Exceptions\BillingException;
 use Modules\Platform\App\Domain\Models\BillingCycle;
 use Modules\Platform\App\Domain\Models\Invoice;
+use Modules\Platform\App\Domain\Models\InvoiceKind;
 use Modules\Platform\App\Domain\Models\InvoiceStatus;
 use Modules\Platform\App\Domain\Models\Payment;
 use Modules\Platform\App\Domain\Models\PaymentStatus;
@@ -98,7 +99,9 @@ final class SubscriptionManager
             throw new BillingException('A trial is activated, not renewed.');
         }
 
-        $plan = $this->planOf($subscription);
+        $plan = $subscription->scheduled_plan_id !== null
+            ? Plan::query()->findOrFail($subscription->scheduled_plan_id)
+            : $this->planOf($subscription);
 
         $dueAt = $this->continuesPaidPeriod($subscription)
             ? $subscription->current_period_end->copy()
@@ -108,28 +111,106 @@ final class SubscriptionManager
     }
 
     /**
-     * Takes effect immediately for modules; no proration. The amount
-     * changes from the next invoice.
+     * A school's own plan change (public plans only). During a trial it
+     * is immediate and free. On a paid period a dearer plan (compared at
+     * the subscription's current cycle) is an upgrade: an invoice for the
+     * prorated difference, with the current plan in force until it is
+     * paid. An equal or cheaper plan is a downgrade: scheduled for the
+     * end of the paid period.
+     *
+     * @throws BillingException
      */
-    public function changePlan(Subscription $subscription, string $planKey): Subscription
+    public function requestPlanChange(Subscription $subscription, string $planKey): PlanChangeResult
     {
-        $plan = $this->selectablePlan($planKey);
+        $plan = Plan::query()->selectable()->public()->where('key', $planKey)->first();
 
-        $subscription->forceFill(['plan_id' => $plan->id])->save();
-
-        if ($subscription->status !== SubscriptionStatus::Cancelled) {
-            $this->syncModules($subscription, $plan);
+        if ($plan === null) {
+            throw new BillingException("Plan [{$planKey}] does not exist or is not available.");
         }
+
+        $current = $this->planOf($subscription);
+
+        if ($plan->id === $current->id) {
+            throw new BillingException('The subscription is already on this plan.');
+        }
+
+        return DB::transaction(function () use ($subscription, $plan, $current): PlanChangeResult {
+            if ($subscription->isTrial()) {
+                $this->invoices->voidOpen($subscription);
+                $subscription->forceFill(['plan_id' => $plan->id, 'scheduled_plan_id' => null])->save();
+                $this->syncModules($subscription, $plan);
+
+                return PlanChangeResult::immediate();
+            }
+
+            if (! $this->continuesPaidPeriod($subscription)) {
+                throw new BillingException('Only a trial or a running paid period can change plan; activate or renew instead.');
+            }
+
+            $cycle = $subscription->billing_cycle;
+
+            if ($plan->priceFor($cycle) > $current->priceFor($cycle)) {
+                return PlanChangeResult::upgrade($this->invoices->issueUpgrade($subscription, $current, $plan));
+            }
+
+            $this->invoices->voidOpen($subscription);
+            $subscription->forceFill(['scheduled_plan_id' => $plan->id])->save();
+
+            return PlanChangeResult::scheduled($plan);
+        });
+    }
+
+    /**
+     * Drop a scheduled downgrade; an open invoice already issued for it
+     * is voided (the renewal is reissued on the current plan).
+     */
+    public function cancelScheduledChange(Subscription $subscription): Subscription
+    {
+        if ($subscription->scheduled_plan_id === null) {
+            return $subscription;
+        }
+
+        DB::transaction(function () use ($subscription): void {
+            $this->invoices->voidOpen($subscription);
+            $subscription->forceFill(['scheduled_plan_id' => null])->save();
+        });
 
         return $subscription;
     }
 
     /**
-     * Applies from the next invoice.
+     * Provider override for support or custom deals: switches plan and
+     * modules at once, charges nothing, drops a scheduled downgrade and
+     * voids any open invoice (it would revert this change if paid). The
+     * amount changes from the next invoice.
+     */
+    public function changePlan(Subscription $subscription, string $planKey): Subscription
+    {
+        $plan = $this->selectablePlan($planKey);
+
+        DB::transaction(function () use ($subscription, $plan): void {
+            $this->invoices->voidOpen($subscription);
+
+            $subscription->forceFill(['plan_id' => $plan->id, 'scheduled_plan_id' => null])->save();
+
+            if ($subscription->status !== SubscriptionStatus::Cancelled) {
+                $this->syncModules($subscription, $plan);
+            }
+        });
+
+        return $subscription;
+    }
+
+    /**
+     * Applies from the next invoice; an open invoice on the old cycle is
+     * voided so the next one uses the new cycle.
      */
     public function changeCycle(Subscription $subscription, BillingCycle $cycle): Subscription
     {
-        $subscription->forceFill(['billing_cycle' => $cycle])->save();
+        DB::transaction(function () use ($subscription, $cycle): void {
+            $this->invoices->voidOpen($subscription);
+            $subscription->forceFill(['billing_cycle' => $cycle])->save();
+        });
 
         return $subscription;
     }
@@ -222,20 +303,26 @@ final class SubscriptionManager
                 'meta' => array_merge($payment->meta ?? [], $outcome->meta),
             ])->save();
 
+            // An upgrade keeps the paid period: only the plan changes.
+            $isUpgrade = $invoice->kind === InvoiceKind::Upgrade;
+
             $invoice->forceFill([
                 'status' => InvoiceStatus::Paid,
                 'paid_at' => now(),
-                'period_start' => $start,
-                'period_end' => $end,
+                ...($isUpgrade ? [] : ['period_start' => $start, 'period_end' => $end]),
             ])->save();
 
-            $subscription->forceFill([
+            $subscription->forceFill($isUpgrade ? [
+                'plan_id' => $invoice->plan_id,
+                'scheduled_plan_id' => null,
+            ] : [
                 'plan_id' => $invoice->plan_id,
                 'billing_cycle' => $invoice->billing_cycle,
                 'status' => SubscriptionStatus::Active,
                 'current_period_start' => $start,
                 'current_period_end' => $end,
                 'cancelled_at' => null,
+                'scheduled_plan_id' => null,
             ])->save();
 
             $this->syncModules($subscription, Plan::query()->findOrFail($invoice->plan_id));

@@ -771,7 +771,7 @@ function SubscriptionTab({
                                     })
                                 }
                             >
-                                Ganti paket saja
+                                Ganti paket langsung (tanpa tagihan)
                             </Button>
                             <Button
                                 variant="outline"

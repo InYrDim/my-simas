@@ -23,15 +23,22 @@ final class ModuleFlagManager
      * Enable a module for a tenant. Optional expiry (e.g. trials).
      * Runs inside the given tenant context without disturbing the
      * caller's own context.
+     *
+     * $source says who set the flag: `plan` (subscription sync, default)
+     * never overwrites a flag the provider set by hand (`manual`).
      */
-    public function enable(string $tenantId, string $module, ?\DateTimeInterface $expiresAt = null): void
+    public function enable(string $tenantId, string $module, ?\DateTimeInterface $expiresAt = null, string $source = TenantModulesModel::SOURCE_PLAN): void
     {
         $this->assertKnown($module);
 
-        $this->context->run($tenantId, function () use ($module, $expiresAt): void {
+        $this->context->run($tenantId, function () use ($module, $expiresAt, $source): void {
+            if ($this->isHeldManually($module, $source)) {
+                return;
+            }
+
             TenantModulesModel::query()->updateOrCreate(
                 ['module' => $module],
-                ['enabled' => true, 'enabled_at' => now(), 'expires_at' => $expiresAt],
+                ['enabled' => true, 'enabled_at' => now(), 'expires_at' => $expiresAt, 'source' => $source],
             );
         });
 
@@ -39,19 +46,46 @@ final class ModuleFlagManager
     }
 
     /**
-     * Disable a module for a tenant.
+     * Disable a module for a tenant. A manual disable leaves a row behind
+     * so later plan syncs know not to switch the module back on.
      */
-    public function disable(string $tenantId, string $module): void
+    public function disable(string $tenantId, string $module, string $source = TenantModulesModel::SOURCE_PLAN): void
     {
         $this->assertKnown($module);
 
-        $this->context->run($tenantId, function () use ($module): void {
+        $this->context->run($tenantId, function () use ($module, $source): void {
+            if ($this->isHeldManually($module, $source)) {
+                return;
+            }
+
+            if ($source === TenantModulesModel::SOURCE_MANUAL) {
+                TenantModulesModel::query()->updateOrCreate(
+                    ['module' => $module],
+                    ['enabled' => false, 'expires_at' => null, 'source' => $source],
+                );
+
+                return;
+            }
+
             TenantModulesModel::query()
                 ->where('module', $module)
                 ->update(['enabled' => false, 'expires_at' => null]);
         });
 
         $this->cache->forget($tenantId, $module);
+    }
+
+    /**
+     * Must run inside the tenant context. Only a plan-sourced write is
+     * blocked by a manual flag.
+     */
+    private function isHeldManually(string $module, string $source): bool
+    {
+        return $source === TenantModulesModel::SOURCE_PLAN
+            && TenantModulesModel::query()
+                ->where('module', $module)
+                ->where('source', TenantModulesModel::SOURCE_MANUAL)
+                ->exists();
     }
 
     private function assertKnown(string $module): void

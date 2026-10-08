@@ -42,6 +42,63 @@ final class InvoiceIssuer
         return $this->issueOrReuse($subscription, $plan, $cycle, InvoiceKind::Renewal, $periodStart, $dueAt);
     }
 
+    /**
+     * The invoice for moving to a dearer plan in the middle of a paid
+     * period: the price difference for the same cycle, prorated over the
+     * days left (rounded up to whole rupiah). The period is today up to
+     * the current period end; the current plan stays in force until paid.
+     * Any open invoice of the subscription is voided first.
+     *
+     * @throws BillingException when the paid period has no days left
+     */
+    public function issueUpgrade(Subscription $subscription, Plan $from, Plan $to): Invoice
+    {
+        $today = BillingClock::today();
+        $end = $subscription->current_period_end;
+        $cycle = $subscription->billing_cycle;
+
+        $remainingDays = $end === null ? 0 : (int) $today->diffInDays($end, false);
+        $periodDays = $end === null || $subscription->current_period_start === null
+            ? 0
+            : (int) $subscription->current_period_start->diffInDays($end);
+
+        if ($remainingDays < 1 || $periodDays < 1) {
+            throw new BillingException('The paid period has no days left to upgrade in; renew instead.');
+        }
+
+        $amount = $this->proratedAmount($to->priceFor($cycle) - $from->priceFor($cycle), $remainingDays, $periodDays);
+        $dueAt = $today->copy()->addDays((int) config('billing.invoice_due_days', 7));
+
+        return DB::transaction(function () use ($subscription, $to, $cycle, $today, $end, $amount, $dueAt): Invoice {
+            $this->voidOpen($subscription);
+
+            return $this->issueOrReuse($subscription, $to, $cycle, InvoiceKind::Upgrade, $today, $dueAt, $amount, $end);
+        });
+    }
+
+    /**
+     * ceil(difference × remaining ÷ period) in whole rupiah.
+     */
+    public function proratedAmount(int $priceDifference, int $remainingDays, int $periodDays): int
+    {
+        return intdiv($priceDifference * $remainingDays + $periodDays - 1, $periodDays);
+    }
+
+    /**
+     * Void every unpaid invoice of the subscription: after a plan or
+     * cycle change they no longer match, so paying one must not be
+     * possible.
+     */
+    public function voidOpen(Subscription $subscription): void
+    {
+        Invoice::query()
+            ->where('tenant_id', $subscription->tenant_id)
+            ->where('subscription_id', $subscription->id)
+            ->where('status', InvoiceStatus::Unpaid)
+            ->get()
+            ->each(fn (Invoice $invoice): Invoice => $this->void($invoice));
+    }
+
     public function void(Invoice $invoice): Invoice
     {
         if ($invoice->status !== InvoiceStatus::Unpaid) {
@@ -58,9 +115,9 @@ final class InvoiceIssuer
      * open invoice of the subscription is voided before a new one is
      * issued.
      */
-    private function issueOrReuse(Subscription $subscription, Plan $plan, BillingCycle $cycle, InvoiceKind $kind, CarbonInterface $periodStart, CarbonInterface $dueAt): Invoice
+    private function issueOrReuse(Subscription $subscription, Plan $plan, BillingCycle $cycle, InvoiceKind $kind, CarbonInterface $periodStart, CarbonInterface $dueAt, ?int $amount = null, ?CarbonInterface $periodEnd = null): Invoice
     {
-        return DB::transaction(function () use ($subscription, $plan, $cycle, $kind, $periodStart, $dueAt): Invoice {
+        return DB::transaction(function () use ($subscription, $plan, $cycle, $kind, $periodStart, $dueAt, $amount, $periodEnd): Invoice {
             Subscription::query()
                 ->where('tenant_id', $subscription->tenant_id)
                 ->lockForUpdate()
@@ -97,12 +154,12 @@ final class InvoiceIssuer
                 'plan_name' => $plan->name,
                 'billing_cycle' => $cycle,
                 'kind' => $kind,
-                'amount' => $plan->priceFor($cycle),
+                'amount' => $amount ?? $plan->priceFor($cycle),
                 'status' => InvoiceStatus::Unpaid,
                 'issued_at' => $today,
                 'due_at' => $dueAt,
                 'period_start' => $periodStart,
-                'period_end' => $periodStart->copy()->addMonthsNoOverflow($cycle->months()),
+                'period_end' => $periodEnd ?? $periodStart->copy()->addMonthsNoOverflow($cycle->months()),
             ]);
         });
     }

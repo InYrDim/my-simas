@@ -68,7 +68,7 @@ final class TenantSubscriptionController
 
         return $this->attempt(
             fn () => $this->subscriptions->changePlan($this->subscriptionOf($tenant), $data['plan']),
-            'Paket diganti.',
+            'Paket diganti langsung tanpa tagihan.',
         );
     }
 

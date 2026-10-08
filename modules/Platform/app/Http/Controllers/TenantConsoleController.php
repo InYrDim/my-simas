@@ -18,6 +18,7 @@ use Modules\Platform\App\Domain\Models\Plan;
 use Modules\Platform\App\Domain\Models\Subscription;
 use Modules\Platform\App\Domain\Models\SubscriptionStatus;
 use Modules\Platform\App\Domain\Models\Tenant;
+use Modules\Platform\App\Domain\Models\TenantModules as TenantModuleFlag;
 use Modules\Platform\App\Domain\Models\TenantStatus;
 use Modules\Platform\App\Http\Support\ConsoleResources;
 use Modules\Platform\App\Infrastructure\Modules\ModuleFlagManager;
@@ -238,9 +239,15 @@ final class TenantConsoleController
                 continue;
             }
 
-            in_array($key, $wanted, true)
-                ? $this->flags->enable($tenant->id, $key)
-                : $this->flags->disable($tenant->id, $key);
+            $want = in_array($key, $wanted, true);
+
+            if ($want === $this->tenantModules->isEnabled($key, $tenant->id)) {
+                continue;
+            }
+
+            $want
+                ? $this->flags->enable($tenant->id, $key, null, TenantModuleFlag::SOURCE_MANUAL)
+                : $this->flags->disable($tenant->id, $key, TenantModuleFlag::SOURCE_MANUAL);
         }
 
         return back()->with('status', 'Modul tenant disimpan.');
