@@ -10,6 +10,7 @@ use Modules\Platform\App\Contracts\ModuleRegistry;
 use Modules\Platform\App\Contracts\PermissionRegistry;
 use Modules\Platform\App\Contracts\SchoolSessionOpener;
 use Modules\Platform\App\Contracts\TenantApplications;
+use Modules\Platform\App\Contracts\TenantBilling;
 use Modules\Platform\App\Contracts\TenantCache;
 use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Contracts\TenantDirectory;
@@ -26,6 +27,7 @@ use Modules\Platform\App\Http\Middleware\EnsureModuleActive;
 use Modules\Platform\App\Http\Middleware\ResolveTenant;
 use Modules\Platform\App\Infrastructure\Billing\BillingNotifier;
 use Modules\Platform\App\Infrastructure\Billing\BillingSummary;
+use Modules\Platform\App\Infrastructure\Billing\DefaultTenantBilling;
 use Modules\Platform\App\Infrastructure\Billing\InvoiceIssuer;
 use Modules\Platform\App\Infrastructure\Billing\ManualTransferGateway;
 use Modules\Platform\App\Infrastructure\Billing\PaymentGateway;
@@ -161,6 +163,10 @@ class PlatformServiceProvider extends ServiceProvider
         $this->app->singleton(SubscriptionManager::class);
         $this->app->singleton(BillingSummary::class);
 
+        // The school's own door to its subscription (plan, usage, invoices,
+        // subscribing, paying); the account panels in Shared read it.
+        $this->app->singleton(TenantBilling::class, DefaultTenantBilling::class);
+
         // WhatsApp through the provider's OpenWA gateway: the school-side
         // contract. Requests, approval and the gateway client stay internal.
         $this->app->singleton(WhatsappChannel::class, DefaultWhatsappChannel::class);
@@ -201,7 +207,21 @@ class PlatformServiceProvider extends ServiceProvider
         $this->registerQueueContext();
         $this->registerInertiaPagePaths();
         $this->registerUsageMeters();
+        $this->registerPermissions();
         $this->registerBillingNoticeListener();
+    }
+
+    /**
+     * Who of a school may see its subscription and who may act on it
+     * (subscribe, change plan, pay, download an invoice). The school admin
+     * holds both by default (Identity's roles.php).
+     */
+    protected function registerPermissions(): void
+    {
+        $this->app->make(PermissionRegistry::class)->register('platform', [
+            'platform.billing.view',
+            'platform.billing.pay',
+        ]);
     }
 
     /**

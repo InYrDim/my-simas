@@ -37,6 +37,8 @@ return [
             'ppdb.applicants.manage',
             'ppdb.selection.manage',
             'ppdb.settings.manage',
+            'platform.billing.view',
+            'platform.billing.pay',
         ],
     ],
 

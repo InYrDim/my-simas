@@ -12,6 +12,7 @@ use Modules\Platform\App\Contracts\PermissionRegistry;
 use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Contracts\TenantModules;
 use Modules\Platform\App\Contracts\TenantNavigation;
+use Modules\Platform\App\Http\Support\SchoolBillingPayload;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -21,6 +22,8 @@ use Symfony\Component\HttpFoundation\Response;
  * - `modules`: active module keys for the current tenant
  * - `tenantNav`: sidebar entries the signed-in user may see (lazy)
  * - `abilities`: permission name => allowed for the signed-in user (lazy)
+ * - `billing`: the school's subscription for the account panels (optional:
+ *   only sent when a partial reload asks for it)
  *
  * Runs AFTER ResolveTenant (reads its context) and BEFORE
  * HandleInertiaRequests (whose share() merges with these props).
@@ -48,6 +51,9 @@ final class ShareTenantContext
             // Lazy: the Gate needs the signed-in user, resolved at render.
             'tenantNav' => fn (): array => $this->navigation->forCurrentUser(),
             'abilities' => fn (): array => $this->sharedAbilities(),
+            // Optional: the account panels ask for it when they open, so no
+            // page pays for the billing queries.
+            'billing' => Inertia::optional(fn (): ?array => $this->sharedBilling()),
         ]);
 
         return $next($request);
@@ -81,6 +87,21 @@ final class ShareTenantContext
         ksort($abilities);
 
         return $abilities;
+    }
+
+    /**
+     * The school's subscription for the account panels, only for someone
+     * who may see it. See SchoolBillingPayload.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function sharedBilling(): ?array
+    {
+        if ($this->context->id() === null || ! Auth::check()) {
+            return null;
+        }
+
+        return app(SchoolBillingPayload::class)->build();
     }
 
     /**

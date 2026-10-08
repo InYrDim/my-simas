@@ -342,10 +342,12 @@ function ConfirmPaymentForm({
     invoice: ConsoleInvoice;
     onDone: () => void;
 }) {
+    const reported = invoice.reportedTransfer ?? null;
+
     const form = useForm({
         method: 'bank_transfer',
-        reference: '',
-        paid_on: todayIso(),
+        reference: reported?.reference ?? '',
+        paid_on: reported?.transferredOn ?? todayIso(),
         note: '',
     });
 
@@ -368,6 +370,18 @@ function ConfirmPaymentForm({
                     diterima.
                 </DialogDescription>
             </DialogHeader>
+
+            {reported !== null && (
+                <p className="mt-4 border border-border bg-muted px-3 py-2 text-sm">
+                    Sekolah melaporkan transfer{' '}
+                    {formatDate(reported.transferredOn)} lewat {reported.bank}{' '}
+                    atas nama {reported.senderName}
+                    {reported.reference
+                        ? `, referensi ${reported.reference}`
+                        : ''}
+                    . Cocokkan dengan mutasi rekening sebelum mengonfirmasi.
+                </p>
+            )}
 
             <FieldGroup className="my-5">
                 <Field data-invalid={!!form.errors.method}>

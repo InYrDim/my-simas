@@ -9,10 +9,8 @@ import {
     ReceiptTextIcon,
 } from 'lucide-react';
 import { useState } from 'react';
-import type { ReactNode } from 'react';
 
 import { Avatar, AvatarFallback } from '@shared/components/ui/avatar';
-import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
 import {
     Dialog,
@@ -31,25 +29,13 @@ import {
     DropdownMenuTrigger,
 } from '@shared/components/ui/dropdown-menu';
 import { SidebarMenuButton } from '@shared/components/ui/sidebar';
+import { useCan } from '@shared/hooks/useCan';
+
+import InvoicesPanel from './account/InvoicesPanel';
+import { Row } from './account/PanelParts';
+import PlanPanel from './account/PlanPanel';
 
 type PanelKey = 'plan' | 'invoices' | 'help' | 'about';
-
-/*
- * Sample content: the account panels are a mockup, nothing is persisted
- * and the figures are placeholders until Platform exposes real billing.
- */
-const usage = [
-    { label: 'Siswa', used: 642, limit: 1000 },
-    { label: 'Akun staf', used: 38, limit: 60 },
-    { label: 'Penyimpanan (GB)', used: 3, limit: 10 },
-];
-
-const invoices = [
-    { number: 'INV-2026-0010', date: '1 Oktober 2026', status: 'unpaid' },
-    { number: 'INV-2026-0009', date: '1 September 2026', status: 'paid' },
-    { number: 'INV-2026-0008', date: '1 Agustus 2026', status: 'paid' },
-    { number: 'INV-2026-0007', date: '1 Juli 2026', status: 'paid' },
-] as const;
 
 const helpTopics = [
     [
@@ -92,100 +78,6 @@ function initials(name: string): string {
         .slice(0, 2)
         .map((part) => part[0].toUpperCase())
         .join('');
-}
-
-function Row({ label, children }: { label: string; children: ReactNode }) {
-    return (
-        <div className="flex items-baseline justify-between gap-6 border-b border-border py-2.5 text-sm last:border-b-0">
-            <dt className="text-muted-foreground">{label}</dt>
-            <dd className="text-right text-foreground">{children}</dd>
-        </div>
-    );
-}
-
-function PlanPanel() {
-    return (
-        <div className="flex flex-col gap-5">
-            <div className="flex items-start justify-between gap-4">
-                <div>
-                    <p className="text-base font-semibold">Sekolah Standar</p>
-                    <p className="text-muted-foreground">
-                        Rp 750.000 per bulan
-                    </p>
-                </div>
-                <Badge>Berlangganan</Badge>
-            </div>
-
-            <div className="flex flex-col gap-4">
-                {usage.map((row) => {
-                    const percent = Math.round((row.used / row.limit) * 100);
-
-                    return (
-                        <div key={row.label}>
-                            <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">
-                                    {row.label}
-                                </span>
-                                <span className="font-medium">
-                                    {row.used} / {row.limit}
-                                </span>
-                            </div>
-                            <div
-                                role="progressbar"
-                                aria-label={row.label}
-                                aria-valuenow={row.used}
-                                aria-valuemin={0}
-                                aria-valuemax={row.limit}
-                                className="mt-1.5 h-1.5 bg-muted"
-                            >
-                                <div
-                                    className={
-                                        percent >= 90
-                                            ? 'h-full bg-accent'
-                                            : 'h-full bg-primary'
-                                    }
-                                    style={{ width: `${percent}%` }}
-                                />
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-
-            <dl className="border-t border-border">
-                <Row label="Modul aktif">Core · Absensi</Row>
-                <Row label="Perpanjangan berikutnya">1 November 2026</Row>
-            </dl>
-        </div>
-    );
-}
-
-function InvoicesPanel() {
-    return (
-        <ul className="flex flex-col divide-y divide-border">
-            {invoices.map((invoice) => (
-                <li
-                    key={invoice.number}
-                    className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"
-                >
-                    <div>
-                        <p className="font-mono text-xs">{invoice.number}</p>
-                        <p className="text-xs text-muted-foreground">
-                            {invoice.date} · Rp 750.000
-                        </p>
-                    </div>
-                    {invoice.status === 'unpaid' ? (
-                        <div className="flex items-center gap-3">
-                            <Badge variant="outline">Belum dibayar</Badge>
-                            <Button size="sm">Bayar</Button>
-                        </div>
-                    ) : (
-                        <Badge>Lunas</Badge>
-                    )}
-                </li>
-            ))}
-        </ul>
-    );
 }
 
 function HelpPanel() {
@@ -244,6 +136,8 @@ export default function AccountMenu({
     changePasswordHref: string;
 }) {
     const [open, setOpen] = useState<PanelKey | null>(null);
+    const can = useCan();
+    const canSeeBilling = can('platform.billing.view');
     const panel = open === null ? null : panels[open];
     // An account without an email signs in by username (NIS, NIP).
     const identity = user.email ?? user.username ?? '';
@@ -283,17 +177,25 @@ export default function AccountMenu({
                         </span>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuGroup>
-                        <DropdownMenuItem onSelect={() => setOpen('plan')}>
-                            <CreditCardIcon />
-                            Paket & Langganan
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => setOpen('invoices')}>
-                            <ReceiptTextIcon />
-                            Tagihan & Invoice
-                        </DropdownMenuItem>
-                    </DropdownMenuGroup>
-                    <DropdownMenuSeparator />
+                    {canSeeBilling && (
+                        <>
+                            <DropdownMenuGroup>
+                                <DropdownMenuItem
+                                    onSelect={() => setOpen('plan')}
+                                >
+                                    <CreditCardIcon />
+                                    Paket & Langganan
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onSelect={() => setOpen('invoices')}
+                                >
+                                    <ReceiptTextIcon />
+                                    Tagihan & Invoice
+                                </DropdownMenuItem>
+                            </DropdownMenuGroup>
+                            <DropdownMenuSeparator />
+                        </>
+                    )}
                     <DropdownMenuGroup>
                         <DropdownMenuItem onSelect={() => setOpen('help')}>
                             <CircleHelpIcon />
@@ -329,15 +231,15 @@ export default function AccountMenu({
                 open={open !== null}
                 onOpenChange={(next) => !next && setOpen(null)}
             >
-                <DialogContent className="sm:max-w-lg">
+                <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
                     <DialogHeader>
                         <DialogTitle>{panel?.title}</DialogTitle>
                         <DialogDescription>
                             {panel?.description}
                         </DialogDescription>
                     </DialogHeader>
-                    {open === 'plan' && <PlanPanel />}
-                    {open === 'invoices' && <InvoicesPanel />}
+                    {open === 'plan' && <PlanPanel active />}
+                    {open === 'invoices' && <InvoicesPanel active />}
                     {open === 'help' && <HelpPanel />}
                     {open === 'about' && (
                         <AboutPanel
@@ -345,9 +247,11 @@ export default function AccountMenu({
                             schoolCode={schoolCode}
                         />
                     )}
-                    <p className="text-xs text-muted-foreground">
-                        Tampilan contoh — data belum tersimpan.
-                    </p>
+                    {(open === 'help' || open === 'about') && (
+                        <p className="text-xs text-muted-foreground">
+                            Tampilan contoh — isi bantuan dan versi belum final.
+                        </p>
+                    )}
                 </DialogContent>
             </Dialog>
         </>

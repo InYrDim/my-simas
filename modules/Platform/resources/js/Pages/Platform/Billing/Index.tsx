@@ -71,9 +71,8 @@ export default function BillingIndex({
                     <AlertDescription>
                         Penangguhan otomatis ditahan: {daily.blocked.count}{' '}
                         sekolah melewati batas aman sekaligus. Periksa daftar
-                        dengan <code>php artisan billing:daily --dry-run</code>
-                        , lalu jalankan dengan <code>--force</code> bila
-                        benar.
+                        dengan <code>php artisan billing:daily --dry-run</code>,
+                        lalu jalankan dengan <code>--force</code> bila benar.
                     </AlertDescription>
                 </Alert>
             )}

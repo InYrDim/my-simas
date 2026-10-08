@@ -14,6 +14,8 @@ use Modules\Platform\App\Domain\Models\BillingNotice;
 use Modules\Platform\App\Domain\Models\BillingNoticeStatus;
 use Modules\Platform\App\Domain\Models\Invoice;
 use Modules\Platform\App\Domain\Models\InvoiceStatus;
+use Modules\Platform\App\Domain\Models\Payment;
+use Modules\Platform\App\Domain\Models\PaymentStatus;
 use Modules\Platform\App\Domain\Models\ProviderUser;
 use Modules\Platform\App\Domain\Support\BillingClock;
 use Modules\Platform\App\Http\Support\ConsoleResources;
@@ -70,6 +72,14 @@ final class InvoiceController
             ->withQueryString()
             ->through(fn (Invoice $invoice): array => ConsoleResources::invoice($invoice));
 
+        // What a school said about a transfer it made, from its waiting payment.
+        $reported = Payment::query()
+            ->whereIn('invoice_id', $invoices->getCollection()->pluck('id'))
+            ->where('status', PaymentStatus::Pending)
+            ->orderBy('id')
+            ->get()
+            ->keyBy('invoice_id');
+
         $notices = BillingNotice::query()
             ->whereIn('invoice_id', $invoices->getCollection()->pluck('id'))
             ->orderByDesc('id')
@@ -78,6 +88,7 @@ final class InvoiceController
 
         $invoices->through(fn (array $invoice): array => [
             ...$invoice,
+            'reportedTransfer' => $reported->get($invoice['id'])?->meta['reported'] ?? null,
             'notices' => ($notices->get($invoice['id']) ?? collect())
                 ->map(fn (BillingNotice $notice): array => [
                     'id' => $notice->id,

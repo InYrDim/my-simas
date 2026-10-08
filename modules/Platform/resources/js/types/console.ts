@@ -82,13 +82,21 @@ export interface ConsoleInvoice {
     periodEnd: string;
     /** Delivery history, newest first; only on the invoice list page. */
     notices?: BillingNoticeRow[];
+    /** What the school said about a transfer it made, if it did. */
+    reportedTransfer?: {
+        transferredOn: string;
+        bank: string;
+        senderName: string;
+        reference: string | null;
+    } | null;
 }
 
 export interface BillingNoticeRow {
     id: number;
     kind:
         | 'invoice_issued'
-        | 'due_reminder' | 'trial_ending'
+        | 'due_reminder'
+        | 'trial_ending'
         | 'overdue_reminder'
         | 'payment_received'
         | 'access_stopped'

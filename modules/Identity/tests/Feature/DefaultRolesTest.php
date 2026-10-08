@@ -52,7 +52,7 @@ it('seeds the default roles for a new tenant via TenantCreated', function () {
         ->and($roles)->toContain('siswa');
 });
 
-it('gives admin-sekolah the identity.users, core, attendance and ppdb permission sets and the others the view and recording permissions', function () {
+it('gives admin-sekolah the identity.users, core, attendance, ppdb and billing permission sets and the others the view and recording permissions', function () {
     /** @var Tenant $tenant */
     $tenant = TenantFactory::new()->create();
 
@@ -79,6 +79,8 @@ it('gives admin-sekolah the identity.users, core, attendance and ppdb permission
         'identity.users.sendReset',
         'identity.users.update',
         'identity.users.view',
+        'platform.billing.pay',
+        'platform.billing.view',
         'ppdb.applicants.manage',
         'ppdb.selection.manage',
         'ppdb.settings.manage',
