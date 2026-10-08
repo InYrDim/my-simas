@@ -36,9 +36,9 @@ it('logs in without a submitted school code after visiting the school address', 
 });
 
 it('adopts the school from its slug in the login address', function () {
-    TenantFactory::new()->create(['slug' => 'sekolah-demo']);
+    TenantFactory::new()->create(['slug' => '123456']);
 
-    get('/sekolah-demo/login')
+    get('/123456/login')
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page->where('schoolLinked', true));
 });
