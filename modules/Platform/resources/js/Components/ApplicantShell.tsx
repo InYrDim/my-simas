@@ -140,8 +140,9 @@ function MobileHeader({ step }: { step?: number }) {
 /**
  * Frame for the applicant pages (daftar, masuk, verifikasi, onboarding).
  * Desktop: a two-column screen, side panel left and the page right.
- * Mobile: one column, brand and progress on top, the page full width with
- * no card around it. No navigation — each page points at one action.
+ * Mobile: one column, brand and progress on top, the page centred in the
+ * screen with no card around it. No navigation — each page points at one
+ * action.
  */
 export default function ApplicantShell({
     title,
@@ -166,7 +167,7 @@ export default function ApplicantShell({
 
             <SidePanel step={step} />
 
-            <main className="flex flex-col gap-8 px-4 py-6 sm:px-8 sm:py-10 lg:items-center lg:justify-center lg:px-12 lg:py-14">
+            <main className="flex flex-col items-center justify-center gap-8 px-4 py-6 sm:px-8 sm:py-10 lg:px-12 lg:py-14">
                 <div className={cn('flex w-full flex-col gap-8', width)}>
                     <MobileHeader step={step} />
 
