@@ -97,12 +97,12 @@ Legenda: ⬜ belum · 🟡 berjalan · ✅ selesai. Berhenti di antara tahap dan
 | Tahap | Cakupan | Status | Catatan |
 | --- | --- | --- | --- |
 | 1 | Fondasi: skema, `BillingClock`, config, plan (`limits`, `is_public`) di console | ✅ | Tiga migrasi, `BillingClock` di `Domain/Support`, plan publik/khusus, batas di console dan pemilih plan. Suite Platform 335/335 hijau. `BillingClock` pindah dari `Infrastructure/Billing` ke `Domain/Support` (model Domain memakainya) |
-| 2 | Pembayaran asinkron, `settle()`, satu invoice unpaid, form konfirmasi manual | ⬜ | Setelah 1 |
+| 2 | Pembayaran asinkron, `settle()`, satu invoice unpaid, form konfirmasi manual | ✅ | `payments`, `ManualTransferGateway`, `settle()` idempoten dengan kunci baris invoice, `InvoiceIssuer::issueActivation/issueRenewal`, form konfirmasi di `Invoices.tsx`. Dikerjakan di worktree terpisah, digabung `ba669e5`. Platform 369 tes hijau |
 | 3 | Flag modul bersumber dan ganti plan (upgrade prorata, downgrade terjadwal) | ⬜ | Setelah 2 |
 | 4 | Siklus hidup: tenggang, suspend bersebab, halaman "Akses dihentikan", `billing_exempt` | ⬜ | Setelah 2 |
 | 5 | Dokumen invoice PDF, email billing, catatan pengiriman, kontak tagihan | ⬜ | Setelah 1 (memakai `settle()` dari 2 untuk kuitansi) |
 | 6 | `billing:daily` dengan pengaman dan penanda cron | ⬜ | Setelah 2, 4, 5 |
-| 7 | Pemakaian dan batas plan (registry, meter, tampilan console) | ⬜ | Setelah 1; bebas dari 2–6 |
+| 7 | Pemakaian dan batas plan (registry, meter, tampilan console) | ✅ | `UsageMeters`/`TenantUsage`/`UsageLine`, meter `students` (Core), `staff_accounts` (Identity), `storage` (Platform), panel Pemakaian dan tanda melebihi batas di console. Dikerjakan paralel di worktree, digabung `ef5e007`. Core 550 + Identity 163 + Platform 369 tes hijau |
 | 8 | Sisi sekolah: `TenantBilling`, izin, prop `billing`, `AccountMenu` nyata | ⬜ | Setelah 2, 3, 5, 7 |
 | 9 | Dokumentasi, pemeriksaan batas modul, penutupan | ⬜ | Terakhir |
 
@@ -125,14 +125,14 @@ Tahap 2, 5 (sebagian), dan 7 saling bebas setelah Tahap 1 dan boleh dikerjakan p
 **Selesai bila:** `php artisan migrate` berjalan bersih, provider dapat mengisi batas dan visibilitas plan di console, dan pemilih plan hanya menampilkan plan publik. Bukti: `php artisan test --compact modules/Platform` → hijau; `npm run types:check` → tanpa galat.
 
 ### Tahap 2 — Pembayaran asinkron
-- [ ] Migrasi `payments` (invoice_id, tenant_id, amount, method, status, reference, gateway, external_id, paid_on, paid_at, confirmed_by, note, meta, expires_at; unik `gateway`+`external_id`) — `modules/Platform/database/migrations/0010_01_01_000003_create_payments_table.php` (baru)
-- [ ] Model `Payment`, enum `PaymentStatus`, `PaymentFactory` — `modules/Platform/app/Domain/Models/`, `modules/Platform/database/factories/` (baru)
-- [ ] Seam: ganti `PaymentGateway::charge()` dengan `initiate(Invoice): Payment`; `ManualTransferGateway` (instruksi dari `config('billing.issuer')`); hapus `AlwaysSucceedsPaymentGateway`; ikat di provider — `modules/Platform/app/Infrastructure/Billing/PaymentGateway.php`, `ManualTransferGateway.php` (baru), `modules/Platform/app/Infrastructure/Providers/PlatformServiceProvider.php`
-- [ ] `PaymentOutcome` (baru) dan `SubscriptionManager::settle(Payment, PaymentOutcome)`: transaksi, `lockForUpdate` pada invoice, no-op bila sudah `paid`, tolak nominal tak pas, periode dihitung saat bayar, ambil plan/siklus dari snapshot invoice; hapus `payInvoice`
-- [ ] `InvoiceIssuer`: satu invoice `unpaid` per langganan (pakai ulang bila plan+siklus sama, void bila beda), kolom `kind`, jatuh tempo perpanjangan = akhir periode (aktivasi = terbit + 7 hari)
-- [ ] Console: ganti aksi "Tandai lunas" dengan form konfirmasi (metode, referensi wajib untuk transfer, tanggal bayar tidak di masa depan, catatan); route `billing.invoices.confirm`; regenerasi Wayfinder — `modules/Platform/app/Http/Controllers/InvoiceController.php`, `modules/Platform/routes/web.php`, `modules/Platform/resources/js/Pages/Platform/Billing/Invoices.tsx`
-- [ ] Test double: `FakePaymentGateway` dengan hasil yang bisa diatur — `modules/Platform/tests/Support/FakePaymentGateway.php` (baru)
-- [ ] Tes: konfirmasi dua kali memperpanjang sekali; nominal salah ditolak; `external_id` ganda ditolak; failed/expired tidak mengubah invoice; satu invoice unpaid per langganan; periode lanjut dari akhir periode bila aktif; form konfirmasi mencatat pengonfirmasi — `modules/Platform/tests/Feature/BillingSubscriptionTest.php` (sesuaikan), `modules/Platform/tests/Feature/PaymentSettleTest.php` (baru)
+- [x] Migrasi `payments` (invoice_id, tenant_id, amount, method, status, reference, gateway, external_id, paid_on, paid_at, confirmed_by, note, meta, expires_at; unik `gateway`+`external_id`) — `modules/Platform/database/migrations/0010_01_01_000003_create_payments_table.php` (baru)
+- [x] Model `Payment`, enum `PaymentStatus`, `PaymentFactory` — `modules/Platform/app/Domain/Models/`, `modules/Platform/database/factories/` (baru)
+- [x] Seam: ganti `PaymentGateway::charge()` dengan `initiate(Invoice): Payment`; `ManualTransferGateway` (instruksi dari `config('billing.issuer')`); hapus `AlwaysSucceedsPaymentGateway`; ikat di provider — `modules/Platform/app/Infrastructure/Billing/PaymentGateway.php`, `ManualTransferGateway.php` (baru), `modules/Platform/app/Infrastructure/Providers/PlatformServiceProvider.php`
+- [x] `PaymentOutcome` (baru) dan `SubscriptionManager::settle(Payment, PaymentOutcome)`: transaksi, `lockForUpdate` pada invoice, no-op bila sudah `paid`, tolak nominal tak pas, periode dihitung saat bayar, ambil plan/siklus dari snapshot invoice; hapus `payInvoice`
+- [x] `InvoiceIssuer`: satu invoice `unpaid` per langganan (pakai ulang bila plan+siklus sama, void bila beda), kolom `kind`, jatuh tempo perpanjangan = akhir periode (aktivasi = terbit + 7 hari)
+- [x] Console: ganti aksi "Tandai lunas" dengan form konfirmasi (metode, referensi wajib untuk transfer, tanggal bayar tidak di masa depan, catatan); route `billing.invoices.confirm`; regenerasi Wayfinder — `modules/Platform/app/Http/Controllers/InvoiceController.php`, `modules/Platform/routes/web.php`, `modules/Platform/resources/js/Pages/Platform/Billing/Invoices.tsx`
+- [x] Test double: `FakePaymentGateway` dengan hasil yang bisa diatur — `modules/Platform/tests/Support/FakePaymentGateway.php` (baru)
+- [x] Tes: konfirmasi dua kali memperpanjang sekali; nominal salah ditolak; `external_id` ganda ditolak; failed/expired tidak mengubah invoice; satu invoice unpaid per langganan; periode lanjut dari akhir periode bila aktif; form konfirmasi mencatat pengonfirmasi — `modules/Platform/tests/Feature/BillingSubscriptionTest.php` (sesuaikan), `modules/Platform/tests/Feature/PaymentSettleTest.php` (baru)
 
 **Selesai bila:** provider mengonfirmasi pembayaran lewat form yang tercatat lengkap, dan konfirmasi ulang tidak mengubah apa pun. Bukti: `php artisan test --compact modules/Platform --filter=Payment` dan `--filter=BillingSubscription` → hijau.
 
@@ -180,12 +180,12 @@ Tahap 2, 5 (sebagian), dan 7 saling bebas setelah Tahap 1 dan boleh dikerjakan p
 **Selesai bila:** menjalankan `billing:daily` dua kali pada hari yang sama menghasilkan efek yang sama dengan sekali, dan console menunjukkan waktu jalan terakhir. Bukti: `php artisan test --compact modules/Platform --filter=BillingDaily` → hijau; `php artisan billing:daily --dry-run` → daftar rencana tanpa perubahan data.
 
 ### Tahap 7 — Pemakaian dan batas plan
-- [ ] Kontrak `UsageMeters` (daftar: key, label, unit, penghitung; sembunyikan meter modul nonaktif), `TenantUsage::forTenant($id)`, DTO `UsageLine` (state `ok`/`near` ≥ 90%/`over`) beserta implementasi internal dan ikatan — `modules/Platform/app/Contracts/UsageMeters.php` (baru), `modules/Platform/app/Contracts/TenantUsage.php` (baru), `modules/Platform/app/Contracts/DTOs/UsageLine.php` (baru), `modules/Platform/app/Infrastructure/Usage/` (baru), `PlatformServiceProvider.php`
-- [ ] Meter `storage` milik Platform: jumlah byte berkas di `tenants/{id}` pada disk privat, di-cache 15 menit lewat `TenantCache` — `modules/Platform/app/Infrastructure/Usage/StorageMeter.php` (baru)
-- [ ] Core mendaftarkan `students`; Identity mendaftarkan `staff_accounts` — `CoreServiceProvider.php`, `IdentityServiceProvider.php`
-- [ ] `isOverLimit(key)` dan `remaining(key)` di `TenantUsage` (tidak dipakai untuk memblokir)
-- [ ] Console: pemakaian di halaman detail tenant dan tanda "melebihi batas" di daftar — `TenantConsoleController.php`, `Tenants/Index.tsx`, `Tenants/Show.tsx`
-- [ ] Tes: semua siswa dihitung apa pun statusnya; akun staf mengecualikan `siswa` dan akun nonaktif, mencakup yang diundang; meter modul nonaktif tersembunyi; batas kosong = tanpa batas; isolasi antar tenant; cache penyimpanan — `modules/Platform/tests/Feature/TenantUsageTest.php` (baru), tes meter di `modules/Core/tests/Feature/` dan `modules/Identity/tests/Feature/`
+- [x] Kontrak `UsageMeters` (daftar: key, label, unit, penghitung; sembunyikan meter modul nonaktif), `TenantUsage::forTenant($id)`, DTO `UsageLine` (state `ok`/`near` ≥ 90%/`over`) beserta implementasi internal dan ikatan — `modules/Platform/app/Contracts/UsageMeters.php` (baru), `modules/Platform/app/Contracts/TenantUsage.php` (baru), `modules/Platform/app/Contracts/DTOs/UsageLine.php` (baru), `modules/Platform/app/Infrastructure/Usage/` (baru), `PlatformServiceProvider.php`
+- [x] Meter `storage` milik Platform: jumlah byte berkas di `tenants/{id}` pada disk privat, di-cache 15 menit lewat `TenantCache` — `modules/Platform/app/Infrastructure/Usage/StorageMeter.php` (baru)
+- [x] Core mendaftarkan `students`; Identity mendaftarkan `staff_accounts` — `CoreServiceProvider.php`, `IdentityServiceProvider.php`
+- [x] `isOverLimit(key)` dan `remaining(key)` di `TenantUsage` (tidak dipakai untuk memblokir)
+- [x] Console: pemakaian di halaman detail tenant dan tanda "melebihi batas" di daftar — `TenantConsoleController.php`, `Tenants/Index.tsx`, `Tenants/Show.tsx`
+- [x] Tes: semua siswa dihitung apa pun statusnya; akun staf mengecualikan `siswa` dan akun nonaktif, mencakup yang diundang; meter modul nonaktif tersembunyi; batas kosong = tanpa batas; isolasi antar tenant; cache penyimpanan — `modules/Platform/tests/Feature/TenantUsageTest.php` (baru), tes meter di `modules/Core/tests/Feature/` dan `modules/Identity/tests/Feature/`
 
 **Selesai bila:** console menampilkan pemakaian per sekolah dan menandai yang melebihi batas, tanpa memblokir apa pun. Bukti: `php artisan test --compact modules/Platform --filter=TenantUsage` → hijau; `composer deptrac` → tanpa pelanggaran.
 
@@ -259,6 +259,14 @@ Diisi selama eksekusi; dokumen ini hidup.
 - 2026-10-08 — Peran seeder: Pro memuat `ppdb` (keputusan #13), jadi `AttendanceForEverySchoolTest::lists Absensi in every seeded plan` diubah dari "semua plan identik" menjadi "semua plan memuat attendance, hanya Pro memuat ppdb" — perubahan sengaja.
 - 2026-10-08 — Form plan di console memakai kolom datar `limit_students`, `limit_staff_accounts`, `limit_storage_mb` (bukan array bersarang); controller menyusunnya menjadi `plans.limits` dan membuang yang kosong.
 - 2026-10-08 — Pendaftar hanya boleh memilih plan publik: `DefaultTenantApplications::assertPlanSelectable` mendapat `publicOnly` untuk jalur `submit`; provider tetap boleh memilih plan khusus saat menyetujui.
+- 2026-10-08 — **Tahap 2:** `PaymentGateway` kini hanya `initiate(Invoice): Payment`; `payments.gateway` berisi `manual_transfer` (atau `fake` di tes) sedangkan `payments.method` berisi `bank_transfer`/`cash`/`other` — tiket #5 memakai "method" untuk kunci gateway, plan punya kedua kolom.
+- 2026-10-08 — **Tahap 2:** `InvoiceIssuer::issue()` diganti `issueActivation()` dan `issueRenewal()`; dua `renew()` berturut-turut pada plan dan siklus sama memakai ulang satu invoice, jadi tes penomoran berurutan menyisipkan `changeCycle` di antaranya (tes dimodifikasi sengaja, tidak dihapus).
+- 2026-10-08 — **Tahap 2:** `ManualTransferGateway::initiate()` memakai ulang Payment manual `pending` yang terbuka dan menyimpan rekening dari `config('billing.issuer.bank')` di `meta.instructions`. `invoice.paid_at`/`payment.paid_at` = `now()`; `payment.paid_on` = tanggal yang diisi provider (default `BillingClock::today()`).
+- 2026-10-08 — **Tahap 2:** tepi `settle()`: Payment `pending` yang diselesaikan pada invoice yang sudah `paid` dikembalikan apa adanya tanpa galat; invoice `void` melempar `BillingException`; hasil `failed`/`expired` yang terlambat tidak membatalkan Payment `paid`; mengonfirmasi invoice yang bukan `unpaid` lewat console memberi galat form `billing`.
+- 2026-10-08 — **Tahap 2:** `Tenants/Show.tsx` ikut diubah (impor aksi `pay` yang dihapus dan tombol "Tandai lunas" diganti tautan ke halaman invoice terfilter) — di luar daftar tugas tetapi build gagal tanpanya.
+- 2026-10-08 — **Tahap 7:** meter `storage` melaporkan MB bulat ke atas (unit `MB`, kunci batas `storage_mb`); byte mentah di-cache 15 menit. `UsageMeters::register(module, key, label, unit, counter, ?limitKey)` menerima kunci batas opsional. Meter milik `platform` tidak dicek terhadap modul aktif (`platform` bukan modul terdaftar). `near` = pakai ≥ 90% batas (termasuk tepat di batas), `over` = pakai > batas; `remaining` minimal 0 dan null tanpa batas.
+- 2026-10-08 — **Tahap 7:** akun staf mengikuti resolusi #7: pengguna aktif dikecualikan hanya bila `siswa` satu-satunya perannya; pengguna dengan `siswa` plus peran lain, atau tanpa peran, dihitung staf. Dihitung dengan `whereDoesntHave('roles', ...)` karena scope `withoutRole` Spatie melempar galat bila peran tidak ada.
+- 2026-10-08 — **Tahap 7:** daftar tenant menghitung pemakaian per tenant per halaman (15); hanya penyimpanan yang di-cache. Tes Platform memakai meter palsu (bukan impor Core) agar Platform tidak bergantung pada Core.
 
 ### Temuan
 - Sebelum menulis: `payInvoice` mengembalikan plan lama (jebakan 1) dan `syncModules()` menimpa modul manual (jebakan 2); keduanya ditutup di Tahap 2–3.
@@ -266,6 +274,11 @@ Diisi selama eksekusi; dokumen ini hidup.
 - `composer deptrac` sudah gagal sebelum fase ini: `App\Console\Commands\DemoSeedCommand` bergantung pada `Database\Seeders\DemoSchoolSeeder` (1 pelanggaran, tidak terkait billing; terbukti dengan `git stash`). Tidak diperbaiki di fase ini; Tahap 9 jangan menganggapnya regresi.
 - `npm run check:fix` memformat ulang berkas di luar yang disentuh (`Attendance/Monthly.tsx`, `Core/Integration/Whatsapp/Index.tsx`); dikembalikan dengan `git checkout`. Gunakan pemeriksaan tanpa `--fix` atau periksa `git status` sesudahnya.
 - Form plan di console kini punya sekitar 11 kolom di dalam modal (batas aturan UX ≈ 10): ditoleransi karena semuanya satu entitas master data; pertimbangkan memecahnya bila ditambah lagi.
+- Agen dengan `isolation: "worktree"` memulai dari commit lama (`88f33c0`, bukan HEAD branch fitur) — kedua agen harus `git reset --hard` ke commit Tahap 1 sebelum bekerja. Cek basis (`git merge-base --is-ancestor`) sebelum menggabung.
+- Worktree tidak membawa berkas yang di-ignore: `vendor/` (jangan junction — autoloader memuat kode repo utama), `.env`, `AGENTS.md`, dan `public/build`; tes yang merender halaman Inertia butuh `public/build/manifest.json` (salin atau `npm run build`). `npm install` menulis ulang `package-lock.json`: kembalikan sebelum commit.
+- Berkas Wayfinder hasil generate (`resources/js/actions`, `resources/js/routes`) di-ignore git: jalankan `php artisan wayfinder:generate` setelah menambah rute, sebelum `npm run types:check`.
+- `pint --test` pada pohon gabungan menandai satu berkas di luar fase ini: `modules/Attendance/app/Http/Controllers/MyScheduleController.php` (impor tak terpakai) — sudah ada sebelumnya, tidak diperbaiki.
+- Modul Attendance dan Ppdb belum dijalankan setelah Tahap 1, 2, dan 7 (hanya Platform, Core, Identity, arsitektur).
 
 ### Hasil akhir
 Diisi saat semua tahap selesai.
