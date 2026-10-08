@@ -297,6 +297,8 @@ Diisi selama eksekusi; dokumen ini hidup.
 - 2026-10-08 — **Tahap 9:** `AGENTS.md` ternyata dilacak git (baris `# /AGENTS.md` di `.gitignore` dikomentari, bertentangan dengan komentar di dalam berkasnya sendiri), jadi perubahannya ikut di-commit; plan sebelumnya menyebutnya tidak dilacak. Pernyataan "`ppdb` belum masuk plan mana pun" diperbarui di `AGENTS.md`, `docs/architecture/modular-monolith.md`, dan `modules/Ppdb/CONTRACT.md`.
 - 2026-10-08 — **Tahap 9:** `composer types:check` (PHPStan) menemukan 6 galat di berkas fase ini (`?->` yang tak perlu sebelum `??`, `list<>` yang tak terjamin) dan semuanya diperbaiki; 6 galat lain ada di berkas yang tidak disentuh fase ini.
 
+- 2026-10-08 — **Tambahan setelah fase:** banner masa uji coba di semua halaman sekolah (permintaan pemilik produk). Prop bersama lazy `trial` (`TrialNoticePayload`, satu query) untuk semua pengguna sekolah yang masuk selama trial atau tenggang setelahnya; komponen `TrialBanner` di `TenantShell`; tombol "Lihat paket" hanya untuk pemegang `platform.billing.view` dan membuka panel Paket & Langganan (state panel di `AccountMenu` kini bisa dikendalikan dari luar). Guru melihat banner tanpa tombol. Tes: `TrialNoticeTest` (8) dan 4 skenario baru di `tests/Browser/BillingPanelsTest.php`.
+
 ### Temuan
 - Sebelum menulis: `payInvoice` mengembalikan plan lama (jebakan 1) dan `syncModules()` menimpa modul manual (jebakan 2); keduanya ditutup di Tahap 2–3.
 - Event `JobProcessing` tidak dapat membatalkan job; mekanisme pelepasan pekerjaan sekolah yang disuspend ditentukan lewat spike di Tahap 4.

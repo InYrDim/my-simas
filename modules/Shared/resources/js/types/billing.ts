@@ -15,6 +15,18 @@ export type BillingState =
     | 'exempt'
     | 'none';
 
+/**
+ * The shared Inertia prop `trial`, present only while the school is on its
+ * trial (`trial`) or just after it ended and access still runs
+ * (`trial_expired`). `daysLeft` is negative once the trial is over.
+ */
+export interface TrialNotice {
+    state: 'trial' | 'trial_expired';
+    endsOn: string;
+    daysLeft: number;
+    accessEndsOn: string | null;
+}
+
 export type BillingCycleKey = 'monthly' | 'yearly';
 
 export interface UsageLine {

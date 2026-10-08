@@ -13,6 +13,7 @@ use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Contracts\TenantModules;
 use Modules\Platform\App\Contracts\TenantNavigation;
 use Modules\Platform\App\Http\Support\SchoolBillingPayload;
+use Modules\Platform\App\Http\Support\TrialNoticePayload;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -24,6 +25,8 @@ use Symfony\Component\HttpFoundation\Response;
  * - `abilities`: permission name => allowed for the signed-in user (lazy)
  * - `billing`: the school's subscription for the account panels (optional:
  *   only sent when a partial reload asks for it)
+ * - `trial`: the facts for the trial banner, null unless the school is on
+ *   its trial or in the grace period after it (lazy)
  *
  * Runs AFTER ResolveTenant (reads its context) and BEFORE
  * HandleInertiaRequests (whose share() merges with these props).
@@ -54,6 +57,8 @@ final class ShareTenantContext
             // Optional: the account panels ask for it when they open, so no
             // page pays for the billing queries.
             'billing' => Inertia::optional(fn (): ?array => $this->sharedBilling()),
+            // Lazy: the trial banner shows on every school page while it lasts.
+            'trial' => fn (): ?array => $this->sharedTrial(),
         ]);
 
         return $next($request);
@@ -87,6 +92,21 @@ final class ShareTenantContext
         ksort($abilities);
 
         return $abilities;
+    }
+
+    /**
+     * The trial banner's facts, for any signed-in user of the school. See
+     * TrialNoticePayload.
+     *
+     * @return array{state: string, endsOn: string, daysLeft: int, accessEndsOn: string|null}|null
+     */
+    private function sharedTrial(): ?array
+    {
+        if ($this->context->id() === null || ! Auth::check()) {
+            return null;
+        }
+
+        return app(TrialNoticePayload::class)->build();
     }
 
     /**

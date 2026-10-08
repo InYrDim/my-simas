@@ -342,7 +342,12 @@ prop, `billing` (Fase 17), is OPTIONAL (`Inertia::optional`): the account
 panels ask for it with a partial reload when they open, and it carries the
 school's subscription plus the URL of every billing action (built by
 `Http/Support/SchoolBillingPayload`, only for `platform.billing.view`;
-Shared may not import Platform, so it gets its links from this prop). Hooks
+Shared may not import Platform, so it gets its links from this prop). A
+fourth prop, `trial`, is lazy and goes to every signed-in user of the school
+while it is on its trial or in the grace period after it (`state`, `endsOn`,
+`daysLeft`, `accessEndsOn`; null otherwise, and for an exempt school); the
+trial banner in Shared's `TenantShell` reads it (`Http/Support/TrialNoticePayload`).
+Hooks
 live in Shared (`useTenant()`, `useModules()`, `hasModule(key)`), types
 in `modules/Shared/resources/js/types/tenant.ts` re-exported by root
 `resources/js/types`.

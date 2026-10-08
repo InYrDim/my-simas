@@ -107,3 +107,52 @@ it('does not offer the billing panels to a teacher', function () {
         ->assertDontSee('Tagihan & Invoice')
         ->assertNoJavaScriptErrors();
 });
+
+it('shows a trial school the days left and opens the plan panel from the banner', function () {
+    [$page, $tenant] = schoolMemberSignsIn();
+
+    PlanFactory::new()->create(['key' => 'starter', 'name' => 'Paket Contoh', 'price_monthly' => 150_000, 'price_yearly' => 1_500_000]);
+    SubscriptionFactory::new()->forTenant($tenant->id)->trialEndingIn(2)->create();
+
+    $page->navigate('/beranda')
+        ->assertSee('Masa uji coba berakhir 2 hari lagi')
+        ->assertSee('Pilih paket agar sekolah tetap bisa memakai SIMAS.')
+        ->click('internal:role=button[name="Lihat paket"i]')
+        ->assertSee('Paket & Langganan')
+        ->assertSee('Uji coba')
+        ->assertSee('Berlangganan')
+        ->assertNoJavaScriptErrors();
+});
+
+it('tells a teacher the trial is running but leaves the choosing to the school admin', function () {
+    [$page, $tenant] = schoolMemberSignsIn('guru');
+
+    SubscriptionFactory::new()->forTenant($tenant->id)->trialEndingIn(10)->create();
+
+    $page->navigate('/beranda')
+        ->assertSee('Masa uji coba berakhir 10 hari lagi')
+        ->assertSee('Minta admin sekolah memilih paket')
+        ->assertDontSee('Lihat paket')
+        ->assertNoJavaScriptErrors();
+});
+
+it('warns when the trial has ended but access still runs', function () {
+    [$page, $tenant] = schoolMemberSignsIn();
+
+    SubscriptionFactory::new()->forTenant($tenant->id)->trialEndingIn(-2)->create();
+
+    $page->navigate('/beranda')
+        ->assertSee('Masa uji coba berakhir')
+        ->assertSee('akses tetap berjalan sampai')
+        ->assertNoJavaScriptErrors();
+});
+
+it('shows no banner to a school that is paying', function () {
+    [$page, $tenant] = schoolMemberSignsIn();
+
+    SubscriptionFactory::new()->forTenant($tenant->id)->active(20)->create();
+
+    $page->navigate('/beranda')
+        ->assertDontSee('Masa uji coba')
+        ->assertNoJavaScriptErrors();
+});

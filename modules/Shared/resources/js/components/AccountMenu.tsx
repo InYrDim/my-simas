@@ -35,7 +35,7 @@ import InvoicesPanel from './account/InvoicesPanel';
 import { Row } from './account/PanelParts';
 import PlanPanel from './account/PlanPanel';
 
-type PanelKey = 'plan' | 'invoices' | 'help' | 'about';
+export type PanelKey = 'plan' | 'invoices' | 'help' | 'about';
 
 const helpTopics = [
     [
@@ -128,14 +128,21 @@ export default function AccountMenu({
     schoolCode,
     logoutHref,
     changePasswordHref,
+    panel: controlledPanel,
+    onPanelChange,
 }: {
     user: { name: string; email: string | null; username?: string | null };
     schoolName: string;
     schoolCode: string;
     logoutHref: string;
     changePasswordHref: string;
+    /** Which dialog is open, when the page decides (for example the trial banner opens the plan). Leave out to let the menu keep it. */
+    panel?: PanelKey | null;
+    onPanelChange?: (panel: PanelKey | null) => void;
 }) {
-    const [open, setOpen] = useState<PanelKey | null>(null);
+    const [ownPanel, setOwnPanel] = useState<PanelKey | null>(null);
+    const open = controlledPanel === undefined ? ownPanel : controlledPanel;
+    const setOpen = onPanelChange ?? setOwnPanel;
     const can = useCan();
     const canSeeBilling = can('platform.billing.view');
     const panel = open === null ? null : panels[open];
