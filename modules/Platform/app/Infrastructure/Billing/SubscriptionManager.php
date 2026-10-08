@@ -33,6 +33,7 @@ final class SubscriptionManager
         private readonly ModuleFlagManager $flags,
         private readonly DefaultModuleRegistry $registry,
         private readonly InvoiceIssuer $invoices,
+        private readonly BillingNotifier $notifier,
     ) {}
 
     public function startTrial(string $tenantId, string $planKey, ?int $days = null): Subscription
@@ -239,6 +240,8 @@ final class SubscriptionManager
             ])->save();
 
             $this->syncModules($subscription, Plan::query()->findOrFail($invoice->plan_id));
+
+            $this->notifier->paymentReceived($invoice);
 
             return $payment;
         });

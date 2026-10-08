@@ -5,6 +5,8 @@ import type { FormEvent } from 'react';
 import {
     confirm as confirmInvoice,
     index as invoicesIndex,
+    pdf as invoicePdf,
+    resend as resendInvoice,
     voidMethod as voidInvoice,
 } from '@/actions/Modules/Platform/App/Http/Controllers/InvoiceController';
 import { show as showTenant } from '@/actions/Modules/Platform/App/Http/Controllers/TenantConsoleController';
@@ -44,12 +46,31 @@ import {
 } from '../../../Components/format';
 import ProviderLayout from '../../../Components/ProviderLayout';
 import { applyFilters, send } from '../../../Components/send';
-import type { ConsoleInvoice, Paginated } from '../../../types/console';
+import type {
+    BillingNoticeRow,
+    ConsoleInvoice,
+    Paginated,
+} from '../../../types/console';
 
 interface InvoicesProps {
     invoices: Paginated<ConsoleInvoice>;
     filters: { q: string; status: string };
 }
+
+const noticeKindLabel: Record<BillingNoticeRow['kind'], string> = {
+    invoice_issued: 'Invoice terbit',
+    due_reminder: 'Pengingat jatuh tempo',
+    overdue_reminder: 'Pengingat terlambat',
+    payment_received: 'Pembayaran diterima',
+    access_stopped: 'Akses dihentikan',
+    access_reopened: 'Akses dibuka kembali',
+};
+
+const noticeStatusLabel: Record<BillingNoticeRow['status'], string> = {
+    queued: 'Antre',
+    sent: 'Terkirim',
+    failed: 'Gagal',
+};
 
 const methodOptions = [
     { value: 'bank_transfer', label: 'Transfer bank' },
@@ -65,7 +86,10 @@ function todayIso(): string {
 /** Invoices: search, filter, confirm a payment (modal) or void. */
 export default function BillingInvoices({ invoices, filters }: InvoicesProps) {
     const [query, setQuery] = useState(filters.q);
-    const [confirming, setConfirming] = useState<ConsoleInvoice | null>(null);
+    const [dialog, setDialog] = useState<{
+        mode: 'confirm' | 'history';
+        invoice: ConsoleInvoice;
+    } | null>(null);
     const base = invoicesIndex.url();
 
     function change(next: Partial<typeof filters>) {
@@ -162,16 +186,64 @@ export default function BillingInvoices({ invoices, filters }: InvoicesProps) {
                                     <StatusChip status={invoice.state} />
                                 </TableCell>
                                 <TableCell>
-                                    {invoice.status === 'unpaid' && (
-                                        <div className="flex gap-2">
+                                    <div className="flex flex-wrap gap-2">
+                                        {invoice.status === 'unpaid' && (
                                             <Button
                                                 size="sm"
                                                 onClick={() =>
-                                                    setConfirming(invoice)
+                                                    setDialog({
+                                                        mode: 'confirm',
+                                                        invoice,
+                                                    })
                                                 }
                                             >
                                                 Konfirmasi pembayaran
                                             </Button>
+                                        )}
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            asChild
+                                        >
+                                            <a
+                                                href={consolePath(
+                                                    invoicePdf.url({
+                                                        invoice: invoice.id,
+                                                    }),
+                                                )}
+                                            >
+                                                PDF
+                                            </a>
+                                        </Button>
+                                        {invoice.status !== 'void' && (
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() =>
+                                                    send(
+                                                        'post',
+                                                        resendInvoice.url({
+                                                            invoice: invoice.id,
+                                                        }),
+                                                    )
+                                                }
+                                            >
+                                                Kirim ulang
+                                            </Button>
+                                        )}
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() =>
+                                                setDialog({
+                                                    mode: 'history',
+                                                    invoice,
+                                                })
+                                            }
+                                        >
+                                            Riwayat email
+                                        </Button>
+                                        {invoice.status === 'unpaid' && (
                                             <Button
                                                 size="sm"
                                                 variant="outline"
@@ -186,8 +258,8 @@ export default function BillingInvoices({ invoices, filters }: InvoicesProps) {
                                             >
                                                 Batalkan
                                             </Button>
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -197,24 +269,68 @@ export default function BillingInvoices({ invoices, filters }: InvoicesProps) {
             </div>
 
             <Dialog
-                open={confirming !== null}
+                open={dialog !== null}
                 onOpenChange={(open) => {
                     if (!open) {
-                        setConfirming(null);
+                        setDialog(null);
                     }
                 }}
             >
                 <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
-                    {confirming !== null && (
+                    {dialog?.mode === 'confirm' && (
                         <ConfirmPaymentForm
-                            key={confirming.id}
-                            invoice={confirming}
-                            onDone={() => setConfirming(null)}
+                            key={dialog.invoice.id}
+                            invoice={dialog.invoice}
+                            onDone={() => setDialog(null)}
                         />
+                    )}
+                    {dialog?.mode === 'history' && (
+                        <NoticeHistory invoice={dialog.invoice} />
                     )}
                 </DialogContent>
             </Dialog>
         </ProviderLayout>
+    );
+}
+
+function NoticeHistory({ invoice }: { invoice: ConsoleInvoice }) {
+    const notices = invoice.notices ?? [];
+
+    return (
+        <>
+            <DialogHeader>
+                <DialogTitle>Riwayat email</DialogTitle>
+                <DialogDescription>
+                    {invoice.number} · {invoice.tenantName}
+                </DialogDescription>
+            </DialogHeader>
+
+            {notices.length === 0 ? (
+                <p className="my-5 text-sm text-muted-foreground">
+                    Belum ada email untuk tagihan ini.
+                </p>
+            ) : (
+                <ul className="my-5 space-y-3 text-sm">
+                    {notices.map((notice) => (
+                        <li key={notice.id}>
+                            <p className="font-medium">
+                                {noticeKindLabel[notice.kind]} ·{' '}
+                                {noticeStatusLabel[notice.status]}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                {notice.recipient ?? 'Tanpa penerima'}
+                                {notice.at ? ` · ${notice.at}` : ''}
+                            </p>
+                            {notice.error && (
+                                <p className="text-xs text-destructive">
+                                    {notice.error}
+                                </p>
+                            )}
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </>
     );
 }
 

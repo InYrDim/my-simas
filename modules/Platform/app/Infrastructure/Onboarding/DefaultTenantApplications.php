@@ -186,6 +186,8 @@ final class DefaultTenantApplications implements TenantApplications
                 'slug' => $final['desired_slug'],
                 'timezone' => $final['timezone'],
                 'status' => TenantStatus::Active,
+                'billing_email' => mb_strtolower(trim($application->applicant_email)),
+                'billing_name' => $application->applicant_name,
             ]);
 
             // Flagged modules only; core is always active without a flag

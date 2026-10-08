@@ -2,7 +2,9 @@
 
 namespace Modules\Platform\App\Infrastructure\Providers;
 
+use Illuminate\Mail\Events\MessageSent;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Modules\Platform\App\Contracts\ModuleRegistry;
 use Modules\Platform\App\Contracts\PermissionRegistry;
@@ -22,6 +24,7 @@ use Modules\Platform\App\Contracts\UsageMeters;
 use Modules\Platform\App\Contracts\WhatsappChannel;
 use Modules\Platform\App\Http\Middleware\EnsureModuleActive;
 use Modules\Platform\App\Http\Middleware\ResolveTenant;
+use Modules\Platform\App\Infrastructure\Billing\BillingNotifier;
 use Modules\Platform\App\Infrastructure\Billing\BillingSummary;
 use Modules\Platform\App\Infrastructure\Billing\InvoiceIssuer;
 use Modules\Platform\App\Infrastructure\Billing\ManualTransferGateway;
@@ -36,6 +39,7 @@ use Modules\Platform\App\Infrastructure\Commands\TenantListCommand;
 use Modules\Platform\App\Infrastructure\Commands\TenantModulesCommand;
 use Modules\Platform\App\Infrastructure\Commands\TenantRunCommand;
 use Modules\Platform\App\Infrastructure\Commands\TenantSuspendCommand;
+use Modules\Platform\App\Infrastructure\Mail\BillingMail;
 use Modules\Platform\App\Infrastructure\Modules\DefaultModuleRegistry;
 use Modules\Platform\App\Infrastructure\Modules\DefaultTenantModules;
 use Modules\Platform\App\Infrastructure\Modules\ModuleFlagManager;
@@ -195,6 +199,22 @@ class PlatformServiceProvider extends ServiceProvider
         $this->registerQueueContext();
         $this->registerInertiaPagePaths();
         $this->registerUsageMeters();
+        $this->registerBillingNoticeListener();
+    }
+
+    /**
+     * A billing mail carries its notice id in a header; once the message
+     * has been sent the notice turns `sent`.
+     */
+    protected function registerBillingNoticeListener(): void
+    {
+        Event::listen(MessageSent::class, function (MessageSent $event): void {
+            $header = $event->message->getHeaders()->get(BillingMail::NOTICE_HEADER);
+
+            if ($header !== null && ctype_digit($header->getBodyAsString())) {
+                BillingNotifier::markSent((int) $header->getBodyAsString());
+            }
+        });
     }
 
     /**

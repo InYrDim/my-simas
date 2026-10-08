@@ -167,6 +167,8 @@ Route::domain((string) config('tenancy.console_domain'))->middleware('web')->nam
 
             Route::get('invoices', [InvoiceController::class, 'index'])->name('invoices');
             Route::post('invoices/{invoice}/confirm', [InvoiceController::class, 'confirm'])->name('invoices.confirm');
+            Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf');
+            Route::post('invoices/{invoice}/resend', [InvoiceController::class, 'resend'])->name('invoices.resend');
             Route::post('invoices/{invoice}/void', [InvoiceController::class, 'void'])->name('invoices.void');
         });
 

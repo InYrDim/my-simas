@@ -275,6 +275,8 @@ function Overview({
         name: tenant.name,
         timezone: tenant.timezone,
         domain: tenant.domain ?? '',
+        billing_email: tenant.billingEmail ?? '',
+        billing_name: tenant.billingName ?? '',
     });
     const suspended = tenant.status === 'suspended';
 
@@ -336,6 +338,42 @@ function Overview({
                                 aria-invalid={!!form.errors.domain}
                             />
                             <FieldError>{form.errors.domain}</FieldError>
+                        </Field>
+                        <Field data-invalid={!!form.errors.billing_email}>
+                            <FieldLabel htmlFor="tenant-billing-email">
+                                Email tagihan
+                            </FieldLabel>
+                            <Input
+                                id="tenant-billing-email"
+                                type="email"
+                                value={form.data.billing_email}
+                                onChange={(event) =>
+                                    form.setData(
+                                        'billing_email',
+                                        event.target.value,
+                                    )
+                                }
+                                placeholder="keuangan@sekolah.sch.id"
+                                aria-invalid={!!form.errors.billing_email}
+                            />
+                            <FieldError>{form.errors.billing_email}</FieldError>
+                        </Field>
+                        <Field data-invalid={!!form.errors.billing_name}>
+                            <FieldLabel htmlFor="tenant-billing-name">
+                                Nama kontak tagihan
+                            </FieldLabel>
+                            <Input
+                                id="tenant-billing-name"
+                                value={form.data.billing_name}
+                                onChange={(event) =>
+                                    form.setData(
+                                        'billing_name',
+                                        event.target.value,
+                                    )
+                                }
+                                aria-invalid={!!form.errors.billing_name}
+                            />
+                            <FieldError>{form.errors.billing_name}</FieldError>
                         </Field>
                     </FieldGroup>
                     <Button
