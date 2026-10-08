@@ -49,7 +49,7 @@ export function LembarShell({
             <TimingRail progress={progress} />
 
             <div className="flex min-h-dvh flex-col pl-7 sm:pl-12">
-                <header className="border-b-2 border-(--ink)">
+                <header className="bg-white">
                     <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5 sm:px-8">
                         <Link
                             href="/"
@@ -65,7 +65,7 @@ export function LembarShell({
 
                 <main className="mx-auto grid w-full max-w-6xl flex-1 content-start gap-x-12 gap-y-8 px-5 pt-8 pb-14 sm:px-8 sm:pt-14 lg:grid-cols-12 lg:pt-20">
                     <div className="lg:col-span-5 lg:pt-2">
-                        <h1 className="text-[2.25rem] leading-[0.95] font-extrabold tracking-[-0.02em] text-balance [font-stretch:75%] sm:text-[3rem] lg:text-[3.5rem]">
+                        <h1 className="text-[2.25rem] leading-[0.95] font-bold tracking-[-0.02em] text-balance [font-stretch:75%] sm:text-[3rem] lg:text-[3.5rem]">
                             {title}
                         </h1>
                         {lead && (
@@ -85,11 +85,11 @@ export function LembarShell({
                     <div className="lg:col-span-6 lg:col-start-7">
                         <section
                             aria-label={sheet}
-                            className="relative border-2 border-(--ink) bg-white px-5 pt-5 pb-6 sm:px-8 sm:pt-8 sm:pb-8"
+                            className="relative bg-white px-5 pt-5 pb-6 sm:px-8 sm:pt-8 sm:pb-8"
                         >
                             <CornerMarks />
 
-                            <div className="flex flex-col items-start gap-1 border border-(--ink) bg-(--ink-tint) px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                            <div className="flex flex-col items-start gap-1 bg-(--ink-tint) px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                                 <span className="text-sm font-bold tracking-[0.08em] text-(--ink-deep) uppercase [font-stretch:85%]">
                                     {sheet}
                                 </span>
@@ -143,10 +143,7 @@ function Instructions({
     className: string;
 }) {
     return (
-        <section
-            aria-labelledby={id}
-            className={`border-t-2 border-(--ink) pt-4 ${className}`}
-        >
+        <section aria-labelledby={id} className={className}>
             <h2
                 id={id}
                 className="text-xs font-bold tracking-[0.1em] text-(--ink-deep) uppercase"
@@ -157,7 +154,7 @@ function Instructions({
                 {lines.map((line, index) => (
                     <li
                         key={index}
-                        className="grid max-w-[30rem] grid-cols-[1.75rem_1fr] border-b border-(--ink-line) py-3 text-[15px] leading-relaxed text-(--pencil) last:border-b-0"
+                        className="grid max-w-[30rem] grid-cols-[1.75rem_1fr] py-2 text-[15px] leading-relaxed text-(--pencil)"
                     >
                         <span className="font-code text-(--ink-deep)">
                             {index + 1}.

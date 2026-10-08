@@ -32,9 +32,9 @@ colors:
   landing-ink-deep: "#006b9c"
   landing-ink-line: "#acd8f4"
   landing-ink-tint: "#ecf7fe"
-  landing-graphite: "#1d1d1f"
-  landing-pencil: "#55555b"
-  landing-paper: "#ffffff"
+  landing-graphite: "#27313c"
+  landing-pencil: "#5b6674"
+  landing-paper: "#f4f8fb"
   landing-correction: "#c0261b"
 typography:
   title:
@@ -708,9 +708,21 @@ application sheet that fills itself in and stops mid-review, because a person on
 
 - Two inks, one paper: cobalt ink prints the form, graphite fills it. No third hue.
 - One variable face (Archivo) set condensed for heads and expanded for the wordmark; one mono (Azeret Mono 500) for written digits only.
-- 2px corners, 2px ink frames, square corner marks, round bubbles.
+- 2px corners, 1px ink frames, square corner marks, round bubbles.
 - One authored moment: the pencil fill. The timing rail tracks reading progress.
-- Flat. No shadow, gradient, blur or illustration anywhere on the sheet.
+- Flat. No shadow, gradient or blur; the one illustration is the isometric school
+  building in the hero.
+- Calm, not hard: graphite is a cool slate, heads stop at 700, corner marks and
+  filled timing marks are softened, and the closing band is Ink Tint with Deep
+  Cobalt type, not a full ink block.
+- **No border lines** (decided after review: the lines read too hard). Surfaces
+  separate by tone alone: the page is a faint sky-grey paper (`#f4f8fb`), sheets,
+  the masthead and the rail are white, header strips, bands, code cells and inputs
+  are Ink Tint fills, and table rows alternate white. Wherever the sections below
+  still say "frame", "rule" or "hairline", read a change of surface instead. The
+  only rings left are the bubbles (they are marks, not borders), the comb's light
+  cell dividers, an input's 2px inner graphite stroke on focus, and a 1px red ring
+  on a field to correct.
 
 ### Colors
 
@@ -719,7 +731,7 @@ Printed in drop-out ink, filled in graphite.
 - **Drop-out Cobalt** (`landing-ink`): the app's sky primary (`oklch(0.693 0.150 237)`,
   the blue of `/daftar-sekolah`); the other ink shades share its hue. Only ~2.7:1 on
   paper, so small text never sits in it: numerals, labels and selection use Deep
-  Cobalt (5.9:1). The printed form. 2px frames on the masthead
+  Cobalt (5.9:1). The printed form. 1px frames on the masthead
   rule, the application sheet, sheet bands and the ketentuan box; bubble rings; field
   borders; step and principle numerals; the link underline; the full-bleed closing
   band; the scrollbar thumb; the selection fill.
@@ -760,7 +772,7 @@ at the root.
   head, 2rem / 2.75rem at `sm`, width 75%.
 - **Title** (`landing-title`): module names at 1.5rem, width 85%; flow step titles
   1.25rem at 700, width 85%; principle titles 1.125rem 700.
-- **Wordmark** (`landing-wordmark`): "SIMAS" at 900, width 118%, the only expanded
+- **Wordmark** (`landing-wordmark`): "SIMAS" at 800, width 118%, the only expanded
   setting.
 - **Lead / body** (`landing-lead`, `landing-body`): leads 1.125rem relaxed, max
   ~34rem; module summaries 1rem; detail lines and notes 0.875rem in Pencil.
@@ -809,14 +821,14 @@ one character per box. It is not a code font for labels or decoration.
 
 ### Elevation & Depth
 
-Flat. Depth is printed: 2px cobalt frames, a tinted band ground, and the full cobalt
+Flat. Depth is printed: 1px cobalt frames, tinted band grounds, and the tinted
 closing band. There is no `box-shadow` on the page; the only "lift" is the 1px press
 of a button on `:active`.
 
 ### Shapes
 
 - **Corners:** 2px (`landing-sheet`) on buttons; frames are square-cornered.
-- **Frames:** 2px cobalt for the things that are a sheet (masthead underline,
+- **Frames:** 1px cobalt for the things that are a sheet (masthead underline,
   application sheet, sheet bands top and bottom, roles table head, ketentuan box);
   1px cobalt for fields inside the sheet; 1px Ink Hairline between rows.
 - **Corner marks:** four 10px graphite squares inset 8px in the corners of the
@@ -828,34 +840,44 @@ of a button on `:active`.
 
 ### Components
 
-- **Masthead:** 64px (80px at `sm`), 2px cobalt underline. Wordmark, tagline in
+- **Masthead:** 64px (80px at `sm`), 1px cobalt underline. Wordmark, tagline in
   field-label caps from `md`, nav (Calon siswa, Masuk) in Pencil, and the graphite
   "Daftarkan sekolah" from `sm`.
 - **Timing rail:** 28 marks, 6px tall, spaced down the full height. Unfilled marks
   are short Ink Hairline bars; marks up to the reading position are longer graphite
   bars (200ms width/colour transition). `aria-hidden`.
-- **Application sheet (signature):** a 2px-framed `figure` with corner marks; an
-  Ink Tint header strip ("Lembar pengajuan sekolah" / "Contoh pengisian"); kode
-  sekolah as six digit boxes over 0–9 bubble columns; jenjang bubbles; module
-  bubbles that are real `aria-pressed` toggles; a three-step status (Diajukan →
-  Ditinjau tim kami → Disetujui) that stops at review. Bubble grids are
-  `aria-hidden` with an `sr-only` sentence carrying the value.
+- **School building (hero, signature; replaced the application sheet on request,
+  styled after the isometric line drawings of the Laravel homepage):**
+  `Components/Landing/SchoolBuilding.tsx`, an isometric two-storey school drawn as
+  SVG polygons with a soft slate outline (`#27313c` at 50%, 1px non-scaling; the one
+  place on Lembar pages where edges are drawn): a slate plinth ("Ruang kerja per
+  sekolah"), white walls with windows, columns, an upper corridor rail, a sky fascia
+  carrying "SIMAS", a pitched slate-blue roof, the merah-putih flag, a faint
+  isometric grid fading out (a mask, not a visible gradient), three lines carrying
+  the example school codes (`123456`, `sekolah-a`, `sekolah-b`) to the building, and
+  the four default roles as floor tiles. Each room is a module (ground floor
+  Absensi, PPDB, Data induk; upper floor Akademik, Statistik & laporan, WhatsApp
+  sekolah): switching it on lights its windows and fills its bubble, which sits in
+  the middle of the room as an HTML overlay (names live in the toggle list under the
+  drawing). The hero grid is 5/7 at `lg` to give the drawing room. The SVG is
+  `aria-hidden`; an `sr-only` line names the modules that are on.
 - **Bubble:** the one mark. Ring = an answer that exists; graphite fill = chosen.
   Used for answers, toggles, status and role grants. Never decorative.
 - **Primary button:** graphite fill, paper text, 48px, 2px corners; hover Deep
-  Cobalt; 1px press. The **inverted** variant (paper fill, graphite text, hover Ink
-  Tint) is only for the cobalt closing band.
+  Cobalt; 1px press. There is no inverted variant any more.
 - **Quiet link:** graphite text with a 2px cobalt underline at 6px offset and a
   trailing arrow beside the label (the only icon on the page); hover Deep Cobalt.
-- **Sheet band:** full-bleed Ink Tint with 2px cobalt rules top and bottom; condensed
+- **Sheet band:** full-bleed Ink Tint with 1px cobalt rules top and bottom; condensed
   band head left, Deep Cobalt aside right from `sm`.
-- **Roles bubble table:** a real `table`; a 2px cobalt rule under the head; one row
+- **Roles bubble table:** a real `table`; a 1px cobalt rule under the head; one row
   per task, one column per default role, a filled or empty bubble per cell with
   `sr-only` "Ya"/"Tidak".
 - **Ketentuan box:** a 2px-framed, corner-marked ordered list of standing rules,
   cobalt mono numerals, hairlines between items.
-- **Ink close band:** full-bleed cobalt, paper corner marks, condensed paper
-  headline, the inverted button and underlined tertiary links.
+- **Close band:** full-bleed Ink Tint between 1px cobalt rules, softened corner
+  marks, the condensed headline in Deep Cobalt at 700, the graphite button and
+  quiet underlined tertiary links. (It was a full cobalt block; softened on request
+  because the page read too hard.)
 - **Sign-in sheet (`LembarShell`):** masthead with the wordmark (link to `/`) and the
   door in caps ("Portal sekolah", "PPDB · Calon siswa"); one 2px-framed,
   corner-marked sheet with an Ink Tint header strip naming the sheet ("Lembar masuk

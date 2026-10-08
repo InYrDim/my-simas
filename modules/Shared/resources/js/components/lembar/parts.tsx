@@ -43,7 +43,7 @@ export function CornerMarks({
 }: {
     tone?: 'graphite' | 'white';
 }) {
-    const color = tone === 'white' ? 'bg-white' : 'bg-(--graphite)';
+    const color = tone === 'white' ? 'bg-white' : 'bg-(--graphite)/60';
 
     return (
         <>
@@ -56,7 +56,7 @@ export function CornerMarks({
                 <span
                     key={position}
                     aria-hidden
-                    className={`absolute size-2.5 ${color} ${position}`}
+                    className={`absolute size-2 ${color} ${position}`}
                 />
             ))}
         </>
@@ -111,14 +111,14 @@ export function TimingRail({ progress }: { progress?: number }) {
     return (
         <div
             aria-hidden
-            className="fixed inset-y-0 left-0 z-20 flex w-7 flex-col justify-between border-r border-(--ink-line) bg-white py-5 sm:w-12 sm:py-8"
+            className="fixed inset-y-0 left-0 z-20 flex w-7 flex-col justify-between bg-white py-5 sm:w-12 sm:py-8"
         >
             {Array.from({ length: TIMING_MARKS }, (_, index) => (
                 <span
                     key={index}
                     className={`timing-mark ml-2 block h-1.5 sm:ml-4 ${
                         index < filled
-                            ? 'w-3 bg-(--graphite) sm:w-5'
+                            ? 'w-3 bg-(--ink-deep)/55 sm:w-5'
                             : 'w-2 bg-(--ink-line) sm:w-3'
                     }`}
                 />
@@ -131,7 +131,7 @@ export function TimingRail({ progress }: { progress?: number }) {
 export function Wordmark({ className = 'text-2xl' }: { className?: string }) {
     return (
         <span
-            className={`font-black tracking-[-0.02em] [font-stretch:118%] ${className}`}
+            className={`font-extrabold tracking-[-0.02em] [font-stretch:118%] ${className}`}
         >
             SIMAS
         </span>

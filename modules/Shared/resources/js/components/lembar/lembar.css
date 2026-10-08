@@ -33,17 +33,23 @@
     --ink-deep: #006b9c;
     --ink-line: #acd8f4;
     --ink-tint: #ecf7fe;
-    --graphite: #1d1d1f;
-    --pencil: #55555b;
+    /*
+     * Graphite and pencil are a cool slate rather than near-black, and the
+     * paper is a faint sky white: the sheet reads calm, not hard.
+     */
+    --graphite: #27313c;
+    --pencil: #5b6674;
+    /* A faint sky-grey ground: white sheets read on it without a border. */
+    --paper: #f4f8fb;
     /* The teacher's red pen: a field that needs correcting, nothing else. */
     --correction: #c0261b;
 
     font-family: 'Archivo', ui-sans-serif, system-ui, sans-serif;
     letter-spacing: 0;
     color: var(--graphite);
-    background-color: #fff;
+    background-color: var(--paper);
     font-variant-numeric: tabular-nums;
-    scrollbar-color: var(--ink) #fff;
+    scrollbar-color: var(--ink-line) var(--paper);
     caret-color: var(--graphite);
 }
 
@@ -68,13 +74,12 @@
  */
 .lembar .lembar-box:focus-visible {
     outline: none;
-    border-color: var(--graphite);
-    box-shadow: inset 0 0 0 1px var(--graphite);
+    background-color: #fff;
+    box-shadow: inset 0 0 0 2px var(--graphite);
 }
 
 .lembar .lembar-box[aria-invalid='true']:focus-visible {
-    border-color: var(--correction);
-    box-shadow: inset 0 0 0 1px var(--correction);
+    box-shadow: inset 0 0 0 2px var(--correction);
 }
 
 .lembar .lembar-switch:focus-visible {
@@ -124,7 +129,29 @@
     background-repeat: repeat-x;
 }
 
+/* The landing stack: a module block settles onto the core on load. */
+.lembar .stack-in {
+    animation: lembar-settle 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: var(--delay, 0ms);
+}
+
+@keyframes lembar-settle {
+    from {
+        transform: translateY(-6px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
+    .lembar .stack-in {
+        animation: none;
+    }
+
     .lembar .pencil-fill {
         animation: none;
     }

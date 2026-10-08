@@ -55,10 +55,10 @@ export function LembarInput({
                     aria-invalid={error ? true : undefined}
                     aria-describedby={note ? noteId : undefined}
                     className={cn(
-                        'lembar-box block h-12 w-full rounded-[2px] border bg-white px-3 text-base text-(--graphite) transition-colors',
+                        'lembar-box block h-12 w-full rounded-[2px] bg-(--ink-tint) px-3 text-base text-(--graphite) transition-colors',
                         error
-                            ? 'border-(--correction)'
-                            : 'border-(--ink) hover:border-(--ink-deep)',
+                            ? 'shadow-[inset_0_0_0_1px_var(--correction)]'
+                            : 'hover:bg-(--ink-line)/40',
                         comb && 'comb-input font-code text-xl font-medium',
                         isPassword && 'pr-24',
                     )}
@@ -146,7 +146,7 @@ export function LembarButton({
             className={cn(
                 'inline-flex h-12 items-center justify-center rounded-[2px] px-6 text-[15px] font-semibold transition-colors active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60 disabled:active:translate-y-0',
                 quiet
-                    ? 'border border-(--ink) bg-white text-(--graphite) hover:bg-(--ink-tint)'
+                    ? 'bg-(--ink-tint) text-(--graphite) hover:bg-(--ink-line)/50'
                     : 'bg-(--graphite) text-white hover:bg-(--ink-deep)',
                 className,
             )}
@@ -173,7 +173,7 @@ export function LembarNotice({ children }: { children: ReactNode }) {
     return (
         <p
             role="status"
-            className="border border-(--ink) bg-(--ink-tint) px-4 py-3 text-[15px] leading-relaxed"
+            className="bg-(--ink-tint) px-4 py-3 text-[15px] leading-relaxed"
         >
             {children}
         </p>
