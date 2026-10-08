@@ -343,10 +343,10 @@ phase. Extract one module per stage and stop between stages.
 
 ## Docs
 
-The tracked, canonical version of this policy lives in
+The canonical, detailed version of this policy lives in
 docs/architecture/modular-monolith.md — update it whenever the surface
-or rules change (this AGENTS.md copy is intentionally gitignored; keep
-them in sync).
+or rules change (this AGENTS.md is tracked in git too; keep them in
+sync).
 
 ## Feature modules — pointers (details live in CONTRACT.md + docs)
 
