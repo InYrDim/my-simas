@@ -628,5 +628,169 @@
       "Don't put text in monospace unless it is a slug, a host, or an identifier a human must verify character by character.",
       "Don't assume a breakpoint exists. None are defined; new surfaces must introduce responsive behavior deliberately, mobile-first."
     ]
+  },
+  "landingLembar": {
+    "scope": "Public landing page at / only (unauthenticated marketing surface), scoped under .landing-lembar. Does not govern the app; the app's tokens and rules do not govern it. Colour and typography primitives live in DESIGN.md frontmatter under the landing- prefix.",
+    "source": [
+      "modules/Platform/resources/js/Pages/Platform/Landing.tsx",
+      "modules/Platform/resources/js/Components/Landing/landing.css"
+    ],
+    "colorMeta": {
+      "landing-ink": {
+        "role": "primary",
+        "displayName": "Drop-out Cobalt",
+        "purpose": "The printed form: frames, bubble rings, field borders, numerals, link underline, closing band, selection."
+      },
+      "landing-ink-deep": {
+        "role": "primary",
+        "displayName": "Deep Cobalt",
+        "purpose": "Ink as text (field labels, table heads, asides); hover of graphite button and links."
+      },
+      "landing-ink-line": {
+        "role": "neutral",
+        "displayName": "Ink Hairline",
+        "purpose": "1px row rules, timing rail border and unfilled marks."
+      },
+      "landing-ink-tint": {
+        "role": "neutral",
+        "displayName": "Ink Tint",
+        "purpose": "Sheet band and sheet header ground; inverted button hover; 60% marks the human review step."
+      },
+      "landing-graphite": {
+        "role": "neutral",
+        "displayName": "Graphite",
+        "purpose": "Text, bubble fills, filled timing marks, corner marks, primary button, focus ring."
+      },
+      "landing-pencil": {
+        "role": "neutral",
+        "displayName": "Pencil",
+        "purpose": "Secondary text, leads, nav at rest."
+      },
+      "landing-paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "purpose": "Page and every framed surface; text on the cobalt band (90%)."
+      }
+    },
+    "typographyMeta": {
+      "landing-display": {
+        "displayName": "Display",
+        "purpose": "Hero and closing headlines; 2.75rem / 4.25rem sm / 5.25rem xl, Archivo width 72%."
+      },
+      "landing-band": {
+        "displayName": "Band head",
+        "purpose": "Section heads in sheet bands; 2rem / 2.75rem sm, width 75%."
+      },
+      "landing-title": {
+        "displayName": "Title",
+        "purpose": "Module, step and principle titles, width 85%."
+      },
+      "landing-wordmark": {
+        "displayName": "Wordmark",
+        "purpose": "SIMAS wordmark only, width 118%."
+      },
+      "landing-lead": {
+        "displayName": "Lead",
+        "purpose": "Hero and close leads."
+      },
+      "landing-body": {
+        "displayName": "Body",
+        "purpose": "Module summaries; detail lines at 0.875rem."
+      },
+      "landing-action": {
+        "displayName": "Action",
+        "purpose": "Buttons and nav, 15px."
+      },
+      "landing-field-label": {
+        "displayName": "Field label",
+        "purpose": "Uppercase printed-form field labels only."
+      },
+      "landing-code": {
+        "displayName": "Written digit",
+        "purpose": "Azeret Mono 500 for digits and numerals only."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "landing-pencil-fill",
+        "value": "280ms cubic-bezier(0.16, 1, 0.3, 1); scale 0.15 -> 1, opacity 0 -> 1; per-mark --delay",
+        "purpose": "The one authored moment: bubbles fill mark by mark. Removed under prefers-reduced-motion."
+      },
+      {
+        "name": "landing-timing-mark",
+        "value": "background-color 200ms ease-out, width 200ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Timing rail marks fill with reading progress."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "xl",
+        "value": "1280px"
+      }
+    ],
+    "components": [
+      {
+        "name": "Lembar button - primary",
+        "kind": "button",
+        "refersTo": "landing-button-primary",
+        "description": "Graphite action button; inverted variant only on the cobalt band.",
+        "html": "<a class=\"ds-lembar-btn\" href=\"#\">Daftarkan sekolah</a>",
+        "css": ".ds-lembar-btn { display: inline-flex; align-items: center; height: 48px; padding: 0 24px; border-radius: 2px; background: #1d1d1f; color: #fff; font-family: Archivo, ui-sans-serif, system-ui, sans-serif; font-size: 15px; font-weight: 600; text-decoration: none; transition: background-color 150ms; } .ds-lembar-btn:hover { background: #173a99; } .ds-lembar-btn:active { transform: translateY(1px); } .ds-lembar-btn:focus-visible { outline: 2px solid #1d1d1f; outline-offset: 3px; }"
+      },
+      {
+        "name": "Lembar bubble",
+        "kind": "custom",
+        "refersTo": "landing-bubble",
+        "description": "The one mark: cobalt ring, graphite fill when chosen.",
+        "html": "<span class=\"ds-lembar-bubble\"></span><span class=\"ds-lembar-bubble ds-lembar-bubble--on\"></span>",
+        "css": ".ds-lembar-bubble { display: inline-block; width: 20px; height: 20px; border: 1px solid #2350c8; border-radius: 9999px; background: #fff; margin-right: 8px; } .ds-lembar-bubble--on { background: #1d1d1f; border-color: #1d1d1f; }"
+      },
+      {
+        "name": "Lembar sheet band",
+        "kind": "card",
+        "refersTo": "landing-sheet-band",
+        "description": "Full-bleed tinted band with 2px cobalt rules; section head.",
+        "html": "<div class=\"ds-lembar-band\"><h2>Siapa mengisi apa</h2></div>",
+        "css": ".ds-lembar-band { background: #eef3fd; border-top: 2px solid #2350c8; border-bottom: 2px solid #2350c8; padding: 24px 20px; } .ds-lembar-band h2 { margin: 0; font-family: Archivo, ui-sans-serif, sans-serif; font-size: 2rem; font-weight: 800; line-height: 1; letter-spacing: -0.02em; font-stretch: 75%; color: #1d1d1f; }"
+      }
+    ],
+    "narrative": {
+      "northStar": "Lembar (the LJK answer sheet)",
+      "rules": [
+        {
+          "name": "The Two Inks Rule",
+          "body": "Cobalt prints, graphite marks. Anything the form is (rules, labels, rings, frames) is cobalt; anything a person wrote (fills, answers, the action they take) is graphite. A third hue, green included, does not appear.",
+          "section": "colors"
+        },
+        {
+          "name": "The Width Axis Rule",
+          "body": "Hierarchy comes from Archivo's width axis as much as size: condensed (72-85%) for heads, normal for reading, expanded (118%) only for the wordmark.",
+          "section": "typography"
+        },
+        {
+          "name": "The Written Digit Rule",
+          "body": "Mono means a digit a hand wrote on the sheet. It is not a code font for labels or decoration.",
+          "section": "typography"
+        },
+        {
+          "name": "The One Pencil Rule",
+          "body": "One authored motion per page, and it is the act of filling the sheet. No scroll reveals, parallax or looping animation.",
+          "section": "elevation"
+        }
+      ]
+    }
   }
 }
