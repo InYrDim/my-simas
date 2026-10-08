@@ -1,20 +1,19 @@
-import { Link, useForm } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 
 import { request } from '@/actions/Modules/Ppdb/App/Http/Controllers/Account/PasswordController';
 import { store } from '@/actions/Modules/Ppdb/App/Http/Controllers/Account/SessionController';
 import { register } from '@/routes/ppdb/account';
-import { Button } from '@shared/components/ui/button';
-import { Checkbox } from '@shared/components/ui/checkbox';
 import {
-    Field,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-} from '@shared/components/ui/field';
-import { Input } from '@shared/components/ui/input';
-
-import PortalPage from '../../../Components/PortalPage';
+    LembarButton,
+    LembarCheck,
+    LembarInput,
+    LembarLink,
+} from '@shared/components/lembar/fields';
+import {
+    filledShare,
+    LembarShell,
+} from '@shared/components/lembar/LembarShell';
 
 /** Sign in to the applicant's own account. */
 export default function Login() {
@@ -33,81 +32,82 @@ export default function Login() {
     }
 
     return (
-        <PortalPage
+        <LembarShell
+            area="PPDB · Calon siswa"
+            sheet="Lembar masuk PPDB"
             title="Masuk ke akun PPDB"
-            description="Lanjutkan pendaftaran Anda atau lihat statusnya."
-            footer={
+            lead="Lanjutkan pendaftaran Anda atau lihat statusnya."
+            progress={filledShare([form.data.email, form.data.password])}
+            instructions={[
+                'Akun PPDB terpisah dari akun sekolah. Siswa dan guru masuk lewat halaman masuk sekolah.',
+                'Satu akun untuk mendaftar ke satu sekolah, dengan kode atau tautan dari sekolah itu.',
+                'Hasil seleksi tampil di halaman akun Anda setelah sekolah mengumumkannya.',
+            ]}
+            after={
                 <span>
                     Belum punya akun?{' '}
-                    <Link
+                    <LembarLink
                         href={register.url()}
-                        className="text-primary hover:underline"
+                        className="text-(--graphite)"
                     >
                         Buat akun
-                    </Link>
+                    </LembarLink>
                 </span>
             }
         >
-            <form onSubmit={submit} noValidate>
-                <FieldGroup>
-                    <Field data-invalid={!!form.errors.email}>
-                        <FieldLabel htmlFor="email">Email</FieldLabel>
-                        <Input
-                            id="email"
-                            name="email"
-                            type="email"
-                            autoComplete="username"
-                            autoFocus
-                            required
-                            value={form.data.email}
-                            aria-invalid={!!form.errors.email}
-                            onChange={(event) =>
-                                form.setData('email', event.target.value)
-                            }
-                        />
-                        <FieldError>{form.errors.email}</FieldError>
-                    </Field>
+            <form onSubmit={submit} className="flex flex-col gap-5" noValidate>
+                <LembarInput
+                    label="Email"
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="username"
+                    autoFocus
+                    required
+                    value={form.data.email}
+                    error={form.errors.email}
+                    onChange={(event) =>
+                        form.setData('email', event.target.value)
+                    }
+                />
 
-                    <Field data-invalid={!!form.errors.password}>
-                        <FieldLabel htmlFor="password">Kata sandi</FieldLabel>
-                        <Input
-                            id="password"
-                            name="password"
-                            type="password"
-                            autoComplete="current-password"
-                            required
-                            value={form.data.password}
-                            aria-invalid={!!form.errors.password}
-                            onChange={(event) =>
-                                form.setData('password', event.target.value)
-                            }
-                        />
-                        <FieldError>{form.errors.password}</FieldError>
-                    </Field>
+                <LembarInput
+                    label="Kata sandi"
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    value={form.data.password}
+                    error={form.errors.password}
+                    onChange={(event) =>
+                        form.setData('password', event.target.value)
+                    }
+                />
 
-                    <Link
-                        href={request.url()}
-                        className="text-sm text-primary hover:underline"
-                    >
+                <div className="flex flex-wrap items-center justify-between gap-x-4">
+                    <LembarCheck
+                        label="Ingat saya"
+                        name="remember"
+                        checked={form.data.remember}
+                        onChange={(checked) =>
+                            form.setData('remember', checked)
+                        }
+                    />
+
+                    <LembarLink href={request.url()}>
                         Lupa kata sandi?
-                    </Link>
+                    </LembarLink>
+                </div>
 
-                    <Field orientation="horizontal">
-                        <Checkbox
-                            id="remember"
-                            checked={form.data.remember}
-                            onCheckedChange={(checked) =>
-                                form.setData('remember', checked === true)
-                            }
-                        />
-                        <FieldLabel htmlFor="remember">Ingat saya</FieldLabel>
-                    </Field>
-
-                    <Button type="submit" disabled={form.processing}>
-                        {form.processing ? 'Memeriksa...' : 'Masuk'}
-                    </Button>
-                </FieldGroup>
+                <LembarButton
+                    type="submit"
+                    disabled={form.processing}
+                    className="w-full"
+                >
+                    {form.processing ? 'Memeriksa...' : 'Masuk'}
+                </LembarButton>
             </form>
-        </PortalPage>
+        </LembarShell>
     );
 }

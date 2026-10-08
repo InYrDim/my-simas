@@ -1,8 +1,15 @@
-import { Link, useForm } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 
-import { AuthInput } from '@shared/components/AuthInput';
-import { AuthShell } from '@shared/components/AuthShell';
+import {
+    LembarButton,
+    LembarInput,
+    LembarLink,
+} from '@shared/components/lembar/fields';
+import {
+    filledShare,
+    LembarShell,
+} from '@shared/components/lembar/LembarShell';
 import { useTenant } from '@shared/hooks/useTenant';
 
 import { destroy as logout } from '@/actions/Modules/Identity/App/Http/Controllers/Auth/AuthenticatedSessionController';
@@ -36,19 +43,30 @@ export default function ChangePassword({ forced }: ChangePasswordProps) {
     }
 
     return (
-        <AuthShell
-            tone="light"
-            eyebrow={tenant ? tenant.name : 'Portal Sekolah'}
+        <LembarShell
+            area="Portal sekolah"
+            sheet="Lembar ganti kata sandi"
+            sheetNote={tenant?.name}
             title="Ganti kata sandi"
-            subtitle={
+            lead={
                 forced
                     ? 'Kata sandi Anda masih kata sandi awal. Buat kata sandi sendiri untuk melanjutkan.'
                     : 'Buat kata sandi baru untuk akun Anda.'
             }
-            footer="SIMAS untuk sekolah"
+            progress={filledShare([
+                form.data.current_password,
+                form.data.password,
+                form.data.password_confirmation,
+            ])}
+            instructions={[
+                forced
+                    ? 'Kata sandi sekarang adalah kata sandi awal yang Anda terima dari sekolah.'
+                    : 'Kata sandi sekarang adalah kata sandi yang Anda pakai untuk masuk tadi.',
+                'Kata sandi baru hanya Anda yang tahu. Jangan pakai tanggal lahir.',
+            ]}
         >
-            <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
-                <AuthInput
+            <form onSubmit={submit} className="flex flex-col gap-5" noValidate>
+                <LembarInput
                     label="Kata sandi sekarang"
                     id="current_password"
                     name="current_password"
@@ -63,7 +81,7 @@ export default function ChangePassword({ forced }: ChangePasswordProps) {
                     }
                 />
 
-                <AuthInput
+                <LembarInput
                     label="Kata sandi baru"
                     id="password"
                     name="password"
@@ -77,7 +95,7 @@ export default function ChangePassword({ forced }: ChangePasswordProps) {
                     }
                 />
 
-                <AuthInput
+                <LembarInput
                     label="Ulangi kata sandi baru"
                     id="password_confirmation"
                     name="password_confirmation"
@@ -94,35 +112,30 @@ export default function ChangePassword({ forced }: ChangePasswordProps) {
                     }
                 />
 
-                <button
+                <LembarButton
                     type="submit"
                     disabled={form.processing}
-                    className="mt-2 w-full rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
+                    className="w-full"
                 >
                     {form.processing ? 'Menyimpan...' : 'Simpan kata sandi'}
-                </button>
+                </LembarButton>
 
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between gap-4">
                     {forced ? (
                         <span />
                     ) : (
-                        <Link
-                            href="/beranda"
-                            className="text-emerald-700 hover:text-emerald-800 hover:underline"
-                        >
-                            Kembali
-                        </Link>
+                        <LembarLink href="/beranda">Kembali</LembarLink>
                     )}
-                    <Link
+                    <LembarLink
                         href={logout.url()}
                         method="post"
                         as="button"
-                        className="text-zinc-600 hover:text-zinc-900 hover:underline"
+                        className="font-medium text-(--pencil) decoration-(--ink-line) decoration-1 hover:text-(--graphite)"
                     >
                         Keluar
-                    </Link>
+                    </LembarLink>
                 </div>
             </form>
-        </AuthShell>
+        </LembarShell>
     );
 }

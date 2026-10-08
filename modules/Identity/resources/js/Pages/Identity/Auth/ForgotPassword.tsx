@@ -1,10 +1,19 @@
-import { useForm } from '@inertiajs/react';
+import { usePage, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 
-import { AuthInput } from '@shared/components/AuthInput';
-import { AuthShell } from '@shared/components/AuthShell';
+import {
+    LembarButton,
+    LembarInput,
+    LembarLink,
+    LembarNotice,
+} from '@shared/components/lembar/fields';
+import {
+    filledShare,
+    LembarShell,
+} from '@shared/components/lembar/LembarShell';
 import { useTenant } from '@shared/hooks/useTenant';
 
+import { create as login } from '@/actions/Modules/Identity/App/Http/Controllers/Auth/AuthenticatedSessionController';
 import { store as requestReset } from '@/actions/Modules/Identity/App/Http/Controllers/Auth/PasswordResetLinkController';
 
 /**
@@ -14,6 +23,7 @@ import { store as requestReset } from '@/actions/Modules/Identity/App/Http/Contr
  */
 export default function ForgotPassword() {
     const tenant = useTenant();
+    const { flash } = usePage<{ flash?: { status?: string | null } }>().props;
 
     const form = useForm({ school: '', email: '' });
 
@@ -24,29 +34,45 @@ export default function ForgotPassword() {
     }
 
     return (
-        <AuthShell
-            tone="light"
-            eyebrow={tenant ? tenant.name : 'Portal Sekolah'}
+        <LembarShell
+            area="Portal sekolah"
+            sheet="Lembar lupa kata sandi"
+            sheetNote={tenant?.name}
             title="Lupa kata sandi"
-            subtitle="Masukkan email akun Anda — jika terdaftar, kami kirim tautan pengaturan ulang."
-            footer="SIMAS untuk sekolah"
+            lead="Masukkan email akun Anda — jika terdaftar, kami kirim tautan pengaturan ulang."
+            progress={
+                form.wasSuccessful
+                    ? 1
+                    : filledShare([form.data.school, form.data.email])
+            }
+            instructions={[
+                'Tautan berlaku 60 menit dan hanya bisa dipakai sekali.',
+                'Akun yang masuk dengan NIS atau NIP tidak punya email: minta admin sekolah membantu mengatur ulang kata sandi.',
+            ]}
+            after={
+                <LembarLink href={login.url()} className="text-(--graphite)">
+                    Kembali ke halaman masuk
+                </LembarLink>
+            }
         >
             {form.wasSuccessful ? (
-                <p className="text-sm text-emerald-700">
-                    Jika email terdaftar, tautan reset telah dikirim. Periksa
-                    kotak masuk Anda.
-                </p>
+                !flash?.status && (
+                    <LembarNotice>
+                        Jika email terdaftar, tautan reset telah dikirim.
+                        Periksa kotak masuk Anda.
+                    </LembarNotice>
+                )
             ) : (
                 <form
                     onSubmit={submit}
-                    className="flex flex-col gap-4"
+                    className="flex flex-col gap-5"
                     noValidate
                 >
-                    <AuthInput
+                    <LembarInput
                         label="Kode sekolah"
                         id="school"
                         name="school"
-                        type="text"
+                        comb
                         autoComplete="organization"
                         autoFocus
                         required
@@ -57,7 +83,7 @@ export default function ForgotPassword() {
                         }
                     />
 
-                    <AuthInput
+                    <LembarInput
                         label="Email"
                         id="email"
                         name="email"
@@ -71,15 +97,15 @@ export default function ForgotPassword() {
                         }
                     />
 
-                    <button
+                    <LembarButton
                         type="submit"
                         disabled={form.processing}
-                        className="mt-2 w-full rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
+                        className="w-full"
                     >
                         {form.processing ? 'Mengirim...' : 'Kirim tautan reset'}
-                    </button>
+                    </LembarButton>
                 </form>
             )}
-        </AuthShell>
+        </LembarShell>
     );
 }

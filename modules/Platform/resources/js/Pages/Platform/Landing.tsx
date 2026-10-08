@@ -1,7 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import { ArrowRightIcon } from 'lucide-react';
-import type { CSSProperties, ReactNode } from 'react';
-import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
+import { useState } from 'react';
 
 import {
     links,
@@ -11,14 +11,18 @@ import {
     roleTasks,
     steps,
 } from '../../Components/Landing/content';
-import '../../Components/Landing/landing.css';
+import {
+    Bubble,
+    CornerMarks,
+    TimingRail,
+    Wordmark,
+} from '@shared/components/lembar/parts';
 
 const SCHOOL_CODE = '123456';
 const LEVELS = ['SD', 'SMP', 'SMA', 'SMK'];
 const STATUSES = ['Diajukan', 'Ditinjau tim kami', 'Disetujui'];
 /** The sample sheet stops mid-review: approval is a person's step. */
 const STATUSES_DONE = 2;
-const TIMING_MARKS = 28;
 
 /**
  * The public landing page ("Lembar"), shown at / to a visitor with no
@@ -29,7 +33,7 @@ const TIMING_MARKS = 28;
  */
 export default function Landing({ trialDays }: { trialDays: number }) {
     return (
-        <div className="landing-lembar min-h-dvh">
+        <div className="lembar min-h-dvh">
             <Head title="Sistem Informasi Manajemen Sekolah">
                 <meta
                     name="description"
@@ -51,57 +55,6 @@ export default function Landing({ trialDays }: { trialDays: number }) {
                 </main>
                 <Footer />
             </div>
-        </div>
-    );
-}
-
-/** The sheet's timing marks double as the reading progress: filled = read. */
-function TimingRail() {
-    const [filled, setFilled] = useState(1);
-
-    useEffect(() => {
-        let frame = 0;
-
-        const measure = () => {
-            frame = 0;
-            const max =
-                document.documentElement.scrollHeight - window.innerHeight;
-            const progress = max > 0 ? window.scrollY / max : 1;
-            setFilled(Math.max(1, Math.round(progress * TIMING_MARKS)));
-        };
-
-        const onScroll = () => {
-            if (frame === 0) {
-                frame = window.requestAnimationFrame(measure);
-            }
-        };
-
-        measure();
-        window.addEventListener('scroll', onScroll, { passive: true });
-        window.addEventListener('resize', onScroll);
-
-        return () => {
-            window.removeEventListener('scroll', onScroll);
-            window.removeEventListener('resize', onScroll);
-            window.cancelAnimationFrame(frame);
-        };
-    }, []);
-
-    return (
-        <div
-            aria-hidden
-            className="fixed inset-y-0 left-0 z-20 flex w-7 flex-col justify-between border-r border-(--ink-line) bg-white py-5 sm:w-12 sm:py-8"
-        >
-            {Array.from({ length: TIMING_MARKS }, (_, index) => (
-                <span
-                    key={index}
-                    className={`timing-mark ml-2 block h-1.5 sm:ml-4 ${
-                        index < filled
-                            ? 'w-3 bg-(--graphite) sm:w-5'
-                            : 'w-2 bg-(--ink-line) sm:w-3'
-                    }`}
-                />
-            ))}
         </div>
     );
 }
@@ -134,9 +87,7 @@ function Masthead() {
         <header className="border-b-2 border-(--ink)">
             <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-5 sm:h-20 sm:px-8">
                 <div className="flex items-baseline gap-4">
-                    <span className="text-2xl font-black tracking-[-0.02em] [font-stretch:118%]">
-                        SIMAS
-                    </span>
+                    <Wordmark />
                     <span className="hidden text-xs font-semibold tracking-[0.12em] text-(--ink-deep) uppercase md:inline">
                         Sistem Informasi Manajemen Sekolah
                     </span>
@@ -205,55 +156,6 @@ function Hero({ trialDays }: { trialDays: number }) {
                 <ApplicationSheet />
             </div>
         </section>
-    );
-}
-
-function Bubble({
-    filled,
-    delay,
-    children,
-    size = 'md',
-}: {
-    filled: boolean;
-    delay?: number;
-    children?: ReactNode;
-    size?: 'sm' | 'md';
-}) {
-    const box = size === 'sm' ? 'size-4 text-[8px]' : 'size-5 text-[9px]';
-
-    return (
-        <span
-            className={`relative inline-grid shrink-0 place-items-center rounded-full border border-(--ink) font-semibold text-(--ink) ${box}`}
-        >
-            {children}
-            {filled && (
-                <span
-                    className="pencil-fill absolute inset-[-1px] rounded-full bg-(--graphite)"
-                    style={{ '--delay': `${delay ?? 0}ms` } as CSSProperties}
-                />
-            )}
-        </span>
-    );
-}
-
-function CornerMarks({ tone = 'graphite' }: { tone?: 'graphite' | 'white' }) {
-    const color = tone === 'white' ? 'bg-white' : 'bg-(--graphite)';
-
-    return (
-        <>
-            {[
-                'top-2 left-2',
-                'top-2 right-2',
-                'bottom-2 left-2',
-                'bottom-2 right-2',
-            ].map((position) => (
-                <span
-                    key={position}
-                    aria-hidden
-                    className={`absolute size-2.5 ${color} ${position}`}
-                />
-            ))}
-        </>
     );
 }
 
@@ -542,7 +444,7 @@ function FlowSection() {
                                 index > 0 ? 'lg:border-l' : 'lg:pl-0'
                             } ${review ? 'bg-(--ink-tint)/60' : ''}`}
                         >
-                            <span className="font-code text-xl font-medium text-(--ink)">
+                            <span className="font-code text-xl font-medium text-(--ink-deep)">
                                 <span className="sr-only">Langkah </span>
                                 {index + 1}
                             </span>
@@ -646,7 +548,7 @@ function RulesSection() {
                         key={principle.title}
                         className="grid grid-cols-[2.5rem_1fr] gap-x-3 border-b border-(--ink-line) py-6 first:pt-2 last:border-b-0 last:pb-2"
                     >
-                        <span className="font-code pt-0.5 text-lg font-medium text-(--ink)">
+                        <span className="font-code pt-0.5 text-lg font-medium text-(--ink-deep)">
                             {index + 1}.
                         </span>
                         <div>
@@ -679,7 +581,7 @@ function CloseSection() {
                     Ajukan sekolah Anda. Tim kami meninjau setiap pengajuan.
                 </h2>
                 <div className="flex flex-col items-start gap-6 lg:col-span-5 lg:pt-3">
-                    <p className="text-lg leading-relaxed text-white/90">
+                    <p className="text-lg leading-relaxed font-medium text-white">
                         Buat akun pemohon, isi data sekolah, lalu tunggu email
                         dari tim kami. Pengajuan yang ditolak dapat diperbaiki
                         dan dikirim lagi.
@@ -711,10 +613,8 @@ function Footer() {
     return (
         <footer className="mx-auto flex max-w-7xl flex-col gap-3 px-5 py-10 text-sm text-(--pencil) sm:flex-row sm:items-center sm:justify-between sm:px-8">
             <span>
-                <span className="font-black text-(--graphite) [font-stretch:118%]">
-                    SIMAS
-                </span>{' '}
-                · Sistem Informasi Manajemen Sekolah
+                <Wordmark className="text-sm text-(--graphite)" /> · Sistem
+                Informasi Manajemen Sekolah
             </span>
             <nav aria-label="Kaki halaman" className="flex flex-wrap gap-x-5">
                 <Link

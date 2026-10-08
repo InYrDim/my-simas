@@ -1,8 +1,16 @@
 import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 
-import { AuthInput } from '@shared/components/AuthInput';
-import { AuthShell } from '@shared/components/AuthShell';
+import {
+    LembarButton,
+    LembarCheck,
+    LembarInput,
+    LembarLink,
+} from '@shared/components/lembar/fields';
+import {
+    filledShare,
+    LembarShell,
+} from '@shared/components/lembar/LembarShell';
 import { useTenant } from '@shared/hooks/useTenant';
 
 import { store as loginStore } from '@/actions/Modules/Identity/App/Http/Controllers/Auth/AuthenticatedSessionController';
@@ -38,21 +46,44 @@ export default function Login({
         });
     }
 
+    const answers = schoolLinked
+        ? [form.data.login, form.data.password]
+        : [form.data.school, form.data.login, form.data.password];
+
     return (
-        <AuthShell
-            tone="light"
-            eyebrow={tenant ? tenant.name : 'Portal Sekolah'}
+        <LembarShell
+            area="Portal sekolah"
+            sheet="Lembar masuk sekolah"
+            sheetNote={tenant?.name}
             title="Masuk ke akun Anda"
-            subtitle="Gunakan email atau nomor induk dan kata sandi akun sekolah Anda."
-            footer="SIMAS untuk sekolah"
+            lead="Gunakan email atau nomor induk dan kata sandi akun sekolah Anda."
+            progress={filledShare(answers)}
+            instructions={[
+                schoolLinked
+                    ? 'Kode sekolah sudah terisi dari alamat sekolah yang Anda buka.'
+                    : 'Kode sekolah didapat dari admin sekolah Anda.',
+                'Akun tanpa email masuk dengan NIS (siswa) atau NIP (guru).',
+                'Di HP atau komputer bersama, jangan centang “Ingat saya”.',
+            ]}
+            after={
+                <span>
+                    Sekolah Anda belum terdaftar?{' '}
+                    <LembarLink
+                        href={registerSchool.url()}
+                        className="text-(--graphite)"
+                    >
+                        Daftarkan sekolah
+                    </LembarLink>
+                </span>
+            }
         >
-            <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
+            <form onSubmit={submit} className="flex flex-col gap-5" noValidate>
                 {!schoolLinked && (
-                    <AuthInput
+                    <LembarInput
                         label="Kode sekolah"
                         id="school"
                         name="school"
-                        type="text"
+                        comb
                         autoComplete="organization"
                         autoFocus
                         required
@@ -64,12 +95,12 @@ export default function Login({
                     />
                 )}
 
-                <AuthInput
+                <LembarInput
                     label="Email atau NIS/NIP"
                     id="login"
                     name="login"
-                    type="text"
                     autoComplete="username"
+                    autoCapitalize="none"
                     autoFocus={schoolLinked}
                     required
                     value={form.data.login}
@@ -79,7 +110,7 @@ export default function Login({
                     }
                 />
 
-                <AuthInput
+                <LembarInput
                     label="Kata sandi"
                     id="password"
                     name="password"
@@ -93,46 +124,29 @@ export default function Login({
                     }
                 />
 
-                <div className="flex items-center justify-between">
-                    <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-                        <input
-                            type="checkbox"
-                            name="remember"
-                            checked={form.data.remember}
-                            onChange={(event) =>
-                                form.setData('remember', event.target.checked)
-                            }
-                            className="size-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-600/20"
-                        />
-                        Ingat saya
-                    </label>
+                <div className="flex flex-wrap items-center justify-between gap-x-4">
+                    <LembarCheck
+                        label="Ingat saya"
+                        name="remember"
+                        checked={form.data.remember}
+                        onChange={(checked) =>
+                            form.setData('remember', checked)
+                        }
+                    />
 
-                    <a
-                        href={forgotPassword.url()}
-                        className="text-sm text-emerald-700 hover:text-emerald-800 hover:underline"
-                    >
+                    <LembarLink href={forgotPassword.url()}>
                         Lupa kata sandi?
-                    </a>
+                    </LembarLink>
                 </div>
 
-                <button
+                <LembarButton
                     type="submit"
                     disabled={form.processing}
-                    className="mt-2 w-full rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
+                    className="w-full"
                 >
                     {form.processing ? 'Memeriksa...' : 'Masuk'}
-                </button>
-
-                <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
-                    Sekolah Anda belum terdaftar?{' '}
-                    <a
-                        href={registerSchool.url()}
-                        className="text-emerald-700 hover:text-emerald-800 hover:underline"
-                    >
-                        Daftarkan sekolah
-                    </a>
-                </p>
+                </LembarButton>
             </form>
-        </AuthShell>
+        </LembarShell>
     );
 }

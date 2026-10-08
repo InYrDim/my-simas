@@ -1,8 +1,11 @@
 import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 
-import { AuthInput } from '@shared/components/AuthInput';
-import { AuthShell } from '@shared/components/AuthShell';
+import { LembarButton, LembarInput } from '@shared/components/lembar/fields';
+import {
+    filledShare,
+    LembarShell,
+} from '@shared/components/lembar/LembarShell';
 import { useTenant } from '@shared/hooks/useTenant';
 
 import { store as resetStore } from '@/actions/Modules/Identity/App/Http/Controllers/Auth/NewPasswordController';
@@ -34,15 +37,24 @@ export default function ResetPassword({ email, token }: ResetPasswordProps) {
     }
 
     return (
-        <AuthShell
-            tone="light"
-            eyebrow={tenant ? tenant.name : 'Portal Sekolah'}
+        <LembarShell
+            area="Portal sekolah"
+            sheet="Lembar kata sandi baru"
+            sheetNote={tenant?.name}
             title="Atur kata sandi baru"
-            subtitle="Buat kata sandi baru untuk akun sekolah Anda."
-            footer="SIMAS untuk sekolah"
+            lead="Buat kata sandi baru untuk akun sekolah Anda."
+            progress={filledShare([
+                form.data.email,
+                form.data.password,
+                form.data.password_confirmation,
+            ])}
+            instructions={[
+                'Tautan dari email berlaku 60 menit dan hanya bisa dipakai sekali.',
+                'Setelah disimpan, Anda langsung masuk dengan kata sandi baru.',
+            ]}
         >
-            <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
-                <AuthInput
+            <form onSubmit={submit} className="flex flex-col gap-5" noValidate>
+                <LembarInput
                     label="Email"
                     id="email"
                     name="email"
@@ -56,7 +68,7 @@ export default function ResetPassword({ email, token }: ResetPasswordProps) {
                     }
                 />
 
-                <AuthInput
+                <LembarInput
                     label="Kata sandi baru"
                     id="password"
                     name="password"
@@ -71,7 +83,7 @@ export default function ResetPassword({ email, token }: ResetPasswordProps) {
                     }
                 />
 
-                <AuthInput
+                <LembarInput
                     label="Ulangi kata sandi baru"
                     id="password_confirmation"
                     name="password_confirmation"
@@ -88,14 +100,14 @@ export default function ResetPassword({ email, token }: ResetPasswordProps) {
                     }
                 />
 
-                <button
+                <LembarButton
                     type="submit"
                     disabled={form.processing}
-                    className="mt-2 w-full rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
+                    className="w-full"
                 >
                     {form.processing ? 'Menyimpan...' : 'Simpan kata sandi'}
-                </button>
+                </LembarButton>
             </form>
-        </AuthShell>
+        </LembarShell>
     );
 }

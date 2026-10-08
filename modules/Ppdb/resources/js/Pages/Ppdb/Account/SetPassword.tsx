@@ -1,16 +1,11 @@
 import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 
-import { Button } from '@shared/components/ui/button';
+import { LembarButton, LembarInput } from '@shared/components/lembar/fields';
 import {
-    Field,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-} from '@shared/components/ui/field';
-import { Input } from '@shared/components/ui/input';
-
-import PortalPage from '../../../Components/PortalPage';
+    filledShare,
+    LembarShell,
+} from '@shared/components/lembar/LembarShell';
 
 /**
  * Set a new password from an emailed link. `action` is the signed URL the
@@ -37,55 +32,57 @@ export default function SetPassword({
     }
 
     return (
-        <PortalPage
+        <LembarShell
+            area="PPDB · Calon siswa"
+            sheet="Lembar kata sandi baru"
             title="Buat kata sandi baru"
-            description={`Buat kata sandi baru untuk ${email}.`}
+            lead={`Buat kata sandi baru untuk ${email}.`}
+            progress={filledShare([
+                form.data.password,
+                form.data.password_confirmation,
+            ])}
         >
-            <form onSubmit={submit} noValidate>
-                <FieldGroup>
-                    <Field data-invalid={!!form.errors.password}>
-                        <FieldLabel htmlFor="password">Kata sandi</FieldLabel>
-                        <Input
-                            id="password"
-                            name="password"
-                            type="password"
-                            autoComplete="new-password"
-                            autoFocus
-                            required
-                            value={form.data.password}
-                            aria-invalid={!!form.errors.password}
-                            onChange={(event) =>
-                                form.setData('password', event.target.value)
-                            }
-                        />
-                        <FieldError>{form.errors.password}</FieldError>
-                    </Field>
+            <form onSubmit={submit} className="flex flex-col gap-5" noValidate>
+                <LembarInput
+                    label="Kata sandi"
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete="new-password"
+                    autoFocus
+                    required
+                    value={form.data.password}
+                    error={form.errors.password}
+                    onChange={(event) =>
+                        form.setData('password', event.target.value)
+                    }
+                />
 
-                    <Field>
-                        <FieldLabel htmlFor="password_confirmation">
-                            Ulangi kata sandi
-                        </FieldLabel>
-                        <Input
-                            id="password_confirmation"
-                            name="password_confirmation"
-                            type="password"
-                            autoComplete="new-password"
-                            required
-                            value={form.data.password_confirmation}
-                            onChange={(event) =>
-                                form.setData(
-                                    'password_confirmation',
-                                    event.target.value,
-                                )
-                            }
-                        />
-                    </Field>
+                <LembarInput
+                    label="Ulangi kata sandi"
+                    id="password_confirmation"
+                    name="password_confirmation"
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    value={form.data.password_confirmation}
+                    error={form.errors.password_confirmation}
+                    onChange={(event) =>
+                        form.setData(
+                            'password_confirmation',
+                            event.target.value,
+                        )
+                    }
+                />
 
-                    <Button type="submit" disabled={form.processing}>
-                        {form.processing ? 'Menyimpan...' : 'Simpan kata sandi'}
-                    </Button>
-                </FieldGroup>
+                <LembarButton
+                    type="submit"
+                    disabled={form.processing}
+                    className="w-full"
+                >
+                    {form.processing ? 'Menyimpan...' : 'Simpan kata sandi'}
+                </LembarButton>
             </form>
-        </PortalPage>
+        </LembarShell>
     );
 }
