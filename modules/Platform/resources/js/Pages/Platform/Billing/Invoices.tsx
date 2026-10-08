@@ -1,15 +1,31 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 
 import {
+    confirm as confirmInvoice,
     index as invoicesIndex,
-    pay as payInvoice,
     voidMethod as voidInvoice,
 } from '@/actions/Modules/Platform/App/Http/Controllers/InvoiceController';
 import { show as showTenant } from '@/actions/Modules/Platform/App/Http/Controllers/TenantConsoleController';
 import { Button } from '@shared/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@shared/components/ui/dialog';
+import {
+    Field,
+    FieldDescription,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+} from '@shared/components/ui/field';
 import { Input } from '@shared/components/ui/input';
+import { Textarea } from '@shared/components/ui/textarea';
 import { TableCell, TableRow } from '@shared/components/ui/table';
 
 import { consolePath } from '../../../Components/consolePath';
@@ -35,9 +51,21 @@ interface InvoicesProps {
     filters: { q: string; status: string };
 }
 
-/** Invoices: search, filter, mark paid (gateway) or void. */
+const methodOptions = [
+    { value: 'bank_transfer', label: 'Transfer bank' },
+    { value: 'cash', label: 'Tunai' },
+    { value: 'other', label: 'Lainnya' },
+];
+
+/** Local calendar day as YYYY-MM-DD (the date input's format). */
+function todayIso(): string {
+    return new Date().toLocaleDateString('en-CA');
+}
+
+/** Invoices: search, filter, confirm a payment (modal) or void. */
 export default function BillingInvoices({ invoices, filters }: InvoicesProps) {
     const [query, setQuery] = useState(filters.q);
+    const [confirming, setConfirming] = useState<ConsoleInvoice | null>(null);
     const base = invoicesIndex.url();
 
     function change(next: Partial<typeof filters>) {
@@ -139,15 +167,10 @@ export default function BillingInvoices({ invoices, filters }: InvoicesProps) {
                                             <Button
                                                 size="sm"
                                                 onClick={() =>
-                                                    send(
-                                                        'post',
-                                                        payInvoice.url({
-                                                            invoice: invoice.id,
-                                                        }),
-                                                    )
+                                                    setConfirming(invoice)
                                                 }
                                             >
-                                                Tandai lunas
+                                                Konfirmasi pembayaran
                                             </Button>
                                             <Button
                                                 size="sm"
@@ -172,6 +195,139 @@ export default function BillingInvoices({ invoices, filters }: InvoicesProps) {
                 )}
                 <ListPagination page={invoices} />
             </div>
+
+            <Dialog
+                open={confirming !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setConfirming(null);
+                    }
+                }}
+            >
+                <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
+                    {confirming !== null && (
+                        <ConfirmPaymentForm
+                            key={confirming.id}
+                            invoice={confirming}
+                            onDone={() => setConfirming(null)}
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
         </ProviderLayout>
+    );
+}
+
+function ConfirmPaymentForm({
+    invoice,
+    onDone,
+}: {
+    invoice: ConsoleInvoice;
+    onDone: () => void;
+}) {
+    const form = useForm({
+        method: 'bank_transfer',
+        reference: '',
+        paid_on: todayIso(),
+        note: '',
+    });
+
+    function submit(event: FormEvent) {
+        event.preventDefault();
+
+        form.post(consolePath(confirmInvoice.url({ invoice: invoice.id })), {
+            preserveScroll: true,
+            onSuccess: onDone,
+        });
+    }
+
+    return (
+        <form onSubmit={submit} noValidate>
+            <DialogHeader>
+                <DialogTitle>Konfirmasi pembayaran</DialogTitle>
+                <DialogDescription>
+                    {invoice.number} · {invoice.tenantName} ·{' '}
+                    {formatRupiah(invoice.amount)}. Hanya nominal pas yang
+                    diterima.
+                </DialogDescription>
+            </DialogHeader>
+
+            <FieldGroup className="my-5">
+                <Field data-invalid={!!form.errors.method}>
+                    <FieldLabel>Metode pembayaran</FieldLabel>
+                    <OptionSelect
+                        label="Metode pembayaran"
+                        value={form.data.method}
+                        onChange={(method) => form.setData('method', method)}
+                        options={methodOptions}
+                    />
+                    <FieldError>{form.errors.method}</FieldError>
+                </Field>
+                <Field data-invalid={!!form.errors.reference}>
+                    <FieldLabel htmlFor="payment-reference">
+                        Nomor referensi
+                        {form.data.method === 'bank_transfer'
+                            ? ''
+                            : ' (opsional)'}
+                    </FieldLabel>
+                    <Input
+                        id="payment-reference"
+                        value={form.data.reference}
+                        onChange={(event) =>
+                            form.setData('reference', event.target.value)
+                        }
+                        aria-invalid={!!form.errors.reference}
+                        autoFocus
+                    />
+                    {form.errors.reference ? (
+                        <FieldError>{form.errors.reference}</FieldError>
+                    ) : (
+                        <FieldDescription>
+                            Nomor bukti transfer atau berita transfer.
+                        </FieldDescription>
+                    )}
+                </Field>
+                <Field data-invalid={!!form.errors.paid_on}>
+                    <FieldLabel htmlFor="payment-paid-on">
+                        Tanggal bayar
+                    </FieldLabel>
+                    <Input
+                        id="payment-paid-on"
+                        type="date"
+                        max={todayIso()}
+                        value={form.data.paid_on}
+                        onChange={(event) =>
+                            form.setData('paid_on', event.target.value)
+                        }
+                        aria-invalid={!!form.errors.paid_on}
+                    />
+                    <FieldError>{form.errors.paid_on}</FieldError>
+                </Field>
+                <Field data-invalid={!!form.errors.note}>
+                    <FieldLabel htmlFor="payment-note">
+                        Catatan (opsional)
+                    </FieldLabel>
+                    <Textarea
+                        id="payment-note"
+                        value={form.data.note}
+                        onChange={(event) =>
+                            form.setData('note', event.target.value)
+                        }
+                        aria-invalid={!!form.errors.note}
+                    />
+                    <FieldError>{form.errors.note}</FieldError>
+                </Field>
+                <FieldError>{form.errors.billing}</FieldError>
+            </FieldGroup>
+
+            <DialogFooter>
+                <Button type="button" variant="outline" onClick={onDone}>
+                    Batal
+                </Button>
+                <Button type="submit" disabled={form.processing}>
+                    Tandai lunas
+                </Button>
+            </DialogFooter>
+        </form>
     );
 }
