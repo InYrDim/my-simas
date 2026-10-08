@@ -90,6 +90,19 @@ export interface TenantListItem {
     timezone: string;
     createdAt: string | null;
     subscription: ConsoleSubscription | null;
+    overLimit: boolean;
+}
+
+export type UsageState = 'ok' | 'near' | 'over';
+
+/** One usage figure against a plan limit; limit null = no limit. */
+export interface UsageLine {
+    key: string;
+    label: string;
+    unit: string;
+    used: number;
+    limit: number | null;
+    state: UsageState;
 }
 
 export interface TenantDetail {

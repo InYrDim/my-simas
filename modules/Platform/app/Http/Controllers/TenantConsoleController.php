@@ -7,10 +7,12 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Platform\App\Contracts\DTOs\UsageLine;
 use Modules\Platform\App\Contracts\ModuleRegistry;
 use Modules\Platform\App\Contracts\PermissionRegistry;
 use Modules\Platform\App\Contracts\TenantModules;
 use Modules\Platform\App\Contracts\TenantRoles;
+use Modules\Platform\App\Contracts\TenantUsage;
 use Modules\Platform\App\Domain\Models\Invoice;
 use Modules\Platform\App\Domain\Models\Plan;
 use Modules\Platform\App\Domain\Models\Subscription;
@@ -33,6 +35,7 @@ final class TenantConsoleController
         private readonly TenantModules $tenantModules,
         private readonly ModuleFlagManager $flags,
         private readonly TenantLifecycle $lifecycle,
+        private readonly TenantUsage $usage,
     ) {}
 
     public function index(Request $request): Response
@@ -80,6 +83,8 @@ final class TenantConsoleController
                 'subscription' => $tenant->subscription !== null
                     ? ConsoleResources::subscription($tenant->subscription)
                     : null,
+                'overLimit' => collect($this->usage->forTenant($tenant->id))
+                    ->contains(fn (UsageLine $line): bool => $line->isOver()),
             ]);
 
         return Inertia::render('Platform/Tenants/Index', [
@@ -134,6 +139,14 @@ final class TenantConsoleController
             'subscription' => $subscription !== null ? ConsoleResources::subscription($subscription) : null,
             'plans' => Plan::query()->selectable()->orderBy('sort_order')->get()
                 ->map(fn (Plan $plan): array => ConsoleResources::plan($plan))->all(),
+            'usage' => array_map(fn (UsageLine $line): array => [
+                'key' => $line->key,
+                'label' => $line->label,
+                'unit' => $line->unit,
+                'used' => $line->used,
+                'limit' => $line->limit,
+                'state' => $line->state,
+            ], $this->usage->forTenant($tenant->id)),
             'modules' => $modules,
             'permissionCatalog' => $catalog,
             'roles' => $roleRows,

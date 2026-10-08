@@ -141,7 +141,12 @@ export default function TenantsIndex({ tenants, filters, plans }: IndexProps) {
                                     </p>
                                 </TableCell>
                                 <TableCell>
-                                    <StatusChip status={tenant.status} />
+                                    <div className="flex flex-wrap gap-1">
+                                        <StatusChip status={tenant.status} />
+                                        {tenant.overLimit && (
+                                            <StatusChip status="over" />
+                                        )}
+                                    </div>
                                 </TableCell>
                                 <TableCell>
                                     {tenant.subscription?.planName ?? '—'}

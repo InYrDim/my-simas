@@ -17,6 +17,8 @@ use Modules\Platform\App\Contracts\TenantRoles;
 use Modules\Platform\App\Contracts\TenantSession;
 use Modules\Platform\App\Contracts\TenantStorage;
 use Modules\Platform\App\Contracts\TenantUrl;
+use Modules\Platform\App\Contracts\TenantUsage;
+use Modules\Platform\App\Contracts\UsageMeters;
 use Modules\Platform\App\Contracts\WhatsappChannel;
 use Modules\Platform\App\Http\Middleware\EnsureModuleActive;
 use Modules\Platform\App\Http\Middleware\ResolveTenant;
@@ -56,6 +58,9 @@ use Modules\Platform\App\Infrastructure\Tenancy\SchoolCodeTenantResolver;
 use Modules\Platform\App\Infrastructure\Tenancy\SessionTenantSession;
 use Modules\Platform\App\Infrastructure\Tenancy\TenantLifecycle;
 use Modules\Platform\App\Infrastructure\Tenancy\TenantQueueContext;
+use Modules\Platform\App\Infrastructure\Usage\DefaultTenantUsage;
+use Modules\Platform\App\Infrastructure\Usage\DefaultUsageMeters;
+use Modules\Platform\App\Infrastructure\Usage\StorageMeter;
 use Modules\Platform\App\Infrastructure\Whatsapp\DefaultWhatsappChannel;
 
 class PlatformServiceProvider extends ServiceProvider
@@ -114,6 +119,14 @@ class PlatformServiceProvider extends ServiceProvider
         // entries; the tenant shell reads the filtered list.
         $this->app->singleton(DefaultTenantNavigation::class);
         $this->app->alias(DefaultTenantNavigation::class, TenantNavigation::class);
+
+        // Usage against plan limits: modules register meters, Platform
+        // measures them (display only).
+        $this->app->singleton(DefaultUsageMeters::class);
+        $this->app->alias(DefaultUsageMeters::class, UsageMeters::class);
+        $this->app->singleton(DefaultTenantUsage::class);
+        $this->app->alias(DefaultTenantUsage::class, TenantUsage::class);
+        $this->app->singleton(StorageMeter::class);
 
         $this->app->singleton(TenantRoleResolver::class);
         $this->app->singleton(PermissionSync::class);
@@ -181,6 +194,22 @@ class PlatformServiceProvider extends ServiceProvider
         $this->registerSchemaMacro();
         $this->registerQueueContext();
         $this->registerInertiaPagePaths();
+        $this->registerUsageMeters();
+    }
+
+    /**
+     * Platform's own usage meter: files under the school's storage directory.
+     */
+    protected function registerUsageMeters(): void
+    {
+        $this->app->make(UsageMeters::class)->register(
+            DefaultTenantUsage::PLATFORM_MODULE,
+            'storage',
+            'Penyimpanan',
+            'MB',
+            fn (): int => $this->app->make(StorageMeter::class)->megabytes(),
+            'storage_mb',
+        );
     }
 
     /**

@@ -22,6 +22,7 @@ use Modules\Platform\App\Contracts\ModuleRegistry;
 use Modules\Platform\App\Contracts\PermissionRegistry;
 use Modules\Platform\App\Contracts\SchoolSessionOpener;
 use Modules\Platform\App\Contracts\TenantNavigation;
+use Modules\Platform\App\Contracts\UsageMeters;
 
 class IdentityServiceProvider extends ServiceProvider
 {
@@ -63,6 +64,7 @@ class IdentityServiceProvider extends ServiceProvider
         $this->registerPolicies();
         $this->registerIdentityPermissions();
         $this->registerNavigation();
+        $this->registerUsageMeters();
         $this->listenForTenantCreated();
         $this->listenForTenantApproved();
         $this->commands([RolesSyncCommand::class]);
@@ -118,6 +120,27 @@ class IdentityServiceProvider extends ServiceProvider
             'identity.users.deactivate',
             'identity.users.sendReset',
         ]);
+    }
+
+    /**
+     * Register the staff-account meter: active users who do not hold the
+     * `siswa` role, or hold it next to another role. Invited accounts
+     * count; the figure is indicative since a school admin can change roles.
+     */
+    protected function registerUsageMeters(): void
+    {
+        $this->app->make(UsageMeters::class)->register(
+            'identity',
+            'staff_accounts',
+            'Akun staf',
+            'akun',
+            fn (): int => User::query()
+                ->whereNull('deactivated_at')
+                ->where(fn ($staff) => $staff
+                    ->whereDoesntHave('roles', fn ($roles) => $roles->where('name', 'siswa'))
+                    ->orWhereHas('roles', fn ($roles) => $roles->where('name', '!=', 'siswa')))
+                ->count(),
+        );
     }
 
     /**

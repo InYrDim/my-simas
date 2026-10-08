@@ -1,6 +1,6 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
-import type { FormEvent } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 
 import {
     pay as payInvoice,
@@ -80,12 +80,14 @@ import type {
     ConsoleSubscription,
     PermissionGroup,
     TenantDetail,
+    UsageLine,
 } from '../../../types/console';
 
 interface ShowProps {
     tenant: TenantDetail;
     subscription: ConsoleSubscription | null;
     plans: ConsolePlan[];
+    usage: UsageLine[];
     modules: ConsoleModule[];
     permissionCatalog: PermissionGroup[];
     roles: ConsoleRole[];
@@ -103,6 +105,7 @@ export default function TenantShow({
     tenant,
     subscription,
     plans,
+    usage,
     modules,
     permissionCatalog,
     roles,
@@ -140,6 +143,7 @@ export default function TenantShow({
                     <Overview
                         tenant={tenant}
                         subscription={subscription}
+                        usage={usage}
                         route={route}
                     />
                 </TabsContent>
@@ -259,10 +263,12 @@ function Confirm({
 function Overview({
     tenant,
     subscription,
+    usage,
     route,
 }: {
     tenant: TenantDetail;
     subscription: ConsoleSubscription | null;
+    usage: UsageLine[];
     route: Route;
 }) {
     const form = useForm({
@@ -406,6 +412,32 @@ function Overview({
                                     : '—',
                             ],
                         ]}
+                    />
+                )}
+            </Panel>
+
+            <Panel title="Pemakaian" className="lg:col-span-2">
+                {usage.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                        Belum ada pemakaian yang diukur.
+                    </p>
+                ) : (
+                    <DefinitionList
+                        rows={usage.map((line): [string, ReactNode] => [
+                            line.label,
+                            <span
+                                key={line.key}
+                                className="flex flex-wrap items-center gap-2"
+                            >
+                                {line.used.toLocaleString('id-ID')}{' '}
+                                {line.limit === null
+                                    ? `${line.unit} (tanpa batas)`
+                                    : `dari ${line.limit.toLocaleString('id-ID')} ${line.unit}`}
+                                {line.state !== 'ok' && (
+                                    <StatusChip status={line.state} />
+                                )}
+                            </span>,
+                        ])}
                     />
                 )}
             </Panel>
