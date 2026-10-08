@@ -20,8 +20,8 @@ use Modules\Platform\Database\Seeders\BillingMasterDataSeeder;
 use Modules\Ppdb\Database\Seeders\PpdbDemoSeeder;
 
 /**
- * One complete demo school (`sekolah-demo`): every module on, a paying
- * subscription, a school admin, all master data (classes, students,
+ * One complete demo school (`sekolah-demo`): every module on, a running
+ * trial on the Standard plan (so the trial banner shows), a school admin, all master data (classes, students,
  * teachers, tenaga kependidikan), their accounts, attendance and PPDB.
  * Local only; safe to run again, every step skips what already exists.
  *
@@ -83,7 +83,11 @@ class DemoSchoolSeeder extends Seeder
 
         $standard = Plan::query()->where('key', 'standard')->firstOrFail();
 
-        SubscriptionFactory::new()->forPlan($standard->id)->active(20)->forTenant($tenant->id)->create();
+        SubscriptionFactory::new()
+            ->forPlan($standard->id)
+            ->trialEndingIn((int) config('billing.trial_days', 14))
+            ->forTenant($tenant->id)
+            ->create();
     }
 
     private function seedAdmin(Tenant $tenant): void
