@@ -24,12 +24,27 @@ final class ConsoleResources
             'name' => $plan->name,
             'priceMonthly' => $plan->price_monthly,
             'priceYearly' => $plan->price_yearly,
-            'maxUsers' => $plan->max_users,
+            'limits' => self::limits($plan),
             'modules' => $plan->modules,
             'isActive' => $plan->is_active,
+            'isPublic' => $plan->is_public,
             'sortOrder' => $plan->sort_order,
             'archived' => $plan->archived_at !== null,
             'subscribers' => $subscribers,
+        ];
+    }
+
+    /**
+     * A plan's ceilings as the pages read them; null = no limit.
+     *
+     * @return array{students: int|null, staffAccounts: int|null, storageMb: int|null}
+     */
+    public static function limits(Plan $plan): array
+    {
+        return [
+            'students' => $plan->limit('students'),
+            'staffAccounts' => $plan->limit('staff_accounts'),
+            'storageMb' => $plan->limit('storage_mb'),
         ];
     }
 

@@ -463,14 +463,31 @@ A Fase 1 deviation from the original plan is recorded in git history:
 allowed touching it; it was deliberately left central to keep the auth
 surface minimal) — fixed in Fase 2 Stage 4.
 
-## Provider-console billing and school admins (Fase 3)
+## Provider-console billing and school admins (Fase 3, made real in Fase 17)
 
-- **Billing is Platform-internal** (`plans`, `subscriptions`, `invoices`;
-  services under `Infrastructure/Billing`). No Billing module. Cross-table
-  links are plain indexed columns — the only FK stays `tenant_id → tenants`.
-  The payment step is a stub (`AlwaysSucceedsPaymentGateway`, always `true`).
-  Initial plans come from `BillingMasterDataSeeder`; values and assumptions
-  are recorded in `modules/Platform/CONTRACT.md`.
+- **Billing is Platform-internal** (`plans`, `subscriptions`, `invoices`,
+  `payments`, `billing_notices`; services under `Infrastructure/Billing`). No
+  Billing module. Cross-table links are plain indexed columns — the only FK
+  stays `tenant_id → tenants`. These tables have no tenant scope, so a query
+  from the school side names the tenant itself.
+- **Money moves through one door.** `PaymentGateway::initiate()` creates a
+  pending Payment; `SubscriptionManager::settle()` is the only thing that
+  turns a payment into a paid invoice and a running subscription (locked,
+  idempotent, exact amount). The first gateway is a manual bank transfer the
+  provider confirms; a real gateway plugs into the same two calls.
+- **Dates are the provider's calendar.** `BillingClock::today()` is the date
+  in `billing.timezone`, not the UTC date; `billing:daily --date=` pins it.
+- **A suspended school sees one neutral 403 page** and its WhatsApp sending
+  stops; only a `billing` suspension is reopened by a payment (see the
+  Platform CONTRACT.md). Cron jobs on this hosting are plain artisan
+  commands (`docs/config/cron.md`), never `schedule:run`.
+- **Usage and the school's account panels follow the registry pattern.**
+  Core and Identity register usage meters into Platform's `UsageMeters`
+  from their own providers; Shared's account panels read the optional
+  Inertia prop `billing` (and its action links) that Platform builds, so
+  Shared imports nothing from Platform.
+- Details, tables and assumptions: `modules/Platform/CONTRACT.md`; the
+  decisions and stages: `docs/ai/plan/fase-17/billing-siap-nyata-plan.md`.
 - **School admins across tenants are an Identity page.** Platform cannot import
   Identity, so `Console/SchoolAdminController` lives in Identity on the console
   host (`auth:provider`), reads tenants through Platform's read-only
@@ -699,10 +716,13 @@ The last module that was a mockup, and the first feature module with a
   wording are Core's. The applicant also sees their result on their own page
   once it is announced.
 - **Stand-in until later.** Document completeness is an interface with an
-  always-true implementation (`DocumentCheck`), the same pattern as
-  Platform's payment gateway. A public result page is not built.
-- **In no plan yet.** `ppdb` is in no billing plan; a provider adds it to
-  a plan's modules or switches it on for a school.
+  always-true implementation (`DocumentCheck`), a replaceable seam like
+  Platform's `PaymentGateway`. A public result page is not built.
+- **Pro plan only.** Since Fase 17 the seeded Pro plan includes `ppdb`; a
+  provider can add it to another plan's modules or switch it on for one
+  school (a manual switch survives plan changes). Selling PPDB to public
+  schools that pay from BOS funds is unconfirmed (Pasal 66 Permendikdasmen
+  8/2026): check with the education office.
 - **After the release** run `php artisan migrate` and
   `php artisan roles:sync` (new permissions for admin-sekolah and staf-tu).
 

@@ -20,8 +20,17 @@ function includeAttendanceForEverySchool(): void
 it('lists Absensi in every seeded plan', function () {
     $this->seed(BillingMasterDataSeeder::class);
 
-    expect(Plan::query()->orderBy('sort_order')->get()->map(fn (Plan $plan): array => $plan->modules)->all())
-        ->toBe(array_fill(0, 3, ['core', 'identity', 'attendance']));
+    $plans = Plan::query()->orderBy('sort_order')->get();
+
+    expect($plans)->toHaveCount(3);
+
+    foreach ($plans as $plan) {
+        expect($plan->modules)->toContain('core', 'identity', 'attendance');
+    }
+
+    // PPDB is the one module that tells the plans apart: only Pro has it.
+    expect($plans->pluck('modules', 'key')->map(fn (array $modules): bool => in_array('ppdb', $modules, true))->all())
+        ->toBe(['starter' => false, 'standard' => false, 'pro' => true]);
 });
 
 it('gives a school on a seeded plan Absensi and keeps it through a plan change', function () {

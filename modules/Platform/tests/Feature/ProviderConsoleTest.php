@@ -1,12 +1,17 @@
 <?php
 
+use Illuminate\Support\Carbon;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Platform\App\Contracts\TenantModules;
+use Modules\Platform\App\Domain\Models\BillingCycle;
 use Modules\Platform\App\Domain\Models\InvoiceStatus;
+use Modules\Platform\App\Domain\Models\Payment;
+use Modules\Platform\App\Domain\Models\PaymentStatus;
 use Modules\Platform\App\Domain\Models\Plan;
 use Modules\Platform\App\Domain\Models\Subscription;
 use Modules\Platform\App\Domain\Models\SubscriptionStatus;
 use Modules\Platform\App\Domain\Models\TenantStatus;
+use Modules\Platform\App\Infrastructure\Billing\SubscriptionManager;
 use Modules\Platform\App\Infrastructure\Tenancy\SchoolCodeTenantResolver;
 use Modules\Platform\App\Infrastructure\Tenancy\TenantMissingException;
 use Modules\Platform\Database\Factories\InvoiceFactory;
@@ -33,6 +38,20 @@ function console(string $path): string
 function signInProvider(array $attributes = []): void
 {
     actingAs(ProviderUserFactory::new()->create($attributes), 'provider');
+}
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function confirmation(array $overrides = []): array
+{
+    return array_merge([
+        'method' => 'bank_transfer',
+        'reference' => 'TRF-0001',
+        'paid_on' => Carbon::today()->toDateString(),
+        'note' => null,
+    ], $overrides);
 }
 
 dataset('console pages', [
@@ -221,7 +240,7 @@ describe('tenant subscription actions', function () {
         expect($invoice->amount)->toBe($plan->price_yearly)
             ->and($invoice->status)->toBe(InvoiceStatus::Unpaid);
 
-        post(console("/billing/invoices/{$invoice->id}/pay"))->assertSessionHasNoErrors();
+        post(console("/billing/invoices/{$invoice->id}/confirm"), confirmation())->assertSessionHasNoErrors();
 
         expect($subscription->refresh()->status)->toBe(SubscriptionStatus::Active)
             ->and($invoice->refresh()->status)->toBe(InvoiceStatus::Paid);
@@ -263,24 +282,28 @@ describe('plans', function () {
             'name' => 'Gold',
             'price_monthly' => 500_000,
             'price_yearly' => 5_000_000,
-            'max_users' => 200,
+            'limit_students' => 500,
+            'limit_staff_accounts' => 40,
             'modules' => ['identity'],
             'is_active' => true,
+            'is_public' => false,
         ])->assertRedirect(console('/billing/plans'));
 
         $plan = Plan::query()->where('key', 'gold')->firstOrFail();
         expect($plan->modules)->toBe(['core', 'identity'])
-            ->and($plan->max_users)->toBe(200);
+            ->and($plan->limits)->toBe(['students' => 500, 'staff_accounts' => 40])
+            ->and($plan->is_public)->toBeFalse();
 
         put(console("/billing/plans/{$plan->id}"), [
             'name' => 'Gold Plus',
             'price_monthly' => 600_000,
             'price_yearly' => 6_000_000,
-            'max_users' => null,
+            'limit_students' => null,
+            'limit_staff_accounts' => null,
             'modules' => ['identity'],
         ])->assertSessionDoesntHaveErrors();
 
-        expect($plan->refresh())->name->toBe('Gold Plus')->max_users->toBeNull();
+        expect($plan->refresh())->name->toBe('Gold Plus')->limits->toBeNull()->is_public->toBeTrue();
 
         post(console("/billing/plans/{$plan->id}/archive"))->assertRedirect();
         expect($plan->refresh()->archived_at)->not->toBeNull()
@@ -333,7 +356,74 @@ describe('invoices', function () {
         post(console("/billing/invoices/{$unpaid->id}/void"))->assertRedirect();
         expect($unpaid->refresh()->status)->toBe(InvoiceStatus::Void);
 
-        post(console("/billing/invoices/{$unpaid->id}/pay"))->assertSessionHasErrors('billing');
+        post(console("/billing/invoices/{$unpaid->id}/confirm"), confirmation())->assertSessionHasErrors('billing');
+    });
+});
+
+describe('invoice payment confirmation', function () {
+    it('records who confirmed, the method, reference and paid date', function () {
+        $provider = ProviderUserFactory::new()->create();
+        actingAs($provider, 'provider');
+        $subscription = SubscriptionFactory::new()->trialEndingIn(5)->create();
+        $invoice = app(SubscriptionManager::class)->activate($subscription, $subscription->plan->key, BillingCycle::Monthly);
+        $paidOn = Carbon::today()->subDays(2)->toDateString();
+
+        post(console("/billing/invoices/{$invoice->id}/confirm"), confirmation([
+            'paid_on' => $paidOn,
+            'note' => 'Diterima lewat BCA',
+        ]))->assertSessionHasNoErrors();
+
+        $payment = Payment::query()->where('invoice_id', $invoice->id)->sole();
+
+        expect($payment->status)->toBe(PaymentStatus::Paid)
+            ->and($payment->confirmed_by)->toBe($provider->id)
+            ->and($payment->method)->toBe('bank_transfer')
+            ->and($payment->reference)->toBe('TRF-0001')
+            ->and($payment->paid_on->toDateString())->toBe($paidOn)
+            ->and($payment->note)->toBe('Diterima lewat BCA')
+            ->and($invoice->refresh()->status)->toBe(InvoiceStatus::Paid)
+            ->and($subscription->refresh()->status)->toBe(SubscriptionStatus::Active);
+    });
+
+    it('requires a reference for a bank transfer but not for cash', function () {
+        signInProvider();
+        $subscription = SubscriptionFactory::new()->trialEndingIn(5)->create();
+        $invoice = app(SubscriptionManager::class)->activate($subscription, $subscription->plan->key, BillingCycle::Monthly);
+
+        post(console("/billing/invoices/{$invoice->id}/confirm"), confirmation(['reference' => '']))
+            ->assertSessionHasErrors('reference');
+
+        expect($invoice->refresh()->status)->toBe(InvoiceStatus::Unpaid);
+
+        post(console("/billing/invoices/{$invoice->id}/confirm"), confirmation(['method' => 'cash', 'reference' => '']))
+            ->assertSessionHasNoErrors();
+
+        expect($invoice->refresh()->status)->toBe(InvoiceStatus::Paid);
+    });
+
+    it('refuses a paid date in the future', function () {
+        signInProvider();
+        $subscription = SubscriptionFactory::new()->trialEndingIn(5)->create();
+        $invoice = app(SubscriptionManager::class)->activate($subscription, $subscription->plan->key, BillingCycle::Monthly);
+
+        post(console("/billing/invoices/{$invoice->id}/confirm"), confirmation(['paid_on' => Carbon::today()->addDay()->toDateString()]))
+            ->assertSessionHasErrors('paid_on');
+
+        expect($invoice->refresh()->status)->toBe(InvoiceStatus::Unpaid);
+    });
+
+    it('confirming twice extends the subscription once', function () {
+        signInProvider();
+        $subscription = SubscriptionFactory::new()->trialEndingIn(5)->create();
+        $invoice = app(SubscriptionManager::class)->activate($subscription, $subscription->plan->key, BillingCycle::Monthly);
+
+        post(console("/billing/invoices/{$invoice->id}/confirm"), confirmation())->assertSessionHasNoErrors();
+        $end = $subscription->refresh()->current_period_end->toDateString();
+
+        post(console("/billing/invoices/{$invoice->id}/confirm"), confirmation())->assertSessionHasErrors('billing');
+
+        expect($subscription->refresh()->current_period_end->toDateString())->toBe($end)
+            ->and(Payment::query()->where('status', PaymentStatus::Paid)->count())->toBe(1);
     });
 });
 

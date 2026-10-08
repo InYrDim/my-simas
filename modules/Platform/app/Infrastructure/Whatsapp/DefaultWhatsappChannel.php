@@ -9,6 +9,7 @@ use Modules\Platform\App\Contracts\Exceptions\WhatsappRiskNotAcknowledgedExcepti
 use Modules\Platform\App\Contracts\Exceptions\WhatsappUnavailableException;
 use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Contracts\WhatsappChannel;
+use Modules\Platform\App\Domain\Models\TenantStatus;
 use Modules\Platform\App\Domain\Models\WhatsappInstance;
 use Modules\Platform\App\Domain\Models\WhatsappInstanceStatus;
 
@@ -116,6 +117,12 @@ final class DefaultWhatsappChannel implements WhatsappChannel
 
     public function sendText(string $phone, string $text): WhatsappSendResult
     {
+        // A suspended school sends nothing: messages queued before it was
+        // closed are closed as not sent and are not offered again.
+        if ($this->context->currentOrFail()->status === TenantStatus::Suspended) {
+            return WhatsappSendResult::suspended();
+        }
+
         $instance = $this->instance();
 
         // Decided from what was last seen: a school that is not linked

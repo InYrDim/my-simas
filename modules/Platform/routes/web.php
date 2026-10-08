@@ -14,6 +14,7 @@ use Modules\Platform\App\Http\Controllers\BillingController;
 use Modules\Platform\App\Http\Controllers\InvoiceController;
 use Modules\Platform\App\Http\Controllers\PlanController;
 use Modules\Platform\App\Http\Controllers\ProviderHomeController;
+use Modules\Platform\App\Http\Controllers\School\BillingController as SchoolBillingController;
 use Modules\Platform\App\Http\Controllers\TenantConsoleController;
 use Modules\Platform\App\Http\Controllers\TenantSubscriptionController;
 use Modules\Platform\App\Http\Controllers\WhatsappInstanceController;
@@ -142,6 +143,9 @@ Route::domain((string) config('tenancy.console_domain'))->middleware('web')->nam
         Route::post('tenants/{tenant}/activate', [TenantConsoleController::class, 'activate'])
             ->name('tenants.activate');
 
+        Route::put('tenants/{tenant}/billing-exempt', [TenantConsoleController::class, 'billingExempt'])
+            ->name('tenants.billing-exempt');
+
         Route::put('tenants/{tenant}/modules', [TenantConsoleController::class, 'syncModules'])
             ->name('tenants.modules');
 
@@ -166,7 +170,9 @@ Route::domain((string) config('tenancy.console_domain'))->middleware('web')->nam
             Route::post('plans/{plan}/restore', [PlanController::class, 'restore'])->name('plans.restore');
 
             Route::get('invoices', [InvoiceController::class, 'index'])->name('invoices');
-            Route::post('invoices/{invoice}/pay', [InvoiceController::class, 'pay'])->name('invoices.pay');
+            Route::post('invoices/{invoice}/confirm', [InvoiceController::class, 'confirm'])->name('invoices.confirm');
+            Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf');
+            Route::post('invoices/{invoice}/resend', [InvoiceController::class, 'resend'])->name('invoices.resend');
             Route::post('invoices/{invoice}/void', [InvoiceController::class, 'void'])->name('invoices.void');
         });
 
@@ -209,5 +215,23 @@ Route::domain((string) config('tenancy.console_domain'))->middleware('web')->nam
             Route::post('{instance}/disable', [WhatsappInstanceController::class, 'disable'])->whereNumber('instance')->name('disable');
             Route::post('{instance}/enable', [WhatsappInstanceController::class, 'enable'])->whereNumber('instance')->name('enable');
         });
+    });
+});
+
+// The school's own billing (Fase 17): the actions behind the account
+// panels "Paket & Langganan" and "Tagihan & Invoice". Reading the data goes
+// through the shared Inertia prop `billing`. Tenant routes: the school comes
+// from the session, so they need a signed-in user, and every action needs
+// `platform.billing.pay` (the school admin by default).
+Route::middleware(['web', 'auth', 'can:platform.billing.pay'])->prefix('langganan')->name('school.billing.')->group(function (): void {
+    Route::post('berlangganan', [SchoolBillingController::class, 'subscribe'])->name('subscribe');
+    Route::post('paket', [SchoolBillingController::class, 'changePlan'])->name('plan');
+    Route::delete('paket/jadwal', [SchoolBillingController::class, 'cancelScheduledChange'])->name('plan.cancel');
+    Route::put('siklus', [SchoolBillingController::class, 'changeCycle'])->name('cycle');
+
+    Route::prefix('invoice/{invoice}')->where(['invoice' => '[A-Za-z0-9\-]+'])->group(function (): void {
+        Route::post('bayar', [SchoolBillingController::class, 'pay'])->name('pay');
+        Route::post('transfer', [SchoolBillingController::class, 'reportTransfer'])->name('report');
+        Route::get('pdf', [SchoolBillingController::class, 'pdf'])->name('pdf');
     });
 });

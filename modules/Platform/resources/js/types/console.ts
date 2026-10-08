@@ -21,15 +21,23 @@ export interface Paginated<T> {
     total: number;
 }
 
+/** A plan's ceilings; null = no limit. */
+export interface PlanLimits {
+    students: number | null;
+    staffAccounts: number | null;
+    storageMb: number | null;
+}
+
 export interface ConsolePlan {
     id: number;
     key: string;
     name: string;
     priceMonthly: number;
     priceYearly: number;
-    maxUsers: number | null;
+    limits: PlanLimits;
     modules: string[];
     isActive: boolean;
+    isPublic: boolean;
     sortOrder: number;
     archived: boolean;
     subscribers: number | null;
@@ -72,6 +80,31 @@ export interface ConsoleInvoice {
     paidAt: string | null;
     periodStart: string;
     periodEnd: string;
+    /** Delivery history, newest first; only on the invoice list page. */
+    notices?: BillingNoticeRow[];
+    /** What the school said about a transfer it made, if it did. */
+    reportedTransfer?: {
+        transferredOn: string;
+        bank: string;
+        senderName: string;
+        reference: string | null;
+    } | null;
+}
+
+export interface BillingNoticeRow {
+    id: number;
+    kind:
+        | 'invoice_issued'
+        | 'due_reminder'
+        | 'trial_ending'
+        | 'overdue_reminder'
+        | 'payment_received'
+        | 'access_stopped'
+        | 'access_reopened';
+    recipient: string | null;
+    status: 'queued' | 'sent' | 'failed';
+    error: string | null;
+    at: string | null;
 }
 
 export interface TenantListItem {
@@ -82,6 +115,27 @@ export interface TenantListItem {
     timezone: string;
     createdAt: string | null;
     subscription: ConsoleSubscription | null;
+    overLimit: boolean;
+}
+
+export type UsageState = 'ok' | 'near' | 'over';
+
+/** One usage figure against a plan limit; limit null = no limit. */
+export interface UsageLine {
+    key: string;
+    label: string;
+    unit: string;
+    used: number;
+    limit: number | null;
+    state: UsageState;
+}
+
+/** State of the billing:daily cron job, as the billing overview shows it. */
+export interface BillingDailyStatus {
+    lastRunAt: string | null;
+    stale: boolean;
+    staleDays: number;
+    blocked: { at: string; count: number } | null;
 }
 
 export interface TenantDetail {
@@ -91,6 +145,10 @@ export interface TenantDetail {
     domain: string | null;
     status: TenantStatus;
     timezone: string;
+    suspendedReason: 'billing' | 'manual' | null;
+    billingExempt: boolean;
+    billingEmail: string | null;
+    billingName: string | null;
     createdAt: string | null;
 }
 

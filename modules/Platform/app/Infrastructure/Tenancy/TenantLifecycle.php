@@ -2,6 +2,7 @@
 
 namespace Modules\Platform\App\Infrastructure\Tenancy;
 
+use Modules\Platform\App\Domain\Models\SuspensionReason;
 use Modules\Platform\App\Domain\Models\Tenant;
 use Modules\Platform\App\Domain\Models\TenantStatus;
 
@@ -12,8 +13,19 @@ use Modules\Platform\App\Domain\Models\TenantStatus;
  */
 final class TenantLifecycle
 {
-    public function suspend(Tenant $tenant): Tenant
+    /**
+     * Close the school. A school that is already suspended keeps the reason
+     * it was suspended for: a billing run never turns a manual suspension
+     * into one a payment could lift.
+     */
+    public function suspend(Tenant $tenant, SuspensionReason $reason = SuspensionReason::Manual): Tenant
     {
+        if ($tenant->status === TenantStatus::Suspended) {
+            return $tenant;
+        }
+
+        $tenant->suspended_reason = $reason;
+
         return $this->setStatus($tenant, TenantStatus::Suspended);
     }
 
@@ -22,11 +34,34 @@ final class TenantLifecycle
         return $this->setStatus($tenant, TenantStatus::Active);
     }
 
+    /**
+     * Reopen a school closed for billing, and only that kind: a payment or
+     * a trial extension must not undo a manual suspension.
+     *
+     * @return bool whether the school was reopened
+     */
+    public function reactivateIfBillingSuspended(Tenant $tenant): bool
+    {
+        if ($tenant->status !== TenantStatus::Suspended || $tenant->suspended_reason !== SuspensionReason::Billing) {
+            return false;
+        }
+
+        $this->activate($tenant);
+
+        return true;
+    }
+
     public function setStatus(Tenant $tenant, TenantStatus $status): Tenant
     {
         if ($tenant->status === $status) {
             return $tenant;
         }
+
+        // The reason always matches the status; a suspension nobody gave a
+        // reason for counts as the provider's own.
+        $tenant->suspended_reason = $status === TenantStatus::Active
+            ? null
+            : ($tenant->suspended_reason ?? SuspensionReason::Manual);
 
         $tenant->status = $status;
         $tenant->save();

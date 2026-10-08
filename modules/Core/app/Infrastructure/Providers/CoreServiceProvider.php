@@ -16,6 +16,7 @@ use Modules\Core\App\Contracts\StudentAdmission;
 use Modules\Core\App\Contracts\StudentDirectory;
 use Modules\Core\App\Contracts\TeacherSchedule;
 use Modules\Core\App\Domain\Dashboard\SchoolDashboard;
+use Modules\Core\App\Domain\Models\Student;
 use Modules\Core\App\Domain\Reports\StudentListReport;
 use Modules\Core\App\Domain\Reports\StudentMutationReport;
 use Modules\Core\App\Domain\Reports\TeachingLoadReport;
@@ -35,6 +36,7 @@ use Modules\Core\App\Infrastructure\Whatsapp\DefaultNoticeRegistry;
 use Modules\Platform\App\Contracts\ModuleRegistry;
 use Modules\Platform\App\Contracts\PermissionRegistry;
 use Modules\Platform\App\Contracts\TenantNavigation;
+use Modules\Platform\App\Contracts\UsageMeters;
 
 class CoreServiceProvider extends ServiceProvider
 {
@@ -91,6 +93,7 @@ class CoreServiceProvider extends ServiceProvider
         $this->registerPermissions();
         $this->registerNavigation();
         $this->registerInsight();
+        $this->registerUsageMeters();
         $this->loadRoutesFrom(__DIR__.'/../../../routes/web.php');
         // API routes bring their own middleware grouping inside the file.
         $this->loadRoutesFrom(__DIR__.'/../../../routes/api.php');
@@ -139,6 +142,21 @@ class CoreServiceProvider extends ServiceProvider
 
         $this->app->make(StatisticsRegistry::class)->register('core', SchoolStatistics::class);
         $this->app->make(DashboardRegistry::class)->register('core', SchoolDashboard::class);
+    }
+
+    /**
+     * Register the usage meter shown against the plan's student quota.
+     * Every student row counts, whatever its status (product decision).
+     */
+    protected function registerUsageMeters(): void
+    {
+        $this->app->make(UsageMeters::class)->register(
+            'core',
+            'students',
+            'Siswa',
+            'siswa',
+            fn (): int => Student::query()->count(),
+        );
     }
 
     /**

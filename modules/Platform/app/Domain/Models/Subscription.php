@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Modules\Platform\App\Domain\Support\BillingClock;
 use Modules\Platform\Database\Factories\SubscriptionFactory;
 
 /**
@@ -26,13 +27,14 @@ use Modules\Platform\Database\Factories\SubscriptionFactory;
  * @property Carbon|null $current_period_start
  * @property Carbon|null $current_period_end
  * @property Carbon|null $cancelled_at
+ * @property int|null $scheduled_plan_id a downgrade that takes effect at the end of the paid period
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Plan|null $plan
  * @property-read Tenant|null $tenant
  */
 #[UseFactory(SubscriptionFactory::class)]
-#[Fillable(['tenant_id', 'plan_id', 'billing_cycle', 'status', 'trial_ends_at', 'current_period_start', 'current_period_end', 'cancelled_at'])]
+#[Fillable(['tenant_id', 'plan_id', 'billing_cycle', 'status', 'trial_ends_at', 'current_period_start', 'current_period_end', 'cancelled_at', 'scheduled_plan_id'])]
 class Subscription extends Model
 {
     /** @use HasFactory<SubscriptionFactory> */
@@ -111,7 +113,7 @@ class Subscription extends Model
      */
     public function displayState(?CarbonInterface $today = null): string
     {
-        $today ??= Carbon::today();
+        $today ??= BillingClock::today();
 
         if ($this->status === SubscriptionStatus::Cancelled) {
             return self::STATE_CANCELLED;
@@ -132,6 +134,46 @@ class Subscription extends Model
         return $end->lte($today->copy()->addDays((int) config('billing.due_soon_days', 7)))
             ? self::STATE_DUE
             : self::STATE_ACTIVE;
+    }
+
+    /**
+     * The last day the school keeps access. A trial and an active
+     * subscription get a grace period after their end; a cancelled one
+     * ("not renewed") keeps access only to the end of what it had, with no
+     * grace. Null when the dates are missing, which never suspends.
+     */
+    public function accessEndsAt(): ?CarbonInterface
+    {
+        return match ($this->status) {
+            SubscriptionStatus::Trial => $this->trial_ends_at?->copy()->addDays((int) config('billing.trial_grace_days', 7)),
+            SubscriptionStatus::Active => $this->current_period_end?->copy()->addDays((int) config('billing.overdue_grace_days', 7)),
+            SubscriptionStatus::Cancelled => $this->current_period_end ?? $this->trial_ends_at,
+        };
+    }
+
+    /**
+     * Access is over: the day after the last day of access has come.
+     */
+    public function accessLapsed(?CarbonInterface $today = null): bool
+    {
+        $today ??= BillingClock::today();
+        $end = $this->accessEndsAt();
+
+        return $end !== null && $end->lt($today);
+    }
+
+    /**
+     * Past the trial or paid period but still inside the grace period.
+     */
+    public function inGrace(?CarbonInterface $today = null): bool
+    {
+        $today ??= BillingClock::today();
+        $end = $this->endsAt();
+
+        return $this->status !== SubscriptionStatus::Cancelled
+            && $end !== null
+            && $end->lt($today)
+            && ! $this->accessLapsed($today);
     }
 
     /**

@@ -36,6 +36,15 @@ final readonly class WhatsappSendResult
     }
 
     /**
+     * The school is suspended: nothing was tried and nothing will be, so
+     * the message is closed as not sent (not failed, not retried).
+     */
+    public static function suspended(): self
+    {
+        return new self(sent: false, unavailable: true, error: 'Pengiriman dihentikan sementara karena akses sekolah ditangguhkan.');
+    }
+
+    /**
      * Held back to protect the school's number. The same message should
      * be offered again after `$retryAfterSeconds`; this is not a failure.
      */

@@ -2,12 +2,15 @@
 
 namespace Modules\Platform\App\Infrastructure\Providers;
 
+use Illuminate\Mail\Events\MessageSent;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Modules\Platform\App\Contracts\ModuleRegistry;
 use Modules\Platform\App\Contracts\PermissionRegistry;
 use Modules\Platform\App\Contracts\SchoolSessionOpener;
 use Modules\Platform\App\Contracts\TenantApplications;
+use Modules\Platform\App\Contracts\TenantBilling;
 use Modules\Platform\App\Contracts\TenantCache;
 use Modules\Platform\App\Contracts\TenantContext;
 use Modules\Platform\App\Contracts\TenantDirectory;
@@ -17,14 +20,19 @@ use Modules\Platform\App\Contracts\TenantRoles;
 use Modules\Platform\App\Contracts\TenantSession;
 use Modules\Platform\App\Contracts\TenantStorage;
 use Modules\Platform\App\Contracts\TenantUrl;
+use Modules\Platform\App\Contracts\TenantUsage;
+use Modules\Platform\App\Contracts\UsageMeters;
 use Modules\Platform\App\Contracts\WhatsappChannel;
 use Modules\Platform\App\Http\Middleware\EnsureModuleActive;
 use Modules\Platform\App\Http\Middleware\ResolveTenant;
-use Modules\Platform\App\Infrastructure\Billing\AlwaysSucceedsPaymentGateway;
+use Modules\Platform\App\Infrastructure\Billing\BillingNotifier;
 use Modules\Platform\App\Infrastructure\Billing\BillingSummary;
+use Modules\Platform\App\Infrastructure\Billing\DefaultTenantBilling;
 use Modules\Platform\App\Infrastructure\Billing\InvoiceIssuer;
+use Modules\Platform\App\Infrastructure\Billing\ManualTransferGateway;
 use Modules\Platform\App\Infrastructure\Billing\PaymentGateway;
 use Modules\Platform\App\Infrastructure\Billing\SubscriptionManager;
+use Modules\Platform\App\Infrastructure\Commands\BillingDailyCommand;
 use Modules\Platform\App\Infrastructure\Commands\CachePruneExpiredCommand;
 use Modules\Platform\App\Infrastructure\Commands\PermissionsSyncCommand;
 use Modules\Platform\App\Infrastructure\Commands\ProviderCreateUserCommand;
@@ -34,6 +42,7 @@ use Modules\Platform\App\Infrastructure\Commands\TenantListCommand;
 use Modules\Platform\App\Infrastructure\Commands\TenantModulesCommand;
 use Modules\Platform\App\Infrastructure\Commands\TenantRunCommand;
 use Modules\Platform\App\Infrastructure\Commands\TenantSuspendCommand;
+use Modules\Platform\App\Infrastructure\Mail\BillingMail;
 use Modules\Platform\App\Infrastructure\Modules\DefaultModuleRegistry;
 use Modules\Platform\App\Infrastructure\Modules\DefaultTenantModules;
 use Modules\Platform\App\Infrastructure\Modules\ModuleFlagManager;
@@ -56,6 +65,9 @@ use Modules\Platform\App\Infrastructure\Tenancy\SchoolCodeTenantResolver;
 use Modules\Platform\App\Infrastructure\Tenancy\SessionTenantSession;
 use Modules\Platform\App\Infrastructure\Tenancy\TenantLifecycle;
 use Modules\Platform\App\Infrastructure\Tenancy\TenantQueueContext;
+use Modules\Platform\App\Infrastructure\Usage\DefaultTenantUsage;
+use Modules\Platform\App\Infrastructure\Usage\DefaultUsageMeters;
+use Modules\Platform\App\Infrastructure\Usage\StorageMeter;
 use Modules\Platform\App\Infrastructure\Whatsapp\DefaultWhatsappChannel;
 
 class PlatformServiceProvider extends ServiceProvider
@@ -115,6 +127,14 @@ class PlatformServiceProvider extends ServiceProvider
         $this->app->singleton(DefaultTenantNavigation::class);
         $this->app->alias(DefaultTenantNavigation::class, TenantNavigation::class);
 
+        // Usage against plan limits: modules register meters, Platform
+        // measures them (display only).
+        $this->app->singleton(DefaultUsageMeters::class);
+        $this->app->alias(DefaultUsageMeters::class, UsageMeters::class);
+        $this->app->singleton(DefaultTenantUsage::class);
+        $this->app->alias(DefaultTenantUsage::class, TenantUsage::class);
+        $this->app->singleton(StorageMeter::class);
+
         $this->app->singleton(TenantRoleResolver::class);
         $this->app->singleton(PermissionSync::class);
         $this->app->singleton(TenantPermissionBridge::class);
@@ -136,12 +156,16 @@ class PlatformServiceProvider extends ServiceProvider
         $this->app->singleton(TenantSession::class, SessionTenantSession::class);
         $this->app->alias(DefaultTenantApplications::class, TenantApplications::class);
 
-        // Subscription billing (provider side). The gateway is a stub that
-        // always succeeds until a real payment provider is chosen.
-        $this->app->singleton(PaymentGateway::class, AlwaysSucceedsPaymentGateway::class);
+        // Subscription billing (provider side). Payments start at the manual
+        // transfer gateway until a real payment provider is chosen.
+        $this->app->singleton(PaymentGateway::class, ManualTransferGateway::class);
         $this->app->singleton(InvoiceIssuer::class);
         $this->app->singleton(SubscriptionManager::class);
         $this->app->singleton(BillingSummary::class);
+
+        // The school's own door to its subscription (plan, usage, invoices,
+        // subscribing, paying); the account panels in Shared read it.
+        $this->app->singleton(TenantBilling::class, DefaultTenantBilling::class);
 
         // WhatsApp through the provider's OpenWA gateway: the school-side
         // contract. Requests, approval and the gateway client stay internal.
@@ -165,6 +189,7 @@ class PlatformServiceProvider extends ServiceProvider
             PermissionsSyncCommand::class,
             ProviderCreateUserCommand::class,
             CachePruneExpiredCommand::class,
+            BillingDailyCommand::class,
         ]);
     }
 
@@ -181,6 +206,52 @@ class PlatformServiceProvider extends ServiceProvider
         $this->registerSchemaMacro();
         $this->registerQueueContext();
         $this->registerInertiaPagePaths();
+        $this->registerUsageMeters();
+        $this->registerPermissions();
+        $this->registerBillingNoticeListener();
+    }
+
+    /**
+     * Who of a school may see its subscription and who may act on it
+     * (subscribe, change plan, pay, download an invoice). The school admin
+     * holds both by default (Identity's roles.php).
+     */
+    protected function registerPermissions(): void
+    {
+        $this->app->make(PermissionRegistry::class)->register('platform', [
+            'platform.billing.view',
+            'platform.billing.pay',
+        ]);
+    }
+
+    /**
+     * A billing mail carries its notice id in a header; once the message
+     * has been sent the notice turns `sent`.
+     */
+    protected function registerBillingNoticeListener(): void
+    {
+        Event::listen(MessageSent::class, function (MessageSent $event): void {
+            $header = $event->message->getHeaders()->get(BillingMail::NOTICE_HEADER);
+
+            if ($header !== null && ctype_digit($header->getBodyAsString())) {
+                BillingNotifier::markSent((int) $header->getBodyAsString());
+            }
+        });
+    }
+
+    /**
+     * Platform's own usage meter: files under the school's storage directory.
+     */
+    protected function registerUsageMeters(): void
+    {
+        $this->app->make(UsageMeters::class)->register(
+            DefaultTenantUsage::PLATFORM_MODULE,
+            'storage',
+            'Penyimpanan',
+            'MB',
+            fn (): int => $this->app->make(StorageMeter::class)->megabytes(),
+            'storage_mb',
+        );
     }
 
     /**

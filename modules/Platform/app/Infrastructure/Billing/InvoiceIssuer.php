@@ -3,38 +3,107 @@
 namespace Modules\Platform\App\Infrastructure\Billing;
 
 use Carbon\CarbonInterface;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Modules\Platform\App\Domain\Exceptions\BillingException;
 use Modules\Platform\App\Domain\Models\BillingCycle;
 use Modules\Platform\App\Domain\Models\Invoice;
+use Modules\Platform\App\Domain\Models\InvoiceKind;
 use Modules\Platform\App\Domain\Models\InvoiceStatus;
 use Modules\Platform\App\Domain\Models\Plan;
 use Modules\Platform\App\Domain\Models\Subscription;
+use Modules\Platform\App\Domain\Support\BillingClock;
 
 /**
- * Creates and voids invoices. Numbers are INV-YYMM-#### (sequence per
- * issue month); plan name, cycle and amount are snapshotted.
+ * Creates and voids invoices; a subscription has at most one unpaid
+ * invoice. Numbers are INV-YYMM-#### (sequence per issue month); plan
+ * name, cycle and amount are snapshotted.
  */
 final class InvoiceIssuer
 {
-    public function issue(Subscription $subscription, Plan $plan, BillingCycle $cycle, CarbonInterface $periodStart): Invoice
-    {
-        $today = Carbon::today();
+    private const NUMBER_ATTEMPTS = 5;
 
-        return Invoice::query()->create([
-            'number' => $this->nextNumber($today),
-            'tenant_id' => $subscription->tenant_id,
-            'subscription_id' => $subscription->id,
-            'plan_id' => $plan->id,
-            'plan_name' => $plan->name,
-            'billing_cycle' => $cycle,
-            'amount' => $plan->priceFor($cycle),
-            'status' => InvoiceStatus::Unpaid,
-            'issued_at' => $today,
-            'due_at' => $today->copy()->addDays((int) config('billing.invoice_due_days', 7)),
-            'period_start' => $periodStart,
-            'period_end' => $periodStart->copy()->addMonthsNoOverflow($cycle->months()),
-        ]);
+    public function __construct(
+        private readonly BillingNotifier $notifier,
+    ) {}
+
+    /**
+     * The invoice for the first paid period (after a trial or a
+     * cancellation). Due a few days after it is issued.
+     */
+    public function issueActivation(Subscription $subscription, Plan $plan, BillingCycle $cycle, CarbonInterface $periodStart): Invoice
+    {
+        $dueAt = BillingClock::today()->addDays((int) config('billing.invoice_due_days', 7));
+
+        return $this->issueOrReuse($subscription, $plan, $cycle, InvoiceKind::Activation, $periodStart, $dueAt);
+    }
+
+    /**
+     * The invoice for the next period on the current plan. $dueAt is the
+     * day the current paid period ends; a lapsed subscription passes a
+     * fresh due date instead.
+     */
+    public function issueRenewal(Subscription $subscription, Plan $plan, BillingCycle $cycle, CarbonInterface $periodStart, CarbonInterface $dueAt): Invoice
+    {
+        return $this->issueOrReuse($subscription, $plan, $cycle, InvoiceKind::Renewal, $periodStart, $dueAt);
+    }
+
+    /**
+     * The invoice for moving to a dearer plan in the middle of a paid
+     * period: the price difference for the same cycle, prorated over the
+     * days left (rounded up to whole rupiah). The period is today up to
+     * the current period end; the current plan stays in force until paid.
+     * Any open invoice of the subscription is voided first.
+     *
+     * @throws BillingException when the paid period has no days left
+     */
+    public function issueUpgrade(Subscription $subscription, Plan $from, Plan $to): Invoice
+    {
+        $today = BillingClock::today();
+        $end = $subscription->current_period_end;
+        $cycle = $subscription->billing_cycle;
+
+        $remainingDays = $end === null ? 0 : (int) $today->diffInDays($end, false);
+        $periodDays = $end === null || $subscription->current_period_start === null
+            ? 0
+            : (int) $subscription->current_period_start->diffInDays($end);
+
+        if ($remainingDays < 1 || $periodDays < 1) {
+            throw new BillingException('The paid period has no days left to upgrade in; renew instead.');
+        }
+
+        $amount = $this->proratedAmount($to->priceFor($cycle) - $from->priceFor($cycle), $remainingDays, $periodDays);
+        $dueAt = $today->copy()->addDays((int) config('billing.invoice_due_days', 7));
+
+        return DB::transaction(function () use ($subscription, $to, $cycle, $today, $end, $amount, $dueAt): Invoice {
+            $this->voidOpen($subscription);
+
+            return $this->issueOrReuse($subscription, $to, $cycle, InvoiceKind::Upgrade, $today, $dueAt, $amount, $end);
+        });
+    }
+
+    /**
+     * ceil(difference × remaining ÷ period) in whole rupiah.
+     */
+    public function proratedAmount(int $priceDifference, int $remainingDays, int $periodDays): int
+    {
+        return intdiv($priceDifference * $remainingDays + $periodDays - 1, $periodDays);
+    }
+
+    /**
+     * Void every unpaid invoice of the subscription: after a plan or
+     * cycle change they no longer match, so paying one must not be
+     * possible.
+     */
+    public function voidOpen(Subscription $subscription): void
+    {
+        Invoice::query()
+            ->where('tenant_id', $subscription->tenant_id)
+            ->where('subscription_id', $subscription->id)
+            ->where('status', InvoiceStatus::Unpaid)
+            ->get()
+            ->each(fn (Invoice $invoice): Invoice => $this->void($invoice));
     }
 
     public function void(Invoice $invoice): Invoice
@@ -46,6 +115,88 @@ final class InvoiceIssuer
         $invoice->forceFill(['status' => InvoiceStatus::Void])->save();
 
         return $invoice;
+    }
+
+    /**
+     * An open invoice for the same plan and cycle is reused; any other
+     * open invoice of the subscription is voided before a new one is
+     * issued.
+     */
+    private function issueOrReuse(Subscription $subscription, Plan $plan, BillingCycle $cycle, InvoiceKind $kind, CarbonInterface $periodStart, CarbonInterface $dueAt, ?int $amount = null, ?CarbonInterface $periodEnd = null): Invoice
+    {
+        return DB::transaction(function () use ($subscription, $plan, $cycle, $kind, $periodStart, $dueAt, $amount, $periodEnd): Invoice {
+            Subscription::query()
+                ->where('tenant_id', $subscription->tenant_id)
+                ->lockForUpdate()
+                ->findOrFail($subscription->id);
+
+            $open = Invoice::query()
+                ->where('tenant_id', $subscription->tenant_id)
+                ->where('subscription_id', $subscription->id)
+                ->where('status', InvoiceStatus::Unpaid)
+                ->orderByDesc('id')
+                ->get();
+
+            $reusable = $open->first(
+                fn (Invoice $invoice): bool => $invoice->plan_id === $plan->id && $invoice->billing_cycle === $cycle,
+            );
+
+            foreach ($open as $invoice) {
+                if ($invoice->id !== $reusable?->id) {
+                    $this->void($invoice);
+                }
+            }
+
+            if ($reusable !== null) {
+                return $reusable;
+            }
+
+            $today = BillingClock::today();
+
+            $invoice = $this->createNumbered([
+                'tenant_id' => $subscription->tenant_id,
+                'subscription_id' => $subscription->id,
+                'plan_id' => $plan->id,
+                'plan_name' => $plan->name,
+                'billing_cycle' => $cycle,
+                'kind' => $kind,
+                'amount' => $amount ?? $plan->priceFor($cycle),
+                'status' => InvoiceStatus::Unpaid,
+                'issued_at' => $today,
+                'due_at' => $dueAt,
+                'period_start' => $periodStart,
+                'period_end' => $periodEnd ?? $periodStart->copy()->addMonthsNoOverflow($cycle->months()),
+            ], $today);
+
+            $this->notifier->invoiceIssued($invoice);
+
+            return $invoice;
+        });
+    }
+
+    /**
+     * Insert with the next INV-YYMM-#### number. The subscription lock does
+     * not serialise two different schools, so a clash on the unique number
+     * column is retried (in its own savepoint) with a fresh number.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    private function createNumbered(array $attributes, Carbon $issuedOn): Invoice
+    {
+        $attempts = 0;
+
+        while (true) {
+            try {
+                return DB::transaction(fn (): Invoice => Invoice::query()->create([
+                    'number' => $this->nextNumber($issuedOn),
+                    ...$attributes,
+                ]));
+            } catch (UniqueConstraintViolationException $exception) {
+                if (++$attempts >= self::NUMBER_ATTEMPTS) {
+                    throw $exception;
+                }
+            }
+        }
     }
 
     private function nextNumber(Carbon $issuedOn): string

@@ -21,15 +21,20 @@ use Modules\Platform\Database\Factories\TenantModulesFactory;
  * @property Carbon|null $enabled_at
  * @property Carbon|null $expires_at
  * @property array<string, mixed>|null $meta
+ * @property string $source `plan` (set by a subscription) or `manual` (set by the provider)
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
 #[UseFactory(TenantModulesFactory::class)]
-#[Fillable(['module', 'enabled', 'enabled_at', 'expires_at', 'meta'])]
+#[Fillable(['module', 'enabled', 'enabled_at', 'expires_at', 'meta', 'source'])]
 class TenantModules extends Model
 {
     /** @use HasFactory<TenantModulesFactory> */
     use BelongsToTenant, HasFactory;
+
+    public const SOURCE_PLAN = 'plan';
+
+    public const SOURCE_MANUAL = 'manual';
 
     protected $table = 'tenant_modules';
 

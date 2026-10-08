@@ -19,16 +19,17 @@ use Modules\Platform\Database\Factories\PlanFactory;
  * @property string $name
  * @property int $price_monthly
  * @property int $price_yearly
- * @property int|null $max_users
+ * @property array<string, int>|null $limits named ceilings (students, staff_accounts, storage_mb); a missing key means no limit
  * @property array<int, string> $modules
  * @property bool $is_active
+ * @property bool $is_public offered at sign-up; a non-public plan is only assigned by the provider
  * @property int $sort_order
  * @property Carbon|null $archived_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
 #[UseFactory(PlanFactory::class)]
-#[Fillable(['key', 'name', 'price_monthly', 'price_yearly', 'max_users', 'modules', 'is_active', 'sort_order'])]
+#[Fillable(['key', 'name', 'price_monthly', 'price_yearly', 'limits', 'modules', 'is_active', 'is_public', 'sort_order'])]
 class Plan extends Model
 {
     /** @use HasFactory<PlanFactory> */
@@ -44,9 +45,10 @@ class Plan extends Model
         return [
             'price_monthly' => 'integer',
             'price_yearly' => 'integer',
-            'max_users' => 'integer',
+            'limits' => 'array',
             'modules' => 'array',
             'is_active' => 'boolean',
+            'is_public' => 'boolean',
             'sort_order' => 'integer',
             'archived_at' => 'datetime',
         ];
@@ -69,6 +71,27 @@ class Plan extends Model
     public function scopeSelectable(Builder $query): Builder
     {
         return $query->where('is_active', true)->whereNull('archived_at');
+    }
+
+    /**
+     * Plans offered to a school signing up (selectable and public).
+     *
+     * @param  Builder<Plan>  $query
+     * @return Builder<Plan>
+     */
+    public function scopePublic(Builder $query): Builder
+    {
+        return $query->where('is_public', true);
+    }
+
+    /**
+     * The ceiling for one measure, or null when the plan sets none.
+     */
+    public function limit(string $key): ?int
+    {
+        $value = $this->limits[$key] ?? null;
+
+        return $value === null ? null : (int) $value;
     }
 
     public function priceFor(BillingCycle $cycle): int

@@ -12,6 +12,7 @@ use Modules\Platform\App\Contracts\Exceptions\InvalidApplicationException;
 use Modules\Platform\App\Contracts\TenantApplications;
 use Modules\Platform\App\Domain\Models\Applicant;
 use Modules\Platform\App\Domain\Models\Plan;
+use Modules\Platform\App\Http\Support\ConsoleResources;
 
 /**
  * The applicant's onboarding page: fill in the school, choose a plan and
@@ -103,12 +104,13 @@ final class OnboardingController
      * The plans an applicant may choose from, cheapest first as ordered
      * by the provider.
      *
-     * @return list<array{key: string, name: string, priceMonthly: int, priceYearly: int, maxUsers: int|null, modules: array<int, string>}>
+     * @return list<array{key: string, name: string, priceMonthly: int, priceYearly: int, limits: array{students: int|null, staffAccounts: int|null, storageMb: int|null}, modules: array<int, string>}>
      */
     private function plans(): array
     {
         return array_values(Plan::query()
             ->selectable()
+            ->public()
             ->orderBy('sort_order')
             ->get()
             ->map(fn (Plan $plan): array => [
@@ -116,7 +118,7 @@ final class OnboardingController
                 'name' => $plan->name,
                 'priceMonthly' => $plan->price_monthly,
                 'priceYearly' => $plan->price_yearly,
-                'maxUsers' => $plan->max_users,
+                'limits' => ConsoleResources::limits($plan),
                 'modules' => $plan->modules,
             ])
             ->all());

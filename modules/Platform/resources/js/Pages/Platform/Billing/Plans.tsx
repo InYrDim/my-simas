@@ -100,6 +100,9 @@ export default function BillingPlans({ plans, modules }: PlansProps) {
                                             nonaktif
                                         </Badge>
                                     ) : null}
+                                    {!plan.isPublic && (
+                                        <Badge variant="outline">khusus</Badge>
+                                    )}
                                 </div>
                                 <p className="mt-1 text-xl font-semibold">
                                     {formatRupiah(plan.priceMonthly)}
@@ -119,13 +122,21 @@ export default function BillingPlans({ plans, modules }: PlansProps) {
                                 )}
 
                                 <p className="mt-5 text-xs text-muted-foreground">
-                                    Batas pengguna
+                                    Batas
                                 </p>
-                                <p className="text-sm">
-                                    {plan.maxUsers === null
-                                        ? 'Tanpa batas'
-                                        : plan.maxUsers}
-                                </p>
+                                <ul className="mt-1 text-sm">
+                                    <li>
+                                        Siswa: {limitText(plan.limits.students)}
+                                    </li>
+                                    <li>
+                                        Akun staf:{' '}
+                                        {limitText(plan.limits.staffAccounts)}
+                                    </li>
+                                    <li>
+                                        Penyimpanan:{' '}
+                                        {limitText(plan.limits.storageMb, 'MB')}
+                                    </li>
+                                </ul>
 
                                 <p className="mt-4 text-xs text-muted-foreground">
                                     Modul
@@ -220,9 +231,12 @@ function PlanForm({
         name: plan?.name ?? '',
         price_monthly: plan?.priceMonthly ?? 0,
         price_yearly: plan?.priceYearly ?? 0,
-        max_users: plan?.maxUsers ?? ('' as number | ''),
+        limit_students: plan?.limits.students ?? ('' as number | ''),
+        limit_staff_accounts: plan?.limits.staffAccounts ?? ('' as number | ''),
+        limit_storage_mb: plan?.limits.storageMb ?? ('' as number | ''),
         modules: plan?.modules ?? ['core'],
         is_active: plan?.isActive ?? true,
+        is_public: plan?.isPublic ?? true,
         sort_order: plan?.sortOrder ?? 0,
     });
 
@@ -338,33 +352,33 @@ function PlanForm({
                         />
                         <FieldError>{form.errors.price_yearly}</FieldError>
                     </Field>
-                    <Field data-invalid={!!form.errors.max_users}>
-                        <FieldLabel htmlFor="plan-users">
-                            Batas pengguna
-                        </FieldLabel>
-                        <Input
-                            id="plan-users"
-                            type="number"
-                            min={1}
-                            value={form.data.max_users}
-                            onChange={(event) =>
-                                form.setData(
-                                    'max_users',
-                                    event.target.value === ''
-                                        ? ''
-                                        : Number(event.target.value),
-                                )
-                            }
-                            aria-invalid={!!form.errors.max_users}
-                        />
-                        {form.errors.max_users ? (
-                            <FieldError>{form.errors.max_users}</FieldError>
-                        ) : (
-                            <FieldDescription>
-                                Kosongkan untuk tanpa batas.
-                            </FieldDescription>
-                        )}
-                    </Field>
+                    <LimitField
+                        id="plan-limit-students"
+                        label="Batas siswa"
+                        value={form.data.limit_students}
+                        error={form.errors.limit_students}
+                        onChange={(value) =>
+                            form.setData('limit_students', value)
+                        }
+                    />
+                    <LimitField
+                        id="plan-limit-staff"
+                        label="Batas akun staf"
+                        value={form.data.limit_staff_accounts}
+                        error={form.errors.limit_staff_accounts}
+                        onChange={(value) =>
+                            form.setData('limit_staff_accounts', value)
+                        }
+                    />
+                    <LimitField
+                        id="plan-limit-storage"
+                        label="Batas penyimpanan (MB)"
+                        value={form.data.limit_storage_mb}
+                        error={form.errors.limit_storage_mb}
+                        onChange={(value) =>
+                            form.setData('limit_storage_mb', value)
+                        }
+                    />
                     <Field data-invalid={!!form.errors.sort_order}>
                         <FieldLabel htmlFor="plan-order">
                             Urutan tampil
@@ -436,6 +450,20 @@ function PlanForm({
                         Paket aktif (bisa dipilih untuk langganan baru)
                     </FieldLabel>
                 </Field>
+
+                <Field orientation="horizontal">
+                    <Checkbox
+                        id="plan-public"
+                        checked={form.data.is_public}
+                        onCheckedChange={(checked) =>
+                            form.setData('is_public', checked === true)
+                        }
+                    />
+                    <FieldLabel htmlFor="plan-public">
+                        Tampil di pendaftaran sekolah (hapus centang untuk paket
+                        khusus yang hanya diberikan provider)
+                    </FieldLabel>
+                </Field>
             </FieldGroup>
 
             <DialogFooter>
@@ -447,5 +475,57 @@ function PlanForm({
                 </Button>
             </DialogFooter>
         </form>
+    );
+}
+
+/** Text for a ceiling; blank = no limit. */
+function limitText(value: number | null, unit?: string): string {
+    if (value === null) {
+        return 'tanpa batas';
+    }
+
+    return unit
+        ? `${value.toLocaleString('id-ID')} ${unit}`
+        : value.toLocaleString('id-ID');
+}
+
+function LimitField({
+    id,
+    label,
+    value,
+    error,
+    onChange,
+}: {
+    id: string;
+    label: string;
+    value: number | '';
+    error?: string;
+    onChange: (value: number | '') => void;
+}) {
+    return (
+        <Field data-invalid={!!error}>
+            <FieldLabel htmlFor={id}>{label}</FieldLabel>
+            <Input
+                id={id}
+                type="number"
+                min={1}
+                value={value}
+                onChange={(event) =>
+                    onChange(
+                        event.target.value === ''
+                            ? ''
+                            : Number(event.target.value),
+                    )
+                }
+                aria-invalid={!!error}
+            />
+            {error ? (
+                <FieldError>{error}</FieldError>
+            ) : (
+                <FieldDescription>
+                    Kosongkan untuk tanpa batas.
+                </FieldDescription>
+            )}
+        </Field>
     );
 }

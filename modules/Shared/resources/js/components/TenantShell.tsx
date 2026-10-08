@@ -2,9 +2,12 @@ import { Link, usePage } from '@inertiajs/react';
 import { ChevronRightIcon } from 'lucide-react';
 import { DynamicIcon } from 'lucide-react/dynamic';
 import type { IconName } from 'lucide-react/dynamic';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 
 import AccountMenu from '@shared/components/AccountMenu';
+import TrialBanner from '@shared/components/TrialBanner';
+import type { PanelKey } from './AccountMenu';
 import { Alert, AlertDescription } from '@shared/components/ui/alert';
 import {
     Collapsible,
@@ -31,6 +34,7 @@ import {
     SidebarRail,
     SidebarTrigger,
 } from '@shared/components/ui/sidebar';
+import { useCan } from '@shared/hooks/useCan';
 import { useTenant } from '@shared/hooks/useTenant';
 
 interface NavLinkItem {
@@ -122,6 +126,8 @@ export default function TenantShell({
 }) {
     const { url, props } = usePage<SharedProps>();
     const tenant = useTenant();
+    const can = useCan();
+    const [accountPanel, setAccountPanel] = useState<PanelKey | null>(null);
     const path = url.split('?')[0];
     const user = props.auth?.user ?? null;
     const schoolName = tenant?.name ?? 'SIMAS';
@@ -275,6 +281,8 @@ export default function TenantShell({
                                     schoolCode={tenant?.slug ?? ''}
                                     logoutHref={logoutHref}
                                     changePasswordHref={changePasswordHref}
+                                    panel={accountPanel}
+                                    onPanelChange={setAccountPanel}
                                 />
                             </SidebarMenuItem>
                         )}
@@ -291,6 +299,14 @@ export default function TenantShell({
                         {schoolName}
                     </span>
                 </header>
+
+                <TrialBanner
+                    onOpenPlan={
+                        can('platform.billing.view')
+                            ? () => setAccountPanel('plan')
+                            : undefined
+                    }
+                />
 
                 <main
                     className={`mx-auto w-full px-4 py-8 sm:px-6 sm:py-10 ${width}`}

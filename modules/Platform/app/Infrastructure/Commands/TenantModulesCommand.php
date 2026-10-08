@@ -5,6 +5,7 @@ namespace Modules\Platform\App\Infrastructure\Commands;
 use Illuminate\Console\Command;
 use Modules\Platform\App\Contracts\ModuleRegistry;
 use Modules\Platform\App\Domain\Models\Tenant;
+use Modules\Platform\App\Domain\Models\TenantModules;
 use Modules\Platform\App\Infrastructure\Modules\ModuleFlagManager;
 
 class TenantModulesCommand extends Command
@@ -51,12 +52,12 @@ class TenantModulesCommand extends Command
         }
 
         foreach ($enable as $module) {
-            $flags->enable($tenantId, $module);
+            $flags->enable($tenantId, $module, null, TenantModules::SOURCE_MANUAL);
             $this->info("Enabled [{$module}] for [{$slug}].");
         }
 
         foreach ($disable as $module) {
-            $flags->disable($tenantId, $module);
+            $flags->disable($tenantId, $module, TenantModules::SOURCE_MANUAL);
             $this->info("Disabled [{$module}] for [{$slug}].");
         }
 

@@ -7,15 +7,19 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Platform\App\Contracts\DTOs\UsageLine;
 use Modules\Platform\App\Contracts\ModuleRegistry;
 use Modules\Platform\App\Contracts\PermissionRegistry;
 use Modules\Platform\App\Contracts\TenantModules;
 use Modules\Platform\App\Contracts\TenantRoles;
+use Modules\Platform\App\Contracts\TenantUsage;
 use Modules\Platform\App\Domain\Models\Invoice;
 use Modules\Platform\App\Domain\Models\Plan;
 use Modules\Platform\App\Domain\Models\Subscription;
 use Modules\Platform\App\Domain\Models\SubscriptionStatus;
+use Modules\Platform\App\Domain\Models\SuspensionReason;
 use Modules\Platform\App\Domain\Models\Tenant;
+use Modules\Platform\App\Domain\Models\TenantModules as TenantModuleFlag;
 use Modules\Platform\App\Domain\Models\TenantStatus;
 use Modules\Platform\App\Http\Support\ConsoleResources;
 use Modules\Platform\App\Infrastructure\Modules\ModuleFlagManager;
@@ -33,6 +37,7 @@ final class TenantConsoleController
         private readonly TenantModules $tenantModules,
         private readonly ModuleFlagManager $flags,
         private readonly TenantLifecycle $lifecycle,
+        private readonly TenantUsage $usage,
     ) {}
 
     public function index(Request $request): Response
@@ -80,6 +85,8 @@ final class TenantConsoleController
                 'subscription' => $tenant->subscription !== null
                     ? ConsoleResources::subscription($tenant->subscription)
                     : null,
+                'overLimit' => collect($this->usage->forTenant($tenant->id))
+                    ->contains(fn (UsageLine $line): bool => $line->isOver()),
             ]);
 
         return Inertia::render('Platform/Tenants/Index', [
@@ -129,11 +136,23 @@ final class TenantConsoleController
                 'domain' => $tenant->domain,
                 'status' => $tenant->status->value,
                 'timezone' => $tenant->timezone,
+                'suspendedReason' => $tenant->suspended_reason?->value,
+                'billingExempt' => $tenant->billing_exempt,
+                'billingEmail' => $tenant->billing_email,
+                'billingName' => $tenant->billing_name,
                 'createdAt' => $tenant->created_at?->toDateString(),
             ],
             'subscription' => $subscription !== null ? ConsoleResources::subscription($subscription) : null,
             'plans' => Plan::query()->selectable()->orderBy('sort_order')->get()
                 ->map(fn (Plan $plan): array => ConsoleResources::plan($plan))->all(),
+            'usage' => array_map(fn (UsageLine $line): array => [
+                'key' => $line->key,
+                'label' => $line->label,
+                'unit' => $line->unit,
+                'used' => $line->used,
+                'limit' => $line->limit,
+                'state' => $line->state,
+            ], $this->usage->forTenant($tenant->id)),
             'modules' => $modules,
             'permissionCatalog' => $catalog,
             'roles' => $roleRows,
@@ -148,8 +167,14 @@ final class TenantConsoleController
     {
         $request->merge(['domain' => mb_strtolower(trim((string) $request->input('domain')))]);
 
+        if ($request->has('billing_email')) {
+            $request->merge(['billing_email' => mb_strtolower(trim((string) $request->input('billing_email')))]);
+        }
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
+            'billing_email' => ['nullable', 'string', 'email:rfc', 'max:190'],
+            'billing_name' => ['nullable', 'string', 'max:120'],
             'timezone' => ['required', 'timezone:all'],
             'domain' => [
                 'nullable', 'string', 'max:190', 'regex:/^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/',
@@ -158,11 +183,21 @@ final class TenantConsoleController
             ],
         ]);
 
-        $this->lifecycle->updateProfile($tenant, [
+        $profile = [
             'name' => trim($data['name']),
             'timezone' => $data['timezone'],
             'domain' => filled($data['domain'] ?? null) ? $data['domain'] : null,
-        ]);
+        ];
+
+        if (array_key_exists('billing_email', $data)) {
+            $profile['billing_email'] = filled($data['billing_email']) ? $data['billing_email'] : null;
+        }
+
+        if (array_key_exists('billing_name', $data)) {
+            $profile['billing_name'] = filled($data['billing_name']) ? trim($data['billing_name']) : null;
+        }
+
+        $this->lifecycle->updateProfile($tenant, $profile);
 
         return back()->with('status', 'Data tenant diperbarui.');
     }
@@ -195,7 +230,7 @@ final class TenantConsoleController
 
     public function suspend(Tenant $tenant): RedirectResponse
     {
-        $this->lifecycle->suspend($tenant);
+        $this->lifecycle->suspend($tenant, SuspensionReason::Manual);
 
         return back()->with('status', "{$tenant->name} ditangguhkan.");
     }
@@ -205,6 +240,21 @@ final class TenantConsoleController
         $this->lifecycle->activate($tenant);
 
         return back()->with('status', "{$tenant->name} diaktifkan kembali.");
+    }
+
+    /**
+     * Mark a school as owing nothing: billing:daily never suspends or
+     * reminds it, and it is left out of the revenue figures. Reversible.
+     */
+    public function billingExempt(Request $request, Tenant $tenant): RedirectResponse
+    {
+        $data = $request->validate(['exempt' => ['required', 'boolean']]);
+
+        $tenant->forceFill(['billing_exempt' => (bool) $data['exempt']])->save();
+
+        return back()->with('status', $tenant->billing_exempt
+            ? "{$tenant->name} dibebaskan dari tagihan."
+            : "{$tenant->name} dikenai tagihan kembali.");
     }
 
     /**
@@ -225,9 +275,15 @@ final class TenantConsoleController
                 continue;
             }
 
-            in_array($key, $wanted, true)
-                ? $this->flags->enable($tenant->id, $key)
-                : $this->flags->disable($tenant->id, $key);
+            $want = in_array($key, $wanted, true);
+
+            if ($want === $this->tenantModules->isEnabled($key, $tenant->id)) {
+                continue;
+            }
+
+            $want
+                ? $this->flags->enable($tenant->id, $key, null, TenantModuleFlag::SOURCE_MANUAL)
+                : $this->flags->disable($tenant->id, $key, TenantModuleFlag::SOURCE_MANUAL);
         }
 
         return back()->with('status', 'Modul tenant disimpan.');

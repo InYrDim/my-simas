@@ -41,6 +41,8 @@ const statusBadge: Record<string, [BadgeVariant, string]> = {
     trial_expired: ['destructive', 'uji coba berakhir'],
     due: ['outline', 'segera berakhir'],
     cancelled: ['secondary', 'berhenti'],
+    near: ['outline', 'mendekati batas'],
+    over: ['destructive', 'melebihi batas'],
     pending: ['outline', 'pending'],
     inactive: ['secondary', 'nonaktif'],
     invited: ['outline', 'belum aktivasi'],

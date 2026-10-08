@@ -7,11 +7,11 @@ use Illuminate\Auth\SessionGuard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Modules\Platform\App\Domain\Models\TenantStatus;
+use Modules\Platform\App\Http\Exceptions\TenantSuspendedException;
 use Modules\Platform\App\Infrastructure\Tenancy\DefaultTenantContext;
 use Modules\Platform\App\Infrastructure\Tenancy\SchoolCodeTenantResolver;
 use Modules\Platform\App\Infrastructure\Tenancy\TenantMissingException;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 /**
  * Resolves the tenant from the school code, not the host. Runs AFTER
@@ -157,7 +157,7 @@ final class ResolveTenant
         $this->context->adopt($tenant);
 
         if ($tenant->status === TenantStatus::Suspended) {
-            throw new AccessDeniedHttpException;
+            throw new TenantSuspendedException($tenant->name);
         }
 
         if ($request->hasSession()) {

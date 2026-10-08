@@ -1,13 +1,14 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
-import type { FormEvent } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 
 import {
-    pay as payInvoice,
+    index as invoicesIndex,
     voidMethod as voidInvoice,
 } from '@/actions/Modules/Platform/App/Http/Controllers/InvoiceController';
 import {
     activate as activateTenant,
+    billingExempt as billingExemptTenant,
     index as tenantsIndex,
     suspend as suspendTenant,
     syncModules,
@@ -80,12 +81,14 @@ import type {
     ConsoleSubscription,
     PermissionGroup,
     TenantDetail,
+    UsageLine,
 } from '../../../types/console';
 
 interface ShowProps {
     tenant: TenantDetail;
     subscription: ConsoleSubscription | null;
     plans: ConsolePlan[];
+    usage: UsageLine[];
     modules: ConsoleModule[];
     permissionCatalog: PermissionGroup[];
     roles: ConsoleRole[];
@@ -103,6 +106,7 @@ export default function TenantShow({
     tenant,
     subscription,
     plans,
+    usage,
     modules,
     permissionCatalog,
     roles,
@@ -140,6 +144,7 @@ export default function TenantShow({
                     <Overview
                         tenant={tenant}
                         subscription={subscription}
+                        usage={usage}
                         route={route}
                     />
                 </TabsContent>
@@ -259,16 +264,20 @@ function Confirm({
 function Overview({
     tenant,
     subscription,
+    usage,
     route,
 }: {
     tenant: TenantDetail;
     subscription: ConsoleSubscription | null;
+    usage: UsageLine[];
     route: Route;
 }) {
     const form = useForm({
         name: tenant.name,
         timezone: tenant.timezone,
         domain: tenant.domain ?? '',
+        billing_email: tenant.billingEmail ?? '',
+        billing_name: tenant.billingName ?? '',
     });
     const suspended = tenant.status === 'suspended';
 
@@ -331,6 +340,42 @@ function Overview({
                             />
                             <FieldError>{form.errors.domain}</FieldError>
                         </Field>
+                        <Field data-invalid={!!form.errors.billing_email}>
+                            <FieldLabel htmlFor="tenant-billing-email">
+                                Email tagihan
+                            </FieldLabel>
+                            <Input
+                                id="tenant-billing-email"
+                                type="email"
+                                value={form.data.billing_email}
+                                onChange={(event) =>
+                                    form.setData(
+                                        'billing_email',
+                                        event.target.value,
+                                    )
+                                }
+                                placeholder="keuangan@sekolah.sch.id"
+                                aria-invalid={!!form.errors.billing_email}
+                            />
+                            <FieldError>{form.errors.billing_email}</FieldError>
+                        </Field>
+                        <Field data-invalid={!!form.errors.billing_name}>
+                            <FieldLabel htmlFor="tenant-billing-name">
+                                Nama kontak tagihan
+                            </FieldLabel>
+                            <Input
+                                id="tenant-billing-name"
+                                value={form.data.billing_name}
+                                onChange={(event) =>
+                                    form.setData(
+                                        'billing_name',
+                                        event.target.value,
+                                    )
+                                }
+                                aria-invalid={!!form.errors.billing_name}
+                            />
+                            <FieldError>{form.errors.billing_name}</FieldError>
+                        </Field>
                     </FieldGroup>
                     <Button
                         type="submit"
@@ -348,6 +393,22 @@ function Overview({
                         [
                             'Status',
                             <StatusChip key="s" status={tenant.status} />,
+                        ],
+                        ...(suspended
+                            ? ([
+                                  [
+                                      'Alasan penangguhan',
+                                      tenant.suspendedReason === 'billing'
+                                          ? 'Langganan berakhir'
+                                          : 'Oleh provider',
+                                  ],
+                              ] as [string, ReactNode][])
+                            : []),
+                        [
+                            'Tagihan',
+                            tenant.billingExempt
+                                ? 'Dibebaskan dari tagihan'
+                                : 'Dikenai tagihan',
                         ],
                         [
                             'Terdaftar',
@@ -377,6 +438,19 @@ function Overview({
                             }
                         />
                     )}
+                    <Button
+                        variant="outline"
+                        className="ml-2"
+                        onClick={() =>
+                            send('put', billingExemptTenant.url(route), {
+                                exempt: !tenant.billingExempt,
+                            })
+                        }
+                    >
+                        {tenant.billingExempt
+                            ? 'Kenakan tagihan lagi'
+                            : 'Bebaskan dari tagihan'}
+                    </Button>
                 </div>
             </Panel>
 
@@ -406,6 +480,32 @@ function Overview({
                                     : '—',
                             ],
                         ]}
+                    />
+                )}
+            </Panel>
+
+            <Panel title="Pemakaian" className="lg:col-span-2">
+                {usage.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                        Belum ada pemakaian yang diukur.
+                    </p>
+                ) : (
+                    <DefinitionList
+                        rows={usage.map((line): [string, ReactNode] => [
+                            line.label,
+                            <span
+                                key={line.key}
+                                className="flex flex-wrap items-center gap-2"
+                            >
+                                {line.used.toLocaleString('id-ID')}{' '}
+                                {line.limit === null
+                                    ? `${line.unit} (tanpa batas)`
+                                    : `dari ${line.limit.toLocaleString('id-ID')} ${line.unit}`}
+                                {line.state !== 'ok' && (
+                                    <StatusChip status={line.state} />
+                                )}
+                            </span>,
+                        ])}
                     />
                 )}
             </Panel>
@@ -739,7 +839,7 @@ function SubscriptionTab({
                                     })
                                 }
                             >
-                                Ganti paket saja
+                                Ganti paket langsung (tanpa tagihan)
                             </Button>
                             <Button
                                 variant="outline"
@@ -818,18 +918,18 @@ function SubscriptionTab({
                                 <TableCell>
                                     {invoice.status === 'unpaid' && (
                                         <div className="flex gap-2">
-                                            <Button
-                                                size="sm"
-                                                onClick={() =>
-                                                    send(
-                                                        'post',
-                                                        payInvoice.url({
-                                                            invoice: invoice.id,
+                                            <Button asChild size="sm">
+                                                <Link
+                                                    href={consolePath(
+                                                        invoicesIndex.url({
+                                                            query: {
+                                                                q: invoice.number,
+                                                            },
                                                         }),
-                                                    )
-                                                }
-                                            >
-                                                Tandai lunas
+                                                    )}
+                                                >
+                                                    Konfirmasi pembayaran
+                                                </Link>
                                             </Button>
                                             <Button
                                                 size="sm"

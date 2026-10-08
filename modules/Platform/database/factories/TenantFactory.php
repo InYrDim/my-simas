@@ -30,6 +30,10 @@ class TenantFactory extends Factory
             'timezone' => 'Asia/Jakarta',
             'status' => TenantStatus::Active,
             'settings' => null,
+            'billing_email' => null,
+            'billing_name' => null,
+            'billing_exempt' => false,
+            'suspended_reason' => null,
         ];
     }
 
@@ -40,6 +44,27 @@ class TenantFactory extends Factory
     {
         return $this->state(fn (array $attributes): array => [
             'status' => TenantStatus::Suspended,
+            'suspended_reason' => 'manual',
         ]);
+    }
+
+    /**
+     * Indicate the school was closed because its trial or paid period ran
+     * out: a payment or a trial extension reopens it.
+     */
+    public function suspendedForBilling(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'status' => TenantStatus::Suspended,
+            'suspended_reason' => 'billing',
+        ]);
+    }
+
+    /**
+     * Indicate the school is never billed, reminded or suspended for billing.
+     */
+    public function billingExempt(): static
+    {
+        return $this->state(fn (array $attributes): array => ['billing_exempt' => true]);
     }
 }
