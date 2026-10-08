@@ -18,8 +18,22 @@ test.describe('front doors', () => {
         expect(errors).toEqual([]);
     });
 
-    test('school login on the central host', async ({ page }) => {
+    test('landing page, then school login, on the central host', async ({
+        page,
+    }) => {
         await page.goto('/');
+
+        await expect(
+            page.getByRole('heading', {
+                level: 1,
+                name: 'Administrasi sekolah, diisi sekali dan benar.',
+            }),
+        ).toBeVisible();
+
+        await page
+            .getByRole('navigation', { name: 'Utama' })
+            .getByRole('link', { name: 'Masuk', exact: true })
+            .click();
 
         await expect(page).toHaveURL(/\/login$/);
         await expect(

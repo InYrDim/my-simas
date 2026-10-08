@@ -27,6 +27,14 @@ colors:
   chalk-bright: "#f4f4f5"
   night-board: "#09090b"
   night-rule: "#27272a"
+  # Public landing only (Lembar world, scoped under .landing-lembar). Not app tokens.
+  landing-ink: "#2350c8"
+  landing-ink-deep: "#173a99"
+  landing-ink-line: "#b3c4ee"
+  landing-ink-tint: "#eef3fd"
+  landing-graphite: "#1d1d1f"
+  landing-pencil: "#55555b"
+  landing-paper: "#ffffff"
 typography:
   title:
     fontFamily: "Instrument Sans, ui-sans-serif, system-ui, sans-serif"
@@ -52,11 +60,61 @@ typography:
     fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace"
     fontSize: "0.75rem"
     fontWeight: 400
+  landing-display:
+    fontFamily: "Archivo, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "2.75rem"
+    fontWeight: 800
+    lineHeight: "0.95"
+    letterSpacing: "-0.025em"
+    fontVariation: "\"wdth\" 72"
+  landing-band:
+    fontFamily: "Archivo, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "2rem"
+    fontWeight: 800
+    lineHeight: "1"
+    letterSpacing: "-0.02em"
+    fontVariation: "\"wdth\" 75"
+  landing-title:
+    fontFamily: "Archivo, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1.5rem"
+    fontWeight: 700
+    letterSpacing: "-0.01em"
+    fontVariation: "\"wdth\" 85"
+  landing-wordmark:
+    fontFamily: "Archivo, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1.5rem"
+    fontWeight: 900
+    letterSpacing: "-0.02em"
+    fontVariation: "\"wdth\" 118"
+  landing-lead:
+    fontFamily: "Archivo, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1.125rem"
+    fontWeight: 400
+    lineHeight: "1.625"
+  landing-body:
+    fontFamily: "Archivo, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1rem"
+    fontWeight: 400
+    lineHeight: "1.625"
+  landing-action:
+    fontFamily: "Archivo, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "0.9375rem"
+    fontWeight: 600
+  landing-field-label:
+    fontFamily: "Archivo, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "0.75rem"
+    fontWeight: 700
+    letterSpacing: "0.1em"
+  landing-code:
+    fontFamily: "Azeret Mono, ui-monospace, monospace"
+    fontSize: "1rem"
+    fontWeight: 500
 rounded:
   sm: "4px"
   md: "8px"
   lg: "12px"
   pill: "9999px"
+  landing-sheet: "2px"
 spacing:
   xs: "2px"
   sm: "4px"
@@ -165,6 +223,44 @@ components:
   sidebar-night:
     backgroundColor: "{colors.night-board}"
     width: "240px"
+  landing-button-primary:
+    backgroundColor: "{colors.landing-graphite}"
+    textColor: "{colors.landing-paper}"
+    typography: "{typography.landing-action}"
+    rounded: "{rounded.landing-sheet}"
+    padding: "0 24px"
+    height: "48px"
+  landing-button-primary-hover:
+    backgroundColor: "{colors.landing-ink-deep}"
+  landing-button-inverted:
+    backgroundColor: "{colors.landing-paper}"
+    textColor: "{colors.landing-graphite}"
+    typography: "{typography.landing-action}"
+    rounded: "{rounded.landing-sheet}"
+    padding: "0 24px"
+    height: "48px"
+  landing-button-inverted-hover:
+    backgroundColor: "{colors.landing-ink-tint}"
+  landing-bubble:
+    backgroundColor: "{colors.landing-paper}"
+    textColor: "{colors.landing-ink}"
+    rounded: "{rounded.pill}"
+    size: "20px"
+  landing-bubble-filled:
+    backgroundColor: "{colors.landing-graphite}"
+  landing-sheet-band:
+    backgroundColor: "{colors.landing-ink-tint}"
+    textColor: "{colors.landing-graphite}"
+    typography: "{typography.landing-band}"
+    padding: "24px 20px"
+  landing-close-band:
+    backgroundColor: "{colors.landing-ink}"
+    textColor: "{colors.landing-paper}"
+    typography: "{typography.landing-display}"
+    padding: "80px 20px"
+  landing-timing-rail:
+    backgroundColor: "{colors.landing-paper}"
+    width: "28px"
 ---
 
 # Design System: SIMAS — Buku Besar Sekolah
@@ -569,3 +665,208 @@ column (`sm`). Blocks load deferred behind a skeleton of the same bands.
 - **Don't assume a breakpoint exists.** One is named — `sm` (640px) — and it is the
   only one; new surfaces must introduce responsive behavior deliberately,
   mobile-first, and must not invent a second name.
+
+## Public landing world — Lembar
+
+**Scope.** This section governs **only** the public landing page: the
+unauthenticated marketing surface at `/`
+(`modules/Platform/resources/js/Pages/Platform/Landing.tsx`, world in
+`modules/Platform/resources/js/Components/Landing/landing.css`, copy in
+`Components/Landing/content.ts`). Everything is scoped under the `.landing-lembar`
+class the page owns. The rules in every section above (the One Green Rule, three
+type sizes, no display or hero type, 8px corners, words before icons, one named
+breakpoint, the console theme) **do not govern this page**, and nothing in this
+section governs the school portal, the console, the auth cards or the PPDB/applicant
+forms. Lembar tokens carry a `landing-` prefix in the frontmatter so they can never be
+mistaken for app tokens.
+
+### Overview
+
+**Creative North Star: "Lembar" (the LJK answer sheet)**
+
+The page is a *Lembar Jawaban Komputer*: the computer-read answer sheet every
+Indonesian school has handled. White paper, every rule, label and bubble ring printed
+in cobalt drop-out ink, black timing marks down the left edge, and marks filled in 2B
+graphite. The sheet is filled once, correctly, which is the job of the teacher this
+product serves. Instead of a SaaS hero with a screenshot, the hero is a working
+application sheet that fills itself in and stops mid-review, because a person on
+"tim kami" approves every school.
+
+**Key Characteristics:**
+
+- Two inks, one paper: cobalt ink prints the form, graphite fills it. No third hue.
+- One variable face (Archivo) set condensed for heads and expanded for the wordmark; one mono (Azeret Mono 500) for written digits only.
+- 2px corners, 2px ink frames, square corner marks, round bubbles.
+- One authored moment: the pencil fill. The timing rail tracks reading progress.
+- Flat. No shadow, gradient, blur or illustration anywhere on the sheet.
+
+### Colors
+
+Printed in drop-out ink, filled in graphite.
+
+- **Drop-out Cobalt** (`landing-ink`): the printed form. 2px frames on the masthead
+  rule, the application sheet, sheet bands and the ketentuan box; bubble rings; field
+  borders; step and principle numerals; the link underline; the full-bleed closing
+  band; the scrollbar thumb; the selection fill.
+- **Deep Cobalt** (`landing-ink-deep`): ink as *text*, for field labels, table heads,
+  band asides, the masthead tagline, and the hover of the graphite button and links.
+- **Ink Hairline** (`landing-ink-line`): 1px rules between rows and list items, the
+  timing rail's border and its unfilled marks.
+- **Ink Tint** (`landing-ink-tint`): the printed panel ground of sheet bands, the
+  sheet header strip, the hover of the inverted button; at 60% it marks the one
+  human review step in the flow.
+- **Graphite** (`landing-graphite`): body text, bubble fills, filled timing marks,
+  corner marks, the primary button, and the focus ring.
+- **Pencil** (`landing-pencil`): secondary text, leads, nav links at rest.
+- **Paper** (`landing-paper`): the page and every framed surface. On the cobalt band,
+  text is paper at 90%; underlines are paper at 50%, full on hover.
+
+**The Two Inks Rule.** Cobalt prints, graphite marks. Anything the form *is* (rules,
+labels, rings, frames) is cobalt; anything a person *wrote* (fills, answers, the
+action they take) is graphite. A third hue, green included, does not appear.
+
+### Typography
+
+**Display / body:** Archivo variable (400–900, width 62–125%), self-hosted latin
+subset `modules/Platform/resources/fonts/archivo-latin-variable.woff2`.
+**Code:** Azeret Mono 500, self-hosted `azeret-mono-latin-500.woff2`. Both
+`font-display: swap`, SIL OFL. Tabular numerals on the whole page; letter-spacing 0
+at the root.
+
+- **Display** (`landing-display`): the hero headline, 2.75rem, 4.25rem at `sm`,
+  5.25rem at `xl`; width 72%, `text-balance`. The closing headline uses the same
+  voice at 2.5rem / 4rem.
+- **Band head** (`landing-band`): section heads inside sheet bands and the ketentuan
+  head, 2rem / 2.75rem at `sm`, width 75%.
+- **Title** (`landing-title`): module names at 1.5rem, width 85%; flow step titles
+  1.25rem at 700, width 85%; principle titles 1.125rem 700.
+- **Wordmark** (`landing-wordmark`): "SIMAS" at 900, width 118%, the only expanded
+  setting.
+- **Lead / body** (`landing-lead`, `landing-body`): leads 1.125rem relaxed, max
+  ~34rem; module summaries 1rem; detail lines and notes 0.875rem in Pencil.
+- **Action** (`landing-action`): buttons and nav at 15px, 600 (nav 500).
+- **Field label** (`landing-field-label`): uppercase, 0.1em tracking, Deep Cobalt.
+  Used only where a printed form has a field label: the sheet's legends (Kode
+  sekolah, Jenjang, Modul), the table's first column head, and the sheet header strip
+  (0.875rem, 0.08em, width 85%).
+- **Code** (`landing-code`): written digits in the kode sekolah boxes, flow step
+  numbers (1.25rem, cobalt) and principle numbers (1.125rem, cobalt). Never prose.
+
+**The Width Axis Rule.** Hierarchy comes from Archivo's width axis as much as size:
+condensed (72–85%) for heads, normal for reading, expanded (118%) only for the
+wordmark.
+
+**The Written Digit Rule.** Mono means a digit a hand wrote on the sheet. It is not
+a code font for labels or decoration.
+
+### Layout
+
+- **Frame:** a fixed timing rail on the left (28px; 48px at `sm`), the page offset by
+  the same amount. Content in a `max-w-7xl` (80rem) column with 20px sides (32px at
+  `sm`).
+- **Hero:** single column on mobile; at `lg` a 12-column grid, headline 6/12,
+  application sheet 6/12. Top padding 48px, 80px at `sm`.
+- **Sections:** each opens with a full-width sheet band, then its content; 96px
+  between sections (128px at `sm`). The modules list is one column, two at `lg` with
+  a hairline between; the flow is stacked rows, five columns at `lg`; ketentuan is a
+  4/8 split at `lg`.
+- **Breakpoints used:** `sm` (640px) for rail width, side padding, type steps and
+  row/column flips; `md` (768px) only to reveal the masthead tagline; `lg` (1024px)
+  for the 12-column and multi-column grids; `xl` (1280px) only for the largest hero
+  headline step.
+- **Targets:** every link and toggle is at least 44px tall; buttons are 48px.
+
+### Elevation & Depth
+
+Flat. Depth is printed: 2px cobalt frames, a tinted band ground, and the full cobalt
+closing band. There is no `box-shadow` on the page; the only "lift" is the 1px press
+of a button on `:active`.
+
+### Shapes
+
+- **Corners:** 2px (`landing-sheet`) on buttons; frames are square-cornered.
+- **Frames:** 2px cobalt for the things that are a sheet (masthead underline,
+  application sheet, sheet bands top and bottom, roles table head, ketentuan box);
+  1px cobalt for fields inside the sheet; 1px Ink Hairline between rows.
+- **Corner marks:** four 10px graphite squares inset 8px in the corners of the
+  application sheet and the ketentuan box, and in paper on the closing band. They
+  are the scanner's registration marks; they belong only on a framed sheet or band.
+- **Bubbles:** circles with a 1px cobalt ring, 20px (16px in the code columns), with
+  a printed numeral at 8–9px inside the code columns. Filled = a graphite disc
+  covering the ring. Unfilled 8px rings are the bullets of module detail lists.
+
+### Components
+
+- **Masthead:** 64px (80px at `sm`), 2px cobalt underline. Wordmark, tagline in
+  field-label caps from `md`, nav (Calon siswa, Masuk) in Pencil, and the graphite
+  "Daftarkan sekolah" from `sm`.
+- **Timing rail:** 28 marks, 6px tall, spaced down the full height. Unfilled marks
+  are short Ink Hairline bars; marks up to the reading position are longer graphite
+  bars (200ms width/colour transition). `aria-hidden`.
+- **Application sheet (signature):** a 2px-framed `figure` with corner marks; an
+  Ink Tint header strip ("Lembar pengajuan sekolah" / "Contoh pengisian"); kode
+  sekolah as six digit boxes over 0–9 bubble columns; jenjang bubbles; module
+  bubbles that are real `aria-pressed` toggles; a three-step status (Diajukan →
+  Ditinjau tim kami → Disetujui) that stops at review. Bubble grids are
+  `aria-hidden` with an `sr-only` sentence carrying the value.
+- **Bubble:** the one mark. Ring = an answer that exists; graphite fill = chosen.
+  Used for answers, toggles, status and role grants. Never decorative.
+- **Primary button:** graphite fill, paper text, 48px, 2px corners; hover Deep
+  Cobalt; 1px press. The **inverted** variant (paper fill, graphite text, hover Ink
+  Tint) is only for the cobalt closing band.
+- **Quiet link:** graphite text with a 2px cobalt underline at 6px offset and a
+  trailing arrow beside the label (the only icon on the page); hover Deep Cobalt.
+- **Sheet band:** full-bleed Ink Tint with 2px cobalt rules top and bottom; condensed
+  band head left, Deep Cobalt aside right from `sm`.
+- **Roles bubble table:** a real `table`; a 2px cobalt rule under the head; one row
+  per task, one column per default role, a filled or empty bubble per cell with
+  `sr-only` "Ya"/"Tidak".
+- **Ketentuan box:** a 2px-framed, corner-marked ordered list of standing rules,
+  cobalt mono numerals, hairlines between items.
+- **Ink close band:** full-bleed cobalt, paper corner marks, condensed paper
+  headline, the inverted button and underlined tertiary links.
+
+### Motion
+
+- **The pencil fill** is the page's one authored moment: each filled bubble scales
+  from 0.15 to 1 and fades in over 280ms `cubic-bezier(0.16, 1, 0.3, 1)`, staggered
+  by a per-mark `--delay` so the sheet fills digit by digit, then jenjang, modules,
+  status. It runs on load (and when a module bubble is toggled on).
+- **Timing rail:** 200ms colour and width transitions as reading progresses.
+- **Everything else:** colour transitions on hover, a 2px nudge of the link arrow,
+  a 1px button press.
+- **Reduced motion:** `prefers-reduced-motion: reduce` removes the pencil fill;
+  bubbles appear already filled.
+
+**The One Pencil Rule.** One authored motion per page, and it is the act of filling
+the sheet. No scroll reveals, parallax or looping animation.
+
+### Browser surfaces
+
+Scoped to `.landing-lembar`: selection is cobalt with paper text; `:focus-visible`
+is a 2px graphite outline at 3px offset; `scrollbar-color` is cobalt on paper.
+
+### Do's and Don'ts
+
+#### Do:
+- **Do** keep Lembar scoped under `.landing-lembar` and its tokens prefixed
+  `landing-`.
+- **Do** make every new block a printed part of the sheet: a cobalt frame or band, a
+  field label, bubbles for choices, graphite for what is filled.
+- **Do** keep proof real: the modules that exist, the actual onboarding steps, the
+  default roles from Identity's `roles.php`, trial days from config. Example data is
+  labelled "Contoh pengisian".
+- **Do** give every `aria-hidden` bubble grid an `sr-only` sentence with its value.
+
+#### Don't:
+- **Don't** bring Lembar into the app (no cobalt, Archivo or 2px frames in the
+  portal, console or forms), and don't bring app tokens (Stamp Ink green, Instrument
+  Sans, Geist, shadows) onto the landing.
+- **Don't** add a third hue, a gradient, a shadow, a screenshot or a feature-card grid.
+- **Don't** use a full-size bubble as decoration (the 8px ring bullets of detail
+  lists are the one ornamental use), or corner marks on anything that is not a
+  framed sheet or band.
+- **Don't** set mono for anything but a written digit or a numeral.
+- **Don't** set readable text below 12px; the 8–9px numerals exist only inside
+  `aria-hidden` bubbles as print texture.
+- **Don't** add customers, figures, testimonials or prices; there are none.

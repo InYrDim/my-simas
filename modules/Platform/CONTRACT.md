@@ -159,7 +159,10 @@ Internal (private): Tenant model + `TenantStatus` enum, TenantScope,
 controllers (guard `provider`, central-only), and the applicant
 surface (Fase 4): `Applicant` model + guard `applicant`, registration at
 `/daftar-sekolah` (IP throttle on POST + honeypot), `/pemohon/*` (login,
-signed-URL email verification, onboarding). Other modules access
+signed-URL email verification, onboarding), and the public landing page
+`Platform/Landing` that the app shell renders at `/` for a visitor with
+no session (its own visual world, scoped to `.landing-lembar`; content
+in `Components/Landing/content.ts` is product truth only). Other modules access
 tenancy only through contracts/DTOs — never the Tenant model.
 
 ## Tenant resolution (the one strategy)

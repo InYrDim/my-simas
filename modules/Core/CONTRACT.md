@@ -235,10 +235,11 @@ school's choice on Integrasi › WhatsApp.
   Role **labels** come from `config('roles')` — machine names never
   reach the UI.
 - `app/Http/Controllers/EntryController.php` (the app shell) dispatches
-  `/` by tenancy state: central host → provider console or the public
-  application, tenant host → `home` or the tenant login. The landing
-  page itself is Core's, at `GET /beranda`, named `home` so the auth
-  redirect lands there.
+  `/` by session state: console host → provider console; signed-in school
+  user → `home`; applicant → onboarding; remembered school code → the
+  school login; anyone else → Platform's public landing page. The
+  school's own landing is Core's, at `GET /beranda`, named `home` so the
+  auth redirect lands there.
 
 ## Surfaces
 
