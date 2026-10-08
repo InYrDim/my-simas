@@ -129,6 +129,8 @@ export interface TenantDetail {
     domain: string | null;
     status: TenantStatus;
     timezone: string;
+    suspendedReason: 'billing' | 'manual' | null;
+    billingExempt: boolean;
     billingEmail: string | null;
     billingName: string | null;
     createdAt: string | null;

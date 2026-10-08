@@ -17,6 +17,7 @@ use Modules\Platform\App\Domain\Models\Invoice;
 use Modules\Platform\App\Domain\Models\Plan;
 use Modules\Platform\App\Domain\Models\Subscription;
 use Modules\Platform\App\Domain\Models\SubscriptionStatus;
+use Modules\Platform\App\Domain\Models\SuspensionReason;
 use Modules\Platform\App\Domain\Models\Tenant;
 use Modules\Platform\App\Domain\Models\TenantModules as TenantModuleFlag;
 use Modules\Platform\App\Domain\Models\TenantStatus;
@@ -135,6 +136,8 @@ final class TenantConsoleController
                 'domain' => $tenant->domain,
                 'status' => $tenant->status->value,
                 'timezone' => $tenant->timezone,
+                'suspendedReason' => $tenant->suspended_reason?->value,
+                'billingExempt' => $tenant->billing_exempt,
                 'billingEmail' => $tenant->billing_email,
                 'billingName' => $tenant->billing_name,
                 'createdAt' => $tenant->created_at?->toDateString(),
@@ -227,7 +230,7 @@ final class TenantConsoleController
 
     public function suspend(Tenant $tenant): RedirectResponse
     {
-        $this->lifecycle->suspend($tenant);
+        $this->lifecycle->suspend($tenant, SuspensionReason::Manual);
 
         return back()->with('status', "{$tenant->name} ditangguhkan.");
     }
@@ -237,6 +240,21 @@ final class TenantConsoleController
         $this->lifecycle->activate($tenant);
 
         return back()->with('status', "{$tenant->name} diaktifkan kembali.");
+    }
+
+    /**
+     * Mark a school as owing nothing: billing:daily never suspends or
+     * reminds it, and it is left out of the revenue figures. Reversible.
+     */
+    public function billingExempt(Request $request, Tenant $tenant): RedirectResponse
+    {
+        $data = $request->validate(['exempt' => ['required', 'boolean']]);
+
+        $tenant->forceFill(['billing_exempt' => (bool) $data['exempt']])->save();
+
+        return back()->with('status', $tenant->billing_exempt
+            ? "{$tenant->name} dibebaskan dari tagihan."
+            : "{$tenant->name} dikenai tagihan kembali.");
     }
 
     /**

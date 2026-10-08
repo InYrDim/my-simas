@@ -20,7 +20,9 @@ final class BillingSummary
      */
     public function summary(): array
     {
-        $subscriptions = Subscription::query()->with('plan')->get();
+        // A billing-exempt school owes nothing, so it is no revenue.
+        $subscriptions = Subscription::query()->with(['plan', 'tenant'])->get()
+            ->reject(fn (Subscription $s): bool => $s->tenant?->billing_exempt === true);
 
         $states = $subscriptions->groupBy(fn (Subscription $s): string => $s->displayState());
 
@@ -54,6 +56,7 @@ final class BillingSummary
         return Subscription::query()
             ->with(['plan', 'tenant'])
             ->get()
+            ->reject(fn (Subscription $s): bool => $s->tenant?->billing_exempt === true)
             ->filter(function (Subscription $s) use ($soon): bool {
                 $state = $s->displayState();
 

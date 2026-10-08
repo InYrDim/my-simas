@@ -8,6 +8,7 @@ import {
 } from '@/actions/Modules/Platform/App/Http/Controllers/InvoiceController';
 import {
     activate as activateTenant,
+    billingExempt as billingExemptTenant,
     index as tenantsIndex,
     suspend as suspendTenant,
     syncModules,
@@ -393,6 +394,22 @@ function Overview({
                             'Status',
                             <StatusChip key="s" status={tenant.status} />,
                         ],
+                        ...(suspended
+                            ? ([
+                                  [
+                                      'Alasan penangguhan',
+                                      tenant.suspendedReason === 'billing'
+                                          ? 'Langganan berakhir'
+                                          : 'Oleh provider',
+                                  ],
+                              ] as [string, ReactNode][])
+                            : []),
+                        [
+                            'Tagihan',
+                            tenant.billingExempt
+                                ? 'Dibebaskan dari tagihan'
+                                : 'Dikenai tagihan',
+                        ],
                         [
                             'Terdaftar',
                             tenant.createdAt
@@ -421,6 +438,19 @@ function Overview({
                             }
                         />
                     )}
+                    <Button
+                        variant="outline"
+                        className="ml-2"
+                        onClick={() =>
+                            send('put', billingExemptTenant.url(route), {
+                                exempt: !tenant.billingExempt,
+                            })
+                        }
+                    >
+                        {tenant.billingExempt
+                            ? 'Kenakan tagihan lagi'
+                            : 'Bebaskan dari tagihan'}
+                    </Button>
                 </div>
             </Panel>
 

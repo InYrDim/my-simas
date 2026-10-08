@@ -137,6 +137,46 @@ class Subscription extends Model
     }
 
     /**
+     * The last day the school keeps access. A trial and an active
+     * subscription get a grace period after their end; a cancelled one
+     * ("not renewed") keeps access only to the end of what it had, with no
+     * grace. Null when the dates are missing, which never suspends.
+     */
+    public function accessEndsAt(): ?CarbonInterface
+    {
+        return match ($this->status) {
+            SubscriptionStatus::Trial => $this->trial_ends_at?->copy()->addDays((int) config('billing.trial_grace_days', 7)),
+            SubscriptionStatus::Active => $this->current_period_end?->copy()->addDays((int) config('billing.overdue_grace_days', 7)),
+            SubscriptionStatus::Cancelled => $this->current_period_end ?? $this->trial_ends_at,
+        };
+    }
+
+    /**
+     * Access is over: the day after the last day of access has come.
+     */
+    public function accessLapsed(?CarbonInterface $today = null): bool
+    {
+        $today ??= BillingClock::today();
+        $end = $this->accessEndsAt();
+
+        return $end !== null && $end->lt($today);
+    }
+
+    /**
+     * Past the trial or paid period but still inside the grace period.
+     */
+    public function inGrace(?CarbonInterface $today = null): bool
+    {
+        $today ??= BillingClock::today();
+        $end = $this->endsAt();
+
+        return $this->status !== SubscriptionStatus::Cancelled
+            && $end !== null
+            && $end->lt($today)
+            && ! $this->accessLapsed($today);
+    }
+
+    /**
      * The date this subscription ends (trial end or paid period end).
      */
     public function endsAt(): ?CarbonInterface

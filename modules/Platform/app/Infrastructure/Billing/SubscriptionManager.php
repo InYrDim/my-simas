@@ -14,9 +14,11 @@ use Modules\Platform\App\Domain\Models\PaymentStatus;
 use Modules\Platform\App\Domain\Models\Plan;
 use Modules\Platform\App\Domain\Models\Subscription;
 use Modules\Platform\App\Domain\Models\SubscriptionStatus;
+use Modules\Platform\App\Domain\Models\Tenant;
 use Modules\Platform\App\Domain\Support\BillingClock;
 use Modules\Platform\App\Infrastructure\Modules\DefaultModuleRegistry;
 use Modules\Platform\App\Infrastructure\Modules\ModuleFlagManager;
+use Modules\Platform\App\Infrastructure\Tenancy\TenantLifecycle;
 
 /**
  * Write path for tenant subscriptions. Money only moves through
@@ -35,6 +37,7 @@ final class SubscriptionManager
         private readonly DefaultModuleRegistry $registry,
         private readonly InvoiceIssuer $invoices,
         private readonly BillingNotifier $notifier,
+        private readonly TenantLifecycle $lifecycle,
     ) {}
 
     public function startTrial(string $tenantId, string $planKey, ?int $days = null): Subscription
@@ -71,6 +74,10 @@ final class SubscriptionManager
             : BillingClock::today();
 
         $subscription->forceFill(['trial_ends_at' => $base->addDays($days)])->save();
+
+        // The provider's own act of giving more time also reopens a school
+        // that was closed because the trial ran out.
+        $this->reopenIfBillingSuspended($subscription);
 
         return $subscription;
     }
@@ -216,14 +223,43 @@ final class SubscriptionManager
         return $subscription;
     }
 
+    /**
+     * "Not renewed": the school keeps access to the end of the trial or
+     * paid period it has (no grace), then billing:daily closes it. Nothing
+     * is deleted, and paying a new invoice reactivates the subscription.
+     * Open invoices are voided: there is nothing left to renew.
+     */
     public function cancel(Subscription $subscription): Subscription
     {
-        $subscription->forceFill([
-            'status' => SubscriptionStatus::Cancelled,
-            'cancelled_at' => now(),
-        ])->save();
+        DB::transaction(function () use ($subscription): void {
+            $this->invoices->voidOpen($subscription);
+
+            $subscription->forceFill([
+                'status' => SubscriptionStatus::Cancelled,
+                'cancelled_at' => now(),
+                'scheduled_plan_id' => null,
+            ])->save();
+        });
 
         return $subscription;
+    }
+
+    /**
+     * Reopen the school when it was closed for billing and the subscription
+     * has access again, and tell its billing contact. A manual suspension
+     * is left alone.
+     */
+    private function reopenIfBillingSuspended(Subscription $subscription, ?Invoice $invoice = null): void
+    {
+        if ($subscription->accessLapsed()) {
+            return;
+        }
+
+        $tenant = Tenant::query()->find($subscription->tenant_id);
+
+        if ($tenant !== null && $this->lifecycle->reactivateIfBillingSuspended($tenant)) {
+            $this->notifier->accessReopened($subscription, $invoice);
+        }
     }
 
     /**
@@ -241,7 +277,9 @@ final class SubscriptionManager
      */
     public function settle(Payment $payment, PaymentOutcome $outcome): Payment
     {
-        return DB::transaction(function () use ($payment, $outcome): Payment {
+        $newlyPaid = false;
+
+        $settled = DB::transaction(function () use ($payment, $outcome, &$newlyPaid): Payment {
             /** @var Invoice $invoice */
             $invoice = Invoice::query()
                 ->where('tenant_id', $payment->tenant_id)
@@ -330,8 +368,25 @@ final class SubscriptionManager
 
             $this->notifier->paymentReceived($invoice);
 
+            $newlyPaid = true;
+
             return $payment;
         });
+
+        // A first payment also reopens a school closed for billing. Done
+        // after the transaction: it changes the tenant and flushes caches.
+        if ($newlyPaid) {
+            $invoice = Invoice::query()->where('tenant_id', $settled->tenant_id)->find($settled->invoice_id);
+            $subscription = $invoice === null
+                ? null
+                : Subscription::query()->where('tenant_id', $settled->tenant_id)->find($invoice->subscription_id);
+
+            if ($subscription !== null) {
+                $this->reopenIfBillingSuspended($subscription, $invoice);
+            }
+        }
+
+        return $settled;
     }
 
     /**

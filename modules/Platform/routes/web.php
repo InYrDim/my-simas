@@ -142,6 +142,9 @@ Route::domain((string) config('tenancy.console_domain'))->middleware('web')->nam
         Route::post('tenants/{tenant}/activate', [TenantConsoleController::class, 'activate'])
             ->name('tenants.activate');
 
+        Route::put('tenants/{tenant}/billing-exempt', [TenantConsoleController::class, 'billingExempt'])
+            ->name('tenants.billing-exempt');
+
         Route::put('tenants/{tenant}/modules', [TenantConsoleController::class, 'syncModules'])
             ->name('tenants.modules');
 
