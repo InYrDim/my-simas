@@ -27,14 +27,15 @@ colors:
   chalk-bright: "#f4f4f5"
   night-board: "#09090b"
   night-rule: "#27272a"
-  # Public landing only (Lembar world, scoped under .landing-lembar). Not app tokens.
-  landing-ink: "#2350c8"
-  landing-ink-deep: "#173a99"
-  landing-ink-line: "#b3c4ee"
-  landing-ink-tint: "#eef3fd"
+  # Lembar world only (landing + sign-in/account pages, scoped under .lembar). Not app tokens.
+  landing-ink: "#09a8ed"
+  landing-ink-deep: "#006b9c"
+  landing-ink-line: "#acd8f4"
+  landing-ink-tint: "#ecf7fe"
   landing-graphite: "#1d1d1f"
   landing-pencil: "#55555b"
   landing-paper: "#ffffff"
+  landing-correction: "#c0261b"
 typography:
   title:
     fontFamily: "Instrument Sans, ui-sans-serif, system-ui, sans-serif"
@@ -666,19 +667,30 @@ column (`sm`). Blocks load deferred behind a skeleton of the same bands.
   only one; new surfaces must introduce responsive behavior deliberately,
   mobile-first, and must not invent a second name.
 
-## Public landing world — Lembar
+## Public world — Lembar (landing and sign-in pages)
 
-**Scope.** This section governs **only** the public landing page: the
-unauthenticated marketing surface at `/`
-(`modules/Platform/resources/js/Pages/Platform/Landing.tsx`, world in
-`modules/Platform/resources/js/Components/Landing/landing.css`, copy in
-`Components/Landing/content.ts`). Everything is scoped under the `.landing-lembar`
-class the page owns. The rules in every section above (the One Green Rule, three
-type sizes, no display or hero type, 8px corners, words before icons, one named
-breakpoint, the console theme) **do not govern this page**, and nothing in this
-section governs the school portal, the console, the auth cards or the PPDB/applicant
-forms. Lembar tokens carry a `landing-` prefix in the frontmatter so they can never be
-mistaken for app tokens.
+**Scope.** This section governs **only** these unauthenticated surfaces:
+
+- the public landing page at `/`
+  (`modules/Platform/resources/js/Pages/Platform/Landing.tsx`, copy in
+  `Components/Landing/content.ts`);
+- the school's sign-in pages (`modules/Identity/resources/js/Pages/Identity/Auth/`:
+  Login, ForgotPassword, ResetPassword, SetPassword, and ChangePassword, which a
+  signed-in account is forced through);
+- the PPDB applicant's account pages (`modules/Ppdb/resources/js/Pages/Ppdb/Account/`:
+  Login, Register, ForgotPassword, SetPassword, VerifyNotice).
+
+The world lives in Shared: `modules/Shared/resources/js/components/lembar/`
+(`lembar.css` with the faces and the scoped tokens, `parts.tsx` with Bubble,
+CornerMarks, TimingRail and Wordmark, `fields.tsx` with the form controls, and
+`LembarShell.tsx`, the frame of a sign-in page). Everything is scoped under the
+`.lembar` class the page root carries. The rules in every section above (the One
+Green Rule, three type sizes, no display or hero type, 8px corners, words before
+icons, one named breakpoint, the console theme) **do not govern these pages**, and
+nothing in this section governs the school portal, the console, the PPDB applicant's
+signed-in pages (Join, Form, Home, which keep `PortalPage`) or the school applicant
+(pemohon) pages. Lembar tokens carry a `landing-` prefix in the frontmatter so they
+can never be mistaken for app tokens.
 
 ### Overview
 
@@ -704,7 +716,10 @@ application sheet that fills itself in and stops mid-review, because a person on
 
 Printed in drop-out ink, filled in graphite.
 
-- **Drop-out Cobalt** (`landing-ink`): the printed form. 2px frames on the masthead
+- **Drop-out Cobalt** (`landing-ink`): the app's sky primary (`oklch(0.693 0.150 237)`,
+  the blue of `/daftar-sekolah`); the other ink shades share its hue. Only ~2.7:1 on
+  paper, so small text never sits in it: numerals, labels and selection use Deep
+  Cobalt (5.9:1). The printed form. 2px frames on the masthead
   rule, the application sheet, sheet bands and the ketentuan box; bubble rings; field
   borders; step and principle numerals; the link underline; the full-bleed closing
   band; the scrollbar thumb; the selection fill.
@@ -721,14 +736,19 @@ Printed in drop-out ink, filled in graphite.
 - **Paper** (`landing-paper`): the page and every framed surface. On the cobalt band,
   text is paper at 90%; underlines are paper at 50%, full on hover.
 
+- **Correction Red** (`landing-correction`): the teacher's red pen. Only on a field
+  that needs correcting: its border, and the message under it (with a small alert
+  icon and the words). Never a button, never a banner, never on the landing.
+
 **The Two Inks Rule.** Cobalt prints, graphite marks. Anything the form *is* (rules,
 labels, rings, frames) is cobalt; anything a person *wrote* (fills, answers, the
-action they take) is graphite. A third hue, green included, does not appear.
+action they take) is graphite. A third hue, green included, does not appear; the
+red pen marking a field to correct is the one exception.
 
 ### Typography
 
 **Display / body:** Archivo variable (400–900, width 62–125%), self-hosted latin
-subset `modules/Platform/resources/fonts/archivo-latin-variable.woff2`.
+subset `modules/Shared/resources/fonts/archivo-latin-variable.woff2`.
 **Code:** Azeret Mono 500, self-hosted `azeret-mono-latin-500.woff2`. Both
 `font-display: swap`, SIL OFL. Tabular numerals on the whole page; letter-spacing 0
 at the root.
@@ -750,14 +770,20 @@ at the root.
   sekolah, Jenjang, Modul), the table's first column head, and the sheet header strip
   (0.875rem, 0.08em, width 85%).
 - **Code** (`landing-code`): written digits in the kode sekolah boxes, flow step
-  numbers (1.25rem, cobalt) and principle numbers (1.125rem, cobalt). Never prose.
+  numbers (1.25rem, cobalt) and principle numbers (1.125rem, cobalt), the numerals of
+  "Petunjuk pengisian", and the school code typed into the comb (1.25rem). Never
+  prose.
+- **Sign-in title:** the one heading of a sign-in page, the band-head voice at
+  2.25rem, 3rem at `sm`, 3.5rem at `lg`, width 75%.
+- **Field text:** 16px Archivo in every input (16px also keeps phone browsers from
+  zooming on focus).
 
 **The Width Axis Rule.** Hierarchy comes from Archivo's width axis as much as size:
 condensed (72–85%) for heads, normal for reading, expanded (118%) only for the
 wordmark.
 
-**The Written Digit Rule.** Mono means a digit a hand wrote on the sheet. It is not
-a code font for labels or decoration.
+**The Written Digit Rule.** Mono means a digit or code a hand writes on the sheet,
+one character per box. It is not a code font for labels or decoration.
 
 ### Layout
 
@@ -774,7 +800,12 @@ a code font for labels or decoration.
   row/column flips; `md` (768px) only to reveal the masthead tagline; `lg` (1024px)
   for the 12-column and multi-column grids; `xl` (1280px) only for the largest hero
   headline step.
-- **Targets:** every link and toggle is at least 44px tall; buttons are 48px.
+- **Sign-in pages:** the same rail and a 64px masthead; content in a `max-w-6xl`
+  column. At `lg` a 12-column grid: title, lead and "Petunjuk pengisian" in 5/12,
+  the sheet in 6/12 from column 7. On a phone: title, sheet, then the petunjuk, so
+  the form comes first.
+- **Targets:** every link and toggle is at least 44px tall; buttons and inputs are
+  48px.
 
 ### Elevation & Depth
 
@@ -825,6 +856,22 @@ of a button on `:active`.
   cobalt mono numerals, hairlines between items.
 - **Ink close band:** full-bleed cobalt, paper corner marks, condensed paper
   headline, the inverted button and underlined tertiary links.
+- **Sign-in sheet (`LembarShell`):** masthead with the wordmark (link to `/`) and the
+  door in caps ("Portal sekolah", "PPDB · Calon siswa"); one 2px-framed,
+  corner-marked sheet with an Ink Tint header strip naming the sheet ("Lembar masuk
+  sekolah") and, beside it, the school's name when one is known; the flash `status`
+  as a notice inside the sheet; links to other pages under the sheet; the numbered
+  "Petunjuk pengisian" (short, true lines only).
+- **Field (`LembarInput`):** caps field label in Deep Cobalt above; a 48px box, 1px
+  cobalt, 2px corners; hint in Pencil below, or the correction in red. Focus is a 2px
+  graphite stroke inside the box (no detached ring). A password box carries a text
+  switch "Lihat"/"Tutup" (`aria-pressed`) inside its right edge.
+- **Comb (`comb`):** the school code box: 1px Ink Hairline dividers make one cell per
+  character (cell = 1ch + 0.85ch tracking of Azeret Mono), so a code is written one
+  character per box, digits or slug alike.
+- **Check (`LembarCheck`):** a real checkbox drawn as a 20px bubble; checked fills in
+  pencil. 44px row.
+- **Notice:** 1px cobalt frame on Ink Tint, graphite text, `role="status"`.
 
 ### Motion
 
@@ -832,7 +879,9 @@ of a button on `:active`.
   from 0.15 to 1 and fades in over 280ms `cubic-bezier(0.16, 1, 0.3, 1)`, staggered
   by a per-mark `--delay` so the sheet fills digit by digit, then jenjang, modules,
   status. It runs on load (and when a module bubble is toggled on).
-- **Timing rail:** 200ms colour and width transitions as reading progresses.
+- **Timing rail:** 200ms colour and width transitions as reading progresses. On a
+  sign-in page the rail is the form's progress instead: marks fill as the required
+  boxes are filled in.
 - **Everything else:** colour transitions on hover, a 2px nudge of the link arrow,
   a 1px button press.
 - **Reduced motion:** `prefers-reduced-motion: reduce` removes the pencil fill;
@@ -843,14 +892,15 @@ the sheet. No scroll reveals, parallax or looping animation.
 
 ### Browser surfaces
 
-Scoped to `.landing-lembar`: selection is cobalt with paper text; `:focus-visible`
-is a 2px graphite outline at 3px offset; `scrollbar-color` is cobalt on paper.
+Scoped to `.lembar`: selection is cobalt with paper text; `:focus-visible` is a 2px
+graphite outline at 3px offset (inputs take the inner graphite stroke instead);
+`scrollbar-color` is cobalt on paper; the caret is graphite.
 
 ### Do's and Don'ts
 
 #### Do:
-- **Do** keep Lembar scoped under `.landing-lembar` and its tokens prefixed
-  `landing-`.
+- **Do** keep Lembar scoped under `.lembar` and its tokens prefixed `landing-`;
+  build new sign-in pages from `LembarShell` and the shared fields, never by hand.
 - **Do** make every new block a printed part of the sheet: a cobalt frame or band, a
   field label, bubbles for choices, graphite for what is filled.
 - **Do** keep proof real: the modules that exist, the actual onboarding steps, the
@@ -860,8 +910,8 @@ is a 2px graphite outline at 3px offset; `scrollbar-color` is cobalt on paper.
 
 #### Don't:
 - **Don't** bring Lembar into the app (no cobalt, Archivo or 2px frames in the
-  portal, console or forms), and don't bring app tokens (Stamp Ink green, Instrument
-  Sans, Geist, shadows) onto the landing.
+  portal, the console or signed-in forms), and don't bring app tokens (Stamp Ink
+  green, Instrument Sans, Geist, shadows, shadcn components) onto Lembar pages.
 - **Don't** add a third hue, a gradient, a shadow, a screenshot or a feature-card grid.
 - **Don't** use a full-size bubble as decoration (the 8px ring bullets of detail
   lists are the one ornamental use), or corner marks on anything that is not a

@@ -630,10 +630,13 @@
     ]
   },
   "landingLembar": {
-    "scope": "Public landing page at / only (unauthenticated marketing surface), scoped under .landing-lembar. Does not govern the app; the app's tokens and rules do not govern it. Colour and typography primitives live in DESIGN.md frontmatter under the landing- prefix.",
+    "scope": "Lembar world: the public landing at /, the school sign-in pages (Identity Auth) and the PPDB applicant account pages (Ppdb Account: Login, Register, ForgotPassword, SetPassword, VerifyNotice), scoped under .lembar. Does not govern the app; the app tokens and rules do not govern it. Colour and typography primitives live in DESIGN.md frontmatter under the landing- prefix.",
     "source": [
       "modules/Platform/resources/js/Pages/Platform/Landing.tsx",
-      "modules/Platform/resources/js/Components/Landing/landing.css"
+      "modules/Shared/resources/js/components/lembar/lembar.css",
+      "modules/Shared/resources/js/components/lembar/LembarShell.tsx",
+      "modules/Shared/resources/js/components/lembar/fields.tsx",
+      "modules/Shared/resources/js/components/lembar/parts.tsx"
     ],
     "colorMeta": {
       "landing-ink": {
@@ -670,6 +673,11 @@
         "role": "neutral",
         "displayName": "Paper",
         "purpose": "Page and every framed surface; text on the cobalt band (90%)."
+      },
+      "landing-correction": {
+        "role": "error",
+        "displayName": "Correction Red",
+        "purpose": "The teacher red pen: border and message of a field that needs correcting, nothing else."
       }
     },
     "typographyMeta": {
@@ -748,7 +756,7 @@
         "refersTo": "landing-button-primary",
         "description": "Graphite action button; inverted variant only on the cobalt band.",
         "html": "<a class=\"ds-lembar-btn\" href=\"#\">Daftarkan sekolah</a>",
-        "css": ".ds-lembar-btn { display: inline-flex; align-items: center; height: 48px; padding: 0 24px; border-radius: 2px; background: #1d1d1f; color: #fff; font-family: Archivo, ui-sans-serif, system-ui, sans-serif; font-size: 15px; font-weight: 600; text-decoration: none; transition: background-color 150ms; } .ds-lembar-btn:hover { background: #173a99; } .ds-lembar-btn:active { transform: translateY(1px); } .ds-lembar-btn:focus-visible { outline: 2px solid #1d1d1f; outline-offset: 3px; }"
+        "css": ".ds-lembar-btn { display: inline-flex; align-items: center; height: 48px; padding: 0 24px; border-radius: 2px; background: #1d1d1f; color: #fff; font-family: Archivo, ui-sans-serif, system-ui, sans-serif; font-size: 15px; font-weight: 600; text-decoration: none; transition: background-color 150ms; } .ds-lembar-btn:hover { background: #006b9c; } .ds-lembar-btn:active { transform: translateY(1px); } .ds-lembar-btn:focus-visible { outline: 2px solid #1d1d1f; outline-offset: 3px; }"
       },
       {
         "name": "Lembar bubble",
@@ -756,7 +764,7 @@
         "refersTo": "landing-bubble",
         "description": "The one mark: cobalt ring, graphite fill when chosen.",
         "html": "<span class=\"ds-lembar-bubble\"></span><span class=\"ds-lembar-bubble ds-lembar-bubble--on\"></span>",
-        "css": ".ds-lembar-bubble { display: inline-block; width: 20px; height: 20px; border: 1px solid #2350c8; border-radius: 9999px; background: #fff; margin-right: 8px; } .ds-lembar-bubble--on { background: #1d1d1f; border-color: #1d1d1f; }"
+        "css": ".ds-lembar-bubble { display: inline-block; width: 20px; height: 20px; border: 1px solid #09a8ed; border-radius: 9999px; background: #fff; margin-right: 8px; } .ds-lembar-bubble--on { background: #1d1d1f; border-color: #1d1d1f; }"
       },
       {
         "name": "Lembar sheet band",
@@ -764,7 +772,7 @@
         "refersTo": "landing-sheet-band",
         "description": "Full-bleed tinted band with 2px cobalt rules; section head.",
         "html": "<div class=\"ds-lembar-band\"><h2>Siapa mengisi apa</h2></div>",
-        "css": ".ds-lembar-band { background: #eef3fd; border-top: 2px solid #2350c8; border-bottom: 2px solid #2350c8; padding: 24px 20px; } .ds-lembar-band h2 { margin: 0; font-family: Archivo, ui-sans-serif, sans-serif; font-size: 2rem; font-weight: 800; line-height: 1; letter-spacing: -0.02em; font-stretch: 75%; color: #1d1d1f; }"
+        "css": ".ds-lembar-band { background: #ecf7fe; border-top: 2px solid #09a8ed; border-bottom: 2px solid #09a8ed; padding: 24px 20px; } .ds-lembar-band h2 { margin: 0; font-family: Archivo, ui-sans-serif, sans-serif; font-size: 2rem; font-weight: 800; line-height: 1; letter-spacing: -0.02em; font-stretch: 75%; color: #1d1d1f; }"
       }
     ],
     "narrative": {
