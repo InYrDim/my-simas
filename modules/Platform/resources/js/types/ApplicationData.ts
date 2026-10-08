@@ -21,6 +21,10 @@ export interface PlanOption {
     name: string;
     priceMonthly: number;
     priceYearly: number;
-    maxUsers: number | null;
+    limits: {
+        students: number | null;
+        staffAccounts: number | null;
+        storageMb: number | null;
+    };
     modules: string[];
 }

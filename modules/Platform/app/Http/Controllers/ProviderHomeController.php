@@ -2,7 +2,6 @@
 
 namespace Modules\Platform\App\Http\Controllers;
 
-use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Platform\App\Domain\Models\Subscription;
@@ -11,6 +10,7 @@ use Modules\Platform\App\Domain\Models\Tenant;
 use Modules\Platform\App\Domain\Models\TenantApplication;
 use Modules\Platform\App\Domain\Models\TenantApplicationStatus;
 use Modules\Platform\App\Domain\Models\TenantStatus;
+use Modules\Platform\App\Domain\Support\BillingClock;
 use Modules\Platform\App\Http\Support\ConsoleResources;
 use Modules\Platform\App\Infrastructure\Billing\BillingSummary;
 
@@ -37,7 +37,7 @@ final class ProviderHomeController
                 'mrr' => $billing['mrr'],
                 'endingSoon' => Subscription::query()
                     ->where('status', SubscriptionStatus::Active)
-                    ->whereBetween('current_period_end', [Carbon::today(), Carbon::today()->addDays(30)])
+                    ->whereBetween('current_period_end', [BillingClock::today(), BillingClock::today()->addDays(30)])
                     ->count(),
             ],
             'attention' => $this->summary->needsAttention()

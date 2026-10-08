@@ -24,12 +24,29 @@ class PlanFactory extends Factory
             'name' => ucfirst(fake()->unique()->word()),
             'price_monthly' => $monthly,
             'price_yearly' => $monthly * 10,
-            'max_users' => 50,
+            'limits' => null,
             'modules' => ['core', 'identity'],
             'is_active' => true,
+            'is_public' => true,
             'sort_order' => 0,
             'archived_at' => null,
         ];
+    }
+
+    /**
+     * @param  array<string, int>  $limits  students, staff_accounts, storage_mb
+     */
+    public function withLimits(array $limits): static
+    {
+        return $this->state(fn (): array => ['limits' => $limits]);
+    }
+
+    /**
+     * A plan only the provider assigns, hidden from the sign-up list.
+     */
+    public function private(): static
+    {
+        return $this->state(fn (): array => ['is_public' => false]);
     }
 
     public function archived(): static

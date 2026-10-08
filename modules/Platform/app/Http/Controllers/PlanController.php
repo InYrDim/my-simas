@@ -77,10 +77,13 @@ final class PlanController
             'name' => ['required', 'string', 'max:80'],
             'price_monthly' => ['required', 'integer', 'min:0', 'max:1000000000'],
             'price_yearly' => ['required', 'integer', 'min:0', 'max:1000000000'],
-            'max_users' => ['nullable', 'integer', 'min:1', 'max:1000000'],
+            'limit_students' => ['nullable', 'integer', 'min:1', 'max:1000000'],
+            'limit_staff_accounts' => ['nullable', 'integer', 'min:1', 'max:1000000'],
+            'limit_storage_mb' => ['nullable', 'integer', 'min:1', 'max:100000000'],
             'modules' => ['array'],
             'modules.*' => ['string', Rule::in(array_keys($this->registry->all()))],
             'is_active' => ['boolean'],
+            'is_public' => ['boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:1000'],
         ];
     }
@@ -95,11 +98,34 @@ final class PlanController
             'name' => trim($data['name']),
             'price_monthly' => $data['price_monthly'],
             'price_yearly' => $data['price_yearly'],
-            'max_users' => $data['max_users'] ?? null,
+            'limits' => $this->limits($data),
             'modules' => array_values(array_unique(['core', ...($data['modules'] ?? [])])),
             'is_active' => (bool) ($data['is_active'] ?? true),
+            'is_public' => (bool) ($data['is_public'] ?? true),
             'sort_order' => $data['sort_order'] ?? 0,
         ];
+    }
+
+    /**
+     * The ceilings the provider filled in; a blank one is no limit and is
+     * left out. Null when the plan has none.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, int>|null
+     */
+    private function limits(array $data): ?array
+    {
+        $limits = [];
+
+        foreach (['students', 'staff_accounts', 'storage_mb'] as $key) {
+            $value = $data['limit_'.$key] ?? null;
+
+            if ($value !== null && $value !== '') {
+                $limits[$key] = (int) $value;
+            }
+        }
+
+        return $limits === [] ? null : $limits;
     }
 
     /**

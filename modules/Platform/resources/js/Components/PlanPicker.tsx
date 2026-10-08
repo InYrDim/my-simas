@@ -79,9 +79,9 @@ export default function PlanPicker({
                                 {formatRupiah(plan.priceYearly)}/tahun
                             </span>
                             <span className="text-sm text-muted-foreground">
-                                {plan.maxUsers === null
-                                    ? 'Pengguna tanpa batas'
-                                    : `Hingga ${plan.maxUsers} pengguna`}
+                                {plan.limits.students === null
+                                    ? 'Siswa tanpa batas'
+                                    : `Hingga ${plan.limits.students} siswa`}
                             </span>
                         </span>
                     </label>

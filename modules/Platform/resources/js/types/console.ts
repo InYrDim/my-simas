@@ -21,15 +21,23 @@ export interface Paginated<T> {
     total: number;
 }
 
+/** A plan's ceilings; null = no limit. */
+export interface PlanLimits {
+    students: number | null;
+    staffAccounts: number | null;
+    storageMb: number | null;
+}
+
 export interface ConsolePlan {
     id: number;
     key: string;
     name: string;
     priceMonthly: number;
     priceYearly: number;
-    maxUsers: number | null;
+    limits: PlanLimits;
     modules: string[];
     isActive: boolean;
+    isPublic: boolean;
     sortOrder: number;
     archived: boolean;
     subscribers: number | null;

@@ -4,12 +4,12 @@ namespace Modules\Platform\App\Http\Controllers;
 
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Platform\App\Domain\Exceptions\BillingException;
 use Modules\Platform\App\Domain\Models\Invoice;
 use Modules\Platform\App\Domain\Models\InvoiceStatus;
+use Modules\Platform\App\Domain\Support\BillingClock;
 use Modules\Platform\App\Http\Support\ConsoleResources;
 use Modules\Platform\App\Infrastructure\Billing\InvoiceIssuer;
 use Modules\Platform\App\Infrastructure\Billing\SubscriptionManager;
@@ -43,7 +43,7 @@ final class InvoiceController
             })
             ->when($filters['status'] ?? null, function ($query, string $status): void {
                 if ($status === 'overdue') {
-                    $query->where('status', InvoiceStatus::Unpaid)->where('due_at', '<', Carbon::today());
+                    $query->where('status', InvoiceStatus::Unpaid)->where('due_at', '<', BillingClock::today());
 
                     return;
                 }

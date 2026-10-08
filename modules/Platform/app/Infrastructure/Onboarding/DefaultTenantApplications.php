@@ -333,7 +333,7 @@ final class DefaultTenantApplications implements TenantApplications
         $planKey = $this->planKey($school);
 
         if ($planKey !== null) {
-            $this->assertPlanSelectable($planKey);
+            $this->assertPlanSelectable($planKey, publicOnly: true);
         }
     }
 
@@ -393,11 +393,19 @@ final class DefaultTenantApplications implements TenantApplications
     }
 
     /**
-     * A plan can be chosen only while it is active and not archived.
+     * A plan can be chosen only while it is active and not archived. An
+     * applicant may pick only a public plan; the provider may also pick a
+     * private one when approving.
      */
-    private function assertPlanSelectable(string $planKey): void
+    private function assertPlanSelectable(string $planKey, bool $publicOnly = false): void
     {
-        if (! Plan::query()->selectable()->where('key', $planKey)->exists()) {
+        $plans = Plan::query()->selectable();
+
+        if ($publicOnly) {
+            $plans->public();
+        }
+
+        if (! $plans->where('key', $planKey)->exists()) {
             throw new InvalidApplicationException("The plan [{$planKey}] is not available.");
         }
     }

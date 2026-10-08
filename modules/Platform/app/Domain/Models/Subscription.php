@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Modules\Platform\App\Domain\Support\BillingClock;
 use Modules\Platform\Database\Factories\SubscriptionFactory;
 
 /**
@@ -26,13 +27,14 @@ use Modules\Platform\Database\Factories\SubscriptionFactory;
  * @property Carbon|null $current_period_start
  * @property Carbon|null $current_period_end
  * @property Carbon|null $cancelled_at
+ * @property int|null $scheduled_plan_id a downgrade that takes effect at the end of the paid period
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Plan|null $plan
  * @property-read Tenant|null $tenant
  */
 #[UseFactory(SubscriptionFactory::class)]
-#[Fillable(['tenant_id', 'plan_id', 'billing_cycle', 'status', 'trial_ends_at', 'current_period_start', 'current_period_end', 'cancelled_at'])]
+#[Fillable(['tenant_id', 'plan_id', 'billing_cycle', 'status', 'trial_ends_at', 'current_period_start', 'current_period_end', 'cancelled_at', 'scheduled_plan_id'])]
 class Subscription extends Model
 {
     /** @use HasFactory<SubscriptionFactory> */
@@ -111,7 +113,7 @@ class Subscription extends Model
      */
     public function displayState(?CarbonInterface $today = null): string
     {
-        $today ??= Carbon::today();
+        $today ??= BillingClock::today();
 
         if ($this->status === SubscriptionStatus::Cancelled) {
             return self::STATE_CANCELLED;

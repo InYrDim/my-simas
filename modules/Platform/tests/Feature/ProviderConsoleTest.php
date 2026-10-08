@@ -263,24 +263,28 @@ describe('plans', function () {
             'name' => 'Gold',
             'price_monthly' => 500_000,
             'price_yearly' => 5_000_000,
-            'max_users' => 200,
+            'limit_students' => 500,
+            'limit_staff_accounts' => 40,
             'modules' => ['identity'],
             'is_active' => true,
+            'is_public' => false,
         ])->assertRedirect(console('/billing/plans'));
 
         $plan = Plan::query()->where('key', 'gold')->firstOrFail();
         expect($plan->modules)->toBe(['core', 'identity'])
-            ->and($plan->max_users)->toBe(200);
+            ->and($plan->limits)->toBe(['students' => 500, 'staff_accounts' => 40])
+            ->and($plan->is_public)->toBeFalse();
 
         put(console("/billing/plans/{$plan->id}"), [
             'name' => 'Gold Plus',
             'price_monthly' => 600_000,
             'price_yearly' => 6_000_000,
-            'max_users' => null,
+            'limit_students' => null,
+            'limit_staff_accounts' => null,
             'modules' => ['identity'],
         ])->assertSessionDoesntHaveErrors();
 
-        expect($plan->refresh())->name->toBe('Gold Plus')->max_users->toBeNull();
+        expect($plan->refresh())->name->toBe('Gold Plus')->limits->toBeNull()->is_public->toBeTrue();
 
         post(console("/billing/plans/{$plan->id}/archive"))->assertRedirect();
         expect($plan->refresh()->archived_at)->not->toBeNull()

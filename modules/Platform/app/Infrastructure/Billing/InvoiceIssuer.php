@@ -10,6 +10,7 @@ use Modules\Platform\App\Domain\Models\Invoice;
 use Modules\Platform\App\Domain\Models\InvoiceStatus;
 use Modules\Platform\App\Domain\Models\Plan;
 use Modules\Platform\App\Domain\Models\Subscription;
+use Modules\Platform\App\Domain\Support\BillingClock;
 
 /**
  * Creates and voids invoices. Numbers are INV-YYMM-#### (sequence per
@@ -19,7 +20,7 @@ final class InvoiceIssuer
 {
     public function issue(Subscription $subscription, Plan $plan, BillingCycle $cycle, CarbonInterface $periodStart): Invoice
     {
-        $today = Carbon::today();
+        $today = BillingClock::today();
 
         return Invoice::query()->create([
             'number' => $this->nextNumber($today),

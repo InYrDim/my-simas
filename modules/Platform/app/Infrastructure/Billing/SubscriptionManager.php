@@ -3,7 +3,6 @@
 namespace Modules\Platform\App\Infrastructure\Billing;
 
 use Carbon\CarbonInterface;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Platform\App\Domain\Exceptions\BillingException;
 use Modules\Platform\App\Domain\Models\BillingCycle;
@@ -12,6 +11,7 @@ use Modules\Platform\App\Domain\Models\InvoiceStatus;
 use Modules\Platform\App\Domain\Models\Plan;
 use Modules\Platform\App\Domain\Models\Subscription;
 use Modules\Platform\App\Domain\Models\SubscriptionStatus;
+use Modules\Platform\App\Domain\Support\BillingClock;
 use Modules\Platform\App\Infrastructure\Modules\DefaultModuleRegistry;
 use Modules\Platform\App\Infrastructure\Modules\ModuleFlagManager;
 
@@ -47,7 +47,7 @@ final class SubscriptionManager
                 'plan_id' => $plan->id,
                 'billing_cycle' => BillingCycle::Monthly,
                 'status' => SubscriptionStatus::Trial,
-                'trial_ends_at' => Carbon::today()->addDays($days ?? (int) config('billing.trial_days', 14)),
+                'trial_ends_at' => BillingClock::today()->addDays($days ?? (int) config('billing.trial_days', 14)),
             ]);
 
             $this->syncModules($subscription, $plan);
@@ -62,9 +62,9 @@ final class SubscriptionManager
             throw new BillingException('Only a trial can be extended.');
         }
 
-        $base = $subscription->trial_ends_at !== null && $subscription->trial_ends_at->gte(Carbon::today())
+        $base = $subscription->trial_ends_at !== null && $subscription->trial_ends_at->gte(BillingClock::today())
             ? $subscription->trial_ends_at->copy()
-            : Carbon::today();
+            : BillingClock::today();
 
         $subscription->forceFill(['trial_ends_at' => $base->addDays($days)])->save();
 
@@ -190,12 +190,12 @@ final class SubscriptionManager
         if (
             $subscription->status === SubscriptionStatus::Active
             && $subscription->current_period_end !== null
-            && $subscription->current_period_end->gte(Carbon::today())
+            && $subscription->current_period_end->gte(BillingClock::today())
         ) {
             return $subscription->current_period_end->copy();
         }
 
-        return Carbon::today();
+        return BillingClock::today();
     }
 
     /**

@@ -73,7 +73,7 @@ Setelah ini, provider dapat menjalankan siklus langganan sekolah dari trial samp
 
 ### Platform (pemilik billing)
 - **Data baru/berubah** (migrasi baru berawalan `0010_01_01_...`): `payments` (baru); `plans.limits` json + `plans.is_public` (menggantikan `max_users`); `tenants.billing_email`, `billing_name`, `billing_exempt`, `suspended_reason`; `subscriptions.scheduled_plan_id`; `invoices.kind` (`activation`/`renewal`/`upgrade`); `tenant_modules.source`; `billing_notices` (baru).
-- **Layanan** di `modules/Platform/app/Infrastructure/Billing/`: `BillingClock` (baru, `today()` zona `billing.timezone`), `SubscriptionManager` (`settle`, `requestPlanChange`, `cancelScheduledChange`, `changeCycle`, `cancel`; `payInvoice` dipensiunkan), `InvoiceIssuer` (pakai ulang atau void invoice unpaid, `issueUpgrade`, penomoran dikunci), `ManualTransferGateway` (baru, menggantikan `AlwaysSucceedsPaymentGateway`), `BillingNotifier` dan `InvoiceDocument` (baru), serta langkah harian di `Billing/Daily/` (baru).
+- **Layanan** di `modules/Platform/app/Infrastructure/Billing/`: `BillingClock` (baru di `Domain/Support`, `today()` zona `billing.timezone`), `SubscriptionManager` (`settle`, `requestPlanChange`, `cancelScheduledChange`, `changeCycle`, `cancel`; `payInvoice` dipensiunkan), `InvoiceIssuer` (pakai ulang atau void invoice unpaid, `issueUpgrade`, penomoran dikunci), `ManualTransferGateway` (baru, menggantikan `AlwaysSucceedsPaymentGateway`), `BillingNotifier` dan `InvoiceDocument` (baru), serta langkah harian di `Billing/Daily/` (baru).
 - **Kontrak publik baru** di `modules/Platform/app/Contracts/`: `TenantBilling`, `UsageMeters`, `TenantUsage`, DTO `BillingOverview`, `InvoiceSummary`, `PlanOffer`, `PaymentInstructions`, `PlanChangeResult`, `UsageLine`. Implementasinya internal dan diikat di `PlatformServiceProvider`.
 - **Suspend**: `TenantSuspendedException` (internal) dilempar `ResolveTenant`, dirender view Blade `Platform::tenant-suspended` (folder `modules/Platform/mail/`, namespace `Platform` lewat `loadViewsFrom`).
 - **Rute**: console memakai grup billing yang ada di `modules/Platform/routes/web.php` (`billing.*`, ditambah `billing.invoices.confirm`/`pdf`/`resend`); sisi sekolah grup baru `school.billing.*` di file yang sama, `Route::middleware(['web','auth'])` dengan `can:platform.billing.*`.
@@ -96,7 +96,7 @@ Legenda: ⬜ belum · 🟡 berjalan · ✅ selesai. Berhenti di antara tahap dan
 
 | Tahap | Cakupan | Status | Catatan |
 | --- | --- | --- | --- |
-| 1 | Fondasi: skema, `BillingClock`, config, plan (`limits`, `is_public`) di console | ⬜ | Prasyarat semua tahap |
+| 1 | Fondasi: skema, `BillingClock`, config, plan (`limits`, `is_public`) di console | ✅ | Tiga migrasi, `BillingClock` di `Domain/Support`, plan publik/khusus, batas di console dan pemilih plan. Suite Platform 335/335 hijau. `BillingClock` pindah dari `Infrastructure/Billing` ke `Domain/Support` (model Domain memakainya) |
 | 2 | Pembayaran asinkron, `settle()`, satu invoice unpaid, form konfirmasi manual | ⬜ | Setelah 1 |
 | 3 | Flag modul bersumber dan ganti plan (upgrade prorata, downgrade terjadwal) | ⬜ | Setelah 2 |
 | 4 | Siklus hidup: tenggang, suspend bersebab, halaman "Akses dihentikan", `billing_exempt` | ⬜ | Setelah 2 |
@@ -111,16 +111,16 @@ Tahap 2, 5 (sebagian), dan 7 saling bebas setelah Tahap 1 dan boleh dikerjakan p
 ## Tasks
 
 ### Tahap 1 — Fondasi
-- [ ] Migrasi `plans`: tambah `limits` json nullable dan `is_public` bool default true, pindahkan `max_users` ke `limits.staff_accounts`, hapus `max_users` — `modules/Platform/database/migrations/0010_01_01_000000_add_limits_and_visibility_to_plans.php` (baru)
-- [ ] Migrasi `tenants`: `billing_email`, `billing_name` (nullable), `billing_exempt` (bool default false), `suspended_reason` (nullable string) — `modules/Platform/database/migrations/0010_01_01_000001_add_billing_fields_to_tenants.php` (baru)
-- [ ] Migrasi `subscriptions.scheduled_plan_id` (kolom biasa, indeks), `invoices.kind` (default `renewal`), `tenant_modules.source` (default `plan`) — `modules/Platform/database/migrations/0010_01_01_000002_add_billing_lifecycle_columns.php` (baru)
-- [ ] Model: `Plan` (cast `limits`, `is_public`, scope `public`), `Tenant`, `Subscription`, `Invoice` (+ enum `InvoiceKind`, baru), `TenantModules` — `modules/Platform/app/Domain/Models/`; perbarui factory — `modules/Platform/database/factories/`
-- [ ] `BillingClock::today()` (baru) dan ganti semua `Carbon::today()` billing — `modules/Platform/app/Infrastructure/Billing/BillingClock.php` (baru), `SubscriptionManager.php`, `InvoiceIssuer.php`, `BillingSummary.php`, `modules/Platform/app/Domain/Models/Subscription.php`
-- [ ] Config: `timezone`, `trial_grace_days`, `overdue_grace_days`, `renewal_invoice_days_before`, `reminders`, `suspend_cap`, `cron_stale_days`, `issuer` (nama, email, WhatsApp/telepon, alamat, rekening dari env) — `config/billing.php`, `.env.example`
-- [ ] Console plan: validasi `limits.*` dan `is_public`, form modal (tiga batas + visibilitas), tabel menampilkan batas — `modules/Platform/app/Http/Controllers/PlanController.php`, `modules/Platform/app/Http/Support/ConsoleResources.php`, `modules/Platform/resources/js/Pages/Platform/Billing/Plans.tsx`, `modules/Platform/resources/js/types/console.ts`
-- [ ] Onboarding: ganti `maxUsers` dengan batas dari `limits`; hanya plan publik tampil — `modules/Platform/app/Http/Controllers/Applicant/OnboardingController.php`, `modules/Platform/resources/js/Components/PlanPicker.tsx`
-- [ ] Seeder: batas awal (Starter 300 siswa/25 staf, Standard 1.000/100, Pro tanpa batas), PPDB hanya di Pro — `modules/Platform/database/seeders/BillingMasterDataSeeder.php`
-- [ ] Tes: migrasi memindahkan `max_users`; `BillingClock` memakai zona billing; plan tidak publik tidak tampil di pemilih; form plan menyimpan batas — `modules/Platform/tests/Feature/BillingFoundationTest.php` (baru), sesuaikan `ProviderConsoleTest.php`
+- [x] Migrasi `plans`: tambah `limits` json nullable dan `is_public` bool default true, pindahkan `max_users` ke `limits.staff_accounts`, hapus `max_users` — `modules/Platform/database/migrations/0010_01_01_000000_add_limits_and_visibility_to_plans.php` (baru)
+- [x] Migrasi `tenants`: `billing_email`, `billing_name` (nullable), `billing_exempt` (bool default false), `suspended_reason` (nullable string) — `modules/Platform/database/migrations/0010_01_01_000001_add_billing_fields_to_tenants.php` (baru)
+- [x] Migrasi `subscriptions.scheduled_plan_id` (kolom biasa, indeks), `invoices.kind` (default `renewal`), `tenant_modules.source` (default `plan`) — `modules/Platform/database/migrations/0010_01_01_000002_add_billing_lifecycle_columns.php` (baru)
+- [x] Model: `Plan` (cast `limits`, `is_public`, scope `public`), `Tenant`, `Subscription`, `Invoice` (+ enum `InvoiceKind`, baru), `TenantModules` — `modules/Platform/app/Domain/Models/`; perbarui factory — `modules/Platform/database/factories/`
+- [x] `BillingClock::today()` (baru) dan ganti semua `Carbon::today()` billing — `modules/Platform/app/Domain/Support/BillingClock.php` (baru, bukan di `Infrastructure/Billing`: model `Subscription`/`Invoice` memakainya), `SubscriptionManager.php`, `InvoiceIssuer.php`, `BillingSummary.php`, `InvoiceController.php`, `ProviderHomeController.php`, `modules/Platform/app/Domain/Models/Subscription.php`, `Invoice.php`
+- [x] Config: `timezone`, `trial_grace_days`, `overdue_grace_days`, `renewal_invoice_days_before`, `reminders`, `suspend_cap`, `cron_stale_days`, `issuer` (nama, email, WhatsApp/telepon, alamat, rekening dari env) — `config/billing.php`, `.env.example`
+- [x] Console plan: validasi `limits.*` dan `is_public`, form modal (tiga batas + visibilitas), tabel menampilkan batas — `modules/Platform/app/Http/Controllers/PlanController.php`, `modules/Platform/app/Http/Support/ConsoleResources.php`, `modules/Platform/resources/js/Pages/Platform/Billing/Plans.tsx`, `modules/Platform/resources/js/types/console.ts`
+- [x] Onboarding: ganti `maxUsers` dengan batas dari `limits`; hanya plan publik tampil — `modules/Platform/app/Http/Controllers/Applicant/OnboardingController.php`, `modules/Platform/resources/js/Components/PlanPicker.tsx`
+- [x] Seeder: batas awal (Starter 300 siswa/25 staf, Standard 1.000/100, Pro tanpa batas), PPDB hanya di Pro — `modules/Platform/database/seeders/BillingMasterDataSeeder.php`
+- [x] Tes: migrasi memindahkan `max_users`; `BillingClock` memakai zona billing; plan tidak publik tidak tampil di pemilih; form plan menyimpan batas — `modules/Platform/tests/Feature/BillingFoundationTest.php` (baru), sesuaikan `ProviderConsoleTest.php`
 
 **Selesai bila:** `php artisan migrate` berjalan bersih, provider dapat mengisi batas dan visibilitas plan di console, dan pemilih plan hanya menampilkan plan publik. Bukti: `php artisan test --compact modules/Platform` → hijau; `npm run types:check` → tanpa galat.
 
@@ -254,10 +254,18 @@ Diisi selama eksekusi; dokumen ini hidup.
 
 ### Log keputusan
 - 2026-10-08 — Plan ditulis dari peta wayfinder #4 (tiket #5–#13) dan riset pasar — semua keputusan produk sudah dikunci; tidak ada penyimpangan.
+- 2026-10-08 — `BillingClock` ditaruh di `modules/Platform/app/Domain/Support/` (bukan `Infrastructure/Billing/`) — model Domain (`Subscription`, `Invoice`) memanggilnya, dan Domain tidak seharusnya bergantung pada Infrastructure; preseden: `Attendance/Domain/Support/ScanWindow`.
+- 2026-10-08 — `BillingClock::today()` mengembalikan tanggal zona billing sebagai tengah malam zona aplikasi (UTC), bentuk yang sama dengan atribut ber-cast `date` — agar membandingkan tanggal sama tidak bergeser 7 jam.
+- 2026-10-08 — Peran seeder: Pro memuat `ppdb` (keputusan #13), jadi `AttendanceForEverySchoolTest::lists Absensi in every seeded plan` diubah dari "semua plan identik" menjadi "semua plan memuat attendance, hanya Pro memuat ppdb" — perubahan sengaja.
+- 2026-10-08 — Form plan di console memakai kolom datar `limit_students`, `limit_staff_accounts`, `limit_storage_mb` (bukan array bersarang); controller menyusunnya menjadi `plans.limits` dan membuang yang kosong.
+- 2026-10-08 — Pendaftar hanya boleh memilih plan publik: `DefaultTenantApplications::assertPlanSelectable` mendapat `publicOnly` untuk jalur `submit`; provider tetap boleh memilih plan khusus saat menyetujui.
 
 ### Temuan
 - Sebelum menulis: `payInvoice` mengembalikan plan lama (jebakan 1) dan `syncModules()` menimpa modul manual (jebakan 2); keduanya ditutup di Tahap 2–3.
 - Event `JobProcessing` tidak dapat membatalkan job; mekanisme pelepasan pekerjaan sekolah yang disuspend ditentukan lewat spike di Tahap 4.
+- `composer deptrac` sudah gagal sebelum fase ini: `App\Console\Commands\DemoSeedCommand` bergantung pada `Database\Seeders\DemoSchoolSeeder` (1 pelanggaran, tidak terkait billing; terbukti dengan `git stash`). Tidak diperbaiki di fase ini; Tahap 9 jangan menganggapnya regresi.
+- `npm run check:fix` memformat ulang berkas di luar yang disentuh (`Attendance/Monthly.tsx`, `Core/Integration/Whatsapp/Index.tsx`); dikembalikan dengan `git checkout`. Gunakan pemeriksaan tanpa `--fix` atau periksa `git status` sesudahnya.
+- Form plan di console kini punya sekitar 11 kolom di dalam modal (batas aturan UX ≈ 10): ditoleransi karena semuanya satu entitas master data; pertimbangkan memecahnya bila ditambah lagi.
 
 ### Hasil akhir
 Diisi saat semua tahap selesai.

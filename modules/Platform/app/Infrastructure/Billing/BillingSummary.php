@@ -3,11 +3,11 @@
 namespace Modules\Platform\App\Infrastructure\Billing;
 
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Carbon;
 use Modules\Platform\App\Domain\Models\Invoice;
 use Modules\Platform\App\Domain\Models\InvoiceStatus;
 use Modules\Platform\App\Domain\Models\Subscription;
 use Modules\Platform\App\Domain\Models\Tenant;
+use Modules\Platform\App\Domain\Support\BillingClock;
 
 /**
  * Read model for the console's revenue figures. Everything is computed
@@ -49,7 +49,7 @@ final class BillingSummary
      */
     public function needsAttention(): Collection
     {
-        $soon = Carbon::today()->addDays((int) config('billing.due_soon_days', 7));
+        $soon = BillingClock::today()->addDays((int) config('billing.due_soon_days', 7));
 
         return Subscription::query()
             ->with(['plan', 'tenant'])
@@ -74,7 +74,7 @@ final class BillingSummary
      */
     public function monthlyTrend(int $months = 6): array
     {
-        $first = Carbon::today()->startOfMonth()->subMonths($months - 1);
+        $first = BillingClock::today()->startOfMonth()->subMonths($months - 1);
 
         $revenueByMonth = Invoice::query()
             ->where('status', InvoiceStatus::Paid)

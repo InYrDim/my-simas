@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Modules\Platform\App\Domain\Support\BillingClock;
 use Modules\Platform\Database\Factories\InvoiceFactory;
 
 /**
@@ -22,6 +23,7 @@ use Modules\Platform\Database\Factories\InvoiceFactory;
  * @property int $plan_id
  * @property string $plan_name
  * @property BillingCycle $billing_cycle
+ * @property InvoiceKind $kind
  * @property int $amount
  * @property InvoiceStatus $status
  * @property Carbon $issued_at
@@ -35,7 +37,7 @@ use Modules\Platform\Database\Factories\InvoiceFactory;
  * @property-read Subscription|null $subscription
  */
 #[UseFactory(InvoiceFactory::class)]
-#[Fillable(['number', 'tenant_id', 'subscription_id', 'plan_id', 'plan_name', 'billing_cycle', 'amount', 'status', 'issued_at', 'due_at', 'period_start', 'period_end', 'paid_at'])]
+#[Fillable(['number', 'tenant_id', 'subscription_id', 'plan_id', 'plan_name', 'billing_cycle', 'kind', 'amount', 'status', 'issued_at', 'due_at', 'period_start', 'period_end', 'paid_at'])]
 class Invoice extends Model
 {
     /** @use HasFactory<InvoiceFactory> */
@@ -50,6 +52,7 @@ class Invoice extends Model
     {
         return [
             'billing_cycle' => BillingCycle::class,
+            'kind' => InvoiceKind::class,
             'status' => InvoiceStatus::class,
             'amount' => 'integer',
             'issued_at' => 'date',
@@ -81,7 +84,7 @@ class Invoice extends Model
      */
     public function displayState(?CarbonInterface $today = null): string
     {
-        $today ??= Carbon::today();
+        $today ??= BillingClock::today();
 
         if ($this->status === InvoiceStatus::Unpaid && $this->due_at->lt($today)) {
             return 'overdue';
