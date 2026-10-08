@@ -22,9 +22,9 @@ use Modules\Platform\App\Contracts\UsageMeters;
 use Modules\Platform\App\Contracts\WhatsappChannel;
 use Modules\Platform\App\Http\Middleware\EnsureModuleActive;
 use Modules\Platform\App\Http\Middleware\ResolveTenant;
-use Modules\Platform\App\Infrastructure\Billing\AlwaysSucceedsPaymentGateway;
 use Modules\Platform\App\Infrastructure\Billing\BillingSummary;
 use Modules\Platform\App\Infrastructure\Billing\InvoiceIssuer;
+use Modules\Platform\App\Infrastructure\Billing\ManualTransferGateway;
 use Modules\Platform\App\Infrastructure\Billing\PaymentGateway;
 use Modules\Platform\App\Infrastructure\Billing\SubscriptionManager;
 use Modules\Platform\App\Infrastructure\Commands\CachePruneExpiredCommand;
@@ -149,9 +149,9 @@ class PlatformServiceProvider extends ServiceProvider
         $this->app->singleton(TenantSession::class, SessionTenantSession::class);
         $this->app->alias(DefaultTenantApplications::class, TenantApplications::class);
 
-        // Subscription billing (provider side). The gateway is a stub that
-        // always succeeds until a real payment provider is chosen.
-        $this->app->singleton(PaymentGateway::class, AlwaysSucceedsPaymentGateway::class);
+        // Subscription billing (provider side). Payments start at the manual
+        // transfer gateway until a real payment provider is chosen.
+        $this->app->singleton(PaymentGateway::class, ManualTransferGateway::class);
         $this->app->singleton(InvoiceIssuer::class);
         $this->app->singleton(SubscriptionManager::class);
         $this->app->singleton(BillingSummary::class);

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 
 import {
-    pay as payInvoice,
+    index as invoicesIndex,
     voidMethod as voidInvoice,
 } from '@/actions/Modules/Platform/App/Http/Controllers/InvoiceController';
 import {
@@ -850,18 +850,18 @@ function SubscriptionTab({
                                 <TableCell>
                                     {invoice.status === 'unpaid' && (
                                         <div className="flex gap-2">
-                                            <Button
-                                                size="sm"
-                                                onClick={() =>
-                                                    send(
-                                                        'post',
-                                                        payInvoice.url({
-                                                            invoice: invoice.id,
+                                            <Button asChild size="sm">
+                                                <Link
+                                                    href={consolePath(
+                                                        invoicesIndex.url({
+                                                            query: {
+                                                                q: invoice.number,
+                                                            },
                                                         }),
-                                                    )
-                                                }
-                                            >
-                                                Tandai lunas
+                                                    )}
+                                                >
+                                                    Konfirmasi pembayaran
+                                                </Link>
                                             </Button>
                                             <Button
                                                 size="sm"

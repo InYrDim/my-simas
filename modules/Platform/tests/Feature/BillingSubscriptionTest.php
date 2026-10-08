@@ -7,18 +7,21 @@ use Modules\Platform\App\Contracts\TenantModules;
 use Modules\Platform\App\Domain\Exceptions\BillingException;
 use Modules\Platform\App\Domain\Models\BillingCycle;
 use Modules\Platform\App\Domain\Models\Invoice;
+use Modules\Platform\App\Domain\Models\InvoiceKind;
 use Modules\Platform\App\Domain\Models\InvoiceStatus;
+use Modules\Platform\App\Domain\Models\Payment;
+use Modules\Platform\App\Domain\Models\PaymentStatus;
 use Modules\Platform\App\Domain\Models\Subscription;
 use Modules\Platform\App\Domain\Models\SubscriptionStatus;
 use Modules\Platform\App\Infrastructure\Billing\BillingSummary;
 use Modules\Platform\App\Infrastructure\Billing\InvoiceIssuer;
-use Modules\Platform\App\Infrastructure\Billing\PaymentGateway;
 use Modules\Platform\App\Infrastructure\Billing\SubscriptionManager;
 use Modules\Platform\Database\Factories\ApplicantFactory;
 use Modules\Platform\Database\Factories\PlanFactory;
 use Modules\Platform\Database\Factories\ProviderUserFactory;
 use Modules\Platform\Database\Factories\SubscriptionFactory;
 use Modules\Platform\Database\Factories\TenantFactory;
+use Modules\Platform\Tests\Support\FakePaymentGateway;
 
 /**
  * Provider-side subscription billing: trial, activation, invoices, the
@@ -27,6 +30,17 @@ use Modules\Platform\Database\Factories\TenantFactory;
 function subscriptions(): SubscriptionManager
 {
     return app(SubscriptionManager::class);
+}
+
+/**
+ * Pays an invoice the way a gateway would: initiate, then settle with
+ * the outcome the fake reports.
+ */
+function payInvoice(Invoice $invoice, ?FakePaymentGateway $gateway = null): Payment
+{
+    $gateway ??= FakePaymentGateway::paying();
+
+    return subscriptions()->settle($gateway->initiate($invoice), $gateway->outcome($invoice));
 }
 
 it('starts a 14-day trial on the chosen plan and enables its modules', function () {
@@ -96,7 +110,7 @@ it('extends only a trial', function () {
     expect(fn () => subscriptions()->extendTrial($active, 7))->toThrow(BillingException::class);
 });
 
-it('activates a plan by issuing an unpaid invoice and pays it through the gateway', function () {
+it('activates a plan by issuing an unpaid invoice and settles it once paid', function () {
     $plan = PlanFactory::new()->create(['key' => 'standard', 'price_monthly' => 350_000, 'price_yearly' => 3_500_000]);
     $subscription = SubscriptionFactory::new()->trialEndingIn(5)->create();
 
@@ -106,9 +120,11 @@ it('activates a plan by issuing an unpaid invoice and pays it through the gatewa
         ->and($invoice->amount)->toBe(3_500_000)
         ->and($invoice->plan_name)->toBe($plan->name)
         ->and($invoice->number)->toMatch('/^INV-\d{4}-0001$/')
+        ->and($invoice->kind)->toBe(InvoiceKind::Activation)
+        ->and($invoice->due_at->toDateString())->toBe(Carbon::today()->addDays(7)->toDateString())
         ->and($subscription->refresh()->status)->toBe(SubscriptionStatus::Trial);
 
-    expect(subscriptions()->payInvoice($invoice))->toBeTrue();
+    expect(payInvoice($invoice)->status)->toBe(PaymentStatus::Paid);
 
     $subscription->refresh();
     $invoice->refresh();
@@ -130,7 +146,7 @@ it('continues the period from its end when renewing an active subscription', fun
 
     expect($invoice->period_start->toDateString())->toBe($end->toDateString());
 
-    subscriptions()->payInvoice($invoice);
+    payInvoice($invoice);
 
     expect($subscription->refresh()->current_period_end->toDateString())
         ->toBe($end->copy()->addMonthNoOverflow()->toDateString());
@@ -140,7 +156,7 @@ it('restarts from today when a lapsed subscription is paid', function () {
     $subscription = SubscriptionFactory::new()->active(-5)->create();
 
     $invoice = subscriptions()->renew($subscription);
-    subscriptions()->payInvoice($invoice);
+    payInvoice($invoice);
 
     expect($subscription->refresh()->current_period_start->toDateString())->toBe(Carbon::today()->toDateString());
 });
@@ -153,36 +169,28 @@ it('reactivates a cancelled subscription once its invoice is paid', function () 
 
     expect($subscription->refresh()->displayState())->toBe('cancelled');
 
-    subscriptions()->payInvoice($invoice);
+    payInvoice($invoice);
 
     expect($subscription->refresh()->status)->toBe(SubscriptionStatus::Active)
         ->and($subscription->cancelled_at)->toBeNull();
 });
 
 it('leaves everything untouched when the gateway declines', function () {
-    app()->instance(PaymentGateway::class, new class implements PaymentGateway
-    {
-        public function charge(Invoice $invoice): bool
-        {
-            return false;
-        }
-    });
-    app()->forgetInstance(SubscriptionManager::class);
-
     $subscription = SubscriptionFactory::new()->trialEndingIn(5)->create();
     $invoice = subscriptions()->activate($subscription, $subscription->plan->key, BillingCycle::Monthly);
 
-    expect(subscriptions()->payInvoice($invoice))->toBeFalse()
+    expect(payInvoice($invoice, FakePaymentGateway::failing())->status)->toBe(PaymentStatus::Failed)
         ->and($invoice->refresh()->status)->toBe(InvoiceStatus::Unpaid)
         ->and($subscription->refresh()->status)->toBe(SubscriptionStatus::Trial);
 });
 
-it('refuses to pay or void an invoice that is not unpaid', function () {
+it('ignores a second payment on a paid invoice and refuses to void it', function () {
     $subscription = SubscriptionFactory::new()->active()->create();
     $paid = subscriptions()->renew($subscription);
-    subscriptions()->payInvoice($paid);
+    payInvoice($paid);
 
-    expect(fn () => subscriptions()->payInvoice($paid))->toThrow(BillingException::class)
+    expect(payInvoice($paid)->status)->toBe(PaymentStatus::Pending)
+        ->and($paid->refresh()->status)->toBe(InvoiceStatus::Paid)
         ->and(fn () => app(InvoiceIssuer::class)->void($paid))->toThrow(BillingException::class);
 });
 
@@ -190,10 +198,12 @@ it('voids an unpaid invoice and numbers invoices sequentially', function () {
     $subscription = SubscriptionFactory::new()->active()->create();
 
     $first = subscriptions()->renew($subscription);
+    subscriptions()->changeCycle($subscription, BillingCycle::Yearly);
     $second = subscriptions()->renew($subscription);
 
     expect($first->number)->toEndWith('-0001')
-        ->and($second->number)->toEndWith('-0002');
+        ->and($second->number)->toEndWith('-0002')
+        ->and($first->refresh()->status)->toBe(InvoiceStatus::Void);
 
     app(InvoiceIssuer::class)->void($second);
 
