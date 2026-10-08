@@ -80,6 +80,23 @@ export interface ConsoleInvoice {
     paidAt: string | null;
     periodStart: string;
     periodEnd: string;
+    /** Delivery history, newest first; only on the invoice list page. */
+    notices?: BillingNoticeRow[];
+}
+
+export interface BillingNoticeRow {
+    id: number;
+    kind:
+        | 'invoice_issued'
+        | 'due_reminder'
+        | 'overdue_reminder'
+        | 'payment_received'
+        | 'access_stopped'
+        | 'access_reopened';
+    recipient: string | null;
+    status: 'queued' | 'sent' | 'failed';
+    error: string | null;
+    at: string | null;
 }
 
 export interface TenantListItem {
@@ -112,6 +129,8 @@ export interface TenantDetail {
     domain: string | null;
     status: TenantStatus;
     timezone: string;
+    billingEmail: string | null;
+    billingName: string | null;
     createdAt: string | null;
 }
 

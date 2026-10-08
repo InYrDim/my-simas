@@ -135,6 +135,8 @@ final class TenantConsoleController
                 'domain' => $tenant->domain,
                 'status' => $tenant->status->value,
                 'timezone' => $tenant->timezone,
+                'billingEmail' => $tenant->billing_email,
+                'billingName' => $tenant->billing_name,
                 'createdAt' => $tenant->created_at?->toDateString(),
             ],
             'subscription' => $subscription !== null ? ConsoleResources::subscription($subscription) : null,
@@ -162,8 +164,14 @@ final class TenantConsoleController
     {
         $request->merge(['domain' => mb_strtolower(trim((string) $request->input('domain')))]);
 
+        if ($request->has('billing_email')) {
+            $request->merge(['billing_email' => mb_strtolower(trim((string) $request->input('billing_email')))]);
+        }
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
+            'billing_email' => ['nullable', 'string', 'email:rfc', 'max:190'],
+            'billing_name' => ['nullable', 'string', 'max:120'],
             'timezone' => ['required', 'timezone:all'],
             'domain' => [
                 'nullable', 'string', 'max:190', 'regex:/^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/',
@@ -172,11 +180,21 @@ final class TenantConsoleController
             ],
         ]);
 
-        $this->lifecycle->updateProfile($tenant, [
+        $profile = [
             'name' => trim($data['name']),
             'timezone' => $data['timezone'],
             'domain' => filled($data['domain'] ?? null) ? $data['domain'] : null,
-        ]);
+        ];
+
+        if (array_key_exists('billing_email', $data)) {
+            $profile['billing_email'] = filled($data['billing_email']) ? $data['billing_email'] : null;
+        }
+
+        if (array_key_exists('billing_name', $data)) {
+            $profile['billing_name'] = filled($data['billing_name']) ? trim($data['billing_name']) : null;
+        }
+
+        $this->lifecycle->updateProfile($tenant, $profile);
 
         return back()->with('status', 'Data tenant diperbarui.');
     }

@@ -3,6 +3,7 @@
 namespace Modules\Platform\App\Infrastructure\Billing;
 
 use Carbon\CarbonInterface;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Platform\App\Domain\Exceptions\BillingException;
@@ -21,6 +22,12 @@ use Modules\Platform\App\Domain\Support\BillingClock;
  */
 final class InvoiceIssuer
 {
+    private const NUMBER_ATTEMPTS = 5;
+
+    public function __construct(
+        private readonly BillingNotifier $notifier,
+    ) {}
+
     /**
      * The invoice for the first paid period (after a trial or a
      * cancellation). Due a few days after it is issued.
@@ -146,8 +153,7 @@ final class InvoiceIssuer
 
             $today = BillingClock::today();
 
-            return Invoice::query()->create([
-                'number' => $this->nextNumber($today),
+            $invoice = $this->createNumbered([
                 'tenant_id' => $subscription->tenant_id,
                 'subscription_id' => $subscription->id,
                 'plan_id' => $plan->id,
@@ -160,8 +166,37 @@ final class InvoiceIssuer
                 'due_at' => $dueAt,
                 'period_start' => $periodStart,
                 'period_end' => $periodEnd ?? $periodStart->copy()->addMonthsNoOverflow($cycle->months()),
-            ]);
+            ], $today);
+
+            $this->notifier->invoiceIssued($invoice);
+
+            return $invoice;
         });
+    }
+
+    /**
+     * Insert with the next INV-YYMM-#### number. The subscription lock does
+     * not serialise two different schools, so a clash on the unique number
+     * column is retried (in its own savepoint) with a fresh number.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    private function createNumbered(array $attributes, Carbon $issuedOn): Invoice
+    {
+        $attempts = 0;
+
+        while (true) {
+            try {
+                return DB::transaction(fn (): Invoice => Invoice::query()->create([
+                    'number' => $this->nextNumber($issuedOn),
+                    ...$attributes,
+                ]));
+            } catch (UniqueConstraintViolationException $exception) {
+                if (++$attempts >= self::NUMBER_ATTEMPTS) {
+                    throw $exception;
+                }
+            }
+        }
     }
 
     private function nextNumber(Carbon $issuedOn): string
