@@ -15,8 +15,11 @@ beforeEach(function () {
     app()->detectEnvironment(fn (): string => 'local');
 });
 
-it('seeds the demo school on a running trial of the Standard plan', function () {
+it('seeds the demo school with the school code 123456, on a running trial of the Standard plan', function () {
     $this->artisan('db:seed', ['--class' => DemoSchoolSeeder::class])->assertSuccessful();
+
+    expect(DemoSchoolSeeder::SLUG)->toBe('123456')
+        ->and(Tenant::query()->where('slug', 'sekolah-demo')->exists())->toBeFalse();
 
     $tenant = Tenant::query()->where('slug', DemoSchoolSeeder::SLUG)->firstOrFail();
     $subscription = Subscription::query()->where('tenant_id', $tenant->id)->sole();
@@ -27,6 +30,15 @@ it('seeds the demo school on a running trial of the Standard plan', function () 
         ->and($subscription->trial_ends_at->toDateString())->toBe(BillingClock::today()->addDays((int) config('billing.trial_days', 14))->toDateString())
         ->and($subscription->current_period_end)->toBeNull()
         ->and($subscription->plan_id)->toBe(Plan::query()->where('key', 'standard')->value('id'));
+});
+
+it('completes a school that already has the code 123456 instead of creating a second one', function () {
+    $existing = Tenant::query()->create(['name' => 'SMA Sekolah Demo', 'slug' => '123456', 'timezone' => 'Asia/Jakarta', 'status' => 'active']);
+
+    $this->artisan('db:seed', ['--class' => DemoSchoolSeeder::class])->assertSuccessful();
+
+    expect(Tenant::query()->where('slug', '123456')->count())->toBe(1)
+        ->and(Subscription::query()->where('tenant_id', $existing->id)->count())->toBe(1);
 });
 
 it('leaves the subscription alone when it is seeded again', function () {

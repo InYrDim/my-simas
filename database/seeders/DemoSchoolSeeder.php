@@ -20,10 +20,12 @@ use Modules\Platform\Database\Seeders\BillingMasterDataSeeder;
 use Modules\Ppdb\Database\Seeders\PpdbDemoSeeder;
 
 /**
- * One complete demo school (`sekolah-demo`): every module on, a running
- * trial on the Standard plan (so the trial banner shows), a school admin, all master data (classes, students,
- * teachers, tenaga kependidikan), their accounts, attendance and PPDB.
- * Local only; safe to run again, every step skips what already exists.
+ * One complete demo school (school code `123456`): every module on, a
+ * running trial on the Standard plan (so the trial banner shows), a school
+ * admin, all master data (classes, students, teachers, tenaga
+ * kependidikan), their accounts, attendance and PPDB. Local only; safe to
+ * run again, every step skips what already exists (a school that already
+ * has the code `123456` is completed, not duplicated).
  *
  *   php artisan db:seed --class="Database\Seeders\DemoSchoolSeeder"
  *
@@ -33,7 +35,8 @@ use Modules\Ppdb\Database\Seeders\PpdbDemoSeeder;
  */
 class DemoSchoolSeeder extends Seeder
 {
-    public const SLUG = 'sekolah-demo';
+    /** The school code (the tenant slug) people type to sign in. */
+    public const SLUG = '123456';
 
     public const ADMIN_EMAIL = 'admin@sekolah.demo';
 
@@ -71,7 +74,7 @@ class DemoSchoolSeeder extends Seeder
             app(PpdbDemoSeeder::class)->seedSchool();
         });
 
-        $this->command->info("Demo school [{$tenant->slug}] ready — school code: {$tenant->id}");
+        $this->command->info("Demo school ready — school code: {$tenant->slug}");
         $this->command->info('Admin: '.self::ADMIN_EMAIL.' / '.self::ADMIN_PASSWORD);
     }
 
