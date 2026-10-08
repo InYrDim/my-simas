@@ -30,6 +30,7 @@ use Modules\Platform\App\Infrastructure\Billing\InvoiceIssuer;
 use Modules\Platform\App\Infrastructure\Billing\ManualTransferGateway;
 use Modules\Platform\App\Infrastructure\Billing\PaymentGateway;
 use Modules\Platform\App\Infrastructure\Billing\SubscriptionManager;
+use Modules\Platform\App\Infrastructure\Commands\BillingDailyCommand;
 use Modules\Platform\App\Infrastructure\Commands\CachePruneExpiredCommand;
 use Modules\Platform\App\Infrastructure\Commands\PermissionsSyncCommand;
 use Modules\Platform\App\Infrastructure\Commands\ProviderCreateUserCommand;
@@ -182,6 +183,7 @@ class PlatformServiceProvider extends ServiceProvider
             PermissionsSyncCommand::class,
             ProviderCreateUserCommand::class,
             CachePruneExpiredCommand::class,
+            BillingDailyCommand::class,
         ]);
     }
 

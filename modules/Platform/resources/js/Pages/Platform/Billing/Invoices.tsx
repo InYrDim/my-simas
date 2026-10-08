@@ -60,6 +60,7 @@ interface InvoicesProps {
 const noticeKindLabel: Record<BillingNoticeRow['kind'], string> = {
     invoice_issued: 'Invoice terbit',
     due_reminder: 'Pengingat jatuh tempo',
+    trial_ending: 'Pengingat trial berakhir',
     overdue_reminder: 'Pengingat terlambat',
     payment_received: 'Pembayaran diterima',
     access_stopped: 'Akses dihentikan',

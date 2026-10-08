@@ -88,7 +88,7 @@ export interface BillingNoticeRow {
     id: number;
     kind:
         | 'invoice_issued'
-        | 'due_reminder'
+        | 'due_reminder' | 'trial_ending'
         | 'overdue_reminder'
         | 'payment_received'
         | 'access_stopped'
@@ -120,6 +120,14 @@ export interface UsageLine {
     used: number;
     limit: number | null;
     state: UsageState;
+}
+
+/** State of the billing:daily cron job, as the billing overview shows it. */
+export interface BillingDailyStatus {
+    lastRunAt: string | null;
+    stale: boolean;
+    staleDays: number;
+    blocked: { at: string; count: number } | null;
 }
 
 export interface TenantDetail {

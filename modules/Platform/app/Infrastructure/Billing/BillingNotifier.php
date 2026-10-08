@@ -21,6 +21,7 @@ use Modules\Platform\App\Infrastructure\Mail\DueReminderMail;
 use Modules\Platform\App\Infrastructure\Mail\InvoiceIssuedMail;
 use Modules\Platform\App\Infrastructure\Mail\OverdueReminderMail;
 use Modules\Platform\App\Infrastructure\Mail\PaymentReceivedMail;
+use Modules\Platform\App\Infrastructure\Mail\TrialEndingMail;
 
 /**
  * Sends the six billing messages to a school's billing contact. One
@@ -46,6 +47,23 @@ final class BillingNotifier
     public function dueReminder(Invoice $invoice, CarbonInterface $anchorDate): ?BillingNotice
     {
         return $this->notifyInvoice(BillingNoticeKind::DueReminder, $invoice, $anchorDate, DueReminderMail::class);
+    }
+
+    /**
+     * A trial that is about to end has no invoice to point at: the mail
+     * names the end date (carried in `dueOn`) and asks to activate.
+     */
+    public function trialEnding(Subscription $subscription, CarbonInterface $anchorDate, CarbonInterface $trialEndsOn): ?BillingNotice
+    {
+        return $this->record(
+            BillingNoticeKind::TrialEnding,
+            $subscription->tenant_id,
+            $subscription->id,
+            null,
+            $anchorDate,
+            TrialEndingMail::class,
+            ['dueOn' => $trialEndsOn->format('d/m/Y')],
+        );
     }
 
     public function overdueReminder(Invoice $invoice, CarbonInterface $anchorDate, ?CarbonInterface $graceEndsOn = null): ?BillingNotice
@@ -115,7 +133,7 @@ final class BillingNotifier
      */
     private function record(BillingNoticeKind $kind, string $tenantId, ?int $subscriptionId, ?Invoice $invoice, ?CarbonInterface $anchorDate, string $mailClass, array $extra): ?BillingNotice
     {
-        if ($anchorDate !== null && $this->alreadyRecorded($kind, $subscriptionId, $anchorDate)) {
+        if ($anchorDate !== null && $this->wasRecorded($kind, $subscriptionId, $anchorDate)) {
             return null;
         }
 
@@ -151,7 +169,12 @@ final class BillingNotifier
         return $notice;
     }
 
-    private function alreadyRecorded(BillingNoticeKind $kind, ?int $subscriptionId, CarbonInterface $anchorDate): bool
+    /**
+     * Whether a scheduled message of this kind was already recorded for the
+     * subscription on this anchor date (what the daily job asks before it
+     * sends, and in a dry run).
+     */
+    public function wasRecorded(BillingNoticeKind $kind, ?int $subscriptionId, CarbonInterface $anchorDate): bool
     {
         return BillingNotice::query()
             ->where('subscription_id', $subscriptionId)

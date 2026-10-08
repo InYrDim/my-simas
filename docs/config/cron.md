@@ -11,6 +11,7 @@ Replace `/path/to/simas` with the app's directory on the server.
 | --- | --- | --- |
 | `queue:work` | every minute | Sends queued mail and WhatsApp messages |
 | `cache:prune-expired` | daily, 03:00 | Keeps the database cache table small |
+| `billing:daily` | daily, early morning | Issues renewal invoices, sends billing reminders, suspends schools whose access ran out, expires unfinished payments |
 
 ## Queue worker
 
@@ -56,6 +57,36 @@ Replace `/path/to/simas` with the app's directory on the server.
 - The command (Platform) deletes rows whose `expiration` has passed. It
   does nothing when the cache store is not `database`.
 - `cache_locks` needs no job: Laravel clears it by itself.
+
+## Billing
+
+```
+10 3 * * * cd /path/to/simas && php artisan billing:daily >> /dev/null 2>&1
+```
+
+- Runs once a day, early in the morning Jakarta time. The "day" it works on
+  is the date in `BILLING_TIMEZONE` (default `Asia/Jakarta`), whatever
+  timezone the server's cron uses.
+- Four steps, in order, each on its own (one that fails does not stop the
+  next): renewal invoices (14 days before a paid period ends), reminders
+  (trial ending, invoice due, invoice late), suspension (access ran out,
+  grace included), and expiry of gateway payments nobody finished.
+- Safe to run twice on the same day and to run late: reminders are recorded
+  per day in `billing_notices`, and a late run sends only the newest
+  reminder that still makes sense.
+- Check before trusting it: `php artisan billing:daily --dry-run` lists what
+  it would do and changes nothing. `--date=YYYY-MM-DD` runs as if it were
+  that day (replay a missed day, or look ahead together with `--dry-run`),
+  and `--only=renewals` (repeatable) runs single steps.
+- A guard stops one run from suspending more than `billing.suspend_cap`
+  schools. It then suspends nobody, exits with an error, and the billing
+  overview in the console says so; after checking the list, repeat with
+  `--force`.
+- The console's billing overview shows when the job last finished a full
+  run and turns red after `billing.cron_stale_days` days without one. A dry
+  run, a single step, a `--date` run or a run with a failed step does not
+  count as "last run".
+- Needs the queue worker above: reminders and invoices are queued emails.
 
 ## Adding a job
 

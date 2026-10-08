@@ -60,11 +60,14 @@ return [
     | One billing:daily run suspends nobody past this many schools, or this
     | share (percent) of the schools that are billed, unless it is run
     | with --force. A guard against a clock or payment-recording mistake
-    | closing many schools at once.
+    | closing many schools at once. The percentage only counts once at
+    | least percent_min_schools schools are billed: with three schools, one
+    | overdue school would always be a third.
     */
     'suspend_cap' => [
         'count' => 5,
         'percent' => 20,
+        'percent_min_schools' => 10,
     ],
 
     /*

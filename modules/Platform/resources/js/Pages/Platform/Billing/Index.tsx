@@ -1,5 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 
+import { Alert, AlertDescription } from '@shared/components/ui/alert';
+
 import { show as showTenant } from '@/actions/Modules/Platform/App/Http/Controllers/TenantConsoleController';
 
 import { consolePath } from '../../../Components/consolePath';
@@ -18,7 +20,11 @@ import {
     relativeDue,
 } from '../../../Components/format';
 import ProviderLayout from '../../../Components/ProviderLayout';
-import type { ConsoleSubscription, TrendPoint } from '../../../types/console';
+import type {
+    BillingDailyStatus,
+    ConsoleSubscription,
+    TrendPoint,
+} from '../../../types/console';
 
 interface BillingProps {
     summary: {
@@ -32,6 +38,7 @@ interface BillingProps {
     };
     trend: TrendPoint[];
     attention: ConsoleSubscription[];
+    daily: BillingDailyStatus;
 }
 
 /** Subscription revenue overview. */
@@ -39,6 +46,7 @@ export default function BillingIndex({
     summary,
     trend,
     attention,
+    daily,
 }: BillingProps) {
     return (
         <ProviderLayout>
@@ -48,6 +56,33 @@ export default function BillingIndex({
                 title="Ringkasan langganan"
                 description="Pendapatan dan status langganan bulanan atau tahunan tiap sekolah."
             />
+
+            {daily.stale && (
+                <Alert variant="destructive" className="mt-6">
+                    <AlertDescription>
+                        {daily.lastRunAt === null
+                            ? 'Tugas harian penagihan (billing:daily) belum pernah selesai dijalankan. Invoice perpanjangan, pengingat, dan penangguhan tidak berjalan sampai cron dipasang.'
+                            : `Tugas harian penagihan terakhir selesai ${formatDate(daily.lastRunAt.slice(0, 10))}, lebih dari ${daily.staleDays} hari lalu. Periksa cron di server.`}
+                    </AlertDescription>
+                </Alert>
+            )}
+            {daily.blocked !== null && (
+                <Alert variant="destructive" className="mt-6">
+                    <AlertDescription>
+                        Penangguhan otomatis ditahan: {daily.blocked.count}{' '}
+                        sekolah melewati batas aman sekaligus. Periksa daftar
+                        dengan <code>php artisan billing:daily --dry-run</code>
+                        , lalu jalankan dengan <code>--force</code> bila
+                        benar.
+                    </AlertDescription>
+                </Alert>
+            )}
+            {!daily.stale && daily.lastRunAt !== null && (
+                <p className="mt-6 text-xs text-muted-foreground">
+                    Tugas harian penagihan terakhir selesai{' '}
+                    {formatDate(daily.lastRunAt.slice(0, 10))}.
+                </p>
+            )}
 
             <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-3">
                 <StatCard label="MRR" value={formatRupiah(summary.mrr)} />
