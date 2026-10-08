@@ -184,6 +184,14 @@ school's choice on Integrasi › WhatsApp.
 - `Exceptions/UnknownNoticeKindException` — the kind is not registered,
   or its module is not active for the school.
 
+## Registers into Platform
+
+- `students` usage meter (`Platform\Contracts\UsageMeters`, Fase 17):
+  every `Student` row of the school counts, whatever its status
+  (`active`, `graduated`, `transferred`, `left`). Shown against the plan's
+  `students` limit in the school's account panel and the provider console;
+  nothing blocks when it is over.
+
 ## Allowed dependencies
 
 - Modules/Shared

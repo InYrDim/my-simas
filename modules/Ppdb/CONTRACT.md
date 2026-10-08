@@ -182,5 +182,5 @@ Never another feature module (Attendance), not even via its Public surface.
   for the academic year their `registered_on` falls in.
 - Sample data: `php artisan db:seed --class="Modules\Ppdb\Database\Seeders\PpdbDemoSeeder"`
   (schools with the module and no period only; the results stay
-  unannounced). The module is in no billing plan yet: a provider adds
-  `ppdb` to a plan's modules, or switches it on per school.
+  unannounced). The seeded Pro plan includes `ppdb` (Fase 17): a provider
+  can add it to another plan's modules, or switch it on per school.

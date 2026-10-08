@@ -5,7 +5,8 @@
 - Database tables: `tenants`, `tenant_modules`, `tenant_applications`
   (school applications: applicant onboarding → provider review),
   `applicants` (central accounts of people registering a school), `plans`,
-  `subscriptions`, `invoices` (provider-side subscription billing), Spatie
+  `subscriptions`, `invoices`, `payments`, `billing_notices` (provider-side
+  subscription billing), Spatie
   permission tables (`permissions`, `roles`, `model_has_permissions`,
   `model_has_roles`, `role_has_permissions`), `provider_users`,
   `whatsapp_instances` (one per tenant: the school's WhatsApp request, the
@@ -126,8 +127,26 @@
   gateway session id. A gateway that refuses or cannot be reached never
   throws: it comes back as `lastError` / a failed result, in words a
   school may read. See "WhatsApp per school" below.
+- `TenantBilling` (Fase 17) — the school's own door to its subscription,
+  on the current tenant (fails closed without one). `overview()`,
+  `invoices()`, `offers()`, `subscribe($planKey, $cycle)`,
+  `startPayment($invoiceNumber)`, `reportTransfer(...)`, `changePlan($planKey)`,
+  `cancelScheduledChange()`, `changeCycle($cycle)`, `invoicePdf($invoiceNumber)`.
+  DTOs (Contracts/DTOs): `BillingOverview`, `InvoiceSummary`, `PlanOffer`,
+  `PaymentInstructions`, `PlanChangeOutcome`, `InvoiceFile`. An invoice is
+  named by its number and must be the school's own, or the call refuses
+  as not found (`BillingActionRefusedException::$notFound`). It checks no
+  permission: the caller does (`platform.billing.view` / `.pay`).
+  See "Subscription billing" below.
+- `UsageMeters` + `TenantUsage` (Fase 17) with `DTOs/UsageLine` — what a
+  school uses against its plan limits. A module registers its own meters
+  (`register(module, key, label, unit, counter, ?limitKey)`) from its
+  provider; `TenantUsage::forTenant($id)` computes them in the tenant's
+  context (meters of inactive modules left out), `isOverLimit($key)` and
+  `remaining($key)` read the current school. Display only: nothing blocks.
 - Exceptions (Contracts/Exceptions): `TenantNotSetException`,
-  `UnknownModuleException`, `ApplicationNotPendingException`,
+  `BillingActionRefusedException` (a school's billing action refused, in
+  words the school can read), `UnknownModuleException`, `ApplicationNotPendingException`,
   `InvalidApplicationException` (slug conflicts at submit/approve),
   `WhatsappUnavailableException` (`connect`/`disconnect` for a school
   whose WhatsApp is not approved, or is disabled).
@@ -318,7 +337,12 @@ the root seeder (glue layer — legal).
 `ShareTenantContext` middleware (prepended right after `ResolveTenant`,
 before the Inertia middleware): shares `tenant` (`{name, slug,
 timezone}` — null on central) and `modules` (sorted active keys) via
-`Inertia::share()`. Deliberately opaque — no ids, no status enum. Hooks
+`Inertia::share()`. Deliberately opaque — no ids, no status enum. A third
+prop, `billing` (Fase 17), is OPTIONAL (`Inertia::optional`): the account
+panels ask for it with a partial reload when they open, and it carries the
+school's subscription plus the URL of every billing action (built by
+`Http/Support/SchoolBillingPayload`, only for `platform.billing.view`;
+Shared may not import Platform, so it gets its links from this prop). Hooks
 live in Shared (`useTenant()`, `useModules()`, `hasModule(key)`), types
 in `modules/Shared/resources/js/types/tenant.ts` re-exported by root
 `resources/js/types`.
@@ -354,34 +378,95 @@ every layer via the `php_internal` collector.
 
 - None.
 
-## Subscription billing & master data (provider console)
+## Subscription billing & master data (provider console and school)
 
-Billing lives inside Platform (no Billing module). Internal only — nothing
-here is under `Contracts/` except what is listed at the end of this section.
+Billing lives inside Platform (no Billing module). Internal except what is
+listed under "Public additions" at the end of this section. Fase 17 made
+it ready for real money; the decisions behind it, and the stages, are in
+`docs/ai/plan/fase-17/billing-siap-nyata-plan.md`. Terms: `CONTEXT.md`.
 
 - **Tables.** `plans` (key, name, `price_monthly`, `price_yearly` in whole
-  rupiah, `max_users` nullable = unlimited, `modules` json, `is_active`,
-  `sort_order`, `archived_at`), `subscriptions` (ONE per tenant, unique
-  `tenant_id`; `plan_id` is a plain indexed column, no FK), `invoices`
-  (`number` INV-YYMM-####, snapshot `plan_name`/`billing_cycle`/`amount`,
-  `status` unpaid|paid|void). The only FK is `tenant_id → tenants`.
-- **Modes.** Stored `subscriptions.status` = `trial` | `active` |
-  `cancelled`. Date-derived display states (`Subscription::displayState()`):
-  `trial`, `trial_expired`, `active`, `due` (active, ends within 7 days),
-  `overdue` (active, period passed), `cancelled`. No scheduler or job writes
-  these — they are computed from dates.
-- **Flow.** Approving an application starts a trial
-  (`SubscriptionManager::startTrial`, in the approval transaction; a missing
-  trial plan only logs a warning). `activate()` issues an UNPAID invoice;
-  `payInvoice()` charges the gateway and, on success, marks the invoice paid,
-  sets the subscription active, extends the period (continuing from the old
-  end when still running, else from today) and syncs the plan's modules
-  (never disabling `core` or `config('tenancy.onboarding_modules')`).
-  Plan change takes effect on modules immediately and on price from the next
-  invoice (no proration). Cancelling does NOT suspend the tenant.
-- **Payment stub.** `PaymentGateway::charge()` is bound to
-  `AlwaysSucceedsPaymentGateway`, which ALWAYS returns `true`. Real billing is
-  deferred; replace the binding in `PlatformServiceProvider`.
+  rupiah, `limits` json — `students`, `staff_accounts`, `storage_mb`, a
+  missing key = no limit — `modules` json, `is_active`, `is_public`,
+  `sort_order`, `archived_at`; a non-public plan is not offered at sign-up
+  but the provider can assign it to one school), `subscriptions` (ONE per
+  tenant, unique `tenant_id`; `plan_id` and `scheduled_plan_id` are plain
+  indexed columns, no FK), `invoices` (`number` INV-YYMM-####, `kind`
+  activation|renewal|upgrade, snapshot `plan_name`/`billing_cycle`/`amount`,
+  `status` unpaid|paid|void), `payments` (one attempt to pay an invoice:
+  `gateway`, `method`, `status` pending|paid|failed|expired, `reference`,
+  `external_id` unique per gateway, `paid_on`, `confirmed_by`, `meta`),
+  `billing_notices` (each billing message sent, unique per subscription +
+  kind + anchor date for scheduled ones). `tenants` carries `billing_email`,
+  `billing_name`, `billing_exempt` and `suspended_reason`
+  (`billing`|`manual`). The only FK is `tenant_id → tenants`. `invoices`,
+  `subscriptions`, `payments` and `billing_notices` have NO tenant scope:
+  every query from the school side names the tenant itself.
+- **States and access.** Stored `subscriptions.status` = `trial` | `active`
+  | `cancelled`. Display states (`Subscription::displayState()`): `trial`,
+  `trial_expired`, `active`, `due`, `overdue`, `cancelled`, computed from
+  dates. Access: `accessEndsAt()` is the trial end or period end plus the
+  grace period (`billing.trial_grace_days`, `overdue_grace_days`, 7 each);
+  a cancelled subscription ("not renewed") keeps access to the end it had,
+  with no grace. "Today" is `BillingClock::today()`, the date in
+  `billing.timezone` (default Asia/Jakarta), not the UTC date.
+- **Flow.** Approving an application starts a trial (`startTrial`, in the
+  approval transaction; a missing trial plan only logs a warning).
+  `activate()` issues an UNPAID `activation` invoice; `renew()` the next
+  period's `renewal` invoice (due the day the paid period ends). At most
+  one unpaid invoice exists per subscription: asking again for the same
+  plan and cycle returns it, anything else voids the old one.
+  `billing:daily` issues renewals 14 days ahead.
+- **Payments.** `PaymentGateway::initiate(Invoice): Payment` creates (or
+  reuses) a pending Payment with the way to pay; bound to
+  `ManualTransferGateway` (the provider's own bank account from
+  `config('billing.issuer.bank')`). The ONLY door from a payment to an
+  invoice is `SubscriptionManager::settle(Payment, PaymentOutcome)`: it
+  locks the invoice row, is a no-op when the invoice is already paid, refuses
+  an amount that differs from the invoice, and computes the real period at
+  payment time (continuing from the old end while it runs, else from today).
+  Failed and expired outcomes only change the Payment. The provider
+  confirms a manual transfer in the console (method, reference, paid date,
+  note; the confirming user is recorded); what the school reported
+  (`payments.meta.reported`) is shown there. A real gateway implements
+  `initiate()` and calls `settle()` from its webhook.
+- **Plan change.** A school's own change (`requestPlanChange`, public plans
+  only): during a trial at once; on a paid period a dearer plan (compared at
+  the current cycle) is an `upgrade` invoice for the prorated difference
+  (ceil of price difference × remaining days ÷ period days), the current plan
+  staying until it is paid, and an equal or cheaper plan is a downgrade
+  scheduled for the end of the period (`scheduled_plan_id`). A plan or cycle
+  change voids open invoices, so paying a stale one cannot revert it.
+  `SubscriptionManager::changePlan` stays as the PROVIDER's immediate,
+  no-charge override.
+- **Module flags.** `tenant_modules.source` is `plan` or `manual`. A plan
+  sync (`syncModules`) only touches flags it set itself; a module the
+  provider switched on or off by hand survives renewals and plan changes.
+  `core` and `config('tenancy.onboarding_modules')` are never disabled.
+- **Suspension.** `TenantLifecycle::suspend($tenant, SuspensionReason)`:
+  `billing` (access ran out) is reopened by the first confirmed payment or a
+  trial extension; `manual` never is. A suspended school gets ONE neutral
+  403 page (`TenantSuspendedException`, view `Platform::tenant-suspended`)
+  naming the school and the provider's contact and nothing about billing;
+  WhatsApp sending stops (`WhatsappSendResult::suspended()`, closed as not
+  sent). `billing_exempt` takes a school out of billing:daily, reminders and
+  the revenue figures.
+- **Messages and documents.** `BillingNotifier` sends seven queued text
+  mails to `tenants.billing_email` (invoice issued, due reminder, trial
+  ending, overdue, payment received, access stopped, access reopened) and
+  records each in `billing_notices`; a school with no contact gets a
+  `failed` notice, never an error. `InvoiceDocument` renders the PDF
+  (invoice and receipt are one document; `barryvdh/laravel-dompdf`) from the
+  invoice snapshot and `config('billing.issuer')`, read live.
+- **Daily job.** `php artisan billing:daily` (cron, see `docs/config/cron.md`):
+  renewals, reminders, suspension, payment expiry; each step on its own;
+  `--only`, `--date`, `--dry-run`, `--force`; a guard holds back a mass
+  suspension past `billing.suspend_cap` until `--force`; the console shows
+  when it last finished (`billing.last_run_at`).
+- **School side.** `TenantBilling` (above) behind permissions
+  `platform.billing.view` and `platform.billing.pay` (the school admin holds
+  both from Identity's `roles.php`; run `php artisan roles:sync` after
+  release). Actions live under `/langganan/*` (`school.billing.*`).
 - **Seeding.** `BillingMasterDataSeeder` (idempotent, production-safe) creates
   the initial plans. Run in production with
   `php artisan db:seed --class="Modules\Platform\Database\Seeders\BillingMasterDataSeeder"`.
@@ -392,17 +477,27 @@ here is under `Contracts/` except what is listed at the end of this section.
 
 | Item | Current value | Where |
 |---|---|---|
-| Plan Starter | Rp150.000/bln, Rp1.500.000/thn, 25 users, modules core+identity+attendance | `BillingMasterDataSeeder` |
-| Plan Standard | Rp350.000/bln, Rp3.500.000/thn, 100 users, core+identity+attendance | same |
-| Plan Pro | Rp750.000/bln, Rp7.500.000/thn, unlimited users, core+identity+attendance | same |
+| Plan Starter | Rp150.000/bln, Rp1.500.000/thn, 300 students, 25 staff accounts, core+identity+attendance | `BillingMasterDataSeeder` |
+| Plan Standard | Rp350.000/bln, Rp3.500.000/thn, 1.000 students, 100 staff accounts, core+identity+attendance | same |
+| Plan Pro | Rp750.000/bln, Rp7.500.000/thn, no limits, core+identity+attendance+ppdb | same |
+| Storage limit | none until the provider sets one in the console | plans table |
 | Yearly price | 10 × monthly (assumption) | same |
-| Trial | 14 days, plan `starter`, automatic on approval, no auto-suspend | `config/billing.php` |
-| Invoice due | 7 days after issue | `config/billing.php` |
+| Trial | 14 days, plan `starter`, automatic on approval | `config/billing.php` |
+| Grace period | 7 days after a trial / paid period ends, then suspended by `billing:daily` | `config/billing.php` |
+| Invoice due | activation: 7 days after issue; renewal: the day the period ends | `config/billing.php` |
+| Renewal invoice | issued 14 days before the period ends | `config/billing.php` |
+| Reminders | trial 3 days before; due 7 and 1 days before; late 1 and 5 days after | `config/billing.php` |
 | "Due soon" window | 7 days | `config/billing.php` |
-| Plan modules | Every plan includes `attendance` for now (decision of 2026-10-02: every school gets Absensi; which plan keeps it is sorted out later, by editing the plans in the console). Migration `0008_01_01_000000_include_attendance_for_every_school` added it to the plans and schools that existed before. `ppdb` is built (fase 11) but in no plan yet: a provider adds it to a plan's modules or switches it on per school | plans table |
+| Mass-suspension guard | more than 5 schools, or 20% of billed schools (once there are 10) | `config/billing.php` |
+| Provider identity and bank account | `BILLING_ISSUER_*` in `.env` | `config/billing.php` |
+| Plan modules | Every plan includes `attendance` (decision of 2026-10-02: every school gets Absensi). Only Pro includes `ppdb`; a provider can also switch a module on per school (it then survives plan changes). Whether PPDB can be sold as a paid subscription to public schools (BOS rules, Pasal 66 Permendikdasmen 8/2026) is unconfirmed | plans table |
+| Tax | no PPN line on invoices; depends on the provider's PKP status | — |
 
 Public additions: `Contracts/TenantDirectory` (read-only tenant lookup for
-other modules' provider pages) and `TenantRoles::rolePermissions()`.
+other modules' provider pages), `TenantRoles::rolePermissions()`, and (Fase 17)
+`Contracts/TenantBilling`, `Contracts/UsageMeters` and `Contracts/TenantUsage`
+with their DTOs. Core registers the `students` meter and Identity the
+`staff_accounts` meter from their own providers.
 
 School-side navigation: `Contracts/TenantNavigation` is the registry for the
 tenant sidebar. Each module registers its own entries (label, lucide icon
@@ -480,8 +575,11 @@ the gateway side; Core owns the school page and the message log.
   `CredentialVault`, the request/approve/reject/disable/enable actions,
   `SyncWhatsappSession` and the console controller. Other modules reach
   WhatsApp only through `WhatsappChannel`.
-- `Plan`, `Subscription`, `Invoice`, `SubscriptionManager`, `InvoiceIssuer`,
-  `PaymentGateway`, `BillingSummary`, `TenantLifecycle`.
+- `Plan`, `Subscription`, `Invoice`, `Payment`, `BillingNotice`,
+  `SubscriptionManager`, `InvoiceIssuer`, `PaymentGateway` / `ManualTransferGateway`,
+  `BillingSummary`, `BillingNotifier`, `InvoiceDocument`, `BillingClock`, the
+  `billing:daily` steps, `DefaultTenantBilling`, `DefaultUsageMeters`,
+  `TenantLifecycle`, `TenantSuspendedException`.
 - `Tenant` Eloquent model, `TenantStatus`, anything under
   `App/Domain/**`, `App/Infrastructure/**`, `App/Http/**`, `database/**`.
 - The `TenantResolver` interface and its implementation — internal by

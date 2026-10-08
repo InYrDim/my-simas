@@ -282,7 +282,8 @@ Spatie\ imports outside Platform.
 All in Modules/Platform/app/Contracts/**: TenantContext, BelongsToTenant
 (public trait), TenantNotSetException, TenantCache, TenantStorage,
 ModuleRegistry, PermissionRegistry, HasTenantRoles (Spatie wrapper for
-Identity), TenantCreated event, helpers. Private: TenantScope, resolver,
+Identity), TenantBilling, UsageMeters, TenantUsage (Fase 17), TenantCreated
+event, helpers. Private: TenantScope, resolver,
 queue listeners, Spatie integration, Tenant model + persistence.
 ProviderUser stays in Platform (not Identity).
 
@@ -352,10 +353,22 @@ them in sync).
 Read the module's CONTRACT.md and docs/architecture/modular-monolith.md
 before touching these areas; only the traps are kept here.
 
-- **Billing / provider console (Fase 3)**: Platform-internal; payment is
-  the always-true stub `PaymentGateway`. Contracts `TenantDirectory`,
-  `TenantRoles::rolePermissions()`. School admins across tenants:
-  Identity `Console/SchoolAdminController`.
+- **Billing / provider console (Fase 3, real in Fase 17)**: Platform-internal.
+  Money moves only through `PaymentGateway::initiate()` (pending Payment)
+  and `SubscriptionManager::settle()` (locked, idempotent); the first
+  gateway is a manual bank transfer the provider confirms. Billing days are
+  `BillingClock::today()` (Asia/Jakarta), never `Carbon::today()`.
+  `invoices`/`subscriptions`/`payments` have NO tenant scope: name the
+  tenant in every query. A suspended school gets one neutral 403 page; only
+  a `billing` suspension is reopened by a payment. Cron is plain artisan
+  commands (`billing:daily`, see `docs/config/cron.md`), never
+  `schedule:run`. Contracts `TenantDirectory`, `TenantRoles::rolePermissions()`,
+  `TenantBilling` (the school's own view, permissions
+  `platform.billing.view/pay`), `UsageMeters`/`TenantUsage` (Core registers
+  `students`, Identity `staff_accounts`). Shared's account panels read the
+  optional Inertia prop `billing`. School admins across tenants: Identity
+  `Console/SchoolAdminController`. Details: Platform CONTRACT.md,
+  `docs/ai/plan/fase-17/`.
 - **Statistik & Laporan (Fase 7)**: Core owns the pages and
   `ReportRegistry`/`StatisticsRegistry`; every module registers from its
   own provider, Core never imports a feature module. Reports return a
@@ -387,9 +400,10 @@ before touching these areas; only the traps are kept here.
   `TenantContext::run($account->tenant_id)`; refusals to join always give
   the same message. Core's `StudentAdmission::admit()` creates the student;
   results go through `ContactNotifier` (kind `ppdb.result`, off by default).
-  `ppdb` is in no plan yet.
+  `ppdb` is in the Pro plan only (Fase 17); a provider can also switch it
+  on per school.
 - **School setup checklist (Fase 12)**: Core-internal `SetupChecklist`,
   computed per visit, no table, no contract.
 
 After a release run `php artisan migrate` and `php artisan roles:sync`
-(roles/permissions changed in Fase 10, 11, 13, 15 and "Kelas Saya siswa").
+(roles/permissions changed in Fase 10, 11, 13, 15, 17 and "Kelas Saya siswa").

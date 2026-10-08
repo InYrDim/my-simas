@@ -22,7 +22,7 @@ final class InvoiceDocument
 
         return Pdf::loadView('Platform::invoice-pdf', [
             'invoice' => $invoice,
-            'schoolName' => $tenant?->name ?? '-',
+            'schoolName' => $tenant->name ?? '-',
             'contactName' => $tenant?->billing_name,
             'contactEmail' => $tenant?->billing_email,
             'issuer' => (array) config('billing.issuer', []),

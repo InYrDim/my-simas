@@ -108,10 +108,9 @@ final class DefaultTenantBilling implements TenantBilling
             ->get()
             ->keyBy('invoice_id');
 
-        return $invoices
+        return array_values($invoices
             ->map(fn (Invoice $invoice): InvoiceSummary => $this->summary($invoice, $waiting->get($invoice->id)))
-            ->values()
-            ->all();
+            ->all());
     }
 
     public function offers(): array
@@ -121,15 +120,14 @@ final class DefaultTenantBilling implements TenantBilling
         $current = $subscription?->plan;
         $usage = $this->usage->forTenant($tenantId);
 
-        return Plan::query()
+        return array_values(Plan::query()
             ->selectable()
             ->public()
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get()
             ->map(fn (Plan $plan): PlanOffer => $this->offer($plan, $current, $subscription, $usage))
-            ->values()
-            ->all();
+            ->all());
     }
 
     public function subscribe(string $planKey, string $cycle): InvoiceSummary

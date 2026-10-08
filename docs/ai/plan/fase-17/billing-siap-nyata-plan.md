@@ -1,6 +1,6 @@
 # Billing siap-nyata: fungsi trial, pembayaran, langganan, dan invoice untuk operasional provider
 
-> **Status dokumen:** Berjalan
+> **Status dokumen:** Selesai
 > **Dibuat:** 2026-10-08 · **Diperbarui:** 2026-10-08 · **Branch:** `feat/billing-siap-nyata`
 
 ## Context
@@ -104,7 +104,7 @@ Legenda: ⬜ belum · 🟡 berjalan · ✅ selesai. Berhenti di antara tahap dan
 | 6 | `billing:daily` dengan pengaman dan penanda cron | ✅ | Empat langkah (`RenewalStep`, `ReminderStep`, `SuspensionStep`, `PaymentExpiryStep`) di `Billing/Daily/`, `--only/--date/--dry-run/--force`, pengaman suspend massal, `billing.last_run_at`, banner di Ringkasan Langganan, `docs/config/cron.md`. Platform 461 tes hijau |
 | 7 | Pemakaian dan batas plan (registry, meter, tampilan console) | ✅ | `UsageMeters`/`TenantUsage`/`UsageLine`, meter `students` (Core), `staff_accounts` (Identity), `storage` (Platform), panel Pemakaian dan tanda melebihi batas di console. Dikerjakan paralel di worktree, digabung `ef5e007`. Core 550 + Identity 163 + Platform 369 tes hijau |
 | 8 | Sisi sekolah: `TenantBilling`, izin, prop `billing`, `AccountMenu` nyata | ✅ | Kontrak `TenantBilling` + 6 DTO, `DefaultTenantBilling`, izin `platform.billing.view/pay` untuk `admin-sekolah`, prop opsional `billing` dengan URL aksi, rute `school.billing.*`, panel Paket & Langganan dan Tagihan & Invoice nyata di `AccountMenu`, laporan transfer terlihat di form konfirmasi provider. Platform 499 + Identity 163 + Core 550 + Attendance 248 + Ppdb 287 tes hijau; 4 tes browser hijau |
-| 9 | Dokumentasi, pemeriksaan batas modul, penutupan | ⬜ | Terakhir |
+| 9 | Dokumentasi, pemeriksaan batas modul, penutupan | ✅ | CONTRACT Platform/Core/Identity/Ppdb, `docs/architecture/modular-monolith.md`, `docs/config/cron.md`, README plan, `AGENTS.md` diselaraskan. Pemeriksaan: lihat Hasil akhir |
 
 Tahap 2, 5 (sebagian), dan 7 saling bebas setelah Tahap 1 dan boleh dikerjakan paralel di worktree terpisah **bila user memberi izin**; tetap berhenti dan minta persetujuan di akhir tiap tahap.
 
@@ -202,10 +202,10 @@ Tahap 2, 5 (sebagian), dan 7 saling bebas setelah Tahap 1 dan boleh dikerjakan p
 **Selesai bila:** admin sekolah melihat langganan, pemakaian, dan invoice nyata di `AccountMenu`, dan dapat berlangganan, memulai bayar, melapor transfer, serta mengunduh PDF; sekolah lain tidak bisa mengaksesnya. Bukti: `php artisan test --compact modules/Platform --filter=TenantBilling` → hijau; `npm run types:check` → tanpa galat.
 
 ### Tahap 9 — Dokumentasi dan penutupan
-- [ ] Perbarui bagian billing di `modules/Platform/CONTRACT.md` (tabel baru, kontrak baru, config, hapus keterangan "always-true stub", tabel asumsi master data); Core dan Identity (meter, izin) — `modules/Core/CONTRACT.md`, `modules/Identity/CONTRACT.md`
-- [ ] Perbarui `docs/architecture/modular-monolith.md` § Provider-console billing, `docs/config/cron.md`, dan tambahkan Fase 17 ke `docs/ai/plan/README.md`; selaraskan salinan lokal `AGENTS.md` (tidak dilacak git) bila ada perubahan permukaan
-- [ ] Jalankan seluruh pemeriksaan: `vendor/bin/pint --dirty --format agent`, `composer deptrac`, `vendor/bin/pest`, `composer types:check`, `npm run types:check`, `npm run check`
-- [ ] Catatan rilis: `php artisan migrate`, `php artisan roles:sync`, tambah baris cron `billing:daily`, isi `BILLING_ISSUER_*` di `.env`, isi batas siswa/penyimpanan dan kontak tagihan di console
+- [x] Perbarui bagian billing di `modules/Platform/CONTRACT.md` (tabel baru, kontrak baru, config, hapus keterangan "always-true stub", tabel asumsi master data); Core dan Identity (meter, izin) — `modules/Core/CONTRACT.md`, `modules/Identity/CONTRACT.md`
+- [x] Perbarui `docs/architecture/modular-monolith.md` § Provider-console billing, `docs/config/cron.md`, dan tambahkan Fase 17 ke `docs/ai/plan/README.md`; selaraskan `AGENTS.md` (dilacak git; baris `# /AGENTS.md` di `.gitignore` dikomentari) bila ada perubahan permukaan
+- [x] Jalankan seluruh pemeriksaan: `vendor/bin/pint --dirty --format agent`, `composer deptrac`, `vendor/bin/pest`, `composer types:check`, `npm run types:check`, `npm run check`
+- [x] Catatan rilis: `php artisan migrate`, `php artisan roles:sync`, tambah baris cron `billing:daily`, isi `BILLING_ISSUER_*` di `.env`, isi batas siswa/penyimpanan dan kontak tagihan di console
 
 **Selesai bila:** semua pemeriksaan hijau dan dokumentasi sesuai kode. Bukti: `composer test` → lulus.
 
@@ -294,6 +294,8 @@ Diisi selama eksekusi; dokumen ini hidup.
 - 2026-10-08 — **Tahap 8:** prop `billing` dibuat oleh `Http/Support/SchoolBillingPayload` dan hanya untuk pemegang `platform.billing.view`; tanpa `platform.billing.pay`, penawaran, tautan aksi, tombol bayar, dan instruksi pembayaran dikosongkan di sisi server (bukan hanya disembunyikan di UI). Laporan transfer disimpan di `payments.meta.reported` dan ditampilkan di form konfirmasi provider (tanggal, referensi, dan metode sudah terisi).
 - 2026-10-08 — **Tahap 8:** aksi sekolah memakai pola Inertia biasa (redirect balik dengan flash/galat `billing`) dengan partial reload `only: ['billing', 'flash', 'errors']`, sehingga dialog tetap terbuka dan datanya segar; tidak memakai `useHttp`. URL PDF adalah tautan unduh biasa.
 - 2026-10-08 — **Tahap 8:** `modules/Identity/tests/Feature/DefaultRolesTest.php` memuat himpunan izin `admin-sekolah` persis; dua izin billing ditambahkan ke ekspektasinya (perubahan sengaja). Tes browser baru `tests/Browser/BillingPanelsTest.php` (4 skenario) menggantikan verifikasi manual.
+- 2026-10-08 — **Tahap 9:** `AGENTS.md` ternyata dilacak git (baris `# /AGENTS.md` di `.gitignore` dikomentari, bertentangan dengan komentar di dalam berkasnya sendiri), jadi perubahannya ikut di-commit; plan sebelumnya menyebutnya tidak dilacak. Pernyataan "`ppdb` belum masuk plan mana pun" diperbarui di `AGENTS.md`, `docs/architecture/modular-monolith.md`, dan `modules/Ppdb/CONTRACT.md`.
+- 2026-10-08 — **Tahap 9:** `composer types:check` (PHPStan) menemukan 6 galat di berkas fase ini (`?->` yang tak perlu sebelum `??`, `list<>` yang tak terjamin) dan semuanya diperbaiki; 6 galat lain ada di berkas yang tidak disentuh fase ini.
 
 ### Temuan
 - Sebelum menulis: `payInvoice` mengembalikan plan lama (jebakan 1) dan `syncModules()` menimpa modul manual (jebakan 2); keduanya ditutup di Tahap 2–3.
@@ -305,8 +307,8 @@ Diisi selama eksekusi; dokumen ini hidup.
 - Worktree tidak membawa berkas yang di-ignore: `vendor/` (jangan junction — autoloader memuat kode repo utama), `.env`, `AGENTS.md`, dan `public/build`; tes yang merender halaman Inertia butuh `public/build/manifest.json` (salin atau `npm run build`). `npm install` menulis ulang `package-lock.json`: kembalikan sebelum commit.
 - Berkas Wayfinder hasil generate (`resources/js/actions`, `resources/js/routes`) di-ignore git: jalankan `php artisan wayfinder:generate` setelah menambah rute, sebelum `npm run types:check`.
 - `pint --test` pada pohon gabungan menandai satu berkas di luar fase ini: `modules/Attendance/app/Http/Controllers/MyScheduleController.php` (impor tak terpakai) — sudah ada sebelumnya, tidak diperbaiki.
-- Modul Attendance dan Ppdb belum dijalankan setelah Tahap 1, 2, dan 7 (hanya Platform, Core, Identity, arsitektur).
-- `composer require` memicu skrip `post-update-cmd` → `boost:update`, yang menghapus berkas skill `inertia-react-development`, menulis ulang `boost.json`, dan memangkas `AGENTS.md` (tidak dilacak git). Agen memulihkannya; berhati-hatilah menjalankan `composer update`/`require` di repo utama (`composer install` tidak memicunya).
+- Attendance (248 tes) dan Ppdb (287 tes) baru dijalankan setelah Tahap 8, bukan di tiap tahap sebelumnya; keduanya hijau.
+- `composer require` memicu skrip `post-update-cmd` → `boost:update`, yang menghapus berkas skill `inertia-react-development`, menulis ulang `boost.json`, dan memangkas `AGENTS.md` (yang dilacak git — periksa `git diff AGENTS.md` setelah `composer require`/`update`). Agen memulihkannya; berhati-hatilah menjalankan `composer update`/`require` di repo utama (`composer install` tidak memicunya).
 - `git reset --hard` di worktree Windows bisa gagal di tengah jalan (`unable to unlink old 'tests/Browser/WhatsappIntegrationTest.php'`); hapus berkas itu lalu ulangi.
 - Teks PDF dompdf terkompresi, jadi tes tidak bisa mencari nomor atau nominal di biner; tes memeriksa `%PDF` pada render nyata dan isi pada view Blade-nya. Jalur ulang-saat-bentrok di `InvoiceIssuer::createNumbered` belum punya tes (savepoint membatalkan baris bentrok yang disimulasikan); penomoran berurutan teruji.
 - Prettier memberi peringatan bahkan pada berkas yang tidak disentuh di lingkungan ini; jangan jadikan sinyal.
@@ -317,4 +319,23 @@ Diisi selama eksekusi; dokumen ini hidup.
 - Setelah rilis: `php artisan migrate`, `php artisan roles:sync` (admin sekolah yang sudah ada mendapat `platform.billing.view/pay`), dan `npm run build`.
 
 ### Hasil akhir
-Diisi saat semua tahap selesai.
+Billing provider sekarang siap dipakai dengan data nyata. Yang jadi:
+
+- **Pembayaran:** tabel `payments`, seam `PaymentGateway::initiate()` + satu pintu `SubscriptionManager::settle()` (terkunci, idempoten, nominal pas), gateway pertama transfer manual yang dikonfirmasi provider lewat form yang tercatat lengkap (termasuk laporan transfer dari sekolah). Gateway nyata nanti cukup mengisi dua panggilan yang sama.
+- **Siklus hidup:** tenggang 7 hari, suspend dengan alasan `billing`/`manual` (hanya `billing` dibuka otomatis oleh pembayaran atau perpanjangan trial), satu halaman 403 netral, WhatsApp berhenti untuk sekolah yang disuspend, `cancel` = tidak diperpanjang, `billing_exempt`.
+- **Invoice:** PDF (invoice dan kuitansi satu dokumen), tujuh jenis email antre, `billing_notices`, kontak tagihan per sekolah, penomoran yang aman bentrok.
+- **Otomatisasi:** `php artisan billing:daily` (terbit perpanjangan H-14, pengingat, suspend, kedaluwarsa payment) dengan `--only/--date/--dry-run/--force`, pengaman suspend massal, dan penanda "terakhir dijalankan" di console.
+- **Plan dan pemakaian:** `plans.limits` dan `is_public`, flag modul bersumber `plan`/`manual`, upgrade prorata dan downgrade terjadwal, meter `students`/`staff_accounts`/`storage` (hanya ditampilkan).
+- **Sisi sekolah:** kontrak `TenantBilling`, izin `platform.billing.view/pay` untuk `admin-sekolah`, prop opsional `billing`, dan panel "Paket & Langganan" / "Tagihan & Invoice" di `AccountMenu` yang kini memakai data nyata (mockup dihapus).
+
+**Pemeriksaan akhir** (2026-10-08): Platform 499, Identity 163, Core 550, Attendance 248, Ppdb 287, arsitektur 6, root 6 tes hijau; 4 tes browser (`tests/Browser/BillingPanelsTest.php`) hijau; `npm run types:check` bersih; Pint bersih. **Belum hijau, dan bukan dari fase ini:** `composer deptrac` (1 pelanggaran lama: `App\Console\Commands\DemoSeedCommand` → `Database\Seeders\DemoSchoolSeeder`), `composer types:check` (6 galat PHPStan lama di Attendance, Core, Ppdb, dan dua berkas Onboarding), dan `vendor/bin/pint --test` (satu impor tak terpakai di `modules/Attendance/.../MyScheduleController.php`). Karena itu `composer test` sebagai satu rantai belum lulus; suite lengkap `php artisan test --compact` sebaiknya dijalankan pemilik repo.
+
+**Langkah rilis:**
+1. `composer install` (menambah `barryvdh/laravel-dompdf`), `npm run build`.
+2. `php artisan migrate` (tujuh migrasi `0010_01_01_00000N`; sekolah lama yang disuspend ditandai `manual`, kontak tagihan diisi dari aplikasi terakhirnya).
+3. `php artisan roles:sync` (admin sekolah mendapat `platform.billing.view/pay`).
+4. Isi `.env`: `BILLING_ISSUER_NAME/EMAIL/WHATSAPP/PHONE/ADDRESS`, `BILLING_ISSUER_BANK_NAME/ACCOUNT/HOLDER` (rekening tujuan transfer).
+5. Tambah baris cron `billing:daily` (lihat `docs/config/cron.md`), jalankan `php artisan billing:daily --dry-run` dulu.
+6. Di console: isi batas siswa dan penyimpanan tiap plan, tambahkan `ppdb` ke plan yang menjualnya, dan periksa kontak tagihan tiap sekolah (yang kosong dicatat `failed`, bukan error).
+
+**Tersisa (di luar fase ini, sudah di kabut peta):** gateway pembayaran nyata dan webhook; PPN (menunggu status PKP provider); kupon, kredit, dan refund; tagihan semesteran; penegakan batas plan; mode terbatas untuk sekolah yang disuspend; unggah bukti transfer; sekolah menghentikan langganan sendiri; WhatsApp dari provider ke sekolah; konfirmasi ke dinas soal PPDB dan BOS (Pasal 66). Tidak ada tes untuk jalur ulang-saat-bentrok di penomoran invoice.

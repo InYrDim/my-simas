@@ -47,9 +47,9 @@ final class SuspensionStep
             ->values();
 
         if ($this->exceedsCap($candidates->count()) && ! $force) {
-            $lines = $candidates
+            $lines = array_values($candidates
                 ->map(fn (Subscription $subscription): string => "{$subscription->tenant->slug}: tertahan, akses habis {$subscription->accessEndsAt()?->toDateString()}")
-                ->all();
+                ->all());
 
             if (! $dryRun) {
                 ProviderSetting::write(self::BLOCKED_SETTING, [

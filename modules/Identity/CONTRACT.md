@@ -54,6 +54,14 @@ container.
 - None yet. Will be added here when Identity starts emitting domain
   events (e.g. `UserRegistered`).
 
+## Registers into Platform
+
+- `staff_accounts` usage meter (`Platform\Contracts\UsageMeters`, Fase 17):
+  active users (`deactivated_at` empty, invited-but-not-activated ones
+  included) that do not hold the `siswa` role as their only role. Shown
+  against the plan's `staff_accounts` limit; nothing blocks when it is over.
+  Counted through the user's role relation, never through Spatie directly.
+
 ## Implements for Platform
 
 - `Modules\Platform\App\Contracts\SchoolSessionOpener` →
@@ -158,7 +166,9 @@ container.
 - Roles: machine names from `config/roles.php` (`admin-sekolah`,
   `guru`, `staf-tu`, and `siswa` — which holds only `attendance.qr.show`,
   its own attendance QR); `admin-sekolah` also holds the four `ppdb.*`
-  permissions and `staf-tu` `ppdb.view` + `ppdb.applicants.manage` (fase 11;
+  permissions, the two billing permissions `platform.billing.view` and
+  `platform.billing.pay` (registered by Platform, Fase 17; existing schools get
+  them with `php artisan roles:sync`) and `staf-tu` `ppdb.view` + `ppdb.applicants.manage` (fase 11;
   a PPDB applicant is no school user and has no role); labels live in
   config only. Permissions
   `identity.users.{view,create,update,deactivate,sendReset}` are

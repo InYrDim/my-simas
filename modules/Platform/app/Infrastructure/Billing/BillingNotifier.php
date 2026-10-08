@@ -195,8 +195,8 @@ final class BillingNotifier
             ->implode(' / ');
 
         return new $mailClass(...[
-            'recipientName' => $tenant?->billing_name ?: ($tenant?->name ?? ''),
-            'schoolName' => $tenant?->name ?? '',
+            'recipientName' => $tenant?->billing_name ?: ($tenant->name ?? ''),
+            'schoolName' => $tenant->name ?? '',
             'noticeId' => $notice->id,
             'issuerName' => (string) ($issuer['name'] ?? 'SIMAS'),
             'issuerContact' => $contact !== '' ? $contact : null,
