@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { PlusIcon, PrinterIcon, UploadIcon } from 'lucide-react';
+import { useRef, useState } from 'react';
 
 import { index as importPage } from '@/actions/Modules/Core/App/Http/Controllers/ImportController';
 import {
@@ -14,6 +15,16 @@ import {
 } from '@shared/components/page-parts';
 import Can from '@shared/components/Can';
 import { Button } from '@shared/components/ui/button';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@shared/components/ui/dialog';
+import { Skeleton } from '@shared/components/ui/skeleton';
 import { Input } from '@shared/components/ui/input';
 import { TableCell, TableRow } from '@shared/components/ui/table';
 import ListPager, { useListFilters } from '@shared/components/ListPager';
@@ -35,6 +46,78 @@ interface StudentAction {
     allUrl: string;
     /** The student's id goes on the end. */
     studentUrl: string;
+}
+
+interface Preview {
+    title: string;
+    url: string;
+}
+
+/** The address of a module's print page, asking for its dialog layout. */
+function embedded(url: string): string {
+    return `${url}${url.includes('?') ? '&' : '?'}embed=1`;
+}
+
+/**
+ * A module's print page inside a dialog: the page stays where it is, and
+ * "Cetak" prints only what the frame shows.
+ */
+function PrintPreview({
+    preview,
+    onClose,
+}: {
+    preview: Preview | null;
+    onClose: () => void;
+}) {
+    const frame = useRef<HTMLIFrameElement>(null);
+    const [loaded, setLoaded] = useState(false);
+
+    return (
+        <Dialog
+            open={preview !== null}
+            onOpenChange={(open) => {
+                if (!open) {
+                    setLoaded(false);
+                    onClose();
+                }
+            }}
+        >
+            <DialogContent className="sm:max-w-4xl">
+                <DialogHeader>
+                    <DialogTitle>{preview?.title}</DialogTitle>
+                    <DialogDescription>
+                        Periksa hasilnya, lalu cetak atau simpan sebagai PDF.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="relative h-[65vh] overflow-hidden rounded-md border bg-background">
+                    {!loaded && (
+                        <Skeleton className="absolute inset-0 rounded-none" />
+                    )}
+                    {preview !== null && (
+                        <iframe
+                            ref={frame}
+                            title={preview.title}
+                            src={embedded(preview.url)}
+                            className="size-full"
+                            onLoad={() => setLoaded(true)}
+                        />
+                    )}
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="outline">Tutup</Button>
+                    </DialogClose>
+                    <Button
+                        disabled={!loaded}
+                        onClick={() => frame.current?.contentWindow?.print()}
+                    >
+                        <PrinterIcon />
+                        Cetak
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
 }
 
 const statusOptions = [
@@ -62,6 +145,7 @@ export default function StudentsIndex({
     studentActions: StudentAction[];
 }) {
     const url = index.url();
+    const [preview, setPreview] = useState<Preview | null>(null);
     const { filters, set } = useListFilters(url, initial);
     const filtered =
         initial.q !== '' || initial.class !== '' || initial.status !== '';
@@ -137,17 +221,16 @@ export default function StudentsIndex({
                             {studentActions.map((action) => (
                                 <Button
                                     key={action.key}
-                                    asChild
                                     variant="outline"
+                                    onClick={() =>
+                                        setPreview({
+                                            title: `${action.label} — semua siswa`,
+                                            url: action.allUrl,
+                                        })
+                                    }
                                 >
-                                    <a
-                                        href={action.allUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                    >
-                                        <PrinterIcon />
-                                        Cetak semua {action.label}
-                                    </a>
+                                    <PrinterIcon />
+                                    Cetak semua {action.label}
                                 </Button>
                             ))}
                         </div>
@@ -186,18 +269,17 @@ export default function StudentsIndex({
                                             studentActions.map((action) => (
                                                 <Button
                                                     key={action.key}
-                                                    asChild
                                                     variant="ghost"
                                                     size="sm"
+                                                    onClick={() =>
+                                                        setPreview({
+                                                            title: `${action.label} — ${student.name}`,
+                                                            url: `${action.studentUrl}${student.id}`,
+                                                        })
+                                                    }
                                                 >
-                                                    <a
-                                                        href={`${action.studentUrl}${student.id}`}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                    >
-                                                        <PrinterIcon />
-                                                        Cetak {action.label}
-                                                    </a>
+                                                    <PrinterIcon />
+                                                    Cetak {action.label}
                                                 </Button>
                                             ))}
                                     </TableCell>
@@ -209,6 +291,8 @@ export default function StudentsIndex({
             )}
 
             <ListPager url={url} filters={initial} pagination={pagination} />
+
+            <PrintPreview preview={preview} onClose={() => setPreview(null)} />
         </MasterPage>
     );
 }

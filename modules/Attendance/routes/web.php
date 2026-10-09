@@ -15,6 +15,7 @@ use Modules\Attendance\App\Http\Controllers\MyScheduleController;
 use Modules\Attendance\App\Http\Controllers\OverviewController;
 use Modules\Attendance\App\Http\Controllers\ScanController;
 use Modules\Attendance\App\Http\Controllers\SettingsController;
+use Modules\Attendance\App\Http\Controllers\StaticQrCardController;
 use Modules\Attendance\App\Http\Controllers\StaticQrController;
 use Modules\Attendance\App\Http\Controllers\StudentQrController;
 
@@ -78,9 +79,16 @@ Route::middleware('web')->group(function (): void {
 
             // Every student's printed QR; only while the school has the
             // static QR on.
-            Route::get('qr-statis', StaticQrController::class)
-                ->middleware('can:attendance.static-qr.print')
-                ->name('static-qr');
+            Route::middleware('can:attendance.static-qr.print')->prefix('qr-statis')->group(function (): void {
+                Route::get('/', StaticQrController::class)->name('static-qr');
+
+                // The school's student-card picture and the place of the QR on it.
+                Route::get('kartu', [StaticQrCardController::class, 'show'])->name('static-qr.card');
+                Route::get('kartu/gambar', [StaticQrCardController::class, 'image'])->name('static-qr.card.image');
+                Route::post('kartu/gambar', [StaticQrCardController::class, 'store'])->name('static-qr.card.store');
+                Route::put('kartu', [StaticQrCardController::class, 'update'])->name('static-qr.card.update');
+                Route::delete('kartu', [StaticQrCardController::class, 'destroy'])->name('static-qr.card.destroy');
+            });
 
             // A student's own history; the controller finds the student
             // from the signed-in account, never from the URL.

@@ -9,6 +9,8 @@
   (one row per student and day: the day's status and the gate times in
   and out), `lesson_sessions` (one class in one lesson slot of one day),
   `lesson_attendances` (one row per student of a session) and
+  `static_qr_card_templates` (the school's student-card picture and the
+  place of the static QR on it, one row per school) and
   `lesson_checks` (one teacher's own "done" mark per lesson and day: the
   todo checkbox on Jadwal Hari Ini; `user_id` is a plain account id).
 - Core domain concepts: student attendance (Absensi) — at the school gate
@@ -142,6 +144,15 @@ Never another feature module (Ppdb), not even via its Public surface.
   with Core's `StudentActionRegistry`. The page asks the ability `attendance.static-qr.print` = `attendance.settings.manage`
   AND the switch (admin). Students without a class are not on the sheet.
   Rotating the app key invalidates every printed code.
+  **Card template** (`/absensi/qr-statis/kartu`, `StaticQrCardController`, same
+  ability): a PNG/JPG (max 5 MB, min 300x180, never SVG) kept through
+  `TenantStorage` (module `attendance`) and served only by that controller; the QR
+  box is stored as percentages of the picture (`qr_x`, `qr_y`, `qr_size` of the
+  width, always square) plus the printed width in mm. The print page draws the
+  card in the browser (`<img>` + `qrcode.react`, so it prints without background
+  graphics); `?format=polos` forces the plain sheet and `?embed=1` drops the page
+  header. Core opens the print URL in a dialog (iframe) on the Siswa list. A new
+  picture resets the box to the middle; the template stays when the switch is off.
 - **The scanner** (`/absensi/pindai`, `ScanController`): one JSON endpoint
   for a code (`token`) or a manual pick (`student_id`), in mode `gate-in`,
   `gate-out` or `lesson`. The mode decides the permission (gate → daily,

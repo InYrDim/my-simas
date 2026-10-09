@@ -4,12 +4,13 @@ namespace Modules\Attendance\App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Inertia\Response;
+use Modules\Attendance\App\Domain\Models\StaticQrCardTemplate;
 use Modules\Attendance\App\Domain\Qr\StaticQrCodes;
 use Modules\Core\App\Contracts\ClassDirectory;
 use Modules\Core\App\Contracts\DTOs\StudentRecord;
 use Modules\Core\App\Contracts\StudentDirectory;
 use Modules\Platform\App\Contracts\TenantContext;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Cetak QR Statis: a sheet with the printed QR of one active student
@@ -27,8 +28,12 @@ final class StaticQrController
             ? $this->groupOfOne($students, (int) $request->query('siswa'))
             : $this->groupsOfClasses($classes, $students);
 
-        return Inertia::render('Attendance/StaticQr', [
+        $embed = $request->boolean('embed');
+
+        $page = Inertia::render('Attendance/StaticQr', [
             'schoolName' => $context->currentOrFail()->name,
+            'embed' => $embed,
+            'template' => $request->query('format') === 'polos' ? null : StaticQrCardController::describe(StaticQrCardTemplate::current()),
             'groups' => array_map(fn (array $group): array => [
                 'class' => $group['class'],
                 'students' => array_map(fn (StudentRecord $student): array => [
@@ -39,6 +44,16 @@ final class StaticQrController
                 ], $group['students']),
             ], $groups),
         ]);
+
+        $response = $page->toResponse($request);
+
+        // The Siswa list shows this page in its own dialog (a frame of the
+        // same site); every other site is still refused.
+        if ($embed) {
+            $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
+        }
+
+        return $response;
     }
 
     /**

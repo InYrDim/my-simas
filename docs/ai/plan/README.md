@@ -17,6 +17,7 @@ Ringkasan fase yang dulu ada di `AGENTS.md` dipindahkan ke sini supaya `AGENTS.m
 | 15 | Menu guru | `fase-15/` | docs/architecture |
 | 16 | Pengiriman WhatsApp aman (pacing, variasi, pengaman) | `fase-16/` | Platform + Core + Attendance CONTRACT |
 | 17 | Billing siap-nyata (pembayaran, siklus hidup, invoice, pemakaian, sisi sekolah) | `fase-17/` | Platform + Core + Identity CONTRACT |
+| 18 | Template kartu siswa untuk QR statis (gambar kartu, letak QR, cetak dalam modal) | `fase-18/` | Attendance CONTRACT |
 
 ## Arsip: teks asli dari AGENTS.md
 

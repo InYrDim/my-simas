@@ -1,6 +1,7 @@
 import { Link, useForm } from '@inertiajs/react';
 
 import { update } from '@/actions/Modules/Attendance/App/Http/Controllers/SettingsController';
+import { show as cardPage } from '@/actions/Modules/Attendance/App/Http/Controllers/StaticQrCardController';
 import { whatsapp } from '@/routes/core/integration';
 import { Panel } from '@shared/components/page-parts';
 import { Button } from '@shared/components/ui/button';
@@ -168,6 +169,18 @@ export default function Settings({
                                     <FieldError>
                                         {form.errors.static_qr_enabled}
                                     </FieldError>
+                                )}
+                                {staticQrEnabled && (
+                                    <Button
+                                        asChild
+                                        variant="outline"
+                                        size="sm"
+                                        className="mt-2 w-fit"
+                                    >
+                                        <Link href={cardPage.url()}>
+                                            Atur template kartu
+                                        </Link>
+                                    </Button>
                                 )}
                             </FieldContent>
                         </Field>
