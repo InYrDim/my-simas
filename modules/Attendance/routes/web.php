@@ -15,6 +15,7 @@ use Modules\Attendance\App\Http\Controllers\MyScheduleController;
 use Modules\Attendance\App\Http\Controllers\OverviewController;
 use Modules\Attendance\App\Http\Controllers\ScanController;
 use Modules\Attendance\App\Http\Controllers\SettingsController;
+use Modules\Attendance\App\Http\Controllers\StaticQrController;
 use Modules\Attendance\App\Http\Controllers\StudentQrController;
 
 // Module routes are registered via loadRoutesFrom() and do NOT inherit
@@ -74,6 +75,12 @@ Route::middleware('web')->group(function (): void {
                 Route::get('pengaturan', [SettingsController::class, 'show'])->name('settings');
                 Route::put('pengaturan', [SettingsController::class, 'update'])->name('settings.update');
             });
+
+            // Every student's printed QR; only while the school has the
+            // static QR on.
+            Route::get('qr-statis', StaticQrController::class)
+                ->middleware('can:attendance.static-qr.print')
+                ->name('static-qr');
 
             // A student's own history; the controller finds the student
             // from the signed-in account, never from the URL.

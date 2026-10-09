@@ -11,10 +11,12 @@ use Modules\Attendance\App\Domain\Notifications\AttendanceNotices;
 use Modules\Attendance\App\Domain\Reports\ClassAttendanceReport;
 use Modules\Attendance\App\Domain\Reports\MonthlyAttendanceReport;
 use Modules\Attendance\App\Domain\Statistics\AttendanceStatistics;
+use Modules\Attendance\App\Domain\Students\StaticQrStudentActions;
 use Modules\Core\App\Contracts\DashboardRegistry;
 use Modules\Core\App\Contracts\NoticeRegistry;
 use Modules\Core\App\Contracts\ReportRegistry;
 use Modules\Core\App\Contracts\StatisticsRegistry;
+use Modules\Core\App\Contracts\StudentActionRegistry;
 use Modules\Platform\App\Contracts\ModuleRegistry;
 use Modules\Platform\App\Contracts\PermissionRegistry;
 use Modules\Platform\App\Contracts\TenantNavigation;
@@ -87,6 +89,7 @@ class AttendanceServiceProvider extends ServiceProvider
         Gate::define('attendance.lesson.school', fn (Authenticatable $user): bool => Gate::forUser($user)->allows('attendance.lesson.record') && AttendanceSetting::lessonEnabled());
         Gate::define('attendance.scan.use', fn (Authenticatable $user): bool => Gate::forUser($user)->any(['attendance.gate.use', 'attendance.lesson.use']));
         Gate::define('attendance.scan.school', fn (Authenticatable $user): bool => Gate::forUser($user)->any(['attendance.gate.use', 'attendance.lesson.school']));
+        Gate::define('attendance.static-qr.print', fn (Authenticatable $user): bool => Gate::forUser($user)->allows('attendance.settings.manage') && AttendanceSetting::staticQrEnabled());
         Gate::define('attendance.qr.use', fn (Authenticatable $user): bool => Gate::forUser($user)->allows('attendance.qr.show') && (AttendanceSetting::gateEnabled() || AttendanceSetting::lessonEnabled()));
     }
 
@@ -116,6 +119,7 @@ class AttendanceServiceProvider extends ServiceProvider
 
         $this->app->make(StatisticsRegistry::class)->register('attendance', AttendanceStatistics::class);
         $this->app->make(DashboardRegistry::class)->register('attendance', AttendanceDashboard::class);
+        $this->app->make(StudentActionRegistry::class)->register('attendance', StaticQrStudentActions::class);
     }
 
     /**

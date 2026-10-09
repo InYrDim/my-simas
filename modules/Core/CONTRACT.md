@@ -127,6 +127,12 @@ tenant (deferred, after the page shell), keeps the widgets the signed-in
 user may see and groups them by slot; it names no role and no feature
 module. A provider that throws is reported and skipped.
 
+- `StudentActionRegistry::register(string $module, class-string<StudentActionProvider> $provider)`
+  — links on the Siswa list; `StudentActionProvider::actions()` returns
+  `DTOs\StudentAction` (`key`, `label`, `allUrl`, `studentUrl` to which the
+  student's id is appended), run for the signed-in user only while the
+  module is active. The page shows a "Cetak semua" button and an "Aksi"
+  column when any come back (Attendance's static QR).
 - `DashboardRegistry::register(string $module, class-string<DashboardWidgetProvider> $provider)`
   — blocks for the Beranda.
 - `DashboardWidgetProvider` — `widgets()`, run for the signed-in user inside

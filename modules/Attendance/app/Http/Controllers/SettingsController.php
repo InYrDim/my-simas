@@ -27,6 +27,7 @@ final class SettingsController
             'lessonEnabled' => $settings->lesson_enabled,
             'lessonScanEarlyMinutes' => $settings->lesson_scan_early_minutes,
             'lessonCopyPreviousEnabled' => $settings->lesson_copy_previous_enabled,
+            'staticQrEnabled' => $settings->static_qr_enabled,
             'gateOpensAt' => $settings->gateOpensAt(),
             'gateClosesAt' => $settings->gateClosesAt(),
             'can' => ['manageNotices' => Gate::allows('core.integration.manage')],
@@ -42,6 +43,7 @@ final class SettingsController
                 'lesson_enabled' => ['sometimes', 'boolean'],
                 'lesson_scan_early_minutes' => ['sometimes', 'integer', 'between:0,30'],
                 'lesson_copy_previous_enabled' => ['sometimes', 'boolean'],
+                'static_qr_enabled' => ['sometimes', 'boolean'],
                 'gate_opens_at' => ['sometimes', 'required_with:gate_closes_at', 'date_format:H:i'],
                 'gate_closes_at' => ['sometimes', 'required_with:gate_opens_at', 'date_format:H:i', 'after:gate_opens_at'],
             ],
@@ -59,6 +61,7 @@ final class SettingsController
                 'lesson_enabled' => 'Absensi jam pelajaran',
                 'lesson_scan_early_minutes' => 'Toleransi pindai sebelum jam mulai',
                 'lesson_copy_previous_enabled' => 'Salin dari jam sebelumnya',
+                'static_qr_enabled' => 'QR statis',
                 'gate_opens_at' => 'Gerbang dibuka',
                 'gate_closes_at' => 'Gerbang ditutup',
             ],
@@ -74,6 +77,7 @@ final class SettingsController
             $request->boolean('lesson_copy_previous_enabled', $current->lesson_copy_previous_enabled),
             $validated['gate_opens_at'] ?? $current->gateOpensAt(),
             $validated['gate_closes_at'] ?? $current->gateClosesAt(),
+            $request->boolean('static_qr_enabled', $current->static_qr_enabled),
         );
 
         return back()->with('status', 'Pengaturan absensi disimpan.');

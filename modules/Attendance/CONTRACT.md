@@ -129,6 +129,19 @@ Never another feature module (Ppdb), not even via its Public surface.
   minute per account (`attendance-qr:{tenant}:{user}`). The cache store
   has no atomic read-and-delete: two scanners reading one code at the same
   moment are stopped by the "already recorded" rule and the unique index.
+- **The static QR** (`Domain/Qr/StaticQrCodes`, `attendance_settings.static_qr_enabled`,
+  off by default, switched on Pengaturan): a printed code per student,
+  `simas-s1.{student_id}.{signature}`, signed (HMAC) with the app key and the
+  school, never expiring and not used up by a scan. The scanner accepts it
+  only while the switch is on (otherwise a refusal); a forged or foreign
+  code is refused. `/absensi/qr-statis` (`StaticQrController`) prints the
+  active students of the active year's classes, grouped by class, or one
+  student with `?siswa={id}`. It has no menu entry: it is reached from
+  Warga Sekolah › Siswa, where Core shows a "Cetak semua" button and an
+  "Aksi" column once Attendance registers `Domain/Students/StaticQrStudentActions`
+  with Core's `StudentActionRegistry`. The page asks the ability `attendance.static-qr.print` = `attendance.settings.manage`
+  AND the switch (admin). Students without a class are not on the sheet.
+  Rotating the app key invalidates every printed code.
 - **The scanner** (`/absensi/pindai`, `ScanController`): one JSON endpoint
   for a code (`token`) or a manual pick (`student_id`), in mode `gate-in`,
   `gate-out` or `lesson`. The mode decides the permission (gate → daily,

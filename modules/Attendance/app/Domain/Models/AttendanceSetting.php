@@ -15,6 +15,8 @@ use Modules\Platform\App\Contracts\Concerns\BelongsToTenant;
  * long before a lesson starts a student may already be scanned into it.
  * `lesson_copy_previous_enabled` lets a teacher copy the roll of the
  * class's previous lesson of the day into the one being filled.
+ * `static_qr_enabled` lets the school print and accept every student's
+ * static QR; it is off by default.
  * `gate_opens_at` and `gate_closes_at` (`H:i:s`, on the school's clock) are
  * the hours the gate takes scans.
  *
@@ -25,10 +27,11 @@ use Modules\Platform\App\Contracts\Concerns\BelongsToTenant;
  * @property bool $lesson_enabled
  * @property int $lesson_scan_early_minutes
  * @property bool $lesson_copy_previous_enabled
+ * @property bool $static_qr_enabled
  * @property string $gate_opens_at
  * @property string $gate_closes_at
  */
-#[Fillable(['late_after', 'gate_enabled', 'lesson_enabled', 'lesson_scan_early_minutes', 'lesson_copy_previous_enabled', 'gate_opens_at', 'gate_closes_at'])]
+#[Fillable(['late_after', 'gate_enabled', 'lesson_enabled', 'lesson_scan_early_minutes', 'lesson_copy_previous_enabled', 'static_qr_enabled', 'gate_opens_at', 'gate_closes_at'])]
 class AttendanceSetting extends Model
 {
     use BelongsToTenant;
@@ -52,6 +55,7 @@ class AttendanceSetting extends Model
             'lesson_enabled' => true,
             'lesson_scan_early_minutes' => self::DEFAULT_LESSON_SCAN_EARLY_MINUTES,
             'lesson_copy_previous_enabled' => true,
+            'static_qr_enabled' => false,
             'gate_opens_at' => self::DEFAULT_GATE_OPENS_AT,
             'gate_closes_at' => self::DEFAULT_GATE_CLOSES_AT,
         ]);
@@ -79,6 +83,14 @@ class AttendanceSetting extends Model
     public static function copyPreviousEnabled(): bool
     {
         return self::query()->value('lesson_copy_previous_enabled') ?? true;
+    }
+
+    /**
+     * Whether the static QR is on. Reads without creating the row.
+     */
+    public static function staticQrEnabled(): bool
+    {
+        return self::query()->value('static_qr_enabled') ?? false;
     }
 
     /**
@@ -110,6 +122,6 @@ class AttendanceSetting extends Model
      */
     protected function casts(): array
     {
-        return ['gate_enabled' => 'boolean', 'lesson_enabled' => 'boolean', 'lesson_scan_early_minutes' => 'integer', 'lesson_copy_previous_enabled' => 'boolean'];
+        return ['gate_enabled' => 'boolean', 'lesson_enabled' => 'boolean', 'lesson_scan_early_minutes' => 'integer', 'lesson_copy_previous_enabled' => 'boolean', 'static_qr_enabled' => 'boolean'];
     }
 }

@@ -14,6 +14,7 @@ use Modules\Core\App\Http\Concerns\DescribesLinkedAccount;
 use Modules\Core\App\Http\Concerns\RendersMasterPage;
 use Modules\Core\App\Http\Requests\StudentRequest;
 use Modules\Core\App\Http\Resources\StudentResource;
+use Modules\Core\App\Infrastructure\Students\DefaultStudentActionRegistry;
 
 final class StudentController
 {
@@ -21,7 +22,7 @@ final class StudentController
 
     private const PER_PAGE = 25;
 
-    public function index(Request $request): Response
+    public function index(Request $request, DefaultStudentActionRegistry $actions): Response
     {
         $search = trim((string) $request->query('q', ''));
         $classId = (string) $request->query('class', '');
@@ -47,6 +48,7 @@ final class StudentController
             'pagination' => $this->paginationMeta($students),
             'filters' => ['q' => $search, 'class' => $classId, 'status' => $status],
             'classes' => $this->activeYearClasses(),
+            'studentActions' => $actions->actionsForCurrentUser(),
         ]);
     }
 

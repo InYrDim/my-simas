@@ -15,8 +15,10 @@ use Modules\Attendance\App\Domain\Enums\AttendanceStatus;
 use Modules\Attendance\App\Domain\Enums\LessonState;
 use Modules\Attendance\App\Domain\Enums\RecordMethod;
 use Modules\Attendance\App\Domain\Exceptions\AttendanceException;
+use Modules\Attendance\App\Domain\Models\AttendanceSetting;
 use Modules\Attendance\App\Domain\Models\DailyAttendance;
 use Modules\Attendance\App\Domain\Qr\QrTokens;
+use Modules\Attendance\App\Domain\Qr\StaticQrCodes;
 use Modules\Attendance\App\Domain\Queries\ClassChoices;
 use Modules\Attendance\App\Domain\Queries\TeacherLessons;
 use Modules\Attendance\App\Domain\Support\LessonSlots;
@@ -90,6 +92,7 @@ final class ScanController
     public function store(
         ScanRequest $request,
         QrTokens $tokens,
+        StaticQrCodes $staticCodes,
         StudentDirectory $students,
         RecordGateCheckIn $checkIn,
         RecordGateCheckOut $checkOut,
@@ -100,9 +103,17 @@ final class ScanController
         $token = $request->token();
         $method = $token === null ? RecordMethod::Manual : RecordMethod::Qr;
 
-        $studentId = $token === null
-            ? (int) $request->validated('student_id')
-            : $tokens->consume($token);
+        if ($token !== null && $staticCodes->looksStatic($token)) {
+            if (! AttendanceSetting::staticQrEnabled()) {
+                return $this->refused('QR statis sedang dimatikan oleh sekolah. Pakai QR dari aplikasi siswa atau pilih nama siswa.');
+            }
+
+            $studentId = $staticCodes->studentIdFrom($token);
+        } else {
+            $studentId = $token === null
+                ? (int) $request->validated('student_id')
+                : $tokens->consume($token);
+        }
 
         if ($studentId === null) {
             return $this->refused('Kode QR tidak dikenal atau sudah kedaluwarsa. Minta siswa menampilkan kode baru.');

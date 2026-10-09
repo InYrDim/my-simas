@@ -26,6 +26,7 @@ export default function Settings({
     lessonEnabled,
     lessonScanEarlyMinutes,
     lessonCopyPreviousEnabled,
+    staticQrEnabled,
     gateOpensAt,
     gateClosesAt,
     can,
@@ -35,6 +36,7 @@ export default function Settings({
     lessonEnabled: boolean;
     lessonScanEarlyMinutes: number;
     lessonCopyPreviousEnabled: boolean;
+    staticQrEnabled: boolean;
     gateOpensAt: string;
     gateClosesAt: string;
     can: { manageNotices: boolean };
@@ -45,6 +47,7 @@ export default function Settings({
         lesson_enabled: lessonEnabled,
         lesson_scan_early_minutes: lessonScanEarlyMinutes,
         lesson_copy_previous_enabled: lessonCopyPreviousEnabled,
+        static_qr_enabled: staticQrEnabled,
         gate_opens_at: gateOpensAt,
         gate_closes_at: gateClosesAt,
     });
@@ -128,6 +131,42 @@ export default function Settings({
                                 {form.errors.lesson_enabled !== undefined && (
                                     <FieldError>
                                         {form.errors.lesson_enabled}
+                                    </FieldError>
+                                )}
+                            </FieldContent>
+                        </Field>
+                        <Field
+                            orientation="horizontal"
+                            data-invalid={
+                                form.errors.static_qr_enabled !== undefined
+                            }
+                        >
+                            <Checkbox
+                                id="static-qr-enabled"
+                                checked={form.data.static_qr_enabled}
+                                onCheckedChange={(checked) =>
+                                    form.setData(
+                                        'static_qr_enabled',
+                                        checked === true,
+                                    )
+                                }
+                            />
+                            <FieldContent>
+                                <FieldLabel htmlFor="static-qr-enabled">
+                                    QR statis
+                                </FieldLabel>
+                                <FieldDescription>
+                                    Tiap siswa punya QR cetak yang tidak
+                                    berubah, bisa dipindai untuk absensi. Jika
+                                    mati, QR cetak ditolak saat dipindai dan
+                                    tombol cetak di Warga Sekolah › Siswa
+                                    hilang. QR statis bisa difoto atau dipinjam,
+                                    jadi simpan dengan hati-hati.
+                                </FieldDescription>
+                                {form.errors.static_qr_enabled !==
+                                    undefined && (
+                                    <FieldError>
+                                        {form.errors.static_qr_enabled}
                                     </FieldError>
                                 )}
                             </FieldContent>

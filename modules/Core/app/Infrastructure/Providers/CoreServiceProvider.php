@@ -12,6 +12,7 @@ use Modules\Core\App\Contracts\GuardianNotifier;
 use Modules\Core\App\Contracts\NoticeRegistry;
 use Modules\Core\App\Contracts\ReportRegistry;
 use Modules\Core\App\Contracts\StatisticsRegistry;
+use Modules\Core\App\Contracts\StudentActionRegistry;
 use Modules\Core\App\Contracts\StudentAdmission;
 use Modules\Core\App\Contracts\StudentDirectory;
 use Modules\Core\App\Contracts\TeacherSchedule;
@@ -30,6 +31,7 @@ use Modules\Core\App\Infrastructure\Directory\EloquentStudentDirectory;
 use Modules\Core\App\Infrastructure\Directory\EloquentTeacherSchedule;
 use Modules\Core\App\Infrastructure\Insight\DefaultReportRegistry;
 use Modules\Core\App\Infrastructure\Insight\DefaultStatisticsRegistry;
+use Modules\Core\App\Infrastructure\Students\DefaultStudentActionRegistry;
 use Modules\Core\App\Infrastructure\Whatsapp\DefaultContactNotifier;
 use Modules\Core\App\Infrastructure\Whatsapp\DefaultGuardianNotifier;
 use Modules\Core\App\Infrastructure\Whatsapp\DefaultNoticeRegistry;
@@ -62,6 +64,10 @@ class CoreServiceProvider extends ServiceProvider
         // contract and Core's controller reads the concrete.
         $this->app->singleton(DefaultDashboardRegistry::class);
         $this->app->alias(DefaultDashboardRegistry::class, DashboardRegistry::class);
+
+        // Actions other modules add to the Siswa list; same aliasing.
+        $this->app->singleton(DefaultStudentActionRegistry::class);
+        $this->app->alias(DefaultStudentActionRegistry::class, StudentActionRegistry::class);
 
         // WhatsApp notices to guardians: modules register their kinds and
         // send through the notifier; same aliasing as the registries above.

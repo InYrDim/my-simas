@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { PlusIcon, UploadIcon } from 'lucide-react';
+import { PlusIcon, PrinterIcon, UploadIcon } from 'lucide-react';
 
 import { index as importPage } from '@/actions/Modules/Core/App/Http/Controllers/ImportController';
 import {
@@ -29,6 +29,14 @@ import type {
     Student,
 } from '../../../../types/master';
 
+interface StudentAction {
+    key: string;
+    label: string;
+    allUrl: string;
+    /** The student's id goes on the end. */
+    studentUrl: string;
+}
+
 const statusOptions = [
     { value: 'active', label: 'Aktif' },
     { value: 'graduated', label: 'Lulus' },
@@ -43,12 +51,15 @@ export default function StudentsIndex({
     pagination,
     filters: initial,
     classes,
+    studentActions,
 }: {
     school: SchoolSummary;
     students: Student[];
     pagination: Pagination;
     filters: { q: string; class: string; status: string };
     classes: ClassOption[];
+    /** Actions other modules add, such as printing the static QR. */
+    studentActions: StudentAction[];
 }) {
     const url = index.url();
     const { filters, set } = useListFilters(url, initial);
@@ -120,28 +131,81 @@ export default function StudentsIndex({
                         : 'Belum ada siswa.'}
                 </EmptyState>
             ) : (
-                <DataTable head={['Nama', 'NIS / NISN', 'Kelas', 'Status']}>
-                    {students.map((student) => (
-                        <TableRow key={student.id}>
-                            <TableCell className="font-medium">
-                                <Link
-                                    href={show.url(student.id)}
-                                    className="hover:underline"
+                <>
+                    {studentActions.length > 0 && (
+                        <div className="mb-3 flex flex-wrap justify-end gap-2">
+                            {studentActions.map((action) => (
+                                <Button
+                                    key={action.key}
+                                    asChild
+                                    variant="outline"
                                 >
-                                    {student.name}
-                                </Link>
-                            </TableCell>
-                            <TableCell className="font-mono text-xs">
-                                {student.nis}
-                                {student.nisn !== null && ` / ${student.nisn}`}
-                            </TableCell>
-                            <TableCell>{student.class ?? '—'}</TableCell>
-                            <TableCell>
-                                <StatusBadge status={student.status} />
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </DataTable>
+                                    <a
+                                        href={action.allUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        <PrinterIcon />
+                                        Cetak semua {action.label}
+                                    </a>
+                                </Button>
+                            ))}
+                        </div>
+                    )}
+                    <DataTable
+                        head={[
+                            'Nama',
+                            'NIS / NISN',
+                            'Kelas',
+                            'Status',
+                            ...(studentActions.length > 0 ? ['Aksi'] : []),
+                        ]}
+                    >
+                        {students.map((student) => (
+                            <TableRow key={student.id}>
+                                <TableCell className="font-medium">
+                                    <Link
+                                        href={show.url(student.id)}
+                                        className="hover:underline"
+                                    >
+                                        {student.name}
+                                    </Link>
+                                </TableCell>
+                                <TableCell className="font-mono text-xs">
+                                    {student.nis}
+                                    {student.nisn !== null &&
+                                        ` / ${student.nisn}`}
+                                </TableCell>
+                                <TableCell>{student.class ?? '—'}</TableCell>
+                                <TableCell>
+                                    <StatusBadge status={student.status} />
+                                </TableCell>
+                                {studentActions.length > 0 && (
+                                    <TableCell>
+                                        {student.status === 'active' &&
+                                            studentActions.map((action) => (
+                                                <Button
+                                                    key={action.key}
+                                                    asChild
+                                                    variant="ghost"
+                                                    size="sm"
+                                                >
+                                                    <a
+                                                        href={`${action.studentUrl}${student.id}`}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                    >
+                                                        <PrinterIcon />
+                                                        Cetak {action.label}
+                                                    </a>
+                                                </Button>
+                                            ))}
+                                    </TableCell>
+                                )}
+                            </TableRow>
+                        ))}
+                    </DataTable>
+                </>
             )}
 
             <ListPager url={url} filters={initial} pagination={pagination} />
